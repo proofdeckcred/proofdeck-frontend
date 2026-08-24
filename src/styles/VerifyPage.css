@@ -1,0 +1,13 @@
+.verify-page-wrapper {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background-color: #f8f9fa; /* A clean, light gray background */
+}
+
+.verify-main {
+  flex-grow: 1;
+  /* Add padding to create space for the fixed header and before the footer */
+  padding-top: 120px;
+  padding-bottom: 60px;
+}

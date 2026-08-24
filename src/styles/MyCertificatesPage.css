@@ -1,0 +1,90 @@
+/* frontend/src/styles/MyCertificatesPage.css */
+.my-certificates-page {
+  padding: 20px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.stat-card {
+  background: white;
+  border-radius: 12px;
+  padding: 24px;
+  text-align: center;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
+}
+
+.stat-card-icon {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 12px;
+  font-size: 1.2em;
+}
+
+.stat-card-icon.blue {
+  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+  color: white;
+}
+.stat-card-icon.green {
+  background: linear-gradient(135deg, #22c55e, #16a34a);
+  color: white;
+}
+.stat-card-icon.gold {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  color: white;
+}
+
+.content-card {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.cert-item {
+  border-left: 4px solid #2563eb;
+  transition: background-color 0.2s;
+}
+
+.cert-item:hover {
+  background-color: #f8f9fa;
+}
+
+.action-btn {
+  border-radius: 6px;
+  padding: 6px 12px;
+  font-size: 0.9em;
+}
+
+.action-btn.view {
+  background: #e3f2fd;
+  color: #1976d2;
+}
+.action-btn.edit {
+  background: #f3e5f5;
+  color: #7b1fa2;
+}
+.action-btn.delete {
+  background: #ffebee;
+  color: #c62828;
+}
+
+.empty-state-card {
+  text-align: center;
+  padding: 60px 20px;
+  background: #f8f9fa;
+  border-radius: 12px;
+  border: 2px dashed #dee2e6;
+}
+
+.alert {
+  border-radius: 8px;
+}

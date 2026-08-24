@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="manifest" href="/manifest.json" />
+    <link rel="icon" type="image/png" href="/logo.png" />
+
+    <title>ProofDeck - Online Certificate Generator & Verifier</title>
+    <meta
+      name="description"
+      content="ProofDeck helps schools, trainers, and businesses create, send, and verify digital certificates online. Prevent fakes, save time, and issue professional certificates in minutes."
+    />
+    <meta
+      name="keywords"
+      content="certificate generator, self generated certificate, free online courses with certificates, online certificate creator, certificate verification, digital credentials"
+    />
+    <meta name="author" content="Omobolaji Durojaiye" />
+
+    <meta
+      name="google-site-verification"
+      content="5RAgjnkOFyhHoyiUK4s6tZVQRolULfrX0PC0gFKiN1s"
+    />
+
+    <meta
+      property="og:title"
+      content="ProofDeck - Online Certificate Generator & Verifier"
+    />
+    <meta
+      property="og:description"
+      content="Create, send, and verify digital certificates instantly. ProofDeck helps you issue professional, secure certificates without the bloat."
+    />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://proofdeck.app/" />
+    <meta
+      property="og:image"
+      content="https://proofdeck.app/og-image.png"
+    />
+    <meta property="og:image:width" content="896" />
+    <meta property="og:image:height" content="470" />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta
+      name="twitter:title"
+      content="ProofDeck - Online Certificate Generator & Verifier"
+    />
+    <meta
+      name="twitter:description"
+      content="Save time and prevent fraud. ProofDeck lets you generate, send, and verify secure certificates online in just a few clicks."
+    />
+    <meta
+      name="twitter:image"
+      content="https://proofdeck.app/og-image.png"
+    />
+
+    <script src="https://cdn.tailwindcss.com"></script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/index.jsx"></script>
+    <script>
+      if ("serviceWorker" in navigator) {
+        window.addEventListener("load", () => {
+          navigator.serviceWorker.register("/sw.js");
+        });
+      }
+    </script>
+  </body>
+</html>

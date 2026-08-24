@@ -1,0 +1,178 @@
+:root {
+  --primary-blue: #2563eb;
+  --accent-green: #22c55e;
+  --text-slate: #1e293b;
+  --text-slate-light: #64748b;
+  --sidebar-bg: #ffffff;
+  --workspace-bg: #f8f9fc;
+  --sidebar-text: #475569;
+  --sidebar-text-active: var(--primary-blue);
+  --border-color: #e5e7eb;
+}
+
+body {
+  margin: 0;
+  font-family: "Inter", sans-serif;
+  background-color: var(--workspace-bg);
+  color: var(--text-slate);
+  overflow-x: hidden;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: "Poppins", sans-serif;
+  font-weight: 700;
+  color: var(--text-slate);
+}
+
+/* --- DASHBOARD-SPECIFIC LAYOUT --- */
+.dashboard-layout {
+  display: flex;
+  min-height: 100vh;
+}
+
+/* --- SIDEBAR STYLES (DESKTOP) --- */
+.sidebar {
+  width: 260px;
+  background-color: var(--sidebar-bg);
+  padding: 1.5rem 1rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  flex-shrink: 0;
+  border-right: 1px solid var(--border-color);
+  position: fixed;
+  height: 100vh;
+  z-index: 1020;
+}
+
+.sidebar-logo {
+  font-family: "Poppins", sans-serif;
+  font-weight: 700;
+  font-size: 1.5rem;
+  color: var(--text-slate);
+  margin-bottom: 3rem;
+  text-decoration: none;
+  padding-left: 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.sidebar-logo .green {
+  color: var(--accent-green);
+}
+
+.sidebar-logo .blue {
+  color: var(--primary-blue);
+}
+
+.sidebar .nav-link {
+  color: var(--sidebar-text);
+  font-weight: 500;
+  padding: 0.75rem 1rem;
+  border-radius: 0.75rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  transition: all 0.2s ease-in-out;
+  margin-bottom: 0.25rem;
+}
+
+.sidebar .nav-link:hover {
+  color: var(--primary-blue);
+  background-color: #f3f4f6;
+}
+
+.sidebar .nav-link.active {
+  background-color: rgba(37, 99, 235, 0.1);
+  color: var(--sidebar-text-active);
+  font-weight: 600;
+}
+
+.sidebar .nav-link svg {
+  width: 22px;
+  height: 22px;
+}
+
+/* --- MAIN CONTENT --- */
+.main-content {
+  flex-grow: 1;
+  margin-left: 260px; /* Space for the desktop sidebar */
+  transition: margin-left 0.3s ease;
+}
+
+.workspace {
+  padding: 2.5rem;
+}
+
+/* --- DASHBOARD COMPONENT STYLES --- */
+.page-content-card {
+  background-color: white;
+  padding: 2rem;
+  border-radius: 1.5rem;
+  border: 1px solid var(--border-color);
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05);
+}
+
+.custom-form-control {
+  border-radius: 0.75rem !important;
+  padding: 0.9rem 1rem !important;
+  border: 1px solid var(--border-color) !important;
+  background-color: var(--background-white) !important;
+}
+
+.custom-form-control:focus {
+  border-color: var(--primary-blue) !important;
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.2) !important;
+}
+
+/* --- MOBILE RESPONSIVENESS (<= 768px) --- */
+@media (max-width: 768px) {
+  /* Hide the desktop sidebar */
+  .sidebar {
+    display: none;
+  }
+
+  /* Main content takes up full width */
+  .main-content {
+    margin-left: 0;
+  }
+
+  /* Adjust padding for content and bottom nav */
+  .workspace {
+    padding: 1.5rem 1rem 100px 1rem; /* Added 100px bottom padding */
+  }
+
+  .page-content-card {
+    padding: 1.5rem;
+  }
+
+  /* General responsive adjustments */
+  .table-responsive {
+    font-size: 0.875rem;
+  }
+  .btn {
+    padding: 0.5rem 1rem !important;
+    font-size: 0.9rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .workspace {
+    padding: 1rem 0.75rem 100px 0.75rem;
+  }
+  .page-content-card {
+    padding: 1rem;
+  }
+  h1 {
+    font-size: 1.75rem;
+  }
+  h2 {
+    font-size: 1.5rem;
+  }
+}

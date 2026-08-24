@@ -1,0 +1,8 @@
+{
+  "rewrites": [
+    {
+      "source": "/((?!api/|uploads/|images/|sw.js|robots.txt|manifest.json).*)",
+      "destination": "/index.html"
+    }
+  ]
+}

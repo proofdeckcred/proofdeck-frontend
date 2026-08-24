@@ -1,0 +1,264 @@
+.docs-page-wrapper {
+  background-color: #ffffff;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.docs-page-wrapper .docs-container {
+  display: flex;
+  max-width: 1400px;
+  margin: 0 auto;
+  flex-grow: 1; /* Make the container fill available space */
+  width: 100%;
+}
+
+.docs-page-wrapper .docs-sidebar {
+  width: 280px;
+  flex-shrink: 0;
+  padding: 2rem 1rem;
+  position: sticky;
+  /* Adjust top position to account for the height of the new fixed header */
+  top: 80px;
+  height: calc(100vh - 80px);
+  overflow-y: auto;
+  border-right: 1px solid #e2e8f0;
+}
+
+.docs-page-wrapper .docs-sidebar nav ul {
+  list-style: none;
+  padding: 0;
+}
+
+.docs-page-wrapper .docs-sidebar nav a {
+  display: block;
+  padding: 0.5rem 1rem;
+  color: #475569;
+  text-decoration: none;
+  border-radius: 0.375rem;
+  font-weight: 500;
+}
+
+.docs-page-wrapper .docs-sidebar nav a:hover {
+  background-color: #f1f5f9;
+  color: #1e293b;
+}
+
+.docs-page-wrapper .docs-content {
+  flex-grow: 1;
+  /* --- FIX: Add space for the fixed header (~80px) plus original padding --- */
+  padding: calc(80px + 2.5rem) 3rem 2.5rem;
+  line-height: 1.7;
+}
+
+.docs-page-wrapper .docs-content section {
+  margin-bottom: 4rem;
+  scroll-margin-top: 90px; /* Adjust for better anchor linking */
+}
+
+.docs-page-wrapper .docs-content h1 {
+  font-size: 2.5rem;
+  font-weight: 800;
+  color: #111827;
+  border-bottom: 1px solid #e2e8f0;
+  padding-bottom: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.docs-page-wrapper .docs-content h2 {
+  font-size: 1.875rem;
+  font-weight: 700;
+  color: #1e293b;
+  margin-top: 2rem;
+  margin-bottom: 1rem;
+}
+
+.docs-page-wrapper .docs-content h3 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #334155;
+  margin-top: 1.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.docs-page-wrapper .docs-content p,
+.docs-page-wrapper .docs-content li {
+  color: #334155;
+  font-size: 1rem;
+}
+
+.docs-page-wrapper .docs-content code {
+  background-color: #f1f5f9;
+  color: #dd1144;
+  padding: 0.2em 0.4em;
+  margin: 0;
+  font-size: 85%;
+  border-radius: 6px;
+  font-family: "Courier New", Courier, monospace;
+}
+
+/* Custom List */
+.docs-page-wrapper .docs-list {
+  list-style-type: decimal;
+  padding-left: 2rem;
+}
+.docs-page-wrapper .docs-list li {
+  margin-bottom: 0.75rem;
+}
+
+/* Custom Alert Box */
+.docs-page-wrapper .docs-alert {
+  background-color: #fefce8;
+  border-left: 4px solid #facc15;
+  padding: 1rem;
+  margin: 1.5rem 0;
+  border-radius: 0 0.375rem 0.375rem 0;
+}
+.docs-page-wrapper .docs-alert strong {
+  color: #ca8a04;
+}
+
+/* Endpoint Display */
+.docs-page-wrapper .endpoint-details {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  background-color: #f8fafc;
+  border: 1px solid #e2e8f0;
+  padding: 0.75rem 1rem;
+  border-radius: 0.375rem;
+  margin-top: 1rem;
+}
+.docs-page-wrapper .method-post {
+  background-color: #22c55e;
+  color: white;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-weight: 700;
+  font-size: 0.875rem;
+}
+.docs-page-wrapper .endpoint-url {
+  font-family: "Courier New", Courier, monospace;
+  font-weight: 600;
+  color: #0f172a;
+}
+
+/* Table Styling */
+.docs-page-wrapper .docs-table {
+  width: 100%;
+  margin-top: 1.5rem;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+.docs-page-wrapper .docs-table th,
+.docs-page-wrapper .docs-table td {
+  border: 1px solid #e2e8f0;
+  padding: 0.75rem 1rem;
+  text-align: left;
+}
+.docs-page-wrapper .docs-table th {
+  background-color: #f8fafc;
+  font-weight: 600;
+}
+.docs-page-wrapper .docs-table code {
+  font-size: 95%;
+}
+
+/* Code Block Component Styling */
+.docs-page-wrapper .code-block-container {
+  position: relative;
+  background-color: #1e293b;
+  color: #e2e8f0;
+  border-radius: 0.5rem;
+  margin: 1rem 0;
+  font-family: "Courier New", Courier, monospace;
+}
+
+.docs-page-wrapper .code-block-container pre {
+  padding: 1.5rem;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+
+.docs-page-wrapper .code-block-container code {
+  background-color: transparent;
+  color: inherit;
+  padding: 0;
+  font-size: 0.875rem;
+}
+
+.docs-page-wrapper .code-block-copy-button {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  background-color: #334155;
+  border: none;
+  color: #94a3b8;
+  padding: 0.5rem;
+  border-radius: 0.375rem;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.docs-page-wrapper .code-block-copy-button:hover {
+  background-color: #475569;
+  color: #e2e8f0;
+}
+
+.docs-page-wrapper .code-block-language {
+  position: absolute;
+  top: 0.75rem;
+  left: 1rem;
+  color: #94a3b8;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+@media (max-width: 992px) {
+  .docs-page-wrapper .docs-sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: 280px;
+    background-color: #ffffff;
+    z-index: 2000;
+    transform: translateX(-100%); /* Hidden by default */
+    transition: transform 0.3s ease-in-out;
+    border-right: 1px solid #e2e8f0;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+  }
+
+  .docs-page-wrapper .docs-sidebar.mobile-open {
+    transform: translateX(0); /* Slides in when open */
+  }
+
+  .docs-page-wrapper .docs-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 1999;
+  }
+
+  .docs-page-wrapper .docs-container {
+    flex-direction: column;
+  }
+
+  .docs-page-wrapper .docs-content {
+    /* --- FIX: Adjust mobile padding for the fixed header too --- */
+    padding: calc(80px + 1.5rem) 1.5rem 1.5rem;
+  }
+
+  .docs-page-wrapper .docs-content h1 {
+    font-size: 2rem;
+  }
+
+  .docs-page-wrapper .docs-content h2 {
+    font-size: 1.5rem;
+  }
+}

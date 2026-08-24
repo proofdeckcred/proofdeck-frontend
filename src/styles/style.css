@@ -1,0 +1,56 @@
+/* frontend/src/styles/styles.css */
+.navbar-sticky {
+  background-color: #111827;
+  transition: background-color 0.3s ease;
+}
+
+.navbar-scrolled {
+  background-color: #1e293b !important;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.hero-section {
+  background: linear-gradient(135deg, #2563eb 0%, #22c55e 100%);
+  color: white;
+  padding: 80px 0;
+}
+
+.feature-card {
+  border: none;
+  transition: transform 0.2s;
+}
+
+.feature-card:hover {
+  transform: translateY(-5px);
+}
+
+.feature-icon {
+  color: #2563eb;
+}
+
+.pricing-card {
+  background-color: #1e293b;
+  color: white;
+  border: none;
+}
+
+.pricing-card.highlighted {
+  background-color: #2563eb;
+  box-shadow: 0 0 15px rgba(37, 99, 235, 0.5);
+}
+
+.plan-title {
+  font-size: 1.5rem;
+}
+
+.free-title {
+  color: #22c55e;
+}
+
+.monthly-title {
+  color: #facc15;
+}
+
+.lifetime-title {
+  color: #ffffff;
+}

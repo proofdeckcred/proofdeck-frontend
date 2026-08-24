@@ -1,0 +1,61 @@
+/* frontend/src/styles/CreateCertificatePage.css */
+.create-certificate-page {
+  padding: 20px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.form-section {
+  background: white;
+  border-radius: 12px;
+  padding: 30px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  transition: box-shadow 0.3s ease;
+}
+
+.form-section:hover {
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
+}
+
+.preview-section {
+  background: #f8f9fa;
+  border-radius: 12px;
+  padding: 30px;
+  height: fit-content;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.publish-btn {
+  background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+  border: none;
+  padding: 12px 30px;
+  font-weight: 600;
+  border-radius: 8px;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.publish-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.publish-btn:disabled {
+  background: #6c757d;
+  cursor: not-allowed;
+}
+
+.form-control,
+.form-select {
+  border-radius: 8px;
+  padding: 10px;
+  font-size: 1rem;
+}
+
+.form-label {
+  font-weight: 500;
+  color: #333;
+}
+
+.alert.rounded-8 {
+  border-radius: 8px;
+}
