@@ -9,6 +9,12 @@ export const AdminAuthProvider = ({ children }) => {
   const [error, setError] = useState(null);
 
   const fetchAdmin = async () => {
+    const adminToken = localStorage.getItem('adminToken');
+    if (!adminToken) {
+      setAdmin(null);
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     try {
       const res = await getAdminProfile();
@@ -16,7 +22,6 @@ export const AdminAuthProvider = ({ children }) => {
       setAdmin(res.data);
       setError(null);
     } catch (err) {
-      console.error("Admin Auth Context Error:", err);
       setAdmin(null);
       setError(err.response?.data?.msg || "Failed to authenticate");
     } finally {
