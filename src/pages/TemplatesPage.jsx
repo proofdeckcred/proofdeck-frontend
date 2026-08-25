@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Modal, Button, Spinner, Form, Card, Tooltip, OverlayTrigger } from "react-bootstrap";
 import {
   Trash2,
@@ -40,25 +40,25 @@ import { useUser } from "../context/UserContext";
 
 // --- Form Components ---
 const FormInput = ({ label, ...props }) => (
-  <div>
-    <label className="block text-gray-700 font-semibold mb-1.5 text-sm">
+  <div className="space-y-1">
+    <label className="block text-slate-700 font-semibold text-xs">
       {label}
     </label>
     <input
       {...props}
-      className="w-full px-3 py-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-shadow text-sm"
+      className="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded focus:outline-none focus:border-indigo-500 transition-all text-xs shadow-sm"
     />
   </div>
 );
 
 const FormSelect = ({ label, options, ...props }) => (
-  <div>
-    <label className="block text-gray-700 font-semibold mb-1.5 text-sm">
+  <div className="space-y-1">
+    <label className="block text-slate-700 font-semibold text-xs">
       {label}
     </label>
     <select
       {...props}
-      className="w-full px-3 py-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm"
+      className="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded focus:outline-none focus:border-indigo-500 transition-all text-xs shadow-sm"
     >
       {options.map((opt) => (
         <option key={opt} value={opt}>
@@ -70,17 +70,17 @@ const FormSelect = ({ label, options, ...props }) => (
 );
 
 const FormColorInput = ({ label, ...props }) => (
-  <div>
-    <label className="block text-gray-500 text-xs font-medium mb-1 uppercase tracking-wide">
+  <div className="space-y-1">
+    <label className="block text-slate-500 text-[10px] font-semibold uppercase tracking-wider">
       {label}
     </label>
-    <div className="flex items-center gap-2 border border-gray-300 rounded-lg p-1 bg-white">
+    <div className="flex items-center gap-2 border border-slate-200 rounded p-1 bg-white hover:border-slate-300 transition-colors shadow-sm">
       <input
         type="color"
         {...props}
-        className="w-8 h-8 rounded cursor-pointer border-0 p-0"
+        className="w-6 h-6 rounded cursor-pointer border border-slate-200/50 p-0"
       />
-      <span className="text-xs font-mono text-gray-600 flex-grow">
+      <span className="text-[10px] font-mono text-slate-500">
         {props.value}
       </span>
     </div>
@@ -88,25 +88,34 @@ const FormColorInput = ({ label, ...props }) => (
 );
 
 const FormFileInput = ({ label, ...props }) => (
-  <div>
-    <label className="block text-gray-700 font-semibold mb-1.5 text-sm">
+  <div className="space-y-1">
+    <label className="block text-slate-700 font-semibold text-xs">
       {label}
     </label>
     <input
       type="file"
       {...props}
       accept="image/*"
-      className="block w-full text-sm text-gray-500
-        file:mr-4 file:py-2 file:px-4
-        file:rounded-md file:border-0
-        file:text-sm file:font-semibold
-        file:bg-indigo-50 file:text-indigo-700
-        hover:file:bg-indigo-100 cursor-pointer"
+      className="block w-full text-xs text-slate-500
+        file:mr-2 file:py-1 file:px-2.5
+        file:rounded file:border-0
+        file:text-xs file:font-semibold
+        file:bg-slate-100 file:text-slate-700
+        hover:file:bg-slate-200 cursor-pointer"
     />
   </div>
 );
 
 function TemplatesPage() {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const navLinks = [
+    { name: "Overview", path: "/dashboard" },
+    { name: "Templates", path: "/dashboard/templates" },
+    { name: "Groups", path: "/dashboard/groups" },
+    { name: "Analytics", path: "/dashboard/analytics" },
+    { name: "Settings", path: "/dashboard/settings" },
+  ];
   const [templates, setTemplates] = useState([]);
   const [formData, setFormData] = useState({
     title: "",
@@ -155,6 +164,7 @@ function TemplatesPage() {
     "classic",
     "modern",
     "receipt",
+    "invitation",
     "modern_landscape",
     "elegant_serif",
     "minimalist_bold",
@@ -241,6 +251,10 @@ function TemplatesPage() {
   };
 
   const handleEditClick = (template) => {
+    if (template.layout_style === "visual") {
+      navigate(`/dashboard/upload-template/${template.id}`);
+      return;
+    }
     setEditFormData({
       ...template,
       logo: null,
@@ -264,17 +278,25 @@ function TemplatesPage() {
     e.preventDefault();
     const promise = new Promise(async (resolve, reject) => {
       const data = new FormData();
+      const isCopyingPublic = editFormData.is_public;
       Object.keys(editFormData).forEach((key) => {
         if (
           key !== "logo_url" &&
           key !== "background_url" &&
-          editFormData[key]
+          key !== "is_public" &&
+          key !== "id" &&
+          editFormData[key] !== null &&
+          editFormData[key] !== undefined
         ) {
           data.append(key, editFormData[key]);
         }
       });
       try {
-        await updateTemplate(editFormData.id, data);
+        if (isCopyingPublic) {
+          await createTemplate(data);
+        } else {
+          await updateTemplate(editFormData.id, data);
+        }
         setShowEditModal(false);
         fetchTemplates();
         resolve();
@@ -283,8 +305,8 @@ function TemplatesPage() {
       }
     });
     toast.promise(promise, {
-      loading: "Updating...",
-      success: "Template updated!",
+      loading: editFormData.is_public ? "Creating personalized template copy..." : "Updating template...",
+      success: editFormData.is_public ? "Customized template saved to library!" : "Template updated!",
       error: (err) => err.response?.data?.msg || "Failed.",
     });
   };
@@ -310,38 +332,38 @@ function TemplatesPage() {
   const currentFormState = showEditModal ? editFormData : formData;
 
   return (
-    <div className="max-w-7xl mx-auto pb-12">
+    <div className="w-full pb-12">
       <Toaster position="top-right" />
 
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
-        <div>
-          <h2 className="text-2xl font-bold text-gray-900">Templates</h2>
-          <p className="text-gray-500 mt-1">
-            Design and manage your certificate layouts.
-          </p>
+      {/* --- 1. Top Navigation Bar (Header - Locked to Top) --- */}
+      <div className="border-b border-slate-200/80 bg-white mb-6 -mt-6 -mx-4 sm:-mx-6 md:-mx-8 px-4 sm:px-6 md:px-8 py-3">
+        <div className="flex items-center justify-between gap-4 max-w-[1600px] mx-auto">
+          {/* Left: Page Title */}
+          <h1 className="text-sm font-bold text-slate-800 uppercase tracking-wider mb-0">Templates</h1>
+
+          {/* Right Action */}
+          <Link
+            to="/dashboard/upload-template"
+            className="inline-flex items-center justify-center bg-slate-900 border border-slate-900 text-white rounded-lg py-1.5 px-3 hover:bg-black transition-all font-semibold text-xs shadow-sm decoration-none"
+          >
+            <Brush size={14} className="mr-1.5 text-slate-250" />
+            Open Visual Editor
+          </Link>
         </div>
-        <Link
-          to="/dashboard/upload-template"
-          className="inline-flex items-center justify-center bg-indigo-600 text-white rounded-lg py-2.5 px-5 hover:bg-indigo-700 transition-colors font-medium shadow-sm"
-        >
-          <Brush size={18} className="mr-2" />
-          Open Visual Editor
-        </Link>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 mb-16">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-12">
         {/* Creator Form */}
         <div className="col-span-12 lg:col-span-4">
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-            <div className="flex items-center gap-3 mb-6 pb-4 border-b border-gray-100">
-              <LayoutTemplate size={20} className="text-indigo-600" />
-              <h3 className="text-lg font-bold text-gray-900">
+          <div className="bg-white rounded border border-slate-200 p-4 shadow-sm">
+            <div className="flex items-center gap-2 mb-4 pb-2 border-b border-slate-100">
+              <LayoutTemplate size={16} className="text-indigo-600" />
+              <h3 className="text-xs font-bold text-slate-800">
                 Standard Creator
               </h3>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-5">
+            <form onSubmit={handleSubmit} className="space-y-3.5">
               <FormInput
                 label="Template Name"
                 name="title"
@@ -351,26 +373,25 @@ function TemplatesPage() {
                 placeholder="e.g. Monthly Award"
               />
 
-                <TemplateSelector
-                  value={formData.layout_style}
-                  onChange={(val) => handleInputChange({ target: { name: 'layout_style', value: val } })}
-                  options={layoutOptions}
-                />
-              <div className="grid grid-cols-1 gap-4">
-                <FormSelect
-                  label="Font"
-                  name="font_family"
-                  value={formData.font_family}
-                  onChange={handleInputChange}
-                  options={fontOptions}
-                />
-              </div>
+              <TemplateSelector
+                value={formData.layout_style}
+                onChange={(val) => handleInputChange({ target: { name: 'layout_style', value: val } })}
+                options={layoutOptions}
+              />
+              
+              <FormSelect
+                label="Font"
+                name="font_family"
+                value={formData.font_family}
+                onChange={handleInputChange}
+                options={fontOptions}
+              />
 
-              <div className="space-y-3">
-                <label className="block text-gray-700 font-semibold text-sm">
+              <div className="space-y-1">
+                <label className="block text-slate-700 font-semibold text-xs">
                   Colors
                 </label>
-                <div className="grid grid-cols-3 gap-3">
+                <div className="grid grid-cols-3 gap-2">
                   <FormColorInput
                     label="Primary"
                     name="primary_color"
@@ -392,7 +413,7 @@ function TemplatesPage() {
                 </div>
               </div>
 
-              <div className="space-y-4 pt-2">
+              <div className="grid grid-cols-2 gap-3.5 pt-1">
                 <FormInput
                   label="Heading"
                   name="custom_title"
@@ -409,7 +430,7 @@ function TemplatesPage() {
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4 pt-2">
+              <div className="grid grid-cols-2 gap-3.5 pt-1">
                 <FormFileInput
                   label="Logo"
                   name="logo"
@@ -424,9 +445,9 @@ function TemplatesPage() {
 
               <button
                 type="submit"
-                className="w-full bg-gray-900 text-white rounded-lg py-3 font-semibold hover:bg-black transition-all shadow-md mt-4 flex items-center justify-center gap-2"
+                className="w-full bg-slate-900 border border-slate-900 hover:bg-black text-white text-xs font-semibold py-2 px-4 rounded shadow-sm transition-all flex items-center justify-center gap-1.5 mt-2"
               >
-                <Plus size={18} /> Create Template
+                <Plus size={14} /> Create Template
               </button>
             </form>
           </div>
@@ -434,21 +455,21 @@ function TemplatesPage() {
 
         {/* Live Preview - Sticky */}
         <div className="col-span-12 lg:col-span-8">
-          <div className="bg-gray-100 rounded-xl border border-gray-200 p-6 sticky top-6">
-            <div className="flex justify-between items-center mb-4">
-              <div className="flex items-center gap-2 text-gray-700 font-bold">
-                <Eye size={18} />
-                <h4>Live Preview</h4>
+          <div className="bg-slate-50 border border-slate-200 rounded p-4 sticky top-6 min-h-[350px] flex flex-col justify-between shadow-sm">
+            <div className="flex justify-between items-center mb-3">
+              <div className="flex items-center gap-1.5 text-slate-700 font-bold text-xs">
+                <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                <span>Live Preview</span>
               </div>
               <button
                 onClick={() => setIsFullscreen(true)}
-                className="p-2 text-gray-500 hover:text-gray-900 hover:bg-white rounded-lg transition-all shadow-sm"
+                className="p-1.5 text-slate-500 hover:text-slate-800 hover:bg-white border border-transparent hover:border-slate-200 rounded transition-all shadow-sm bg-white/50"
               >
-                <Maximize2 size={18} />
+                <Maximize2 size={14} />
               </button>
             </div>
-            <div className="w-full flex justify-center">
-              <div className="w-full max-w-2xl bg-white shadow-xl rounded overflow-hidden">
+            <div className="w-full flex justify-center flex-1 items-center">
+              <div className="w-full max-w-2xl bg-white shadow border border-slate-200/50 rounded overflow-hidden">
                 <TemplateRenderer template={previewData} />
               </div>
             </div>
@@ -458,17 +479,19 @@ function TemplatesPage() {
 
       {/* Templates List */}
       <div>
-        <h3 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">
-          <div className="w-1 h-6 bg-indigo-600 rounded-full"></div>
-          Your Library
+        <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider mb-4 flex items-center gap-1.5">
+          <div className="w-1 h-3.5 bg-indigo-600 rounded-full"></div>
+          <span>Your Library</span>
         </h3>
 
         {loading ? (
-          <div className="flex justify-center py-12">
-            <Spinner animation="border" />
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6 animate-pulse">
+            {[...Array(3)].map((_, i) => (
+              <div key={i} className="bg-gray-100 border border-gray-200 rounded-xl h-56" />
+            ))}
           </div>
         ) : templates.length > 0 ? (
-          <div className="space-y-8">
+          <div className="space-y-6">
             <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
               {(showAllLibrary ? templates : templates.slice(0, 6)).map((t) => (
                 <TemplateCard
@@ -485,20 +508,20 @@ function TemplatesPage() {
             </div>
             
             {templates.length > 6 && (
-              <div className="flex justify-center pt-4">
+              <div className="flex justify-center pt-2">
                 <button 
                   onClick={() => setShowAllLibrary(!showAllLibrary)}
-                  className="bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 px-6 py-2 rounded-full text-sm font-semibold transition-all shadow-sm flex items-center gap-2"
+                  className="bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 px-4 py-1.5 rounded text-xs font-semibold transition-all shadow-sm flex items-center gap-1.5"
                 >
-                  {showAllLibrary ? <X size={16} /> : <Plus size={16} />}
+                  {showAllLibrary ? <X size={12} /> : <Plus size={12} />}
                   {showAllLibrary ? "Show Less" : `View All Templates (${templates.length})`}
                 </button>
               </div>
             )}
           </div>
         ) : (
-          <div className="text-center py-12 bg-white rounded-xl border border-dashed border-gray-300">
-            <p className="text-gray-500">
+          <div className="text-center py-12 bg-white rounded border border-dashed border-slate-300">
+            <p className="text-slate-500 text-xs italic">
               No templates found. Create one above!
             </p>
           </div>
@@ -511,18 +534,19 @@ function TemplatesPage() {
         onHide={() => setShowEditModal(false)}
         centered
         size="lg"
+        contentClassName="rounded border border-slate-200"
       >
         <Modal.Header closeButton className="border-0 pb-0">
-          <Modal.Title className="font-bold">Edit Template</Modal.Title>
+          <Modal.Title className="font-bold text-sm text-slate-800">Edit Template</Modal.Title>
         </Modal.Header>
-        <Modal.Body className="p-6">
+        <Modal.Body className="p-4">
           <form
             id="edit-form"
             onSubmit={handleEditSubmit}
-            className="space-y-4"
+            className="space-y-3.5"
           >
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-3.5">
                 <FormInput
                   label="Name"
                   name="title"
@@ -530,14 +554,12 @@ function TemplatesPage() {
                   onChange={handleInputChange}
                   required
                 />
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="col-span-2">
-                     <TemplateSelector
-                      value={currentFormState?.layout_style}
-                      onChange={(val) => handleInputChange({ target: { name: 'layout_style', value: val } })}
-                      options={layoutOptions}
-                    />
-                  </div>
+                <div className="space-y-3.5">
+                   <TemplateSelector
+                    value={currentFormState?.layout_style}
+                    onChange={(val) => handleInputChange({ target: { name: 'layout_style', value: val } })}
+                    options={layoutOptions}
+                  />
                   <FormSelect
                     label="Font"
                     name="font_family"
@@ -567,7 +589,7 @@ function TemplatesPage() {
                   />
                 </div>
               </div>
-              <div className="space-y-4">
+              <div className="space-y-3.5">
                 <FormInput
                   label="Heading"
                   name="custom_title"
@@ -595,12 +617,20 @@ function TemplatesPage() {
           </form>
         </Modal.Body>
         <Modal.Footer className="border-0 pt-0">
-          <Button variant="light" onClick={() => setShowEditModal(false)}>
+          <button 
+            type="button" 
+            onClick={() => setShowEditModal(false)}
+            className="px-3 py-1.5 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded transition-colors"
+          >
             Cancel
-          </Button>
-          <Button variant="primary" type="submit" form="edit-form">
+          </button>
+          <button 
+            type="submit" 
+            form="edit-form"
+            className="px-3 py-1.5 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded shadow-sm transition-colors"
+          >
             Save Changes
-          </Button>
+          </button>
         </Modal.Footer>
       </Modal>
 
@@ -609,35 +639,44 @@ function TemplatesPage() {
         show={showDeleteModal}
         onHide={() => setShowDeleteModal(false)}
         centered
+        contentClassName="rounded border border-slate-200"
       >
         <Modal.Header closeButton className="border-0">
-          <Modal.Title className="text-red-600 font-bold">
+          <Modal.Title className="text-red-600 font-bold text-sm">
             Delete Template?
           </Modal.Title>
         </Modal.Header>
-        <Modal.Body>
+        <Modal.Body className="text-xs text-slate-600">
           Are you sure you want to delete{" "}
           <strong>{templateToDelete?.title}</strong>?
           <br />
           This action cannot be undone.
         </Modal.Body>
         <Modal.Footer className="border-0">
-          <Button variant="light" onClick={() => setShowDeleteModal(false)}>
+          <button 
+            type="button" 
+            onClick={() => setShowDeleteModal(false)}
+            className="px-3 py-1.5 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded transition-colors"
+          >
             Cancel
-          </Button>
-          <Button variant="danger" onClick={handleDeleteConfirm}>
+          </button>
+          <button 
+            type="button" 
+            onClick={handleDeleteConfirm}
+            className="px-3 py-1.5 text-xs font-semibold text-white bg-red-600 hover:bg-red-700 rounded shadow-sm transition-colors"
+          >
             Delete Forever
-          </Button>
+          </button>
         </Modal.Footer>
       </Modal>
 
       {/* Fullscreen Preview */}
       {isFullscreen && (
         <div
-          className="fixed inset-0 bg-black/90 z-[9999] flex items-center justify-center p-4"
+          className="fixed inset-0 bg-slate-950/90 z-[9999] flex items-center justify-center p-4"
           onClick={() => setIsFullscreen(false)}
         >
-          <button className="absolute top-6 right-6 text-white hover:text-gray-300 transition-colors">
+          <button className="absolute top-6 right-6 text-white hover:text-slate-300 transition-colors">
             <X size={32} />
           </button>
           <div
@@ -668,14 +707,14 @@ const TemplateCard = ({
   };
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-shadow overflow-hidden group flex flex-col h-full">
+    <div className="bg-white rounded border border-slate-200 hover:border-slate-300 shadow-sm transition-all overflow-hidden group flex flex-col h-full relative">
       {/* Thumbnail Area */}
-      <div className="relative h-48 bg-gray-100 overflow-hidden border-b border-gray-100">
+      <div className="relative h-40 bg-slate-50 overflow-hidden border-b border-slate-100">
         
         {/* PREMIUM BADGE */}
         {template.is_premium && (
-            <div className="absolute top-3 right-3 z-10 bg-gradient-to-r from-yellow-400 to-yellow-600 text-white text-[10px] font-bold px-2 py-1 rounded-full shadow-sm flex items-center gap-1 uppercase tracking-wide">
-                <Award size={10} fill="currentColor" /> Premium
+            <div className="absolute top-2 right-2 z-10 bg-amber-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded shadow-sm flex items-center gap-1 uppercase tracking-wide">
+                <Award size={9} fill="currentColor" /> Premium
             </div>
         )}
 
@@ -683,71 +722,70 @@ const TemplateCard = ({
         <div className="w-full h-full relative">
              {/* Scaled down renderer */}
              <div className="w-[200%] h-[200%] origin-top-left transform scale-50 pointer-events-none select-none">
-                 <TemplateRenderer template={template} />
+                  <TemplateRenderer template={template} />
              </div>
              {/* Overlay to prevent interaction */}
-             <div className="absolute inset-0 bg-transparent group-hover:bg-black/5 transition-colors" />
+             <div className="absolute inset-0 bg-transparent group-hover:bg-slate-950/5 transition-colors" />
         </div>
 
-        <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/40 backdrop-blur-[1px]">
+        <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-slate-950/20 backdrop-blur-[0.5px]">
              {(!template.is_premium || isPro) ? (
                 <button 
                     onClick={() => onEditClick(template)}
-                    className="bg-white text-gray-900 rounded-lg py-2 px-4 font-medium text-sm shadow-lg transform translate-y-2 group-hover:translate-y-0 transition-all hover:bg-gray-50 flex items-center gap-2"
+                    className="bg-white text-slate-800 border border-slate-200 rounded py-1.5 px-3 font-semibold text-xs shadow-md transform translate-y-2 group-hover:translate-y-0 transition-all hover:bg-slate-50 flex items-center gap-1.5"
                 >
-                    <Edit size={16} /> Edit Design
+                    <Edit size={12} /> Edit Design
                 </button>
              ) : (
-                <div className="bg-white/95 text-gray-900 rounded-lg py-3 px-5 font-bold text-sm shadow-2xl flex flex-col items-center gap-2">
-                    <Award className="text-yellow-600" size={24} />
+                <div className="bg-white/95 text-slate-800 rounded p-3 font-bold text-xs shadow-lg flex flex-col items-center gap-1.5">
+                    <Award className="text-amber-500" size={18} />
                     <span>Premium Template</span>
-                    <Link to="/pricing" className="text-indigo-600 text-xs hover:underline mt-1">Upgrade to Access</Link>
+                    <Link to="/pricing" className="text-indigo-600 text-[10px] hover:underline">Upgrade to Access</Link>
                 </div>
              )}
         </div>
       </div>
 
       {/* Card Content */}
-      <div className="p-4 flex flex-col flex-grow">
-        <div className="flex justify-between items-start mb-2">
-          <h4 className="font-bold text-gray-900 truncate pr-2" title={template.title}>
+      <div className="p-3 flex flex-col flex-grow">
+        <div className="flex justify-between items-start mb-1.5">
+          <h4 className="font-bold text-slate-800 text-xs truncate pr-2" title={template.title}>
             {template.title}
           </h4>
           {template.is_public && (
-            <span className="text-[10px] items-center gap-1 bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded border border-blue-100 hidden sm:flex shrink-0">
+            <span className="text-[9px] items-center bg-blue-50 text-blue-600 px-1 py-0.5 rounded border border-blue-100 hidden sm:flex shrink-0 font-medium">
                Public
             </span>
           )}
         </div>
 
-        <div className="text-xs text-gray-500 mb-4 flex-grow">
-           <div className="flex items-center gap-1 mb-1">
+        <div className="text-[10px] text-slate-500 mb-3 flex-grow">
+           <div className="flex items-center gap-1">
                <span className="capitalize text-indigo-600 font-semibold">{template.layout_style?.replace(/_/g, " ")}</span>
-               <span className="text-gray-300">•</span>
+               <span className="text-slate-300">•</span>
                <span>{template.certificates ? template.certificates.length : 0} issued</span>
            </div>
-           {template.is_premium && <p className="text-yellow-600 font-medium text-xs flex items-center gap-1"><Award size={12}/> Premium Template</p>}
         </div>
 
-        <div className="flex items-center justify-between pt-3 border-t border-gray-100 mt-auto">
-           <div className="flex items-center gap-2">
+        <div className="flex items-center justify-between pt-2 border-t border-slate-100 mt-auto">
+           <div className="flex items-center gap-1.5">
                <button 
                   onClick={handleCopyId}
-                  className="text-gray-400 hover:text-gray-600 transition-colors p-1 hover:bg-gray-50 rounded"
+                  className="text-slate-400 hover:text-slate-600 transition-colors p-1 hover:bg-slate-50 rounded"
                   title="Copy ID"
                >
-                  {isCopied ? <Check size={14} className="text-green-500" /> : <Copy size={14} />}
+                  {isCopied ? <Check size={12} className="text-green-500" /> : <Copy size={12} />}
                </button>
-               <span className="text-[10px] font-mono text-gray-400 select-all">#{template.id}</span>
+               <span className="text-[9px] font-mono text-slate-400 select-all">#{template.id}</span>
            </div>
            
            {!template.is_public && (
             <button 
               onClick={() => onDeleteClick(template)}
-              className="text-gray-400 hover:text-red-600 transition-colors p-1 hover:bg-red-50 rounded"
+              className="text-slate-400 hover:text-red-600 transition-colors p-1 hover:bg-red-50 rounded"
               title="Delete Template"
             >
-              <Trash2 size={16} />
+              <Trash2 size={13} />
             </button>
            )}
         </div>

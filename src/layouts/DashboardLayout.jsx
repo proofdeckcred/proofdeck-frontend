@@ -1,5 +1,5 @@
 import React from "react";
-import { Outlet } from "react-router-dom";
+import { Outlet, useLocation } from "react-router-dom";
 import Sidebar from "../components/Sidebar";
 import BottomNav from "../components/BottomNav";
 import useWindowSize from "../hooks/useWindowSize";
@@ -9,6 +9,8 @@ import MobileWarning from "../components/MobileWarning";
 function DashboardLayout() {
   const { width } = useWindowSize();
   const isMobile = width <= 768;
+  const location = useLocation();
+  const isEditorPage = location.pathname.includes("/upload-template");
 
   return (
     <div className="flex h-screen bg-gray-50 dark:bg-[var(--background-white)] transition-colors duration-300 overflow-hidden">
@@ -36,10 +38,14 @@ function DashboardLayout() {
           overflow-y-auto: Only this part scrolls, keeping sidebar fixed.
           relative: For positioning modals/toasts relative to view.
         */}
-        <main className="flex-1 overflow-y-auto focus:outline-none scroll-smooth relative">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8 py-8 pb-24 md:pb-8">
+        <main className={`flex-1 focus:outline-none scroll-smooth relative ${isEditorPage ? "overflow-hidden" : "overflow-y-auto"}`}>
+          {isEditorPage ? (
             <Outlet />
-          </div>
+          ) : (
+            <div className="max-w-[1600px] mx-auto px-4 sm:px-6 md:px-8 py-6 pb-20 md:pb-6">
+              <Outlet />
+            </div>
+          )}
         </main>
       </div>
 

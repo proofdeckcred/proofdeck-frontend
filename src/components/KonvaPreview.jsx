@@ -48,7 +48,7 @@ const KonvaPreview = ({ layoutData, dynamicData }) => {
   const scaleY = dimensions.height / baseHeight;
 
   const backgroundImageSrc = layoutData?.background?.image
-    ? layoutData.background.image.startsWith("http")
+    ? (layoutData.background.image.startsWith("http") || layoutData.background.image.startsWith("data:") || layoutData.background.image.startsWith("blob:"))
       ? layoutData.background.image
       : `${SERVER_BASE_URL}${layoutData.background.image}`
     : null;

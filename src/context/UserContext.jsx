@@ -6,6 +6,7 @@ const UserContext = createContext(null);
 export const UserProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [workspace, setWorkspace] = useState(() => localStorage.getItem("workspaceContext") || "personal");
 
   const fetchUser = useCallback(async () => {
       // Don't set loading to true here to avoid flickering on silent refresh
@@ -14,7 +15,20 @@ export const UserProvider = ({ children }) => {
       if (token) {
         try {
           const res = await getCurrentUser();
-          setUser(res.data);
+          const newUser = res.data;
+          setUser((prevUser) => {
+            const activeWS = localStorage.getItem("workspaceContext") || "personal";
+            if (activeWS !== "personal" && newUser.workspaces) {
+              const isStillMember = newUser.workspaces.some(ws => String(ws.id) === String(activeWS));
+              if (!isStillMember) {
+                alert("Your access to this organization has been revoked.");
+                localStorage.setItem("workspaceContext", "personal");
+                window.location.reload();
+                return null;
+              }
+            }
+            return newUser;
+          });
         } catch (error) {
           console.error("Failed to fetch user", error);
           if (error.response && error.response.status === 401) {
@@ -28,6 +42,12 @@ export const UserProvider = ({ children }) => {
       setLoading(false);
   }, []);
 
+  const switchWorkspace = useCallback((newWorkspace) => {
+    localStorage.setItem("workspaceContext", newWorkspace);
+    setWorkspace(newWorkspace);
+    window.location.reload();
+  }, []);
+
   useEffect(() => {
     fetchUser();
   }, [fetchUser]);
@@ -38,7 +58,7 @@ export const UserProvider = ({ children }) => {
   };
 
   return (
-    <UserContext.Provider value={{ user, loading, refreshUser }}>
+    <UserContext.Provider value={{ user, loading, refreshUser, workspace, switchWorkspace }}>
       {children}
     </UserContext.Provider>
   );

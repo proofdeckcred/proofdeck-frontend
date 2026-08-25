@@ -12,13 +12,15 @@ import {
   User,
   Shield,
 } from "lucide-react";
-import { getAdminCompanyDetails } from "../api";
+import { getAdminCompanyDetails, adjustCompanyQuota } from "../api";
 
 function AdminCompanyDetailsPage() {
   const { companyId } = useParams();
   const [companyData, setCompanyData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [quotaAdjustment, setQuotaAdjustment] = useState({ amount: "", reason: "" });
+  const [isAdjusting, setIsAdjusting] = useState(false);
 
   useEffect(() => {
     fetchCompanyDetails();
@@ -33,6 +35,41 @@ function AdminCompanyDetailsPage() {
       setError("Failed to fetch company details.");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleAdjustmentChange = (e) => {
+    const { name, value } = e.target;
+    setQuotaAdjustment((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleAdjustmentSubmit = async (e) => {
+    e.preventDefault();
+    const amountInt = parseInt(quotaAdjustment.amount, 10);
+    if (isNaN(amountInt)) {
+      alert("Please enter a valid number.");
+      return;
+    }
+    if (!quotaAdjustment.reason.trim()) {
+      alert("A reason for the adjustment is required.");
+      return;
+    }
+
+    const confirmMsg = `Are you sure you want to adjust the quota for "${companyData.name}" by ${amountInt} credits?\n\nReason: "${quotaAdjustment.reason}"`;
+    if (window.confirm(confirmMsg)) {
+      setIsAdjusting(true);
+      try {
+        const res = await adjustCompanyQuota(companyId, amountInt, quotaAdjustment.reason);
+        alert(res.data.msg || "Quota adjusted successfully!");
+        setQuotaAdjustment({ amount: "", reason: "" });
+        // Refresh details to show updated quota
+        const refreshed = await getAdminCompanyDetails(companyId);
+        setCompanyData(refreshed.data);
+      } catch (err) {
+        alert(err.response?.data?.msg || "Failed to adjust quota. Please try again.");
+      } finally {
+        setIsAdjusting(false);
+      }
     }
   };
 
@@ -52,7 +89,7 @@ function AdminCompanyDetailsPage() {
 
   if (!companyData) return <div className="p-4">No company data found.</div>;
 
-  const { name, owner, members, recent_certificates, created_at } = companyData;
+  const { name, owner, members, recent_certificates, created_at, cert_quota } = companyData;
 
   return (
     <div className="space-y-6">
@@ -81,8 +118,9 @@ function AdminCompanyDetailsPage() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-         {/* Left Column: Info */}
+         {/* Left Column: Info & Quota Adjustment */}
          <div className="space-y-6">
+            {/* Info Card */}
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
                 <div className="px-6 py-4 border-b border-gray-100 bg-gray-50">
                      <h3 className="text-sm font-semibold text-gray-800 uppercase tracking-wide">Company Info</h3>
@@ -94,12 +132,62 @@ function AdminCompanyDetailsPage() {
                             <User size={16}/> {owner.name}
                         </Link>
                     </div>
-                    <div className="flex flex-col gap-1">
+                    <div className="flex flex-col gap-1 pb-3 border-b border-gray-100">
                         <span className="text-gray-500 text-xs uppercase font-semibold">Contact Email</span>
                         <div className="text-gray-900 flex items-center gap-2">
                             <Mail size={16}/> {owner.email}
                         </div>
                     </div>
+                    <div className="flex flex-col gap-1">
+                        <span className="text-gray-500 text-xs uppercase font-semibold flex items-center gap-1">
+                            <Shield size={14} className="text-gray-400"/> Certificate Quota
+                        </span>
+                        <div className="text-lg font-bold text-gray-900">
+                            {cert_quota}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {/* Quota Adjustment Card */}
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                <div className="px-6 py-4 border-b border-gray-100 bg-gray-50">
+                     <h3 className="text-sm font-semibold text-gray-800 uppercase tracking-wide">Manual Credit Adjustment</h3>
+                </div>
+                <div className="p-6 space-y-4">
+                     <form onSubmit={handleAdjustmentSubmit} className="space-y-4">
+                          <div>
+                              <label className="block text-xs font-medium text-gray-700 mb-1">Adjustment (+/-)</label>
+                              <input
+                                  type="number"
+                                  name="amount"
+                                  placeholder="e.g. 100 or -50"
+                                  value={quotaAdjustment.amount}
+                                  onChange={handleAdjustmentChange}
+                                  required
+                                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
+                              />
+                          </div>
+                          <div>
+                              <label className="block text-xs font-medium text-gray-700 mb-1">Reason</label>
+                              <input
+                                  type="text"
+                                  name="reason"
+                                  placeholder="e.g. Invoice paid, Promo quota"
+                                  value={quotaAdjustment.reason}
+                                  onChange={handleAdjustmentChange}
+                                  required
+                                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
+                              />
+                          </div>
+                          <button
+                              type="submit"
+                              disabled={isAdjusting}
+                              className="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-2 px-4 rounded-lg font-medium text-sm transition-colors flex items-center justify-center"
+                          >
+                              {isAdjusting ? "Adjusting..." : "Adjust Quota"}
+                          </button>
+                     </form>
                 </div>
             </div>
          </div>
@@ -134,7 +222,7 @@ function AdminCompanyDetailsPage() {
                                             ${member.role === 'pro' ? 'bg-indigo-100 text-indigo-800' : 
                                               member.role === 'admin' ? 'bg-purple-100 text-purple-800' : 'bg-gray-100 text-gray-800'}`}>
                                             {member.role}
-                                        </span>
+                                         </span>
                                     </td>
                                 </tr>
                              ))}

@@ -10,6 +10,7 @@ import {
   InputGroup,
   Image,
   Container,
+  Modal,
 } from "react-bootstrap";
 import {
   PlusCircle,
@@ -52,6 +53,8 @@ function TicketList() {
   const [message, setMessage] = useState("");
   const [file, setFile] = useState(null);
   const [submitting, setSubmitting] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [ticketToDelete, setTicketToDelete] = useState(null);
 
   useEffect(() => {
     fetchTickets();
@@ -109,24 +112,26 @@ function TicketList() {
     e.target.value = null;
   };
 
-  const handleDelete = async (e, ticketId) => {
+  const openDeleteConfirm = (e, ticketId) => {
     e.stopPropagation();
     e.preventDefault();
+    setTicketToDelete(ticketId);
+    setShowDeleteModal(true);
+  };
 
-    if (
-      window.confirm(
-        "Are you sure you want to delete this ticket? This action cannot be undone."
-      )
-    ) {
-      try {
-        await deleteUserTicket(ticketId);
-        toast.success("Ticket deleted successfully!");
-        setTickets((prevTickets) =>
-          prevTickets.filter((ticket) => ticket.id !== ticketId)
-        );
-      } catch (err) {
-        toast.error("Failed to delete the ticket.");
-      }
+  const confirmDelete = async () => {
+    if (!ticketToDelete) return;
+    try {
+      await deleteUserTicket(ticketToDelete);
+      toast.success("Ticket deleted successfully!");
+      setTickets((prevTickets) =>
+        prevTickets.filter((ticket) => ticket.id !== ticketToDelete)
+      );
+    } catch (err) {
+      toast.error("Failed to delete the ticket.");
+    } finally {
+      setShowDeleteModal(false);
+      setTicketToDelete(null);
     }
   };
 
@@ -157,24 +162,27 @@ function TicketList() {
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-8">
+    <div className="w-full pb-20">
       <Toaster position="top-right" />
 
-      {/* Header */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Support Tickets</h1>
-          <p className="text-gray-500 text-sm mt-1">
-            Track your inquiries and communicate with our team.
-          </p>
+      {/* --- 1. Top Navigation Bar (Header - Locked to Top) --- */}
+      <div className="border-b border-slate-200/80 bg-white mb-6 -mt-6 -mx-4 sm:-mx-6 md:-mx-8 px-4 sm:px-6 md:px-8 py-3">
+        <div className="flex items-center justify-between gap-4 max-w-[1600px] mx-auto">
+          {/* Left: Page Title */}
+          <h1 className="text-sm font-bold text-slate-800 uppercase tracking-wider mb-0">Support Tickets</h1>
+
+          {/* Right Action */}
+          <Link
+            to="/dashboard/support"
+            className="inline-flex items-center gap-1 text-xs font-semibold text-slate-650 hover:text-slate-855 decoration-none bg-slate-100 hover:bg-slate-200 px-3 py-1.5 rounded-lg transition-colors border border-slate-200/40 text-slate-600 hover:text-slate-850"
+          >
+            <ArrowLeft size={13} />
+            <span>Help Center</span>
+          </Link>
         </div>
-        <Link
-          to="/dashboard/support"
-          className="flex items-center text-gray-600 hover:text-indigo-600 transition-colors font-medium text-sm bg-white px-4 py-2 rounded-lg border border-gray-200 shadow-sm"
-        >
-          <ArrowLeft size={16} className="mr-2" /> Back to Help Center
-        </Link>
       </div>
+
+      <div className="max-w-7xl mx-auto px-4">
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
         {/* CREATE TICKET FORM */}
@@ -265,8 +273,16 @@ function TicketList() {
             </div>
 
             {loading ? (
-              <div className="text-center py-12">
-                <Spinner animation="border" variant="primary" />
+              <div className="p-4 space-y-4 animate-pulse">
+                {[...Array(3)].map((_, i) => (
+                  <div key={i} className="flex justify-between items-center py-3">
+                    <div className="space-y-2 w-2/3">
+                      <div className="h-4 bg-gray-200 rounded w-3/4" />
+                      <div className="h-3 bg-gray-200 rounded w-1/2" />
+                    </div>
+                    <div className="h-6 bg-gray-200 rounded w-16" />
+                  </div>
+                ))}
               </div>
             ) : tickets.length > 0 ? (
               <div className="divide-y divide-gray-100">
@@ -290,8 +306,8 @@ function TicketList() {
                           {ticket.status.replace("_", " ")}
                         </span>
                         <button
-                          onClick={(e) => handleDelete(e, ticket.id)}
-                          className="text-gray-400 hover:text-red-500 p-1 rounded-md transition-colors opacity-0 group-hover:opacity-100"
+                          onClick={(e) => openDeleteConfirm(e, ticket.id)}
+                          className="p-1 text-gray-400 hover:text-red-650 transition-colors"
                           title="Delete Ticket"
                         >
                           <Trash2 size={16} />
@@ -327,6 +343,37 @@ function TicketList() {
           </div>
         </div>
       </div>
+
+      {/* Custom Confirmation Modal */}
+      <Modal show={showDeleteModal} onHide={() => setShowDeleteModal(false)} centered>
+        <Modal.Body className="p-6 text-center border-0 bg-white rounded-2xl shadow-xl">
+          <div className="bg-red-50 text-red-650 rounded-full w-12 h-12 flex items-center justify-center mx-auto mb-4 border border-red-100">
+            <Trash2 size={22} />
+          </div>
+          <h3 className="text-sm font-bold text-slate-800 mb-2">Delete Support Ticket?</h3>
+          <p className="text-[10px] text-slate-400 leading-relaxed mb-6">
+            Are you sure you want to delete this ticket? This action is irreversible and all conversation history will be lost.
+          </p>
+          <div className="flex items-center justify-center gap-3">
+            <Button
+              variant="outline-secondary"
+              onClick={() => setShowDeleteModal(false)}
+              className="px-4 py-2 border border-slate-200 hover:bg-slate-50 text-slate-650 hover:text-slate-800 text-xs font-semibold rounded-lg"
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="danger"
+              onClick={confirmDelete}
+              className="px-4 py-2 bg-red-600 hover:bg-red-700 border-red-600 hover:border-red-700 text-white text-xs font-semibold rounded-lg"
+            >
+              Delete Ticket
+            </Button>
+          </div>
+        </Modal.Body>
+      </Modal>
+
+      </div> {/* close max-w-7xl */}
     </div>
   );
 }
@@ -405,8 +452,27 @@ function TicketDetails() {
 
   if (loading) {
     return (
-      <div className="min-h-[80vh] flex items-center justify-center">
-        <Spinner animation="border" variant="primary" />
+      <div className="w-full pb-12 flex flex-col h-[calc(100vh-64px)] animate-pulse">
+        {/* Navigation Header Skeleton */}
+        <div className="border-b border-slate-200/80 bg-white mb-6 -mt-6 -mx-4 sm:-mx-6 md:-mx-8 px-4 sm:px-6 md:px-8 py-3">
+          <div className="flex justify-between items-center max-w-[1600px] mx-auto h-8">
+            <div className="w-1/3 bg-gray-200 h-4 rounded" />
+            <div className="w-1/4 bg-gray-200 h-6 rounded" />
+          </div>
+        </div>
+
+        {/* Chat Messages Skeleton */}
+        <div className="max-w-4xl mx-auto px-4 w-full flex-1 flex flex-col justify-end space-y-6 pb-6">
+          <div className="flex justify-start">
+            <div className="bg-gray-100 rounded-2xl rounded-tl-none p-4 w-2/3 h-16" />
+          </div>
+          <div className="flex justify-end">
+            <div className="bg-gray-200 rounded-2xl rounded-tr-none p-4 w-1/2 h-12" />
+          </div>
+          <div className="flex justify-start">
+            <div className="bg-gray-100 rounded-2xl rounded-tl-none p-4 w-3/4 h-20" />
+          </div>
+        </div>
       </div>
     );
   }
@@ -416,36 +482,47 @@ function TicketDetails() {
   const isClosed = ticket.status === "closed";
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-8 h-[calc(100vh-64px)] flex flex-col">
+    <div className="w-full pb-12 flex flex-col h-[calc(100vh-64px)]">
       <Toaster position="top-right" />
 
-      {/* HEADER */}
-      <div className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between shadow-sm z-10 rounded-t-xl border-x border-t">
-        <div className="flex items-center gap-4">
-          <Link
-            to="/dashboard/support/tickets"
-            className="text-gray-500 hover:text-gray-900 transition-colors"
-          >
-            <ArrowLeft size={20} />
-          </Link>
-          <div>
-            <h1 className="text-lg font-bold text-gray-900 line-clamp-1">
-              {ticket.subject}
-            </h1>
-            <span
-              className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium uppercase tracking-wide mt-1 ${
-                ticket.status === "open"
-                  ? "bg-blue-100 text-blue-700"
-                  : ticket.status === "in_progress"
-                  ? "bg-yellow-100 text-yellow-700"
-                  : "bg-gray-100 text-gray-600"
-              }`}
+      {/* --- 1. Top Navigation Bar (Header - Locked to Top) --- */}
+      <div className="border-b border-slate-200/80 bg-white mb-6 -mt-6 -mx-4 sm:-mx-6 md:-mx-8 px-4 sm:px-6 md:px-8 py-3">
+        <div className="flex items-center justify-between gap-4 max-w-[1600px] mx-auto">
+          {/* Left: Page Title */}
+          <div className="flex items-center gap-3">
+            <Link
+              to="/dashboard/support/tickets"
+              className="text-slate-500 hover:text-slate-900 transition-colors"
             >
-              {ticket.status.replace("_", " ")}
-            </span>
+              <ArrowLeft size={16} />
+            </Link>
+            <h1 className="text-sm font-bold text-slate-800 uppercase tracking-wider mb-0">Ticket Details</h1>
           </div>
         </div>
       </div>
+
+      <div className="max-w-4xl mx-auto px-4 w-full flex-1 flex flex-col min-h-0">
+        {/* HEADER */}
+        <div className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between shadow-sm z-10 rounded-t-xl border-x border-t">
+          <div className="flex items-center gap-4">
+            <div>
+              <h1 className="text-lg font-bold text-gray-900 line-clamp-1">
+                {ticket.subject}
+              </h1>
+              <span
+                className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium uppercase tracking-wide mt-1 ${
+                  ticket.status === "open"
+                    ? "bg-blue-100 text-blue-700"
+                    : ticket.status === "in_progress"
+                    ? "bg-yellow-100 text-yellow-700"
+                    : "bg-gray-100 text-gray-600"
+                }`}
+              >
+                {ticket.status.replace("_", " ")}
+              </span>
+            </div>
+          </div>
+        </div>
 
       {/* CHAT AREA */}
       <div className="flex-1 overflow-y-auto p-6 bg-gray-50 border-x border-gray-200 space-y-6">
@@ -583,6 +660,7 @@ function TicketDetails() {
           </Form>
         )}
       </div>
+      </div> {/* close max-w-4xl */}
     </div>
   );
 }

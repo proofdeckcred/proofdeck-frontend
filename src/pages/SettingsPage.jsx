@@ -9,9 +9,13 @@ import {
   switchToCompany,
   getCanvaAuthUrl,
   getReferralStats,
+  getTeamMembers,
+  sendTeamInvite,
+  cancelTeamInvite,
+  removeTeamMember,
 } from "../api";
 import toast, { Toaster } from "react-hot-toast";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate, useLocation, Link } from "react-router-dom";
 import { SERVER_BASE_URL } from "../config";
 import { useUser } from "../context/UserContext";
 import {
@@ -31,6 +35,10 @@ import {
   CheckCircle,
   Link as LinkIcon,
   Gift,
+  PlusCircle,
+  Trash2,
+  UserMinus,
+  Mail,
 } from "lucide-react";
 import { Modal, Spinner, Button } from "react-bootstrap";
 
@@ -169,7 +177,7 @@ const ReferralSection = () => {
 };
 
 function SettingsPage() {
-  const { user, refreshUser } = useUser();
+  const { user, refreshUser, workspace } = useUser();
   const [localUser, setLocalUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("profile");
@@ -185,6 +193,12 @@ function SettingsPage() {
   const [isSwitching, setIsSwitching] = useState(false);
   const [isCanvaConnecting, setIsCanvaConnecting] = useState(false);
 
+  // Team management states
+  const [teamData, setTeamData] = useState({ members: [], invitations: [] });
+  const [inviteEmail, setInviteEmail] = useState("");
+  const [loadingTeam, setLoadingTeam] = useState(false);
+  const [sendingInvite, setSendingInvite] = useState(false);
+
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -193,6 +207,9 @@ function SettingsPage() {
     user && ["pro", "enterprise"].includes(user.role?.toLowerCase());
   const isCompanyUser = user && user.company;
   const isCanvaConnected = user && user.canva_access_token;
+  const isCompanyOwner = user && user.company && user.company.active_role === "owner" && workspace !== "personal";
+  const isCompanyAdmin = user && user.company && user.company.active_role === "admin" && workspace !== "personal";
+  const isCompanyOwnerOrAdmin = isCompanyOwner || isCompanyAdmin;
 
   const initializePayment = usePaystackPayment(paystackConfig || {});
 
@@ -226,6 +243,65 @@ function SettingsPage() {
       setActiveTab(location.state.defaultTab);
     }
   }, [navigate, location.search, location.state, refreshUser]);
+
+  const fetchTeam = useCallback(async () => {
+    setLoadingTeam(true);
+    try {
+      const res = await getTeamMembers();
+      setTeamData(res.data);
+    } catch (error) {
+      toast.error("Failed to load team members.");
+    } finally {
+      setLoadingTeam(false);
+    }
+  }, []);
+
+  const handleSendInvite = async (e) => {
+    e.preventDefault();
+    if (!inviteEmail.trim()) return toast.error("Enter a valid email.");
+    setSendingInvite(true);
+    const toastId = toast.loading("Sending invitation...");
+    try {
+      await sendTeamInvite(inviteEmail.trim());
+      toast.success("Invitation sent successfully!", { id: toastId });
+      setInviteEmail("");
+      fetchTeam();
+    } catch (error) {
+      toast.error(error.response?.data?.msg || "Failed to send invitation.", { id: toastId });
+    } finally {
+      setSendingInvite(false);
+    }
+  };
+
+  const handleCancelInvite = async (inviteId) => {
+    if (!window.confirm("Are you sure you want to cancel this invitation?")) return;
+    const toastId = toast.loading("Cancelling invitation...");
+    try {
+      await cancelTeamInvite(inviteId);
+      toast.success("Invitation cancelled.", { id: toastId });
+      fetchTeam();
+    } catch (error) {
+      toast.error("Failed to cancel invitation.", { id: toastId });
+    }
+  };
+
+  const handleRemoveMember = async (memberId, name) => {
+    if (!window.confirm(`Are you sure you want to remove ${name} from the organization? They will instantly lose access.`)) return;
+    const toastId = toast.loading("Removing team member...");
+    try {
+      await removeTeamMember(memberId);
+      toast.success("Member removed from team.", { id: toastId });
+      fetchTeam();
+    } catch (error) {
+      toast.error("Failed to remove member.", { id: toastId });
+    }
+  };
+
+  useEffect(() => {
+    if (activeTab === "team" && isCompanyOwnerOrAdmin) {
+      fetchTeam();
+    }
+  }, [activeTab, isCompanyOwnerOrAdmin, fetchTeam]);
 
   const handleUpgrade = useCallback(async (plan) => {
     setProcessingPlan(plan);
@@ -310,8 +386,11 @@ function SettingsPage() {
     if (!newCompanyName.trim()) return toast.error("Enter company name.");
     setIsSwitching(true);
     try {
-      await switchToCompany(newCompanyName);
+      const res = await switchToCompany(newCompanyName);
       toast.success("Account upgraded to Company!");
+      if (res.data?.company?.id) {
+        localStorage.setItem("workspaceContext", String(res.data.company.id));
+      }
       setTimeout(() => window.location.reload(), 1000);
     } catch (error) {
       toast.error("Failed to switch.");
@@ -322,6 +401,7 @@ function SettingsPage() {
 
   const handleLogout = () => {
     localStorage.removeItem("token");
+    localStorage.removeItem("workspaceContext");
     navigate("/login");
   };
 
@@ -344,15 +424,26 @@ function SettingsPage() {
 
   if (loading)
     return (
-      <div className="flex justify-center p-12">
-        <Spinner animation="border" />
+      <div className="w-full pb-12 animate-pulse">
+        {/* Navigation Header Skeleton */}
+        <div className="border-b border-slate-200/80 bg-white mb-6 -mt-6 -mx-4 sm:-mx-6 md:-mx-8 px-4 sm:px-6 md:px-8 py-3">
+          <div className="flex justify-between items-center max-w-[1600px] mx-auto h-8">
+            <div className="w-1/3 bg-slate-200 h-4 rounded" />
+            <div className="w-1/4 bg-slate-200 h-6 rounded" />
+          </div>
+        </div>
+        {/* Body Skeletons */}
+        <div className="max-w-5xl mx-auto space-y-6 px-4">
+          <div className="h-10 bg-slate-100 border border-slate-200 rounded-xl" />
+          <div className="h-64 bg-slate-100 border border-slate-200 rounded-xl" />
+        </div>
       </div>
     );
 
   const tabs = [
     { id: "profile", label: "Profile", icon: User },
     { id: "referrals", label: "Referrals", icon: Gift },
-    // { id: "integrations", label: "Integrations", icon: LinkIcon },
+    ...(isCompanyOwnerOrAdmin ? [{ id: "team", label: "Team", icon: Building }] : []),
     { id: "billing", label: "Billing", icon: CreditCard },
     {
       id: "developer",
@@ -362,34 +453,48 @@ function SettingsPage() {
     },
   ];
 
+  const navLinks = [
+    { name: "Overview", path: "/dashboard" },
+    { name: "Templates", path: "/dashboard/templates" },
+    { name: "Groups", path: "/dashboard/groups" },
+    { name: "Analytics", path: "/dashboard/analytics" },
+    { name: "Settings", path: "/dashboard/settings" },
+  ];
+
   return (
-    <div className="max-w-5xl mx-auto pb-12">
+    <div className="w-full pb-12">
       <Toaster position="top-right" />
 
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-900">Settings</h1>
-        <p className="text-gray-500">
-          Manage your account, integrations, and billing.
-        </p>
+      {/* --- 1. Top Navigation Bar (Header - Locked to Top) --- */}
+      <div className="border-b border-slate-200/80 bg-white mb-6 -mt-6 -mx-4 sm:-mx-6 md:-mx-8 px-4 sm:px-6 md:px-8 py-3">
+        <div className="flex items-center justify-between gap-4 max-w-[1600px] mx-auto">
+          {/* Left: Page Title */}
+          <h1 className="text-sm font-bold text-slate-800 uppercase tracking-wider mb-0">Settings</h1>
+        </div>
       </div>
 
-      <div className="flex gap-1 mb-8 border-b border-gray-200 overflow-x-auto">
-        {tabs.map((tab) => (
-          <button
-            key={tab.id}
-            onClick={() => !tab.locked && setActiveTab(tab.id)}
-            className={`flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
-              activeTab === tab.id
-                ? "border-indigo-600 text-indigo-600"
-                : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-            } ${tab.locked ? "opacity-50 cursor-not-allowed" : ""}`}
-          >
-            <tab.icon size={16} />
-            {tab.label}
-            {tab.locked && <Lock size={12} />}
-          </button>
-        ))}
-      </div>
+      <div className="max-w-5xl mx-auto px-4 mt-6">
+        <div className="bg-slate-100/80 p-1 rounded-xl inline-flex gap-1 mb-8 border border-slate-200/40">
+          {tabs.map((tab) => {
+            const isActive = activeTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                disabled={tab.locked}
+                onClick={() => setActiveTab(tab.id)}
+                className={`flex items-center gap-2 px-4 py-2 text-xs font-bold rounded-lg transition-all decoration-none ${
+                  isActive
+                    ? "bg-white text-slate-900 shadow-sm border border-slate-200/30"
+                    : "text-slate-500 hover:text-slate-800"
+                } ${tab.locked ? "opacity-40 cursor-not-allowed" : ""}`}
+              >
+                <tab.icon size={14} />
+                <span>{tab.label}</span>
+                {tab.locked && <Lock size={11} />}
+              </button>
+            );
+          })}
+        </div>
 
       {activeTab === "profile" && (
         <div className="space-y-6">
@@ -548,6 +653,127 @@ function SettingsPage() {
 
       {activeTab === "referrals" && <ReferralSection />}
 
+      {activeTab === "team" && isCompanyOwnerOrAdmin && (
+        <div className="space-y-6">
+          <Section title="Invite Team Member" icon={PlusCircle}>
+            <p className="text-gray-600 mb-4 text-sm">
+              Invite a staff member to join your organization workspace. They will operate using their own email/password but access your company dashboard.
+            </p>
+            <form onSubmit={handleSendInvite} className="flex gap-3 max-w-lg">
+              <input
+                type="email"
+                placeholder="staff@company.com"
+                value={inviteEmail}
+                onChange={(e) => setInviteEmail(e.target.value)}
+                className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-sm"
+              />
+              <button
+                type="submit"
+                disabled={sendingInvite}
+                className="bg-indigo-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-indigo-700 disabled:opacity-50 whitespace-nowrap text-sm flex items-center"
+              >
+                {sendingInvite && <Spinner size="sm" className="mr-2" />} Invite Staff
+              </button>
+            </form>
+          </Section>
+
+          <Section title="Active Team Members" icon={Building}>
+            {loadingTeam ? (
+              <div className="text-center py-4"><Spinner animation="border" size="sm" /></div>
+            ) : teamData.members.length === 0 ? (
+              <p className="text-slate-500 text-sm">No team members joined yet.</p>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="border-b border-gray-100 text-slate-400 text-xs font-semibold uppercase tracking-wider">
+                      <th className="pb-3 font-medium">Name</th>
+                      <th className="pb-3 font-medium">Email</th>
+                      <th className="pb-3 font-medium">Role</th>
+                      <th className="pb-3 font-medium text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100 text-sm">
+                    {teamData.members.map((member) => (
+                      <tr key={member.id} className="hover:bg-slate-50/50">
+                        <td className="py-3.5 font-medium text-slate-900 flex items-center gap-2">
+                          <div className="w-8 h-8 rounded-full bg-indigo-50 text-indigo-700 flex items-center justify-center font-bold text-xs">
+                            {member.name.charAt(0)}
+                          </div>
+                          <span>{member.name}</span>
+                        </td>
+                        <td className="py-3.5 text-slate-500">{member.email}</td>
+                        <td className="py-3.5">
+                          <span className={`px-2 py-0.5 text-xs font-bold rounded-full ${
+                            member.role === "Owner" ? "bg-amber-50 text-amber-700" : "bg-indigo-50 text-indigo-700"
+                          }`}>
+                            {member.role}
+                          </span>
+                        </td>
+                        <td className="py-3.5 text-right">
+                          {member.role !== "Owner" && (
+                            <button
+                              onClick={() => handleRemoveMember(member.id, member.name)}
+                              className="text-red-600 hover:text-red-800 font-medium text-xs flex items-center gap-1 ml-auto"
+                            >
+                              <UserMinus size={14} className="mr-1" /> Remove Staff
+                            </button>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </Section>
+
+          <Section title="Pending Invitations" icon={Mail}>
+            {loadingTeam ? (
+              <div className="text-center py-4"><Spinner animation="border" size="sm" /></div>
+            ) : teamData.invitations.length === 0 ? (
+              <p className="text-slate-500 text-sm">No pending invitations.</p>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="border-b border-gray-100 text-slate-400 text-xs font-semibold uppercase tracking-wider">
+                      <th className="pb-3 font-medium">Email</th>
+                      <th className="pb-3 font-medium">Expires At</th>
+                      <th className="pb-3 font-medium">Status</th>
+                      <th className="pb-3 font-medium text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100 text-sm">
+                    {teamData.invitations.map((invite) => (
+                      <tr key={invite.id} className="hover:bg-slate-50/50">
+                        <td className="py-3.5 font-medium text-slate-900">{invite.email}</td>
+                        <td className="py-3.5 text-slate-500">
+                          {new Date(invite.expires_at).toLocaleString()}
+                        </td>
+                        <td className="py-3.5">
+                          <span className="bg-yellow-50 text-yellow-700 px-2 py-0.5 text-xs font-bold rounded-full capitalize">
+                            {invite.status}
+                          </span>
+                        </td>
+                        <td className="py-3.5 text-right">
+                          <button
+                            onClick={() => handleCancelInvite(invite.id)}
+                            className="text-slate-500 hover:text-red-600 font-medium text-xs flex items-center gap-1 ml-auto"
+                          >
+                            <Trash2 size={14} className="mr-1" /> Cancel
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </Section>
+        </div>
+      )}
+
       {activeTab === "billing" && (
         <div>
           <div className="bg-indigo-50 border border-indigo-100 rounded-xl p-4 mb-8 flex items-start gap-3">
@@ -686,6 +912,7 @@ function SettingsPage() {
           </Button>
         </Modal.Footer>
       </Modal>
+      </div> {/* close max-w-5xl */}
     </div>
   );
 }

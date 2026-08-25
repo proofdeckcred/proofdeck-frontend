@@ -68,6 +68,12 @@ const DraggableText = ({
         <Transformer
           ref={trRef}
           keepRatio={false}
+          anchorStroke="#4f46e5"
+          anchorFill="#ffffff"
+          anchorSize={6}
+          borderStroke="#4f46e5"
+          borderStrokeWidth={1.5}
+          rotateAnchorOffset={15}
           boundBoxFunc={(oldBox, newBox) => {
             if (newBox.width < 5 || newBox.height < 5) {
               return oldBox;
@@ -156,6 +162,12 @@ const DraggableQR = ({
         <Transformer
           ref={trRef}
           keepRatio={true}
+          anchorStroke="#4f46e5"
+          anchorFill="#ffffff"
+          anchorSize={6}
+          borderStroke="#4f46e5"
+          borderStrokeWidth={1.5}
+          rotateAnchorOffset={15}
           boundBoxFunc={(oldBox, newBox) => {
             if (newBox.width < 5 || newBox.height < 5) {
               return oldBox;
@@ -179,14 +191,27 @@ const CustomTemplateEditor = ({
   setSelectedId,
   canvasSize,
   showGrid = true,
+  zoomScale = 1,
 }) => {
   const [image] = useImage(backgroundImageUrl, "anonymous");
   const [guides, setGuides] = useState([]);
 
-  // --- Keyboard Precision Control ---
+  // --- Keyboard Precision Control & Deletion ---
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (!selectedId) return;
+
+      if (e.key === "Delete" || e.key === "Backspace") {
+        // Prevent default browser behavior if focusing on canvas
+        const activeTag = document.activeElement?.tagName?.toLowerCase();
+        if (activeTag === "input" || activeTag === "textarea" || activeTag === "select") {
+          return; // Don't delete elements when typing in inputs!
+        }
+        e.preventDefault();
+        setElements((prevElements) => prevElements.filter((el) => el.id !== selectedId));
+        setSelectedId(null);
+        return;
+      }
 
       const MOVE_STEP = e.shiftKey ? 10 : 1; // Shift + Arrow = 10px, else 1px
       let dx = 0;
@@ -212,7 +237,7 @@ const CustomTemplateEditor = ({
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [selectedId, setElements]);
+  }, [selectedId, setElements, setSelectedId]);
 
   // --- Snapping Logic ---
   const getLineGuideStops = (skipShape) => {
@@ -392,17 +417,19 @@ const CustomTemplateEditor = ({
 
   return (
     <div
+      className="shadow-2xl border border-gray-200/50 rounded overflow-hidden transition-all duration-200"
       style={{
-        width: canvasSize.width,
-        height: canvasSize.height,
-        boxShadow: "0 0 20px rgba(0,0,0,0.1)",
+        width: canvasSize.width * zoomScale,
+        height: canvasSize.height * zoomScale,
         backgroundColor: "#fff",
       }}
     >
       <Stage
         ref={stageRef}
-        width={canvasSize.width}
-        height={canvasSize.height}
+        width={canvasSize.width * zoomScale}
+        height={canvasSize.height * zoomScale}
+        scaleX={zoomScale}
+        scaleY={zoomScale}
         onMouseDown={checkDeselect}
         onTouchStart={checkDeselect}
       >

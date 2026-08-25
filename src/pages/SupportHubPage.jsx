@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { helpArticles } from "../data/helpArticles.jsx";
-import { Search, MessageCircle, HelpCircle } from "lucide-react";
+import { Search, MessageCircle, HelpCircle, ArrowLeft } from "lucide-react";
 import { useSupportStatus } from "../hooks/useSupportStatus";
 
 function SupportHubPage() {
@@ -17,125 +17,125 @@ function SupportHubPage() {
   );
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-8">
-      {/* Hero Section */}
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8 md:p-12 text-center mb-12 relative overflow-hidden">
-        <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500"></div>
-        <div className="max-w-2xl mx-auto relative z-10">
-          <div className="bg-indigo-50 text-indigo-600 p-3 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-6">
-            <HelpCircle size={32} />
-          </div>
-          <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-            How can we help you?
-          </h1>
-          <p className="text-gray-500 text-lg mb-8">
-            Search our knowledge base or browse the topics below to find
-            answers.
-          </p>
+    <div className="w-full pb-20">
+      {/* --- 1. Top Navigation Bar (Header - Locked to Top) --- */}
+      <div className="border-b border-slate-200/80 bg-white mb-6 -mt-6 -mx-4 sm:-mx-6 md:-mx-8 px-4 sm:px-6 md:px-8 py-3">
+        <div className="flex items-center justify-between gap-4 max-w-[1600px] mx-auto">
+          {/* Left: Page Title */}
+          <h1 className="text-sm font-bold text-slate-800 uppercase tracking-wider mb-0">Support Hub</h1>
 
-          <div className="relative max-w-lg mx-auto">
-            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-gray-400">
-              <Search size={20} />
-            </div>
+          {/* Right Action */}
+          <Link
+            to="/dashboard"
+            className="inline-flex items-center gap-1 text-xs font-semibold text-slate-600 hover:text-slate-800 decoration-none bg-slate-100 hover:bg-slate-200 px-3 py-1.5 rounded-lg transition-colors border border-slate-200/40"
+          >
+            <ArrowLeft size={13} />
+            <span>Back to Dashboard</span>
+          </Link>
+        </div>
+      </div>
+
+      {/* --- 2. Main Cohesive Bento Container --- */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 border border-slate-200/80 bg-white rounded-xl overflow-hidden shadow-sm divide-y lg:divide-y-0 lg:divide-x divide-slate-200/80">
+        
+        {/* Left Column: Search & Articles Grid (col-span-8) */}
+        <div className="lg:col-span-8 p-6 space-y-6">
+          <div>
+            <h2 className="text-sm font-bold text-slate-800">Browse Knowledge Base</h2>
+            <p className="text-[10px] text-slate-400">Search guides and articles to solve common questions</p>
+          </div>
+
+          {/* Search Input */}
+          <div className="relative w-full max-w-md">
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 w-3.5 h-3.5" />
             <input
               type="text"
-              placeholder="Search for answers..."
-              className="w-full pl-11 pr-4 py-3.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none text-gray-900 shadow-sm transition-all"
+              placeholder="Search help articles..."
+              className="w-full pl-8 pr-3 py-2 bg-slate-50 border border-slate-200/60 rounded-lg focus:bg-white focus:border-slate-400 transition-all text-xs outline-none"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
-        </div>
-      </div>
 
-      {/* Topics Grid */}
-      <div className="mb-16">
-        <h3 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">
-          <div className="w-1 h-6 bg-indigo-600 rounded-full"></div>
-          Browse Help Topics
-        </h3>
-
-        {filteredArticles.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {filteredArticles.map((article) => (
-              <Link
-                key={article.slug}
-                to={`/dashboard/support/articles/${article.slug}`}
-                className="group bg-white rounded-xl border border-gray-200 p-6 hover:shadow-lg hover:border-indigo-200 transition-all duration-300 flex flex-col h-full text-decoration-none"
-              >
-                <div
-                  className={`w-12 h-12 rounded-lg flex items-center justify-center mb-4 ${article.theme}`}
+          {/* Help Topics Grid */}
+          {filteredArticles.length > 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+              {filteredArticles.map((article) => (
+                <Link
+                  key={article.slug}
+                  to={`/dashboard/support/articles/${article.slug}`}
+                  className="group bg-white rounded-xl border border-slate-200/70 p-4 hover:shadow hover:border-indigo-400 hover:shadow-indigo-50/50 transition-all duration-300 flex flex-col justify-between text-decoration-none h-full"
                 >
-                  {article.icon}
-                </div>
-                <h4 className="text-lg font-bold text-gray-900 mb-2 group-hover:text-indigo-600 transition-colors">
-                  {article.title}
-                </h4>
-                <p className="text-gray-500 text-sm leading-relaxed">
-                  {article.description}
-                </p>
-              </Link>
-            ))}
-          </div>
-        ) : (
-          <div className="text-center py-12 bg-gray-50 rounded-xl border border-dashed border-gray-300">
-            <p className="text-gray-500">
-              No articles found matching "{searchTerm}"
-            </p>
-            <button
-              onClick={() => setSearchTerm("")}
-              className="text-indigo-600 font-medium mt-2 hover:underline"
-            >
-              Clear search
-            </button>
-          </div>
-        )}
-      </div>
-
-      {/* Support Contact */}
-      <div className="max-w-3xl mx-auto">
-        <div className="bg-indigo-900 rounded-2xl shadow-xl p-8 md:p-12 text-center text-white relative overflow-hidden">
-          {/* Background decoration */}
-          <div className="absolute top-0 right-0 -mr-16 -mt-16 w-64 h-64 bg-white opacity-5 rounded-full blur-3xl"></div>
-          <div className="absolute bottom-0 left-0 -ml-16 -mb-16 w-64 h-64 bg-indigo-400 opacity-10 rounded-full blur-3xl"></div>
-
-          <div className="relative z-10">
-            <MessageCircle size={48} className="mx-auto mb-6 text-indigo-300" />
-            <h2 className="text-2xl md:text-3xl font-bold mb-4">
-              Still need help?
-            </h2>
-            <p className="text-indigo-100 text-lg mb-8 max-w-xl mx-auto">
-              Our Nigerian-based support team is ready to assist you. Create a
-              ticket and we'll get back to you as soon as possible.
-            </p>
-
-            <div className="inline-flex items-center gap-2 bg-indigo-800/50 backdrop-blur-sm px-4 py-2 rounded-full mb-8 border border-indigo-700/50">
-              <div
-                className={`w-2.5 h-2.5 rounded-full ${
-                  isOnline ? "bg-green-400 animate-pulse" : "bg-gray-400"
-                }`}
-              ></div>
-              <span
-                className={`text-sm font-medium ${
-                  isOnline ? "text-green-300" : "text-gray-300"
-                }`}
-              >
-                {isOnline ? "Support Team Online" : "Currently Offline"}
-              </span>
+                  <div>
+                    <div className={`w-9 h-9 rounded-lg flex items-center justify-center mb-3 ${article.theme}`}>
+                      {article.icon}
+                    </div>
+                    <h4 className="text-xs font-bold text-slate-800 mb-1 group-hover:text-indigo-650 transition-colors">
+                      {article.title}
+                    </h4>
+                    <p className="text-[10px] text-slate-450 leading-relaxed">
+                      {article.description}
+                    </p>
+                  </div>
+                  <span className="text-[9px] font-bold text-indigo-600 group-hover:translate-x-1 transition-transform mt-3.5 flex items-center gap-0.5">
+                    Read article &rarr;
+                  </span>
+                </Link>
+              ))}
             </div>
+          ) : (
+            <div className="text-center py-12 bg-slate-50/50 rounded-xl border border-dashed border-slate-200">
+              <HelpCircle className="text-slate-350 w-8 h-8 mx-auto mb-2" />
+              <h4 className="text-xs font-bold text-slate-700">No articles match your search</h4>
+              <button
+                onClick={() => setSearchTerm("")}
+                className="mt-3 bg-white border border-slate-200 text-slate-700 rounded-lg py-1 px-3.5 hover:bg-slate-50 transition-all font-semibold text-xs shadow-sm"
+              >
+                Clear search
+              </button>
+            </div>
+          )}
+        </div>
 
+        {/* Right Column: Support Tickets & Contact info (col-span-4) */}
+        <div className="lg:col-span-4 p-6 bg-slate-50/20 flex flex-col justify-between">
+          <div className="space-y-4">
             <div>
-              <Link
-                to="/dashboard/support/tickets"
-                className="inline-block bg-white text-indigo-900 font-bold py-3.5 px-8 rounded-xl hover:bg-indigo-50 transition-colors shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all text-decoration-none"
-              >
-                Create Support Ticket
-              </Link>
+              <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider">Direct Support</h3>
+              <p className="text-[9px] text-slate-400">Submit requests directly to our team</p>
             </div>
 
-            <p className="mt-6 text-indigo-300/80 text-xs">
-              Support Hours: Mon - Fri, 9am - 5pm (WAT)
-            </p>
+            {/* Premium Indigo Dark Card */}
+            <div className="bg-slate-900 rounded-2xl p-6 text-white relative overflow-hidden shadow">
+              <div className="relative z-10 space-y-4">
+                <MessageCircle size={36} className="text-indigo-400" />
+                <div>
+                  <h4 className="text-xs font-bold mb-1">Create Support Ticket</h4>
+                  <p className="text-[10px] text-slate-400 leading-relaxed">
+                    Our team is based in Nigeria and will review your request quickly. Expected response time: under 12 hours.
+                  </p>
+                </div>
+
+                {/* Online Status Pill */}
+                <div className="inline-flex items-center gap-1.5 bg-white/10 backdrop-blur-sm px-3 py-1 rounded-full border border-white/10">
+                  <div className={`w-1.5 h-1.5 rounded-full ${isOnline ? "bg-emerald-400 animate-pulse" : "bg-slate-400"}`} />
+                  <span className="text-[9px] font-semibold text-slate-200">
+                    {isOnline ? "Support Staff Online" : "Staff Currently Offline"}
+                  </span>
+                </div>
+
+                <Link
+                  to="/dashboard/support/tickets"
+                  className="block w-full text-center bg-white text-slate-900 hover:bg-slate-50 font-bold py-2.5 px-4 rounded-lg shadow-sm transition-all text-xs text-decoration-none"
+                >
+                  New Support Ticket
+                </Link>
+              </div>
+            </div>
+          </div>
+
+          <div className="pt-6 border-t border-slate-200/50 mt-6 text-center text-[10px] text-slate-400">
+            <span>Support hours: Mon - Fri, 9am - 5pm WAT</span>
           </div>
         </div>
       </div>
