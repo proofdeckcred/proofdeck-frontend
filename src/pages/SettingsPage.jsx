@@ -796,36 +796,60 @@ function SettingsPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             <PlanCard
               title="Starter"
-              price="$15 /month"
-              features={["500 Credits", "Standard Templates", "Email Support"]}
-              actionText="Upgrade"
+              price="₦25,000 / one-time"
+              features={[
+                "500 Credits Included",
+                "Unlimited Template Designs",
+                "Secure Email Delivery",
+                "High-Res PDF Downloads",
+                "Basic Verification Portal"
+              ]}
+              actionText="Choose Starter"
               current={user?.role?.toLowerCase() === "starter"}
               onAction={() => handleUpgrade("starter")}
               loading={processingPlan === "starter"}
             />
             <PlanCard
               title="Growth"
-              price="$50 /month"
-              features={["2,000 Credits", "All Templates", "Priority Support"]}
-              actionText="Upgrade"
+              price="₦60,000 / one-time"
+              features={[
+                "2,000 Credits Included",
+                "Unlimited Template Designs",
+                "Secure Email Delivery",
+                "Priority Support Channel",
+                "Basic Verification Portal"
+              ]}
+              actionText="Choose Growth"
               current={user?.role?.toLowerCase() === "growth"}
               onAction={() => handleUpgrade("growth")}
               loading={processingPlan === "growth"}
             />
             <PlanCard
               title="Pro"
-              price="$100 /month"
-              features={["5,000 Credits", "API Access", "Custom Branding"]}
-              actionText="Upgrade"
+              price="₦100,000 / one-time"
+              features={[
+                "5,000 Credits Included",
+                "Everything in Growth",
+                "Developer API Access",
+                "Custom Logo & Branding",
+                "Custom Domain URL"
+              ]}
+              actionText="Choose Pro"
               current={user?.role?.toLowerCase() === "pro"}
               onAction={() => handleUpgrade("pro")}
               loading={processingPlan === "pro"}
             />
             <PlanCard
               title="Enterprise"
-              price="$300 /month"
-              features={["20,000 Credits", "Dedicated Manager", "SLA"]}
-              actionText="Upgrade"
+              price="₦300,000 / one-time"
+              features={[
+                "20,000 Credits Included",
+                "Dedicated Account Manager",
+                "SLA Support Guarantee",
+                "Developer API Access",
+                "Unlimited Webhooks & API"
+              ]}
+              actionText="Choose Enterprise"
               current={user?.role?.toLowerCase() === "enterprise"}
               onAction={() => handleUpgrade("enterprise")}
               loading={processingPlan === "enterprise"}

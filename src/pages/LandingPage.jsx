@@ -101,7 +101,7 @@ const Pricing = () => (
       <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 items-stretch pt-4">
         <PricingCard
           title="Starter"
-          price="₦30,000"
+          price="₦25,000"
           suffix="500 credential credits"
           features={[
             "500 Credits Included",

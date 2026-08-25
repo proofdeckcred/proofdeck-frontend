@@ -113,9 +113,9 @@ const PricingPage = () => {
       name: "Starter",
       icon: Sparkles,
       colorClass: "bg-orange-100 text-orange-600",
-      priceNGN: "₦30,000",
+      priceNGN: "₦25,000",
       certs: "500",
-      costPerCert: "₦60",
+      costPerCert: "₦50",
       for: "Perfect for workshops, bootcamps, and small cohorts.",
       features: [
         "500 Credits Included",
