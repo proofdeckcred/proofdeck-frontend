@@ -427,7 +427,15 @@ function SettingsPage() {
     setProcessingPlan(plan);
     try {
       const res = await apiInitializePayment(plan, "paystack");
-      setPaystackConfig({ ...res.data, currency: res.data.currency || "NGN" });
+      const config = {
+        publicKey: res.data.publicKey || "pk_test_e0d4baa25d66a069e4a300836f2f8fd04691b400",
+        email: res.data.email,
+        amount: Number(res.data.amount),
+        reference: res.data.reference,
+        currency: res.data.currency || "NGN",
+        metadata: res.data.metadata || {},
+      };
+      setPaystackConfig(config);
     } catch (error) {
       toast.error(error.response?.data?.msg || "Payment initialization failed.");
       setProcessingPlan(null);
@@ -485,30 +493,40 @@ function SettingsPage() {
   }, [refreshUser]);
 
   useEffect(() => {
-    if (paystackConfig) {
-      initializePayment({
-        onSuccess: async (reference) => {
-          setPaystackConfig(null);
-          const toastId = toast.loading("Verifying payment...");
-          try {
-            await verifyPayment(reference.reference);
-            toast.success("Upgrade successful! Credits added.", { id: toastId });
-            setProcessingPlan(null);
-            await refreshUser();
-            await fetchUser();
-          } catch (err) {
-            toast.error("Payment verification failed.", { id: toastId });
-            setProcessingPlan(null);
-          }
-        },
-        onClose: () => {
-          toast.error("Payment cancelled.");
-          setPaystackConfig(null);
+    if (paystackConfig && paystackConfig.publicKey && paystackConfig.reference) {
+      const onSuccess = async (reference) => {
+        setPaystackConfig(null);
+        const toastId = toast.loading("Verifying payment...");
+        try {
+          const ref = reference?.reference || reference;
+          await verifyPayment(ref);
+          toast.success("Upgrade successful! Credits added.", { id: toastId });
+          await refreshUser();
+          await fetchUser();
+        } catch (err) {
+          toast.error("Payment verification failed.", { id: toastId });
+        } finally {
           setProcessingPlan(null);
-        },
-      });
+        }
+      };
+
+      const onClose = () => {
+        toast.error("Payment cancelled.");
+        setPaystackConfig(null);
+        setProcessingPlan(null);
+      };
+
+      try {
+        initializePayment(onSuccess, onClose);
+      } catch (err) {
+        console.error("Paystack launch error:", err);
+        toast.error("Could not open Paystack checkout window.");
+        setPaystackConfig(null);
+        setProcessingPlan(null);
+      }
     }
   }, [paystackConfig, initializePayment, refreshUser]);
+
 
 
   const handleFileChange = (e) => {
