@@ -96,14 +96,20 @@ const PlanCard = ({
     </ul>
     <button
       onClick={onAction}
-      disabled={disabled || loading || current}
+      disabled={disabled || loading}
       className={`w-full py-2.5 px-4 rounded-lg font-medium text-sm transition-colors flex items-center justify-center ${
         current
-          ? "bg-green-100 text-green-700 cursor-default"
+          ? "bg-indigo-700 text-white hover:bg-indigo-800 shadow-sm"
           : "bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
       }`}
     >
-      {loading ? <Spinner size="sm" /> : current ? "Current Plan" : actionText}
+      {loading ? (
+        <Spinner size="sm" />
+      ) : current ? (
+        "Add Credits / Renew"
+      ) : (
+        actionText || "Choose Plan"
+      )}
     </button>
   </div>
 );
