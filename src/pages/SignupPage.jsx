@@ -23,9 +23,23 @@ function SignupPage() {
     setLoading(true);
     setError("");
 
-    const name = (formData.username || e.target.username?.value || "").trim();
-    const email = (formData.email || e.target.email?.value || "").trim();
-    const password = formData.password || e.target.password?.value || "";
+    const name = (
+      document.getElementById("username")?.value ||
+      formData.username ||
+      e.target.username?.value ||
+      ""
+    ).trim();
+    const email = (
+      document.getElementById("email")?.value ||
+      formData.email ||
+      e.target.email?.value ||
+      ""
+    ).trim();
+    const password =
+      document.getElementById("password")?.value ||
+      formData.password ||
+      e.target.password?.value ||
+      "";
 
     if (!name || !email || !password) {
       setError("Please fill in all required fields.");

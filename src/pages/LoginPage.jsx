@@ -23,8 +23,17 @@ function LoginPage() {
     setLoading(true);
     setError("");
 
-    const email = (formData.email || e.target.email?.value || "").trim();
-    const password = formData.password || e.target.password?.value || "";
+    const email = (
+      document.getElementById("email")?.value ||
+      formData.email ||
+      e.target.email?.value ||
+      ""
+    ).trim();
+    const password =
+      document.getElementById("password")?.value ||
+      formData.password ||
+      e.target.password?.value ||
+      "";
 
     if (!email || !password) {
       setError("Please enter both email and password.");
