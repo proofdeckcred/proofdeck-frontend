@@ -154,8 +154,8 @@ export const generateApiKey = () => API.post("/users/me/api-key");
 export const updateUserProfile = (data) => API.put("/users/me", data);
 
 // PAYMENTS
-export const initializePayment = (plan) =>
-  API.post("/payments/initialize", { plan });
+export const initializePayment = (plan, provider = "paystack") =>
+  API.post("/payments/initialize", { plan, provider });
 export const verifyPayment = (reference) =>
   API.get(`/payments/verify/${reference}`);
 

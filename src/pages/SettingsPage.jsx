@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { usePaystackPayment } from "react-paystack";
+import { loadBachs } from "@bachs/js";
 import {
   getCurrentUser,
   initializePayment as apiInitializePayment,
@@ -39,6 +40,9 @@ import {
   Trash2,
   UserMinus,
   Mail,
+  Globe,
+  ArrowRight,
+  Zap,
 } from "lucide-react";
 import { Modal, Spinner, Button } from "react-bootstrap";
 
@@ -56,63 +60,149 @@ const Section = ({ title, icon: Icon, children, className = "" }) => (
   </div>
 );
 
+const PLAN_INFO = {
+  starter: {
+    name: "Starter",
+    priceNGN: "₦25,000",
+    priceUSD: "$18.00",
+    certs: "500",
+    costPerCert: "₦50 (~$0.03)",
+    description: "Ideal for workshops, bootcamps, and small cohorts.",
+    features: [
+      "500 Credits Included",
+      "Unlimited Template Designs",
+      "Secure Email Delivery",
+      "High-Res PDF Downloads",
+      "Basic Verification Portal",
+    ],
+  },
+  growth: {
+    name: "Growth",
+    priceNGN: "₦60,000",
+    priceUSD: "$42.00",
+    certs: "2,000",
+    costPerCert: "₦30 (~$0.02)",
+    description: "Ideal for schools and training centers issuing regularly.",
+    features: [
+      "2,000 Credits Included",
+      "Unlimited Template Designs",
+      "Secure Email Delivery",
+      "Priority Support Channel",
+      "Basic Verification Portal",
+    ],
+  },
+  pro: {
+    name: "Pro",
+    priceNGN: "₦100,000",
+    priceUSD: "$70.00",
+    certs: "5,000",
+    costPerCert: "₦20 (~$0.014)",
+    description: "For institutions needing automation and deeper integration.",
+    features: [
+      "5,000 Credits Included",
+      "Everything in Growth",
+      "Developer API Access",
+      "Custom Logo & Branding",
+      "Custom Domain URL",
+    ],
+  },
+  enterprise: {
+    name: "Enterprise",
+    priceNGN: "₦300,000",
+    priceUSD: "$200.00",
+    certs: "20,000",
+    costPerCert: "₦15 (~$0.01)",
+    description: "For universities, exam bodies, and large organizations.",
+    features: [
+      "20,000 Credits Included",
+      "Dedicated Account Manager",
+      "SLA Support Guarantee",
+      "Developer API Access",
+      "Unlimited Webhooks & API",
+    ],
+  },
+};
+
 const PlanCard = ({
-  title,
-  price,
-  features,
-  actionText,
+  planKey,
   onAction,
   current,
   disabled,
   loading,
-}) => (
-  <div
-    className={`flex flex-col h-full p-6 rounded-xl border ${
-      current
-        ? "border-indigo-600 ring-1 ring-indigo-600 bg-indigo-50/50"
-        : "border-gray-200 bg-white hover:border-indigo-300"
-    } transition-all`}
-  >
-    <h3 className="text-lg font-bold text-gray-900">{title}</h3>
-    <div className="my-4">
-      <span className="text-3xl font-bold text-gray-900">
-        {price.split(" ")[0]}
-      </span>
-      <span className="text-gray-500 text-sm">
-        {" "}
-        {price.split(" ").slice(1).join(" ")}
-      </span>
-    </div>
-    <ul className="space-y-3 mb-6 flex-1">
-      {features.map((feature, idx) => (
-        <li key={idx} className="flex items-start text-sm text-gray-600">
-          <Check
-            size={16}
-            className="text-green-500 mr-2 mt-0.5 flex-shrink-0"
-          />
-          {feature}
-        </li>
-      ))}
-    </ul>
-    <button
-      onClick={onAction}
-      disabled={disabled || loading}
-      className={`w-full py-2.5 px-4 rounded-lg font-medium text-sm transition-colors flex items-center justify-center ${
+}) => {
+  const plan = PLAN_INFO[planKey];
+  if (!plan) return null;
+
+  return (
+    <div
+      className={`flex flex-col h-full p-6 rounded-xl border ${
         current
-          ? "bg-indigo-700 text-white hover:bg-indigo-800 shadow-sm"
-          : "bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
-      }`}
+          ? "border-indigo-600 ring-1 ring-indigo-600 bg-indigo-50/50"
+          : "border-gray-200 bg-white hover:border-indigo-300 shadow-sm hover:shadow-md"
+      } transition-all`}
     >
-      {loading ? (
-        <Spinner size="sm" />
-      ) : current ? (
-        "Add Credits / Renew"
-      ) : (
-        actionText || "Choose Plan"
-      )}
-    </button>
-  </div>
-);
+      <div className="flex items-center justify-between mb-2">
+        <h3 className="text-lg font-bold text-gray-900">{plan.name}</h3>
+        {current && (
+          <span className="text-[10px] font-bold uppercase tracking-wider bg-indigo-600 text-white px-2 py-0.5 rounded-full">
+            Active
+          </span>
+        )}
+      </div>
+      <p className="text-xs text-gray-500 mb-4 min-h-[32px]">{plan.description}</p>
+      
+      <div className="mb-4">
+        <div className="flex items-baseline gap-2">
+          <span className="text-2xl font-extrabold text-gray-900">
+            {plan.priceNGN}
+          </span>
+          <span className="text-sm font-semibold text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded">
+            {plan.priceUSD}
+          </span>
+        </div>
+        <span className="text-gray-400 text-xs font-medium">/ one-time payment</span>
+      </div>
+
+      <div className="bg-slate-50 border border-slate-100 rounded-lg p-2.5 mb-5 flex justify-between items-center text-xs">
+        <span className="text-gray-500 font-medium">Credits</span>
+        <span className="font-bold text-gray-900">{plan.certs} certs</span>
+      </div>
+
+      <ul className="space-y-2.5 mb-6 flex-1">
+        {plan.features.map((feature, idx) => (
+          <li key={idx} className="flex items-start text-xs text-gray-600">
+            <Check
+              size={14}
+              className="text-green-500 mr-2 mt-0.5 flex-shrink-0"
+            />
+            <span>{feature}</span>
+          </li>
+        ))}
+      </ul>
+      <button
+        onClick={() => onAction(planKey)}
+        disabled={disabled || loading}
+        className={`w-full py-2.5 px-4 rounded-lg font-medium text-xs transition-all flex items-center justify-center gap-2 ${
+          current
+            ? "bg-indigo-700 text-white hover:bg-indigo-800 shadow-sm"
+            : "bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm hover:shadow"
+        }`}
+      >
+        {loading ? (
+          <Spinner size="sm" />
+        ) : current ? (
+          "Add Credits / Renew"
+        ) : (
+          <>
+            <span>Choose {plan.name}</span>
+            <ArrowRight size={13} />
+          </>
+        )}
+      </button>
+    </div>
+  );
+};
+
 
 const ReferralSection = () => {
   const [stats, setStats] = useState(null);
@@ -192,6 +282,8 @@ function SettingsPage() {
   const [isUploading, setIsUploading] = useState(false);
   const [processingPlan, setProcessingPlan] = useState(null);
   const [paystackConfig, setPaystackConfig] = useState(null);
+  const [selectedPlanForModal, setSelectedPlanForModal] = useState(null);
+  const [isBachsLoading, setIsBachsLoading] = useState(false);
   const [showKeyModal, setShowKeyModal] = useState(false);
   const [newApiKey, setNewApiKey] = useState("");
   const [isCopied, setIsCopied] = useState(false);
@@ -241,6 +333,21 @@ function SettingsPage() {
       refreshUser();
       setActiveTab("integrations");
       navigate(location.pathname, { replace: true });
+    } else if (params.get("payment") === "success" && params.get("reference")) {
+      const ref = params.get("reference");
+      const toastId = toast.loading("Verifying your payment...");
+      verifyPayment(ref)
+        .then(async () => {
+          toast.success("Payment verified! Your account is upgraded.", { id: toastId });
+          await refreshUser();
+          await fetchUser();
+        })
+        .catch(() => {
+          toast.error("Payment verification failed or pending.", { id: toastId });
+        })
+        .finally(() => {
+          navigate(location.pathname, { replace: true });
+        });
     } else {
       fetchUser();
     }
@@ -309,16 +416,73 @@ function SettingsPage() {
     }
   }, [activeTab, isCompanyOwnerOrAdmin, fetchTeam]);
 
-  const handleUpgrade = useCallback(async (plan) => {
+  // Open the Provider Selection Modal
+  const handleSelectPlan = (plan) => {
+    setSelectedPlanForModal(plan);
+  };
+
+  // Paystack flow
+  const handlePaystackUpgrade = useCallback(async (plan) => {
+    setSelectedPlanForModal(null);
     setProcessingPlan(plan);
     try {
-      const res = await apiInitializePayment(plan);
+      const res = await apiInitializePayment(plan, "paystack");
       setPaystackConfig({ ...res.data, currency: res.data.currency || "NGN" });
     } catch (error) {
-      toast.error(error.response?.data?.msg || "Payment init failed.");
+      toast.error(error.response?.data?.msg || "Payment initialization failed.");
       setProcessingPlan(null);
     }
   }, []);
+
+  // Bachs flow (using Bachs Overlay Checkout)
+  const handleBachsUpgrade = useCallback(async (plan) => {
+    setSelectedPlanForModal(null);
+    setProcessingPlan(plan);
+    setIsBachsLoading(true);
+    const toastId = toast.loading("Setting up Bachs checkout...");
+    try {
+      const res = await apiInitializePayment(plan, "bachs");
+      toast.dismiss(toastId);
+      const { checkout_url, reference } = res.data;
+      if (!checkout_url) {
+        throw new Error("No checkout URL received from Bachs.");
+      }
+
+      const Bachs = await loadBachs();
+      Bachs.Checkout.open({
+        checkoutUrl: checkout_url,
+        onEvent: async (event) => {
+          if (event.type === "checkout.completed") {
+            const verifyToast = toast.loading("Verifying payment...");
+            try {
+              await verifyPayment(reference);
+              toast.success("Upgrade successful! Credits added to your account.", { id: verifyToast });
+              await refreshUser();
+              await fetchUser();
+            } catch (err) {
+              toast.success("Payment completed! Updating your account...", { id: verifyToast });
+              await refreshUser();
+              await fetchUser();
+            } finally {
+              setProcessingPlan(null);
+              setIsBachsLoading(false);
+            }
+          } else if (event.type === "checkout.failed") {
+            toast.error("Payment failed. Please try again.");
+            setProcessingPlan(null);
+            setIsBachsLoading(false);
+          } else if (event.type === "checkout.closed") {
+            setProcessingPlan(null);
+            setIsBachsLoading(false);
+          }
+        },
+      });
+    } catch (error) {
+      toast.error(error.response?.data?.msg || error.message || "Failed to initialize Bachs checkout.", { id: toastId });
+      setProcessingPlan(null);
+      setIsBachsLoading(false);
+    }
+  }, [refreshUser]);
 
   useEffect(() => {
     if (paystackConfig) {
@@ -328,7 +492,7 @@ function SettingsPage() {
           const toastId = toast.loading("Verifying payment...");
           try {
             await verifyPayment(reference.reference);
-            toast.success("Upgrade successful!", { id: toastId });
+            toast.success("Upgrade successful! Credits added.", { id: toastId });
             setProcessingPlan(null);
             await refreshUser();
             await fetchUser();
@@ -345,6 +509,7 @@ function SettingsPage() {
       });
     }
   }, [paystackConfig, initializePayment, refreshUser]);
+
 
   const handleFileChange = (e) => {
     const file = e.target.files[0];
@@ -795,68 +960,33 @@ function SettingsPage() {
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             <PlanCard
-              title="Starter"
-              price="₦25,000 / one-time"
-              features={[
-                "500 Credits Included",
-                "Unlimited Template Designs",
-                "Secure Email Delivery",
-                "High-Res PDF Downloads",
-                "Basic Verification Portal"
-              ]}
-              actionText="Choose Starter"
+              planKey="starter"
               current={user?.role?.toLowerCase() === "starter"}
-              onAction={() => handleUpgrade("starter")}
+              onAction={handleSelectPlan}
               loading={processingPlan === "starter"}
             />
             <PlanCard
-              title="Growth"
-              price="₦60,000 / one-time"
-              features={[
-                "2,000 Credits Included",
-                "Unlimited Template Designs",
-                "Secure Email Delivery",
-                "Priority Support Channel",
-                "Basic Verification Portal"
-              ]}
-              actionText="Choose Growth"
+              planKey="growth"
               current={user?.role?.toLowerCase() === "growth"}
-              onAction={() => handleUpgrade("growth")}
+              onAction={handleSelectPlan}
               loading={processingPlan === "growth"}
             />
             <PlanCard
-              title="Pro"
-              price="₦100,000 / one-time"
-              features={[
-                "5,000 Credits Included",
-                "Everything in Growth",
-                "Developer API Access",
-                "Custom Logo & Branding",
-                "Custom Domain URL"
-              ]}
-              actionText="Choose Pro"
+              planKey="pro"
               current={user?.role?.toLowerCase() === "pro"}
-              onAction={() => handleUpgrade("pro")}
+              onAction={handleSelectPlan}
               loading={processingPlan === "pro"}
             />
             <PlanCard
-              title="Enterprise"
-              price="₦300,000 / one-time"
-              features={[
-                "20,000 Credits Included",
-                "Dedicated Account Manager",
-                "SLA Support Guarantee",
-                "Developer API Access",
-                "Unlimited Webhooks & API"
-              ]}
-              actionText="Choose Enterprise"
+              planKey="enterprise"
               current={user?.role?.toLowerCase() === "enterprise"}
-              onAction={() => handleUpgrade("enterprise")}
+              onAction={handleSelectPlan}
               loading={processingPlan === "enterprise"}
             />
           </div>
         </div>
       )}
+
 
       {activeTab === "developer" && hasApiAccess && (
         <Section title="API Configuration" icon={Key}>
@@ -942,9 +1072,117 @@ function SettingsPage() {
           </Button>
         </Modal.Footer>
       </Modal>
+
+      {/* --- PAYMENT PROVIDER MODAL --- */}
+      <Modal
+        show={Boolean(selectedPlanForModal)}
+        onHide={() => !processingPlan && !isBachsLoading && setSelectedPlanForModal(null)}
+        centered
+        backdrop="static"
+      >
+        <Modal.Header closeButton={!processingPlan && !isBachsLoading} className="border-b border-gray-100 pb-3">
+          <Modal.Title className="text-base font-bold text-gray-900 flex items-center gap-2">
+            <CreditCard size={18} className="text-indigo-600" />
+            <span>Select Payment Gateway</span>
+          </Modal.Title>
+        </Modal.Header>
+        <Modal.Body className="py-4">
+          {selectedPlanForModal && PLAN_INFO[selectedPlanForModal] && (
+            <div>
+              {/* Selected Plan Summary Banner */}
+              <div className="bg-slate-50 border border-slate-200/80 rounded-xl p-4 mb-4 flex items-center justify-between">
+                <div>
+                  <p className="text-[11px] text-gray-500 font-bold uppercase tracking-wider mb-0.5">Selected Plan</p>
+                  <h4 className="text-base font-extrabold text-gray-900 mb-0">{PLAN_INFO[selectedPlanForModal].name} Plan</h4>
+                  <p className="text-xs text-indigo-600 font-bold mb-0 mt-0.5">{PLAN_INFO[selectedPlanForModal].certs} Credits Included</p>
+                </div>
+                <div className="text-right">
+                  <div className="text-base font-black text-gray-900">{PLAN_INFO[selectedPlanForModal].priceNGN}</div>
+                  <div className="text-xs font-semibold text-gray-500">{PLAN_INFO[selectedPlanForModal].priceUSD}</div>
+                </div>
+              </div>
+
+              <p className="text-xs font-medium text-gray-500 mb-3 uppercase tracking-wider">Choose payment method:</p>
+
+              <div className="space-y-3">
+                {/* Option 1: Paystack */}
+                <button
+                  type="button"
+                  disabled={Boolean(processingPlan)}
+                  onClick={() => handlePaystackUpgrade(selectedPlanForModal)}
+                  className="w-full text-left p-3.5 rounded-xl border-2 border-gray-200 hover:border-indigo-600 hover:bg-indigo-50/20 transition-all duration-200 flex items-center justify-between group disabled:opacity-50"
+                >
+                  <div className="flex items-start gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center font-black text-sm shrink-0 mt-0.5 group-hover:bg-blue-600 group-hover:text-white transition-colors">
+                      P
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-bold text-gray-900 text-sm">Paystack</span>
+                        <span className="text-[10px] uppercase font-bold bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded">
+                          Nigeria / Local
+                        </span>
+                      </div>
+                      <p className="text-xs text-gray-500 mt-1 mb-0 leading-relaxed">
+                        Pay with Nigerian Cards (Mastercard, Visa, Verve), Bank Transfer, or USSD in Naira ({PLAN_INFO[selectedPlanForModal].priceNGN}).
+                      </p>
+                    </div>
+                  </div>
+                  <ArrowRight size={16} className="text-gray-400 group-hover:text-indigo-600 group-hover:translate-x-0.5 transition-all shrink-0 ml-2" />
+                </button>
+
+                {/* Option 2: Bachs */}
+                <button
+                  type="button"
+                  disabled={Boolean(processingPlan)}
+                  onClick={() => handleBachsUpgrade(selectedPlanForModal)}
+                  className="w-full text-left p-3.5 rounded-xl border-2 border-gray-200 hover:border-indigo-600 hover:bg-indigo-50/20 transition-all duration-200 flex items-center justify-between group disabled:opacity-50"
+                >
+                  <div className="flex items-start gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center font-black text-sm shrink-0 mt-0.5 group-hover:bg-purple-600 group-hover:text-white transition-colors">
+                      B
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-bold text-gray-900 text-sm">Bachs</span>
+                        <span className="text-[10px] uppercase font-bold bg-indigo-100 text-indigo-700 px-1.5 py-0.5 rounded flex items-center gap-1">
+                          <Globe size={10} /> Global & Local
+                        </span>
+                      </div>
+                      <p className="text-xs text-gray-500 mt-1 mb-0 leading-relaxed">
+                        Pay globally with Card (Visa, Mastercard, Amex), Bank Transfer, Mobile Money, or Crypto in USD ({PLAN_INFO[selectedPlanForModal].priceUSD}) or local currency.
+                      </p>
+                    </div>
+                  </div>
+                  <ArrowRight size={16} className="text-gray-400 group-hover:text-indigo-600 group-hover:translate-x-0.5 transition-all shrink-0 ml-2" />
+                </button>
+              </div>
+
+              {processingPlan && (
+                <div className="mt-4 p-3 bg-indigo-50 text-indigo-800 rounded-lg flex items-center justify-center gap-2 text-xs font-medium">
+                  <Spinner size="sm" />
+                  <span>Setting up secure checkout...</span>
+                </div>
+              )}
+            </div>
+          )}
+        </Modal.Body>
+        <Modal.Footer className="border-t border-gray-100 py-2">
+          <Button
+            variant="light"
+            size="sm"
+            disabled={Boolean(processingPlan)}
+            onClick={() => setSelectedPlanForModal(null)}
+            className="text-xs font-semibold text-gray-600"
+          >
+            Cancel
+          </Button>
+        </Modal.Footer>
+      </Modal>
       </div> {/* close max-w-5xl */}
     </div>
   );
 }
+
 
 export default SettingsPage;

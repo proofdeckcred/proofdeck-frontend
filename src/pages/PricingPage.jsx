@@ -46,15 +46,19 @@ const PricingCard = ({ plan, isPopular }) => {
       <h3 className="text-xl font-bold text-gray-900 mb-2">{plan.name}</h3>
       <p className="text-gray-500 text-sm mb-6 h-10 leading-relaxed font-medium">{plan.for}</p>
 
-      <div className="flex items-baseline mb-2">
+      <div className="flex items-baseline gap-2 mb-2">
         <span className="text-4xl font-extrabold text-gray-900 tracking-tight">
           {plan.priceNGN}
         </span>
-        <span className="text-gray-500 ml-2 font-medium">/ one-time</span>
+        <span className="text-sm font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-md">
+          {plan.priceUSD}
+        </span>
       </div>
+      <span className="text-gray-400 text-xs font-medium block mb-3">One-time payment</span>
       <p className="text-xs font-semibold uppercase tracking-wide text-indigo-600 bg-indigo-50 inline-block py-1 px-2 rounded-md mb-8 w-max">
           {plan.certs} Credits Included
       </p>
+
 
       <div className="bg-gray-50 rounded-xl py-3 px-4 mb-8 border border-gray-100 flex items-center justify-between">
         <div>
@@ -114,8 +118,9 @@ const PricingPage = () => {
       icon: Sparkles,
       colorClass: "bg-orange-100 text-orange-600",
       priceNGN: "₦25,000",
+      priceUSD: "$18.00",
       certs: "500",
-      costPerCert: "₦50",
+      costPerCert: "₦50 (~$0.03)",
       for: "Perfect for workshops, bootcamps, and small cohorts.",
       features: [
         "500 Credits Included",
@@ -130,8 +135,9 @@ const PricingPage = () => {
       icon: Building2,
       colorClass: "bg-blue-100 text-blue-600",
       priceNGN: "₦60,000",
+      priceUSD: "$42.00",
       certs: "2,000",
-      costPerCert: "₦30",
+      costPerCert: "₦30 (~$0.02)",
       for: "Ideal for schools and training centers issuing regularly.",
       features: [
         "2,000 Credits Included",
@@ -146,8 +152,9 @@ const PricingPage = () => {
       icon: ShieldCheck,
       colorClass: "bg-indigo-100 text-indigo-600",
       priceNGN: "₦100,000",
+      priceUSD: "$70.00",
       certs: "5,000",
-      costPerCert: "₦20",
+      costPerCert: "₦20 (~$0.014)",
       for: "For institutions needing automation and deeper integration.",
       features: [
         "5,000 Credits Included",
@@ -162,8 +169,9 @@ const PricingPage = () => {
       icon: Globe2,
       colorClass: "bg-purple-100 text-purple-600",
       priceNGN: "₦300,000",
+      priceUSD: "$200.00",
       certs: "20,000",
-      costPerCert: "₦15",
+      costPerCert: "₦15 (~$0.01)",
       for: "For universities, exam bodies, and large organizations.",
       features: [
         "20,000 Credits Included",
