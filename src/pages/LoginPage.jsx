@@ -24,12 +24,24 @@ function LoginPage() {
     setError("");
 
     try {
+      console.log("Submitting login for:", formData.email);
       const response = await loginUser(formData);
-      localStorage.setItem("token", response.data.access_token);
-      await refreshUser();
-      navigate("/dashboard");
+      console.log("Login response received:", response.data);
+      if (response.data && response.data.access_token) {
+        localStorage.setItem("token", response.data.access_token);
+        await refreshUser();
+        navigate("/dashboard");
+      } else {
+        setError("Invalid response from server. Please try again.");
+      }
     } catch (err) {
-      setError(err.response?.data?.msg || "Login failed. Please try again.");
+      console.error("Login error details:", err);
+      const errorMsg =
+        err.response?.data?.msg ||
+        (err.code === "ERR_NETWORK"
+          ? "Cannot connect to server. Please check your internet or VPN."
+          : err.message || "Login failed. Please try again.");
+      setError(errorMsg);
     } finally {
       setLoading(false);
     }

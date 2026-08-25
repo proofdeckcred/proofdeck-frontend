@@ -38,7 +38,13 @@ function SignupPage() {
       // Redirect to verification
       navigate(`/verify-email`, { state: { email: formData.email } });
     } catch (err) {
-      setError(err.response?.data?.msg || "Signup failed. Please try again.");
+      console.error("Signup error details:", err);
+      const errorMsg =
+        err.response?.data?.msg ||
+        (err.code === "ERR_NETWORK"
+          ? "Cannot connect to server. Please check your internet or VPN."
+          : err.message || "Signup failed. Please try again.");
+      setError(errorMsg);
     } finally {
       setLoading(false);
     }
