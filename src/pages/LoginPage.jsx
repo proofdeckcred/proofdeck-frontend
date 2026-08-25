@@ -23,16 +23,25 @@ function LoginPage() {
     setLoading(true);
     setError("");
 
+    const email = (formData.email || e.target.email?.value || "").trim();
+    const password = formData.password || e.target.password?.value || "";
+
+    if (!email || !password) {
+      setError("Please enter both email and password.");
+      setLoading(false);
+      return;
+    }
+
     try {
-      console.log("Submitting login for:", formData.email);
-      const response = await loginUser(formData);
+      console.log("Submitting login for:", email);
+      const response = await loginUser({ email, password });
       console.log("Login response received:", response.data);
       if (response.data && response.data.access_token) {
         localStorage.setItem("token", response.data.access_token);
-        await refreshUser();
-        navigate("/dashboard");
+        window.location.href = "/dashboard";
       } else {
         setError("Invalid response from server. Please try again.");
+        setLoading(false);
       }
     } catch (err) {
       console.error("Login error details:", err);
@@ -42,7 +51,6 @@ function LoginPage() {
           ? "Cannot connect to server. Please check your internet or VPN."
           : err.message || "Login failed. Please try again.");
       setError(errorMsg);
-    } finally {
       setLoading(false);
     }
   };

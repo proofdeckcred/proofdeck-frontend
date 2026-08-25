@@ -23,12 +23,22 @@ function SignupPage() {
     setLoading(true);
     setError("");
 
+    const name = (formData.username || e.target.username?.value || "").trim();
+    const email = (formData.email || e.target.email?.value || "").trim();
+    const password = formData.password || e.target.password?.value || "";
+
+    if (!name || !email || !password) {
+      setError("Please fill in all required fields.");
+      setLoading(false);
+      return;
+    }
+
     try {
       // Map frontend role selection to backend expected fields
       const payload = {
-        name: formData.username,
-        email: formData.email,
-        password: formData.password,
+        name,
+        email,
+        password,
         account_type: formData.role === 'enterprise' ? 'company' : 'individual',
         company_name: formData.role === 'enterprise' ? formData.company_name : undefined,
         referral_code: formData.referral_code || undefined
@@ -36,7 +46,7 @@ function SignupPage() {
 
       await signupUser(payload);
       // Redirect to verification
-      navigate(`/verify-email`, { state: { email: formData.email } });
+      window.location.href = `/verify-email?email=${encodeURIComponent(email)}`;
     } catch (err) {
       console.error("Signup error details:", err);
       const errorMsg =
@@ -45,7 +55,6 @@ function SignupPage() {
           ? "Cannot connect to server. Please check your internet or VPN."
           : err.message || "Signup failed. Please try again.");
       setError(errorMsg);
-    } finally {
       setLoading(false);
     }
   };
