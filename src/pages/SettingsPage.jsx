@@ -1112,9 +1112,9 @@ function SettingsPage() {
                   onClick={() => handlePaystackUpgrade(selectedPlanForModal)}
                   className="w-full text-left p-3.5 rounded-xl border-2 border-gray-200 hover:border-indigo-600 hover:bg-indigo-50/20 transition-all duration-200 flex items-center justify-between group disabled:opacity-50"
                 >
-                  <div className="flex items-start gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center font-black text-sm shrink-0 mt-0.5 group-hover:bg-blue-600 group-hover:text-white transition-colors">
-                      P
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 rounded-xl bg-white border border-gray-200 p-2 flex items-center justify-center shrink-0 shadow-xs group-hover:border-indigo-300 transition-colors">
+                      <img src="/images/paystack-logo.webp" alt="Paystack" className="w-full h-full object-contain" />
                     </div>
                     <div>
                       <div className="flex items-center gap-2">
@@ -1123,8 +1123,8 @@ function SettingsPage() {
                           Nigeria / Local
                         </span>
                       </div>
-                      <p className="text-xs text-gray-500 mt-1 mb-0 leading-relaxed">
-                        Pay with Nigerian Cards (Mastercard, Visa, Verve), Bank Transfer, or USSD in Naira ({PLAN_INFO[selectedPlanForModal].priceNGN}).
+                      <p className="text-xs text-gray-500 mt-0.5 mb-0 leading-relaxed">
+                        Pay with Nigerian Cards, Bank Transfer, or USSD in Naira ({PLAN_INFO[selectedPlanForModal].priceNGN}).
                       </p>
                     </div>
                   </div>
@@ -1138,9 +1138,9 @@ function SettingsPage() {
                   onClick={() => handleBachsUpgrade(selectedPlanForModal)}
                   className="w-full text-left p-3.5 rounded-xl border-2 border-gray-200 hover:border-indigo-600 hover:bg-indigo-50/20 transition-all duration-200 flex items-center justify-between group disabled:opacity-50"
                 >
-                  <div className="flex items-start gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center font-black text-sm shrink-0 mt-0.5 group-hover:bg-purple-600 group-hover:text-white transition-colors">
-                      B
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 rounded-xl bg-black border border-black p-2 flex items-center justify-center shrink-0 shadow-xs group-hover:border-indigo-600 transition-colors">
+                      <img src="/images/bachs-logo.png" alt="Bachs" className="w-full h-full object-contain brightness-0 invert" />
                     </div>
                     <div>
                       <div className="flex items-center gap-2">
@@ -1149,8 +1149,8 @@ function SettingsPage() {
                           <Globe size={10} /> Global & Local
                         </span>
                       </div>
-                      <p className="text-xs text-gray-500 mt-1 mb-0 leading-relaxed">
-                        Pay globally with Card (Visa, Mastercard, Amex), Bank Transfer, Mobile Money, or Crypto in USD ({PLAN_INFO[selectedPlanForModal].priceUSD}) or local currency.
+                      <p className="text-xs text-gray-500 mt-0.5 mb-0 leading-relaxed">
+                        Pay globally with Card (Visa, Mastercard, Amex), Bank Transfer, or Crypto in USD ({PLAN_INFO[selectedPlanForModal].priceUSD}).
                       </p>
                     </div>
                   </div>
