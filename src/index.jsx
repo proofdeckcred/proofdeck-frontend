@@ -6,7 +6,6 @@ import App from "./App";
 // Import all necessary stylesheets for the entire application
 import "bootstrap/dist/css/bootstrap.min.css";
 import "./index.css";
-import "./lib/button-spinner.js";
 import "./styles/App.css"; // Main stylesheet for dashboard
 import "./styles/Auth.css"; // Styles for Login/Signup
 import "./styles/LandingPage.css"; // Styles for the new minimal landing page
