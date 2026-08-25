@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { usePaystackPayment } from "react-paystack";
+import PaystackPop from "@paystack/inline-js";
 import { loadBachs } from "@bachs/js";
+
 import {
   getCurrentUser,
   initializePayment as apiInitializePayment,
@@ -281,7 +282,6 @@ function SettingsPage() {
   const [preview, setPreview] = useState(null);
   const [isUploading, setIsUploading] = useState(false);
   const [processingPlan, setProcessingPlan] = useState(null);
-  const [paystackConfig, setPaystackConfig] = useState(null);
   const [selectedPlanForModal, setSelectedPlanForModal] = useState(null);
   const [isBachsLoading, setIsBachsLoading] = useState(false);
   const [showKeyModal, setShowKeyModal] = useState(false);
@@ -308,8 +308,6 @@ function SettingsPage() {
   const isCompanyOwner = user && user.company && user.company.active_role === "owner" && workspace !== "personal";
   const isCompanyAdmin = user && user.company && user.company.active_role === "admin" && workspace !== "personal";
   const isCompanyOwnerOrAdmin = isCompanyOwner || isCompanyAdmin;
-
-  const initializePayment = usePaystackPayment(paystackConfig || {});
 
   const fetchUser = async () => {
     try {
@@ -421,26 +419,53 @@ function SettingsPage() {
     setSelectedPlanForModal(plan);
   };
 
-  // Paystack flow
+  // Paystack flow (using direct PaystackPop)
   const handlePaystackUpgrade = useCallback(async (plan) => {
     setSelectedPlanForModal(null);
     setProcessingPlan(plan);
+    const toastId = toast.loading("Setting up Paystack checkout...");
     try {
       const res = await apiInitializePayment(plan, "paystack");
-      const config = {
-        publicKey: res.data.publicKey || "pk_test_e0d4baa25d66a069e4a300836f2f8fd04691b400",
-        email: res.data.email,
-        amount: Number(res.data.amount),
-        reference: res.data.reference,
-        currency: res.data.currency || "NGN",
-        metadata: res.data.metadata || {},
-      };
-      setPaystackConfig(config);
+      toast.dismiss(toastId);
+
+      const { publicKey, email, amount, reference, currency, metadata } = res.data;
+      const key = publicKey || "pk_test_e0d4baa25d66a069e4a300836f2f8fd04691b400";
+
+      const paystack = new PaystackPop();
+      paystack.newTransaction({
+        key: key,
+        email: email,
+        amount: Number(amount),
+        ref: reference,
+        currency: currency || "NGN",
+        metadata: metadata || {},
+        onSuccess: async (transaction) => {
+          const verifyToast = toast.loading("Verifying payment...");
+          try {
+            const ref = transaction?.reference || reference;
+            await verifyPayment(ref);
+            toast.success("Upgrade successful! Credits added.", { id: verifyToast });
+            await refreshUser();
+            await fetchUser();
+          } catch (err) {
+            toast.error("Payment verification failed.", { id: verifyToast });
+          } finally {
+            setProcessingPlan(null);
+          }
+        },
+        onCancel: () => {
+          toast.error("Payment cancelled.");
+          setProcessingPlan(null);
+        },
+        onClose: () => {
+          setProcessingPlan(null);
+        },
+      });
     } catch (error) {
-      toast.error(error.response?.data?.msg || "Payment initialization failed.");
+      toast.error(error.response?.data?.msg || error.message || "Payment initialization failed.", { id: toastId });
       setProcessingPlan(null);
     }
-  }, []);
+  }, [refreshUser]);
 
   // Bachs flow (using Bachs Overlay Checkout)
   const handleBachsUpgrade = useCallback(async (plan) => {
@@ -491,41 +516,6 @@ function SettingsPage() {
       setIsBachsLoading(false);
     }
   }, [refreshUser]);
-
-  useEffect(() => {
-    if (paystackConfig && paystackConfig.publicKey && paystackConfig.reference) {
-      const onSuccess = async (reference) => {
-        setPaystackConfig(null);
-        const toastId = toast.loading("Verifying payment...");
-        try {
-          const ref = reference?.reference || reference;
-          await verifyPayment(ref);
-          toast.success("Upgrade successful! Credits added.", { id: toastId });
-          await refreshUser();
-          await fetchUser();
-        } catch (err) {
-          toast.error("Payment verification failed.", { id: toastId });
-        } finally {
-          setProcessingPlan(null);
-        }
-      };
-
-      const onClose = () => {
-        toast.error("Payment cancelled.");
-        setPaystackConfig(null);
-        setProcessingPlan(null);
-      };
-
-      try {
-        initializePayment(onSuccess, onClose);
-      } catch (err) {
-        console.error("Paystack launch error:", err);
-        toast.error("Could not open Paystack checkout window.");
-        setPaystackConfig(null);
-        setProcessingPlan(null);
-      }
-    }
-  }, [paystackConfig, initializePayment, refreshUser]);
 
 
 
