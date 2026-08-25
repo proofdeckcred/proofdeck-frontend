@@ -24,16 +24,10 @@ function LoginPage() {
     setError("");
 
     const email = (
-      document.getElementById("email")?.value ||
-      formData.email ||
-      e.target.email?.value ||
-      ""
+      document.getElementById("email")?.value || formData.email || ""
     ).trim();
     const password =
-      document.getElementById("password")?.value ||
-      formData.password ||
-      e.target.password?.value ||
-      "";
+      document.getElementById("password")?.value || formData.password || "";
 
     if (!email || !password) {
       setError("Please enter both email and password.");
@@ -42,24 +36,22 @@ function LoginPage() {
     }
 
     try {
-      console.log("Submitting login for:", email);
-      const response = await loginUser({ email, password });
-      console.log("Login response received:", response.data);
-      if (response.data && response.data.access_token) {
-        localStorage.setItem("token", response.data.access_token);
+      const res = await fetch("https://api.proofdeck.app/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+      const data = await res.json();
+
+      if (res.ok && data.access_token) {
+        localStorage.setItem("token", data.access_token);
         window.location.href = "/dashboard";
       } else {
-        setError("Invalid response from server. Please try again.");
+        setError(data.msg || "Login failed. Please try again.");
         setLoading(false);
       }
     } catch (err) {
-      console.error("Login error details:", err);
-      const errorMsg =
-        err.response?.data?.msg ||
-        (err.code === "ERR_NETWORK"
-          ? "Cannot connect to server. Please check your internet or VPN."
-          : err.message || "Login failed. Please try again.");
-      setError(errorMsg);
+      setError("Cannot connect to server. Please check your internet.");
       setLoading(false);
     }
   };

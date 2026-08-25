@@ -24,22 +24,13 @@ function SignupPage() {
     setError("");
 
     const name = (
-      document.getElementById("username")?.value ||
-      formData.username ||
-      e.target.username?.value ||
-      ""
+      document.getElementById("username")?.value || formData.username || ""
     ).trim();
     const email = (
-      document.getElementById("email")?.value ||
-      formData.email ||
-      e.target.email?.value ||
-      ""
+      document.getElementById("email")?.value || formData.email || ""
     ).trim();
     const password =
-      document.getElementById("password")?.value ||
-      formData.password ||
-      e.target.password?.value ||
-      "";
+      document.getElementById("password")?.value || formData.password || "";
 
     if (!name || !email || !password) {
       setError("Please fill in all required fields.");
@@ -48,7 +39,6 @@ function SignupPage() {
     }
 
     try {
-      // Map frontend role selection to backend expected fields
       const payload = {
         name,
         email,
@@ -58,17 +48,21 @@ function SignupPage() {
         referral_code: formData.referral_code || undefined
       };
 
-      await signupUser(payload);
-      // Redirect to verification
-      window.location.href = `/verify-email?email=${encodeURIComponent(email)}`;
+      const res = await fetch("https://api.proofdeck.app/api/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json();
+
+      if (res.ok) {
+        window.location.href = `/verify-email?email=${encodeURIComponent(email)}`;
+      } else {
+        setError(data.msg || "Signup failed. Please try again.");
+        setLoading(false);
+      }
     } catch (err) {
-      console.error("Signup error details:", err);
-      const errorMsg =
-        err.response?.data?.msg ||
-        (err.code === "ERR_NETWORK"
-          ? "Cannot connect to server. Please check your internet or VPN."
-          : err.message || "Signup failed. Please try again.");
-      setError(errorMsg);
+      setError("Cannot connect to server. Please check your internet.");
       setLoading(false);
     }
   };
