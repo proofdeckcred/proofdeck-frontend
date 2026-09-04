@@ -22,6 +22,7 @@ const WorkspaceSwitcher = ({ isCollapsed }) => {
   const [transferring, setTransferring] = useState(false);
   const [transferError, setTransferError] = useState("");
   const [transferSuccess, setTransferSuccess] = useState("");
+  const [selectedTargetTenant, setSelectedTargetTenant] = useState("");
   const dropdownRef = useRef(null);
 
   // Close dropdown when clicking outside
@@ -35,6 +36,15 @@ const WorkspaceSwitcher = ({ isCollapsed }) => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  const ownedWorkspaces =
+    user?.workspaces?.filter((ws) => ws.role?.toLowerCase() === "owner") || [];
+
+  useEffect(() => {
+    if (ownedWorkspaces.length > 0 && !selectedTargetTenant) {
+      setSelectedTargetTenant(ownedWorkspaces[0].id);
+    }
+  }, [user, ownedWorkspaces, selectedTargetTenant]);
+
   if (!user) return null;
 
   const personalQuota = user.personal_cert_quota ?? user.cert_quota ?? 0;
@@ -45,14 +55,6 @@ const WorkspaceSwitcher = ({ isCollapsed }) => {
 
   const isOwnerOfActiveTeam =
     workspace !== "personal" && activeWsObj?.role?.toLowerCase() === "owner";
-
-  // Check if owner of ANY team workspace to show transfer option
-  const ownedWorkspaces =
-    user.workspaces?.filter((ws) => ws.role?.toLowerCase() === "owner") || [];
-
-  const [selectedTargetTenant, setSelectedTargetTenant] = useState(
-    activeWsObj?.id || ownedWorkspaces[0]?.id || ""
-  );
 
   const handleTransfer = async (e) => {
     e.preventDefault();
