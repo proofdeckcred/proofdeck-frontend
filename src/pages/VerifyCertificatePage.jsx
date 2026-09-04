@@ -23,10 +23,17 @@ import PublicHeader from "../components/PublicHeader";
 import PublicFooter from "../components/PublicFooter";
 
 // --- SHARE SECTION COMPONENT ---
-const ShareCredentialSection = ({ currentUrl, companyName }) => {
+const ShareCredentialSection = ({ currentUrl, companyName, certificate }) => {
   const [copied, setCopied] = useState(false);
 
-  const shareText = `I just earned a valid credential from ${companyName}! Verify it here:`;
+  const issueDateObj = certificate?.issue_date ? new Date(certificate.issue_date) : new Date();
+  const issueYear = certificate?.issue_year || issueDateObj.getFullYear();
+  const issueMonth = certificate?.issue_month || (issueDateObj.getMonth() + 1);
+  const issueMonthName = issueDateObj.toLocaleString('en-US', { month: 'short' });
+
+  const certTitle = certificate?.course_title || "Certificate of Accomplishment";
+  const issuerOrg = certificate?.issuer_name || companyName || "ProofDeck";
+  const certId = certificate?.verification_id || "";
 
   const handleCopy = () => {
     navigator.clipboard.writeText(currentUrl);
@@ -34,8 +41,19 @@ const ShareCredentialSection = ({ currentUrl, companyName }) => {
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const shareText = `I just earned a verified credential for "${certTitle}" from ${issuerOrg}! Verify it on ProofDeck:`;
+
+  // LinkedIn Direct Add to Profile certification URL schema
+  const linkedInAddToProfileUrl = `https://www.linkedin.com/profile/add?startTask=CERTIFICATION_NAME&name=${encodeURIComponent(
+    certTitle
+  )}&organizationName=${encodeURIComponent(
+    issuerOrg
+  )}&issueYear=${issueYear}&issueMonth=${issueMonth}&certUrl=${encodeURIComponent(
+    currentUrl
+  )}&certId=${encodeURIComponent(certId)}`;
+
   const shareLinks = {
-    linkedin: `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(
+    linkedinFeed: `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(
       currentUrl
     )}`,
     twitter: `https://twitter.com/intent/tweet?text=${encodeURIComponent(
@@ -47,64 +65,114 @@ const ShareCredentialSection = ({ currentUrl, companyName }) => {
   };
 
   return (
-    <div className="mt-8 bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+    <div className="mt-8 bg-white rounded-2xl shadow-sm border border-slate-200 p-6 font-sans">
       <div className="flex items-center gap-3 mb-4">
-        <div className="bg-indigo-100 p-2 rounded-full text-indigo-600">
+        <div className="bg-indigo-50 p-2.5 rounded-xl text-indigo-600 border border-indigo-100">
           <Share2 size={20} />
         </div>
-        <h3 className="text-lg font-bold text-gray-900">
-          Share this Achievement
-        </h3>
+        <div>
+          <h3 className="text-base font-bold text-slate-900 mb-0">
+            Share & Verify Credential
+          </h3>
+          <p className="text-xs text-slate-500 mb-0">
+            Add this credential to your LinkedIn profile or share with your professional network.
+          </p>
+        </div>
       </div>
-      <p className="text-gray-600 mb-6 text-sm">
-        Let your network know about your new credential!
-      </p>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-        {/* LinkedIn */}
-        <a
-          href={shareLinks.linkedin}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="flex items-center justify-center gap-2 px-4 py-3 bg-[#0A66C2] text-white rounded-lg hover:bg-[#004182] transition-colors font-medium text-sm no-underline"
-        >
-          <Linkedin size={18} />
-          LinkedIn
-        </a>
+      {/* --- LINKEDIN PROFILE CARD PREVIEW --- */}
+      <div className="mb-6 bg-slate-900 text-white rounded-2xl p-5 border border-slate-800 shadow-md">
+        <div className="flex items-center justify-between mb-3 border-b border-slate-800 pb-2.5">
+          <span className="text-[10px] font-extrabold uppercase text-slate-400 tracking-wider flex items-center gap-1.5">
+            <Linkedin size={14} className="text-[#0A66C2]" />
+            LinkedIn Licenses & Certifications Preview
+          </span>
+          <span className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+            Official Credential
+          </span>
+        </div>
 
-        {/* Twitter / X */}
+        <div className="flex items-start gap-4">
+          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-black text-lg shrink-0 shadow-sm">
+            {issuerOrg.charAt(0).toUpperCase()}
+          </div>
+          <div className="flex-1 min-w-0">
+            <h4 className="text-sm font-bold text-white leading-tight truncate">
+              {certTitle}
+            </h4>
+            <p className="text-xs font-semibold text-slate-300 mt-0.5">
+              {issuerOrg}
+            </p>
+            <p className="text-[11px] text-slate-400 mt-0.5">
+              Issued {issueMonthName} {issueYear}
+            </p>
+            {certId && (
+              <p className="text-[10px] text-slate-400 font-mono mt-1">
+                Credential ID: {certId}
+              </p>
+            )}
+          </div>
+        </div>
+
+        <div className="mt-4 pt-3 border-t border-slate-800 flex flex-wrap gap-2 items-center justify-between">
+          <a
+            href={linkedInAddToProfileUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 px-4 py-2.5 bg-[#0A66C2] text-white rounded-xl hover:bg-[#004182] transition-colors font-bold text-xs no-underline shadow-sm cursor-pointer"
+          >
+            <Linkedin size={16} />
+            Add to LinkedIn Profile
+          </a>
+
+          <a
+            href={shareLinks.linkedinFeed}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl transition-colors font-semibold text-xs no-underline cursor-pointer"
+          >
+            <span>Share to LinkedIn Feed</span>
+          </a>
+        </div>
+      </div>
+
+      {/* --- OTHER SOCIAL & DIRECT LINK --- */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <a
           href={shareLinks.twitter}
           target="_blank"
           rel="noopener noreferrer"
-          className="flex items-center justify-center gap-2 px-4 py-3 bg-black text-white rounded-lg hover:bg-gray-800 transition-colors font-medium text-sm no-underline"
+          className="flex items-center justify-center gap-2 px-4 py-2.5 bg-black text-white rounded-xl hover:bg-gray-800 transition-colors font-bold text-xs no-underline"
         >
-          <Twitter size={18} />
-          Post to X
+          <Twitter size={16} />
+          Post to X (Twitter)
         </a>
 
-        {/* Facebook */}
         <a
           href={shareLinks.facebook}
           target="_blank"
           rel="noopener noreferrer"
-          className="flex items-center justify-center gap-2 px-4 py-3 bg-[#1877F2] text-white rounded-lg hover:bg-[#166fe5] transition-colors font-medium text-sm no-underline"
+          className="flex items-center justify-center gap-2 px-4 py-2.5 bg-[#1877F2] text-white rounded-xl hover:bg-[#0d65d9] transition-colors font-bold text-xs no-underline"
         >
-          <Facebook size={18} />
-          Facebook
+          <Facebook size={16} />
+          Share to Facebook
         </a>
 
-        {/* Copy Link */}
         <button
           onClick={handleCopy}
-          className={`flex items-center justify-center gap-2 px-4 py-3 border rounded-lg transition-colors font-medium text-sm ${
-            copied
-              ? "bg-green-50 border-green-200 text-green-700"
-              : "bg-white border-gray-200 text-gray-700 hover:bg-gray-50"
-          }`}
+          className="flex items-center justify-center gap-2 px-4 py-2.5 bg-slate-100 text-slate-800 rounded-xl hover:bg-slate-200 transition-colors font-bold text-xs cursor-pointer border border-slate-200"
         >
-          {copied ? <Check size={18} /> : <Copy size={18} />}
-          {copied ? "Copied!" : "Copy Link"}
+          {copied ? (
+            <>
+              <Check size={16} className="text-emerald-600" />
+              <span>Copied Link!</span>
+            </>
+          ) : (
+            <>
+              <Copy size={16} />
+              <span>Copy Verification Link</span>
+            </>
+          )}
         </button>
       </div>
     </div>
@@ -289,6 +357,7 @@ const VerifyCertificatePage = () => {
                 <ShareCredentialSection
                   currentUrl={window.location.href}
                   companyName={company?.name || "ProofDeck"}
+                  certificate={certificate}
                 />
               )}
             </div>

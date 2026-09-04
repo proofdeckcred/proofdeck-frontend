@@ -289,3 +289,4 @@ export const cancelTeamInvite = (inviteId) => API.delete(`/team/invites/${invite
 export const removeTeamMember = (memberId) => API.delete(`/team/members/${memberId}`);
 export const getInvitationDetails = (token) => API.get(`/team/invite/${token}`);
 export const acceptInvitation = (data) => API.post("/team/accept", data);
+export const transferQuota = (data) => API.post("/team/transfer-quota", data);

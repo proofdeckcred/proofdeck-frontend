@@ -19,6 +19,7 @@ import {
   Mail,
 } from "lucide-react";
 import { OverlayTrigger, Tooltip } from "react-bootstrap";
+import WorkspaceSwitcher from "./WorkspaceSwitcher";
 
 function Sidebar() {
   const navigate = useNavigate();
@@ -116,41 +117,9 @@ function Sidebar() {
       </div>
 
       {/* --- WORKSPACE SWITCHER --- */}
-      {user && user.workspaces && user.workspaces.length > 0 && (
-        <div className={`px-3 py-2 border-b border-gray-100 ${isCollapsed ? "flex justify-center" : ""}`}>
-          {isCollapsed ? (
-            <button
-              onClick={() => {
-                if (workspace === "personal") {
-                  switchWorkspace(String(user.workspaces[0].id));
-                } else {
-                  switchWorkspace("personal");
-                }
-              }}
-              className="w-10 h-10 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 flex items-center justify-center transition-colors cursor-pointer border-0 font-bold"
-              title={workspace === "personal" ? "Switch to Organization Workspace" : "Switch to Personal Workspace"}
-            >
-              {workspace === "personal" ? "P" : (user.company?.name?.charAt(0).toUpperCase() || "O")}
-            </button>
-          ) : (
-            <div className="flex flex-col gap-1">
-              <span className="text-[9px] uppercase font-bold text-gray-400 tracking-wider">Workspace</span>
-              <select
-                value={workspace}
-                onChange={(e) => switchWorkspace(e.target.value)}
-                className="w-full bg-white border border-slate-200 text-gray-700 font-semibold text-[11px] py-1.5 px-2 rounded-md focus:outline-none focus:border-indigo-500 shadow-sm cursor-pointer border-solid"
-              >
-                <option value="personal">Personal Workspace</option>
-                {user.workspaces.map((ws) => (
-                  <option key={ws.id} value={String(ws.id)}>
-                    {ws.name} ({ws.role.toUpperCase()})
-                  </option>
-                ))}
-              </select>
-            </div>
-          )}
-        </div>
-      )}
+      <div className={`px-3 py-2.5 border-b border-gray-100/80 ${isCollapsed ? "flex justify-center" : ""}`}>
+        <WorkspaceSwitcher isCollapsed={isCollapsed} />
+      </div>
 
       {/* --- NAVIGATION LINKS --- */}
       <div className={`flex-1 py-4 space-y-1 ${isCollapsed ? "px-1" : "px-3"}`}>

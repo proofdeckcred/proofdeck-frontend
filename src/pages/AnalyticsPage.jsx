@@ -268,62 +268,35 @@ const FullDashboard = ({ insights }) => {
     },
   };
 
-  // 5. Dynamic Table rows (uses real templates data if user has issued credentials)
+  // 5. Dynamic Table rows (uses real backend program_insights if available)
   const tableRows = useMemo(() => {
+    if (insights?.program_insights && insights.program_insights.length > 0) {
+      return insights.program_insights.map((p, idx) => ({
+        name: p.name,
+        type: p.type || "Credential",
+        issued: formatNumber(p.issued),
+        cac: p.cac,
+        roas: p.roas,
+        points: idx % 2 === 0 ? "0,10 20,20 40,5 60,25 80,10 100,15" : "0,25 20,15 40,20 60,10 80,18 100,5",
+        color: "#10b981",
+      }));
+    }
     if (charts?.top_programs?.data?.length > 0) {
       return charts.top_programs.labels.map((label, idx) => {
         const count = charts.top_programs.data[idx];
         return {
           name: label,
-          type: "Certificate",
+          type: "Credential",
           issued: formatNumber(count),
-          cac: "1.0",
-          roas: `${(5.1 * (1 + idx * 0.2)).toFixed(1)}x`,
+          cac: `${count} Credits`,
+          roas: `${Math.floor(count * 0.8)} Shares`,
           points: idx % 2 === 0 ? "0,10 20,20 40,5 60,25 80,10 100,15" : "0,25 20,15 40,20 60,10 80,18 100,5",
           color: "#10b981",
         };
       });
     }
-    // Fallback template rows
-    return [
-      {
-        name: "Summer Tech Camp",
-        type: "Certificate",
-        issued: "12,460",
-        cac: "1.0",
-        roas: "5.1x",
-        points: "0,10 20,20 40,5 60,25 80,10 100,15",
-        color: "#10b981",
-      },
-      {
-        name: "Advanced React Patterns",
-        type: "Certificate",
-        issued: "8,960",
-        cac: "1.0",
-        roas: "2.9x",
-        points: "0,25 20,15 40,20 60,10 80,18 100,5",
-        color: "#10b981",
-      },
-      {
-        name: "Gala Night Invites",
-        type: "Invitation",
-        issued: "6,540",
-        cac: "1.0",
-        roas: "3.4x",
-        points: "0,15 20,5 40,25 60,10 80,20 100,10",
-        color: "#ef4444",
-      },
-      {
-        name: "Excel Essentials",
-        type: "Receipt",
-        issued: "1,120",
-        cac: "1.0",
-        roas: "7.8x",
-        points: "0,5 20,10 40,15 60,8 80,25 100,30",
-        color: "#10b981",
-      },
-    ];
-  }, [charts]);
+    return [];
+  }, [insights, charts]);
 
   return (
     <>
@@ -415,28 +388,36 @@ const FullDashboard = ({ insights }) => {
                   </tr>
                 </thead>
                 <tbody className="text-xs font-bold divide-y divide-slate-50">
-                  {tableRows.map((row, idx) => (
-                    <tr key={idx} className="hover:bg-slate-50/40">
-                      <td className="py-3 pl-0 text-slate-850 text-xs font-bold leading-tight">
-                        {row.name}
-                      </td>
-                      <td className="py-3">
-                        <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded bg-slate-100 text-slate-650 border border-slate-205">
-                          {row.type}
-                        </span>
-                      </td>
-                      <td className="py-3 text-right">{row.issued}</td>
-                      <td className="py-3 text-right">{row.cac}</td>
-                      <td className="py-3 text-right text-indigo-650">
-                        {row.roas}
-                      </td>
-                      <td className="py-3 pr-0 text-right">
-                        <div className="flex justify-end items-center">
-                          <Sparkline points={row.points} color={row.color} />
-                        </div>
+                  {tableRows.length === 0 ? (
+                    <tr>
+                      <td colSpan="6" className="text-center py-8 text-slate-400 text-xs font-medium">
+                        No credential program activity recorded yet for this workspace.
                       </td>
                     </tr>
-                  ))}
+                  ) : (
+                    tableRows.map((row, idx) => (
+                      <tr key={idx} className="hover:bg-slate-50/40">
+                        <td className="py-3 pl-0 text-slate-850 text-xs font-bold leading-tight">
+                          {row.name}
+                        </td>
+                        <td className="py-3">
+                          <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded bg-slate-100 text-slate-650 border border-slate-205">
+                            {row.type}
+                          </span>
+                        </td>
+                        <td className="py-3 text-right">{row.issued}</td>
+                        <td className="py-3 text-right">{row.cac}</td>
+                        <td className="py-3 text-right text-indigo-650">
+                          {row.roas}
+                        </td>
+                        <td className="py-3 pr-0 text-right">
+                          <div className="flex justify-end items-center">
+                            <Sparkline points={row.points} color={row.color} />
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  )}
                 </tbody>
               </table>
             </div>
