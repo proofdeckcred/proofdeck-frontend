@@ -684,7 +684,10 @@ function DocsPage() {
         </main>
       </div>
 
-      <PublicFooter />
+      {/* Footer aligned next to fixed sidebar on desktop */}
+      <div className="lg:ml-72 border-t border-slate-100 bg-white">
+        <PublicFooter />
+      </div>
     </div>
   );
 }
