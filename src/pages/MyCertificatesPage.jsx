@@ -426,44 +426,44 @@ function MyCertificatesPage() {
           <div className="lg:col-span-8 flex flex-col divide-y divide-slate-200/80">
             
             {/* Metrics Sub-grid */}
-            <div className="grid grid-cols-3 divide-x divide-slate-200/80">
+            <div className="grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-slate-200/80">
               {/* Available Credits Card */}
-              <div className="p-5 bg-white hover:bg-slate-50/20 transition-colors">
-                <div className="flex items-center justify-between mb-1.5">
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Available Credits</span>
-                  <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 bg-indigo-50 text-indigo-700 border border-indigo-100 rounded text-[9px] font-bold">
+              <div className="p-4 sm:p-5 bg-white hover:bg-slate-50/20 transition-colors">
+                <div className="flex items-center justify-between mb-1.5 gap-2">
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider truncate">Available Credits</span>
+                  <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 bg-indigo-50 text-indigo-700 border border-indigo-100 rounded text-[9px] font-bold shrink-0">
                     Active
                   </span>
                 </div>
-                <h3 className="text-2xl font-semibold tracking-tight text-slate-900 mt-1">
+                <h3 className="text-xl sm:text-2xl font-semibold tracking-tight text-slate-900 mt-1">
                   {user?.cert_quota?.toLocaleString() || 0}
                 </h3>
                 <p className="text-[10px] text-slate-400 mt-0.5">Credits left in active plan</p>
               </div>
 
               {/* Certificates Issued Card */}
-              <div className="p-5 bg-white hover:bg-slate-50/20 transition-colors">
-                <div className="flex items-center justify-between mb-1.5">
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Issued Documents</span>
-                  <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 bg-emerald-50 text-emerald-700 border border-emerald-100 rounded text-[9px] font-bold">
-                    ↗ 100%
+              <div className="p-4 sm:p-5 bg-white hover:bg-slate-50/20 transition-colors">
+                <div className="flex items-center justify-between mb-1.5 gap-2">
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider truncate">Issued Documents</span>
+                  <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 bg-emerald-50 text-emerald-700 border border-emerald-100 rounded text-[9px] font-bold shrink-0">
+                    Active
                   </span>
                 </div>
-                <h3 className="text-2xl font-semibold tracking-tight text-slate-900 mt-1">
+                <h3 className="text-xl sm:text-2xl font-semibold tracking-tight text-slate-900 mt-1">
                   {certificates.length}
                 </h3>
                 <p className="text-[10px] text-slate-400 mt-0.5">Total generated certificates</p>
               </div>
 
               {/* Active Templates Card */}
-              <div className="p-5 bg-white hover:bg-slate-50/20 transition-colors">
-                <div className="flex items-center justify-between mb-1.5">
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Active Templates</span>
-                  <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 bg-amber-50 text-amber-700 border border-amber-100 rounded text-[9px] font-bold">
-                    ↗ 12%
+              <div className="p-4 sm:p-5 bg-white hover:bg-slate-50/20 transition-colors">
+                <div className="flex items-center justify-between mb-1.5 gap-2">
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider truncate">Active Templates</span>
+                  <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 bg-amber-50 text-amber-700 border border-amber-100 rounded text-[9px] font-bold shrink-0">
+                    Active
                   </span>
                 </div>
-                <h3 className="text-2xl font-semibold tracking-tight text-slate-900 mt-1">
+                <h3 className="text-xl sm:text-2xl font-semibold tracking-tight text-slate-900 mt-1">
                   {templates.length}
                 </h3>
                 <p className="text-[10px] text-slate-400 mt-0.5">Design presets available</p>
@@ -471,8 +471,8 @@ function MyCertificatesPage() {
             </div>
 
             {/* Issuance Activity Chart Panel */}
-            <div className="p-6 bg-white">
-              <div className="flex items-center justify-between mb-6">
+            <div className="p-4 sm:p-6 bg-white">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
                 <div>
                   <h3 className="text-sm font-bold text-slate-800">Activity Overview</h3>
                   <p className="text-[10px] text-slate-400">Weekly certificate issuance statistics</p>

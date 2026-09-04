@@ -25,6 +25,7 @@ import PublicFooter from "../components/PublicFooter";
 // --- SHARE SECTION COMPONENT ---
 const ShareCredentialSection = ({ currentUrl, companyName, certificate }) => {
   const [copied, setCopied] = useState(false);
+  const [linkedinOrgId, setLinkedinOrgId] = useState(certificate?.linkedin_org_id || "");
 
   const issueDateObj = certificate?.issue_date ? new Date(certificate.issue_date) : new Date();
   const issueYear = certificate?.issue_year || issueDateObj.getFullYear();
@@ -43,14 +44,18 @@ const ShareCredentialSection = ({ currentUrl, companyName, certificate }) => {
 
   const shareText = `I just earned a verified credential for "${certTitle}" from ${issuerOrg}! Verify it on ProofDeck:`;
 
-  // LinkedIn Direct Add to Profile certification URL schema
-  const linkedInAddToProfileUrl = `https://www.linkedin.com/profile/add?startTask=CERTIFICATION_NAME&name=${encodeURIComponent(
+  // LinkedIn Direct Add to Profile certification URL schema with organizationId support
+  let linkedInAddToProfileUrl = `https://www.linkedin.com/profile/add?startTask=CERTIFICATION_NAME&name=${encodeURIComponent(
     certTitle
   )}&organizationName=${encodeURIComponent(
     issuerOrg
   )}&issueYear=${issueYear}&issueMonth=${issueMonth}&certUrl=${encodeURIComponent(
     currentUrl
   )}&certId=${encodeURIComponent(certId)}`;
+
+  if (linkedinOrgId.trim()) {
+    linkedInAddToProfileUrl += `&organizationId=${encodeURIComponent(linkedinOrgId.trim())}`;
+  }
 
   const shareLinks = {
     linkedinFeed: `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(
@@ -112,6 +117,23 @@ const ShareCredentialSection = ({ currentUrl, companyName, certificate }) => {
               </p>
             )}
           </div>
+        </div>
+
+        {/* LinkedIn Company ID Input for Logo Matching */}
+        <div className="mt-3 pt-3 border-t border-slate-800 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+          <div className="text-[11px] text-slate-300">
+            <span className="font-bold text-white">Attach Company Logo:</span>{" "}
+            <span className="text-slate-400">
+              Enter LinkedIn Company ID (found in page URL, e.g. 12345678) to display your official logo on LinkedIn:
+            </span>
+          </div>
+          <input
+            type="text"
+            placeholder="e.g. 12345678"
+            value={linkedinOrgId}
+            onChange={(e) => setLinkedinOrgId(e.target.value)}
+            className="bg-slate-800 border border-slate-700 text-white text-xs px-2.5 py-1 rounded-lg focus:outline-none focus:border-indigo-500 w-full sm:w-36 font-mono"
+          />
         </div>
 
         <div className="mt-4 pt-3 border-t border-slate-800 flex flex-wrap gap-2 items-center justify-between">
