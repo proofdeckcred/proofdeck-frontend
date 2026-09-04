@@ -1113,31 +1113,29 @@ function SettingsPage() {
               <p className="text-xs font-medium text-gray-500 mb-3 uppercase tracking-wider">Choose payment method:</p>
 
               <div className="space-y-3">
-                {/* Option 1: Paystack */}
-                <button
-                  type="button"
-                  disabled={Boolean(processingPlan)}
-                  onClick={() => handlePaystackUpgrade(selectedPlanForModal)}
-                  className="w-full text-left p-3.5 rounded-xl border-2 border-gray-200 hover:border-indigo-600 hover:bg-indigo-50/20 transition-all duration-200 flex items-center justify-between group disabled:opacity-50"
+                {/* Option 1: Paystack (Disabled / Blurred) */}
+                <div
+                  className="w-full text-left p-3.5 rounded-xl border-2 border-gray-200 bg-gray-50/70 opacity-60 filter blur-[0.5px] cursor-not-allowed select-none flex items-center justify-between pointer-events-none relative overflow-hidden"
+                  title="Paystack is temporarily disabled"
                 >
                   <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-xl bg-white border border-gray-200 p-2 flex items-center justify-center shrink-0 shadow-xs group-hover:border-indigo-300 transition-colors">
+                    <div className="w-12 h-12 rounded-xl bg-white border border-gray-200 p-2 flex items-center justify-center shrink-0 grayscale opacity-80">
                       <img src="/images/paystack-logo.webp" alt="Paystack" className="w-full h-full object-contain" />
                     </div>
                     <div>
                       <div className="flex items-center gap-2">
-                        <span className="font-bold text-gray-900 text-sm">Paystack</span>
-                        <span className="text-[10px] uppercase font-bold bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded">
-                          Nigeria / Local
+                        <span className="font-bold text-gray-600 text-sm">Paystack</span>
+                        <span className="text-[10px] uppercase font-bold bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded">
+                          Temporarily Disabled
                         </span>
                       </div>
-                      <p className="text-xs text-gray-500 mt-0.5 mb-0 leading-relaxed">
-                        Pay with Nigerian Cards, Bank Transfer, or USSD in Naira ({PLAN_INFO[selectedPlanForModal].priceNGN}).
+                      <p className="text-xs text-gray-400 mt-0.5 mb-0 leading-relaxed">
+                        Paystack is offline for maintenance. Please use Bachs gateway below.
                       </p>
                     </div>
                   </div>
-                  <ArrowRight size={16} className="text-gray-400 group-hover:text-indigo-600 group-hover:translate-x-0.5 transition-all shrink-0 ml-2" />
-                </button>
+                  <Lock size={16} className="text-gray-400 shrink-0 ml-2" />
+                </div>
 
                 {/* Option 2: Bachs */}
                 <button
