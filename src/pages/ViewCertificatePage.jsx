@@ -316,8 +316,8 @@ function ViewCertificatePage() {
           
           {/* LEFT COLUMN: DOCUMENT PREVIEW CONTAINER (col-span-8) */}
           <div className="lg:col-span-8">
-            <div className="bg-slate-50 border border-slate-200/60 rounded-xl p-8 flex flex-col items-center shadow-inner min-h-[450px] justify-center">
-              <div className="w-full relative shadow-2xl rounded-xl overflow-hidden bg-white max-w-2xl border border-slate-200/50">
+            <div className="bg-slate-50 border border-slate-200/60 rounded-xl p-4 sm:p-6 flex flex-col items-center shadow-inner min-h-[450px] justify-center">
+              <div className="w-full relative shadow-2xl rounded-xl bg-white max-w-3xl border border-slate-200/50 overflow-hidden">
                 <TemplateRenderer 
                   template={template} 
                   formData={certificate}

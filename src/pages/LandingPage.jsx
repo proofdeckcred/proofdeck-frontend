@@ -22,49 +22,45 @@ const PricingCard = ({
   link,
 }) => (
   <div
-    className={`relative flex flex-col p-7 bg-white rounded-3xl border transition-all duration-300 hover:-translate-y-1.5 ${
+    className={`relative flex flex-col p-7 bg-white rounded-2xl border transition-all duration-200 ${
       isPopular
-        ? "border-indigo-650 shadow-xl shadow-indigo-100/50 scale-105 z-10 bg-gradient-to-b from-white via-white to-indigo-50/10"
-        : "border-slate-200/80 shadow-xs hover:shadow-lg hover:border-slate-300"
+        ? "border-[#4A3AA8] border-t-4 shadow-sm z-10"
+        : "border-[#E6E4ED] shadow-2xs hover:border-slate-300"
     }`}
   >
-    {isPopular && (
-      <div className="absolute top-0 right-0 -mt-3 mr-3 bg-indigo-600 text-white text-[9px] font-extrabold px-3 py-1 rounded-full uppercase tracking-wider animate-pulse">
-        Most Popular
-      </div>
-    )}
     <div className="flex items-center justify-between mb-4">
-      <span className={`text-[10px] font-extrabold uppercase tracking-widest px-2.5 py-1 rounded-md ${
-        isPopular ? "bg-indigo-50 text-indigo-700 border border-indigo-100" : "bg-slate-50 text-slate-500 border border-slate-100"
-      }`}>
+      <span className="text-xs font-bold text-[#15131F]">
         {title}
       </span>
+      {isPopular && (
+        <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-indigo-50 text-[#4A3AA8] border border-indigo-100">
+          Most popular
+        </span>
+      )}
     </div>
 
-    <div className="my-5">
+    <div className="my-4">
       <div className="flex items-baseline gap-1">
-        <span className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight">
+        <span className="text-3xl sm:text-4xl font-black text-[#15131F] tracking-tight">
           {price}
         </span>
-        <span className="text-slate-400 text-xs font-semibold">/ one-time</span>
+        <span className="text-[#68647A] text-xs font-semibold">/ one-time</span>
       </div>
-      <div className={`mt-3 inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold ${
-        isPopular ? "bg-indigo-100/80 text-indigo-750" : "bg-slate-100 text-slate-650"
-      }`}>
-        <Check size={12} className="stroke-[3] text-indigo-650" />
+      <div className="mt-3 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold bg-[#FAFAF9] text-[#68647A] border border-[#E6E4ED]">
+        <Check size={12} className="stroke-[2.5] text-[#4A3AA8]" />
         <span>{suffix}</span>
       </div>
     </div>
 
-    <div className="h-px bg-slate-100 w-full mb-5" />
+    <div className="h-px bg-[#E6E4ED] w-full mb-5" />
 
     <ul className="space-y-3 mb-8 flex-1">
       {features.map((feat, idx) => (
         <li
           key={idx}
-          className="flex items-center gap-2.5 text-xs sm:text-sm text-slate-650 font-semibold"
+          className="flex items-center gap-2.5 text-xs sm:text-sm text-[#15131F] font-semibold"
         >
-          <Check size={15} className="text-indigo-650 shrink-0 stroke-[2.5]" />
+          <Check size={15} className="text-[#4A3AA8] shrink-0 stroke-[2.5]" />
           <span>{feat}</span>
         </li>
       ))}
@@ -72,10 +68,10 @@ const PricingCard = ({
 
     <Link
       to={link}
-      className={`w-full py-3 px-4 rounded-xl font-extrabold text-center transition-all no-underline text-xs tracking-wider uppercase border ${
+      className={`w-full py-3 px-4 rounded-xl font-bold text-center transition-all no-underline text-xs tracking-wide cursor-pointer ${
         isPopular
-          ? "bg-indigo-600 hover:bg-indigo-700 text-white border-transparent shadow-md shadow-indigo-200"
-          : "bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200/60"
+          ? "bg-[#4A3AA8] hover:bg-[#3b2e88] text-white shadow-xs"
+          : "bg-[#FAFAF9] hover:bg-slate-100 text-[#15131F] border border-[#E6E4ED]"
       }`}
     >
       Choose {title}
@@ -84,16 +80,16 @@ const PricingCard = ({
 );
 
 const Pricing = () => (
-  <section id="pricing" className="py-20 md:py-28 bg-white border-t border-slate-100">
+  <section id="pricing" className="py-20 md:py-28 bg-[#FAFAF9] border-t border-[#E6E4ED]">
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div className="text-center max-w-3xl mx-auto mb-14">
-        <p className="text-xs font-bold text-indigo-600 tracking-widest uppercase mb-3">
-          Pricing Plans
+        <p className="text-xs font-bold text-[#4A3AA8] tracking-wider uppercase mb-2">
+          Pricing plans
         </p>
-        <h2 className="text-3xl font-extrabold text-slate-905 sm:text-4xl leading-tight">
-          Flexible Pay-As-You-Go
+        <h2 className="text-3xl font-black text-[#15131F] sm:text-4xl leading-tight tracking-tight">
+          Flexible pay-as-you-go
         </h2>
-        <p className="mt-4 text-base text-slate-500 leading-relaxed">
+        <p className="mt-3 text-base text-[#68647A] font-medium leading-relaxed">
           No monthly subscriptions. Credits never expire. Upgrade only when you need to.
         </p>
       </div>
@@ -232,20 +228,33 @@ function LandingPage() {
             <p className="text-center text-xs font-bold text-slate-400 uppercase tracking-widest mb-8">
               Trusted by forward-thinking organizations
             </p>
-            <div className="flex flex-wrap justify-center items-center gap-8 md:gap-16 opacity-45 grayscale hover:grayscale-0 hover:opacity-75 transition-all duration-500">
+            <div className="flex flex-wrap justify-center items-center gap-8 md:gap-16 opacity-75 hover:opacity-100 transition-all duration-500">
+              <a
+                href="https://zitopy.com/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hover:scale-105 transition-transform flex items-center gap-2 no-underline group"
+                title="Zitopy"
+              >
+                <img
+                  src="/zitopy-logo.jpeg"
+                  className="h-8 md:h-10 object-contain rounded shadow-xs border border-slate-200/80 group-hover:border-indigo-300"
+                  alt="Zitopy"
+                />
+              </a>
               <img
                 src="/images/partners/logo1.png"
-                className="h-8 md:h-10 object-contain"
+                className="h-8 md:h-10 object-contain grayscale hover:grayscale-0"
                 alt="Partner"
               />
               <img
                 src="/images/partners/logo2.png"
-                className="h-8 md:h-10 object-contain"
+                className="h-8 md:h-10 object-contain grayscale hover:grayscale-0"
                 alt="Partner"
               />
               <img
                 src="/images/partners/logo3.png"
-                className="h-8 md:h-10 object-contain"
+                className="h-8 md:h-10 object-contain grayscale hover:grayscale-0"
                 alt="Partner"
               />
             </div>

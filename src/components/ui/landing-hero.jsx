@@ -24,17 +24,12 @@ export function LandingHero() {
             transition={{ duration: 0.6 }}
           >
             <div className="space-y-5">
-              <h1 className="text-4xl sm:text-5xl lg:text-[3.5rem] font-extrabold text-slate-900 leading-[1.1] tracking-tight">
-                Issue Verifiable
-                <br />
-                Credentials,{" "}
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-violet-600">
-                  Effortlessly.
-                </span>
+              <h1 className="text-4xl sm:text-5xl lg:text-[3.5rem] font-black text-[#15131F] leading-[1.1] tracking-tight">
+                Issue Verifiable Credentials, Effortlessly.
               </h1>
-              <p className="text-lg text-slate-500 leading-relaxed max-w-lg">
+              <p className="text-base sm:text-lg text-[#68647A] leading-relaxed max-w-lg font-medium">
                 ProofDeck lets you create, issue, and manage digital certificates,
-                receipts, and invitation cards — all from one powerful platform.
+                receipts, and invitation cards — all from one platform.
                 Verify instantly. Share everywhere.
               </p>
             </div>
@@ -43,7 +38,7 @@ export function LandingHero() {
             <div className="flex flex-col sm:flex-row gap-3">
               <Button
                 onClick={() => navigate("/signup")}
-                className="h-12 px-7 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-base font-bold shadow-lg shadow-indigo-500/20 hover:shadow-indigo-500/30 transition-all cursor-pointer"
+                className="h-12 px-7 rounded-xl bg-[#4A3AA8] hover:bg-[#3b2e88] text-white text-base font-bold shadow-sm transition-all cursor-pointer border-none"
               >
                 Start Issuing Free
                 <ArrowRight className="ml-2 w-4 h-4" />

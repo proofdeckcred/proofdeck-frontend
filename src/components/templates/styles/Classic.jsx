@@ -48,9 +48,9 @@ const Classic = ({ data, isFullscreen }) => {
               />
             )}
             <h1
-              className="font-bold uppercase tracking-wider leading-tight mb-2"
+              className="font-bold uppercase tracking-wider leading-tight mb-1"
               style={{
-                fontSize: isFullscreen ? "2.5rem" : "1.5rem",
+                fontSize: isFullscreen ? "2.5rem" : "1.4rem",
                 color: primary_color,
               }}
             >
@@ -59,16 +59,16 @@ const Classic = ({ data, isFullscreen }) => {
             <p
               className="italic my-1"
               style={{
-                fontSize: isFullscreen ? "1.2rem" : "0.8rem",
+                fontSize: isFullscreen ? "1.1rem" : "0.75rem",
                 color: "#4B5EAA",
               }}
             >
               This is to certify that
             </p>
             <h2
-              className="font-extrabold my-2"
+              className="font-extrabold my-1.5"
               style={{
-                fontSize: isFullscreen ? "3rem" : "1.8rem",
+                fontSize: isFullscreen ? "2.5rem" : "1.5rem",
                 fontFamily: "'Georgia', serif",
                 ...textStyle,
               }}
@@ -76,67 +76,61 @@ const Classic = ({ data, isFullscreen }) => {
               {recipient_name}
             </h2>
             <p
-              className="italic my-2"
+              className="italic my-1 max-w-[85%] mx-auto text-xs sm:text-sm"
               style={{
-                fontSize: isFullscreen ? "1.2rem" : "0.8rem",
-                color: "#4B5EAA",
+                color: body_font_color,
               }}
             >
               {certificateBody}
             </p>
             <p
-              className="font-bold uppercase my-3"
+              className="font-bold uppercase my-2"
               style={{
-                fontSize: isFullscreen ? "1.8rem" : "1rem",
+                fontSize: isFullscreen ? "1.5rem" : "0.95rem",
                 color: secondary_color,
               }}
             >
               {course_title}
             </p>
-            
-            {/* Date logic handling for preview vs rendering */}
-            <p className="max-w-[80%] mx-auto text-lg mb-8" style={{ color: body_font_color }}>
-                {certificateBody}
-            </p>
 
             {/* Custom Fields */}
             {data.customFieldsArray && data.customFieldsArray.length > 0 && (
-                <div className="grid grid-cols-2 gap-4 max-w-[80%] mx-auto mb-8 text-left">
+                <div className="grid grid-cols-2 gap-3 max-w-[80%] mx-auto my-3 text-left">
                     {data.customFieldsArray.map((field, index) => (
                          field.key !== "amount" && (
-                            <div key={index} className="border-b" style={{ borderColor: secondary_color }}>
-                                <span className="font-bold text-gray-500 text-xs uppercase block">{field.key}</span>
-                                <span className="text-base font-semibold" style={{ color: body_font_color }}>{field.value}</span>
+                            <div key={index} className="border-b pb-0.5" style={{ borderColor: secondary_color }}>
+                                <span className="font-bold text-gray-500 text-[10px] uppercase block">{field.key}</span>
+                                <span className="text-xs font-semibold" style={{ color: body_font_color }}>{field.value}</span>
                             </div>
                         )
                     ))}
                 </div>
             )}
 
-            <div className="w-full flex justify-between items-end px-20 mt-auto pb-16">
+            <div className="w-full flex justify-between items-end px-12 sm:px-16 mt-auto pb-4 pt-2">
               <div className="text-center w-1/3">
                 <p
-                  className="font-semibold border-b border-gray-400 pb-1 mb-1"
+                  className="font-semibold border-b border-gray-400 pb-0.5 mb-0.5 text-xs sm:text-sm"
                   style={textStyle}
                 >
                   {signature || issuer_name}
                 </p>
-                <span className="text-gray-500 text-xs">Signature</span>
+                <span className="text-gray-500 text-[10px]">Signature</span>
               </div>
               <div className="text-center w-1/3">
                  <p
-                  className="font-semibold border-b border-gray-400 pb-1 mb-1"
+                  className="font-semibold border-b border-gray-400 pb-0.5 mb-0.5 text-xs sm:text-sm"
                   style={textStyle}
                 >
                   {issuer_name}
                 </p>
-                <span className="text-gray-500 text-xs">Issuer</span>
+                <span className="text-gray-500 text-[10px]">Issuer</span>
               </div>
             </div>
-             <div className="mt-4">
+             <div className="mt-1">
                  <QRCode
                     value={`${window.location.origin}/verify/${verification_id || 'pending'}`}
-                    size={48}
+                    size={40}
                   />
              </div>
           </div>

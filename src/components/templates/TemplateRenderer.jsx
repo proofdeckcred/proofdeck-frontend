@@ -78,9 +78,10 @@ const TemplateRenderer = ({ template, formData = {}, isFullscreen = false }) => 
         year: "numeric",
     });
 
-    // Container style for scaling
+    // Container style for scaling (dynamic orientation)
+    const isPortrait = template.layout_style === 'receipt' || template.layout_style === 'badge_cert';
     const containerStyle = {
-        aspectRatio: "1.414 / 1",
+        aspectRatio: isPortrait ? "1 / 1.414" : "1.414 / 1",
         width: "100%",
         transform: isFullscreen ? "scale(1)" : "scale(1)",
         transition: "transform 0.3s ease",
