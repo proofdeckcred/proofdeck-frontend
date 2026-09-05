@@ -4,7 +4,7 @@ import { Linkedin, Github, Globe, ArrowUpRight, Instagram } from "lucide-react";
 
 const PublicFooter = () => {
   return (
-    <footer className="bg-slate-50 border-t border-slate-200">
+    <footer className="pd-dot-grid border-t border-[var(--pd-line)]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-16 pb-8">
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-y-10 gap-x-8 mb-14">
           {/* Brand Column */}
@@ -40,12 +40,12 @@ const PublicFooter = () => {
 
           {/* Product */}
           <div>
-            <h4 className="font-bold text-slate-900 text-xs uppercase tracking-wider mb-5">
+            <h4 className="font-bold text-[var(--pd-ink)] text-sm mb-5">
               Product
             </h4>
             <ul className="space-y-3">
               <FooterLink to="/dashboard">Dashboard</FooterLink>
-              <FooterLink to="/#features">Features</FooterLink>
+              <FooterLink to="/features">Features</FooterLink>
               <FooterLink to="/pricing">Pricing</FooterLink>
               <FooterLink to="/contact">Support</FooterLink>
             </ul>
@@ -53,7 +53,7 @@ const PublicFooter = () => {
 
           {/* Resources */}
           <div>
-            <h4 className="font-bold text-slate-900 text-xs uppercase tracking-wider mb-5">
+            <h4 className="font-bold text-[var(--pd-ink)] text-sm mb-5">
               Resources
             </h4>
             <ul className="space-y-3">
@@ -68,7 +68,7 @@ const PublicFooter = () => {
 
           {/* Company & Legal */}
           <div>
-            <h4 className="font-bold text-slate-900 text-xs uppercase tracking-wider mb-5">
+            <h4 className="font-bold text-[var(--pd-ink)] text-sm mb-5">
               Company
             </h4>
             <ul className="space-y-3">
@@ -80,6 +80,18 @@ const PublicFooter = () => {
               <FooterLink to="/legal?tab=terms">Terms of Service</FooterLink>
             </ul>
           </div>
+        </div>
+
+        {/* Footer CTA */}
+        <div className="text-center mb-14">
+          <p className="text-lg font-bold text-[var(--pd-ink)] mb-2">Stay credible.</p>
+          <p className="text-sm text-[var(--pd-mute)] mb-6">Issue your first certificate today.</p>
+          <Link
+            to="/signup"
+            className="inline-flex items-center justify-center px-6 py-3 rounded-full text-sm font-medium text-white bg-[var(--pd-indigo)] hover:bg-[var(--pd-indigo-dark)] transition-colors no-underline"
+          >
+            Get started
+          </Link>
         </div>
 
         {/* Bottom Bar */}

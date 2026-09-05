@@ -83,9 +83,7 @@ const Pricing = () => (
   <section id="pricing" className="py-20 md:py-28 bg-[#FAFAF9] border-t border-[#E6E4ED]">
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div className="text-center max-w-3xl mx-auto mb-14">
-        <p className="text-xs font-bold text-[#4A3AA8] tracking-wider uppercase mb-2">
-          Pricing plans
-        </p>
+        <span className="pd-pill-label mb-4 inline-flex">Pricing</span>
         <h2 className="text-3xl font-black text-[#15131F] sm:text-4xl leading-tight tracking-tight">
           Flexible pay-as-you-go
         </h2>
@@ -179,9 +177,7 @@ const FAQ = () => (
   <section className="py-20 md:py-24 bg-slate-50/60 border-t border-slate-100">
     <div className="max-w-3xl mx-auto px-4 sm:px-6">
       <div className="text-center mb-12">
-        <p className="text-xs font-bold text-indigo-600 tracking-widest uppercase mb-3">
-          FAQ
-        </p>
+        <span className="pd-pill-label mb-4 inline-flex">FAQ</span>
         <h2 className="text-2xl sm:text-3xl font-black text-slate-900 leading-tight">
           Frequently Asked Questions
         </h2>
@@ -225,7 +221,7 @@ function LandingPage() {
         {/* 2. Trusted By Logos Bar */}
         <div className="py-12 border-b border-slate-100 bg-white">
           <div className="max-w-7xl mx-auto px-4">
-            <p className="text-center text-xs font-bold text-slate-400 uppercase tracking-widest mb-8">
+            <p className="text-center text-sm font-medium text-[var(--pd-mute)] mb-8">
               Trusted by forward-thinking organizations
             </p>
             <div className="flex flex-wrap justify-center items-center gap-8 md:gap-16 opacity-75 hover:opacity-100 transition-all duration-500">

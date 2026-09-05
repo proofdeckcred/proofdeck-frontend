@@ -28,6 +28,7 @@ import SupportHubPage from "./pages/SupportHubPage";
 import HelpArticlePage from "./pages/HelpArticlePage";
 import VerifyEmailPage from "./pages/VerifyEmailPage";
 import PricingPage from "./pages/PricingPage"; // Import new page
+import FeaturesPage from "./pages/FeaturesPage";
 import ContactPage from "./pages/ContactPage"; // Import new page
 import LegalPage from "./pages/LegalPage";
 import SupportWidget from "./components/SupportWidget"; // Global Support Widget
@@ -74,6 +75,7 @@ function App() {
         <Routes>
           {/* Public routes */}
           <Route path="/" element={<LandingPage />} />
+          <Route path="/features" element={<FeaturesPage />} />
           <Route path="/kasi" element={<KasiLandingPage />} />
           <Route path="/pricing" element={<PricingPage />} />
           <Route path="/legal" element={<LegalPage />} />

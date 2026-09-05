@@ -59,14 +59,10 @@ export function TestimonialSection() {
   return (
     <section className="py-24 bg-white border-b border-gray-100 relative overflow-hidden">
       {/* Background decorations */}
-      <div className="absolute top-0 left-0 w-64 h-64 bg-indigo-50 rounded-full mix-blend-multiply filter blur-3xl opacity-50 -translate-x-1/2 -translate-y-1/2"></div>
-      <div className="absolute bottom-0 right-0 w-64 h-64 bg-blue-50 rounded-full mix-blend-multiply filter blur-3xl opacity-50 translate-x-1/2 translate-y-1/2"></div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         <div className="text-center mb-16">
-          <h2 className="text-indigo-600 font-semibold tracking-wide uppercase text-sm">
-            Testimonials
-          </h2>
+          <span className="pd-pill-label mb-3 inline-flex">Testimonials</span>
           <p className="mt-2 text-3xl font-extrabold text-gray-900 sm:text-4xl">
             Trusted by Industry Leaders
           </p>
@@ -105,7 +101,7 @@ export function TestimonialSection() {
                 </p>
 
                 <div className="flex flex-col items-center justify-center gap-3">
-                  <div className="p-1 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-500 shadow-md">
+                  <div className="p-1 rounded-full bg-[var(--pd-indigo)]">
                     <img
                       src={currentTestimonial.image}
                       alt={currentTestimonial.name}

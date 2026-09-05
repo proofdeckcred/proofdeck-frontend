@@ -4,10 +4,7 @@ import { Toaster, toast } from "react-hot-toast";
 import PublicHeader from "../components/PublicHeader";
 import PublicFooter from "../components/PublicFooter";
 import {
-  Globe,
-  Key,
   Terminal,
-  AlertOctagon,
   Menu,
   X,
   ChevronRight,
@@ -16,15 +13,12 @@ import {
   Code2,
   UserCheck,
   Layers,
-  ShieldAlert,
   Send,
   FileText,
   Search,
   ExternalLink,
-  Zap,
   Check,
-  Smartphone,
-  Download
+  Smartphone
 } from "lucide-react";
 
 // --- Multi-language Code Snippet Viewer ---
@@ -213,7 +207,7 @@ const SidebarItem = ({ href, method, label, active, onClick }) => (
     onClick={onClick}
     className={`group flex items-center justify-between py-2 px-3 text-xs font-medium rounded-lg transition-all duration-150 no-underline ${
       active
-        ? "text-indigo-700 bg-indigo-50 font-semibold border-l-4 border-indigo-600"
+        ? "text-[var(--pd-indigo)] bg-[var(--pd-indigo)]/5"
         : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
     }`}
   >
@@ -363,7 +357,7 @@ function DocsPage() {
         {/* Sidebar */}
         <aside
           className={`
-            fixed inset-y-0 left-0 z-40 w-72 bg-slate-50/80 backdrop-blur-md border-r border-slate-200/80 
+            fixed inset-y-0 left-0 z-40 w-72 bg-[var(--pd-paper)] border-r border-slate-200/80 
             transform transition-transform duration-300 ease-in-out
             lg:translate-x-0 lg:fixed lg:top-[81px] lg:bottom-0 lg:left-0 lg:z-30
             overflow-y-auto custom-scrollbar flex flex-col justify-between
@@ -419,9 +413,8 @@ function DocsPage() {
           </div>
 
           {/* Support Widget */}
-          <div className="p-4 m-4 bg-gradient-to-br from-indigo-900 to-slate-900 rounded-2xl text-white shadow-lg border border-indigo-800/40">
+          <div className="p-4 m-4 bg-[var(--pd-ink)] rounded-2xl text-white shadow-lg border border-indigo-800/40">
             <div className="flex items-center gap-2 text-indigo-400 mb-1.5">
-              <Zap size={15} />
               <h5 className="font-bold text-xs">Production VPS</h5>
             </div>
             <p className="text-[11px] text-slate-300 leading-relaxed mb-3">
@@ -431,7 +424,7 @@ function DocsPage() {
               to="/contact"
               className="inline-flex items-center justify-center w-full text-xs font-bold bg-indigo-600 hover:bg-indigo-500 py-2 rounded-xl transition-colors text-white no-underline shadow-sm"
             >
-              Contact Engineering <ChevronRight size={13} className="ml-1" />
+              Contact Engineering
             </Link>
           </div>
         </aside>
@@ -451,7 +444,7 @@ function DocsPage() {
             <div className="mb-12 border-b border-slate-100 pb-10">
               <div className="flex items-center gap-2 mb-4">
                 <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-indigo-50 text-indigo-700 rounded-full font-mono text-xs font-bold border border-indigo-100">
-                  <Code2 size={13} /> REST API v1.0
+                  REST API v1.0
                 </span>
                 <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-emerald-50 text-emerald-700 rounded-full font-mono text-xs font-bold border border-emerald-100">
                   <Check size={13} /> Production Active
@@ -495,8 +488,8 @@ function DocsPage() {
 
             {/* --- SECTION: INTRODUCTION --- */}
             <section id="intro" className="mb-16 scroll-mt-24">
-              <h2 className="text-2xl font-bold text-slate-900 mb-4 flex items-center gap-2">
-                <Globe className="text-indigo-600" size={22} /> Introduction
+              <h2 className="text-2xl font-bold text-[var(--pd-ink)] mb-4">
+                Introduction
               </h2>
               <p className="text-slate-600 text-sm sm:text-base leading-relaxed mb-4">
                 The ProofDeck Developer API is organized around REST architecture. Standard HTTP request methods (`GET`, `POST`) are used with JSON-formatted request bodies and standard HTTP status response codes.
@@ -523,8 +516,8 @@ function DocsPage() {
 
             {/* --- SECTION: AUTHENTICATION --- */}
             <section id="auth" className="mb-16 scroll-mt-24">
-              <h2 className="text-2xl font-bold text-slate-900 mb-4 flex items-center gap-2">
-                <Key className="text-indigo-600" size={22} /> Authentication
+              <h2 className="text-2xl font-bold text-[var(--pd-ink)] mb-4">
+                Authentication
               </h2>
               <p className="text-slate-600 text-sm sm:text-base leading-relaxed mb-4">
                 Authenticate all requests by including your secret API Key in the HTTP Header:
@@ -533,20 +526,17 @@ function DocsPage() {
                 X-API-Key: pk_live_your_key_here
               </div>
 
-              <div className="bg-amber-50/80 border-l-4 border-amber-500 p-4 rounded-r-xl my-4">
-                <div className="flex gap-3">
-                  <AlertOctagon className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
-                  <p className="text-xs text-amber-900 font-medium leading-relaxed">
-                    Keep your API keys secret! Never expose secret API keys in client-side code, public GitHub repositories, or browser scripts.
-                  </p>
-                </div>
+              <div className="border-t border-b border-[var(--pd-line)] py-4 my-4">
+                <p className="text-xs text-[var(--pd-ink)] leading-relaxed">
+                  <strong>Caution</strong> — Keep your API keys secret. Never expose secret API keys in client-side code, public GitHub repositories, or browser scripts.
+                </p>
               </div>
             </section>
 
             {/* --- SECTION: POSTMAN COLLECTION --- */}
             <section id="postman" className="mb-16 scroll-mt-24">
-              <h2 className="text-2xl font-bold text-slate-900 mb-4 flex items-center gap-2">
-                <Download className="text-indigo-600" size={22} /> Postman Testing
+              <h2 className="text-2xl font-bold text-[var(--pd-ink)] mb-4">
+                Postman Testing
               </h2>
               <p className="text-slate-600 text-sm sm:text-base leading-relaxed mb-4">
                 To test the API instantly in <strong>Postman</strong>:
@@ -635,8 +625,8 @@ function DocsPage() {
 
             {/* --- SECTION: ERROR CODES --- */}
             <section id="errors" className="mb-20 scroll-mt-24 border-t border-slate-100 pt-12">
-              <h2 className="text-2xl font-bold text-slate-900 mb-6 flex items-center gap-2">
-                <ShieldAlert className="text-indigo-600" size={22} /> Error Handling
+              <h2 className="text-2xl font-bold text-[var(--pd-ink)] mb-6">
+                Error Handling
               </h2>
               <div className="space-y-3">
                 <div className="flex items-center gap-4 p-4 bg-white border border-slate-200 rounded-xl">

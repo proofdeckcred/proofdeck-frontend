@@ -5,7 +5,6 @@ import {
   UploadCloud,
   BarChart3,
   ShieldCheck,
-  ArrowRight,
   Code,
 } from "lucide-react";
 
@@ -89,6 +88,7 @@ const features = [
     description:
       "Connect ProofDeck directly to your LMS, HR tool, or payment gateway using our REST API. Automate generation and trigger webhooks upon successful delivery.",
     icon: Code,
+    image: "/images/landing_page_image/api-integration.png",
     benefits: [
       "Easy-to-use REST API endpoints",
       "Real-time webhook updates",
@@ -115,10 +115,7 @@ const FeatureCard = ({ feature, index }) => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-0 items-stretch">
           {/* Left Column: Text Content */}
           <div className="p-8 md:p-12 flex flex-col justify-center bg-white">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-lg bg-[#FAFAF9] text-[#15131F] text-xs font-bold tracking-wide mb-5 w-fit border border-[#E6E4ED]">
-              <feature.icon size={14} className="text-[#4A3AA8]" />
-              <span>{feature.subtitle}</span>
-            </div>
+            <span className="pd-pill-label mb-5">{feature.subtitle}</span>
 
             <h3 className="text-2xl md:text-3xl font-black text-[#15131F] mb-4 leading-tight tracking-tight">
               {feature.title}
@@ -131,7 +128,7 @@ const FeatureCard = ({ feature, index }) => {
             <ul className="space-y-3">
               {feature.benefits.map((benefit, i) => (
                 <li key={i} className="flex items-center gap-3 text-[#15131F]">
-                  <ArrowRight size={14} className="text-[#4A3AA8] shrink-0 stroke-[2]" />
+                  <span className="w-1.5 h-1.5 rounded-full bg-[var(--pd-indigo)] shrink-0 mt-1.5" />
                   <span className="text-sm font-semibold">{benefit}</span>
                 </li>
               ))}
@@ -172,7 +169,8 @@ export function FeaturesSection() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
         <div className="text-center max-w-3xl mx-auto mb-16">
-          <h2 className="text-3xl md:text-4xl font-black text-[#15131F] leading-tight tracking-tight mb-4">
+          <span className="pd-pill-label mb-4 inline-flex">Features</span>
+          <h2 className="text-3xl md:text-4xl font-bold text-[var(--pd-ink)] leading-tight tracking-tight mb-4">
             Everything you need to automate credentials
           </h2>
           <p className="text-base text-[#68647A] font-medium">

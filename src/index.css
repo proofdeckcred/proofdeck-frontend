@@ -65,6 +65,22 @@
   --ring: 221.2 83.2% 53.3%;
   --radius: 0.5rem;
 
+  /* === ProofDeck Design Tokens === */
+  --pd-ink: #0B0B12;
+  --pd-indigo: #5B4CF5;
+  --pd-indigo-dark: #4433E0;
+  --pd-amber: #E8A93B;
+  --pd-paper: #F7F7FA;
+  --pd-paper-dot: #E7E7EF;
+  --pd-card: #FFFFFF;
+  --pd-line: #E7E5F0;
+  --pd-mute: #6B6B7C;
+  --pd-success: #1FAE6B;
+
+  /* Card shadow recipe */
+  --pd-shadow: 0 12px 32px -12px rgba(11,11,18,0.16);
+  --pd-shadow-sticker: 0 6px 16px -6px rgba(11,11,18,0.22);
+
   /* Existing Custom variables */
   /* Light Mode (Default) */
   --primary-blue: #2563eb;
@@ -79,6 +95,26 @@
   --border-color: #e5e7eb;
   --card-bg: #ffffff;
   --input-bg: #f9fafb;
+}
+
+/* === ProofDeck Dot-Grid Background === */
+.pd-dot-grid {
+  background-image: radial-gradient(circle, var(--pd-paper-dot) 1px, transparent 1px);
+  background-size: 24px 24px;
+  background-color: var(--pd-paper);
+}
+
+/* === ProofDeck Pill Label === */
+.pd-pill-label {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 14px;
+  background: var(--pd-card);
+  border: 1px solid var(--pd-line);
+  color: var(--pd-mute);
+  font-size: 12px;
+  font-weight: 500;
+  border-radius: 999px;
 }
 
 .dark {

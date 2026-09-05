@@ -2,7 +2,6 @@ import React, { useState } from "react";
 import {
   Clock,
   GraduationCap,
-  Sparkles,
   Megaphone,
   Linkedin,
   ChevronDown,
@@ -29,7 +28,7 @@ const benefits = [
   },
   {
     id: "engagement",
-    icon: Sparkles,
+    icon: CheckCircle,
     title: "Ignite recipient engagement",
     description:
       "Boost engagement by enabling recipients to proudly share their credentials across social media platforms, increasing visibility for both the earner and your brand.",
@@ -222,7 +221,8 @@ export function BenefitsSection() {
           viewport={{ once: true }}
           transition={{ duration: 0.4 }}
         >
-          <h2 className="text-3xl md:text-4xl font-black text-[#15131F] leading-tight tracking-tight">
+          <span className="pd-pill-label mb-4 inline-flex">Benefits</span>
+          <h2 className="text-3xl md:text-4xl font-bold text-[var(--pd-ink)] leading-tight tracking-tight">
             Real tangible benefits of credential automation
           </h2>
           <p className="text-sm text-[#68647A] font-semibold mt-3 max-w-xl mx-auto">

@@ -20,64 +20,69 @@ const PublicHeader = () => {
 
   return (
     <>
-      <header className="sticky top-0 z-50 bg-white/90 backdrop-blur-xl border-b border-gray-100 transition-all duration-300">
+      <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-sm border-b border-gray-100 transition-all duration-300">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-20">
+          <div className="flex justify-between items-center h-16">
             <div className="flex-shrink-0 flex items-center z-50">
               <Link
                 to="/"
                 className="flex items-center gap-2.5 no-underline group"
               >
                 <div className="relative">
-                  <div className="absolute inset-0 bg-indigo-600 blur-lg opacity-20 group-hover:opacity-40 transition-opacity"></div>
                   <img
                     src="/logo.png"
                     alt="ProofDeck"
-                    className="w-10 h-10 rounded-lg"
+                    className="w-8 h-8 rounded-lg"
                   />
                 </div>
-                <span className="font-bold text-xl text-gray-900 tracking-tight group-hover:text-indigo-600 transition-colors">
+                <span className="font-bold text-lg text-[var(--pd-ink)] tracking-tight group-hover:text-[var(--pd-indigo)] transition-colors">
                   ProofDeck
                 </span>
               </Link>
             </div>
 
-            <nav className="hidden md:flex items-center gap-8">
+            <nav className="hidden md:flex items-center gap-7">
+              <Link
+                to="/features"
+                className="text-[13px] font-medium text-[var(--pd-mute)] hover:text-[var(--pd-ink)] transition-colors no-underline"
+              >
+                Features
+              </Link>
               <Link
                 to="/pricing"
-                className="text-[15px] font-medium text-gray-600 hover:text-indigo-600 transition-colors no-underline"
+                className="text-[13px] font-medium text-[var(--pd-mute)] hover:text-[var(--pd-ink)] transition-colors no-underline"
               >
                 Pricing
               </Link>
               <Link
                 to="/search"
-                className="text-[15px] font-medium text-gray-600 hover:text-indigo-600 transition-colors no-underline"
+                className="text-[13px] font-medium text-[var(--pd-mute)] hover:text-[var(--pd-ink)] transition-colors no-underline"
               >
                 Public Ledger
               </Link>
               <Link
                 to="/docs"
-                className="text-[15px] font-medium text-gray-600 hover:text-indigo-600 transition-colors no-underline"
+                className="text-[13px] font-medium text-[var(--pd-mute)] hover:text-[var(--pd-ink)] transition-colors no-underline"
               >
                 Developers
               </Link>
 
-              <div className="h-5 w-px bg-gray-200 mx-2"></div>
+              <div className="h-4 w-px bg-gray-200 mx-1"></div>
 
               <Link
                 to="/login"
-                className="text-[15px] font-medium text-gray-900 hover:text-indigo-600 transition-colors no-underline"
+                className="text-[13px] font-medium text-[var(--pd-ink)] hover:text-[var(--pd-indigo)] transition-colors no-underline"
               >
                 Sign In
               </Link>
               <Link
                 to="/signup"
-                className="group inline-flex items-center justify-center px-5 py-2.5 rounded-full text-[15px] font-bold text-white bg-gray-900 hover:bg-black transition-all shadow-lg hover:shadow-xl no-underline"
+                className="group inline-flex items-center justify-center px-4 py-2 rounded-full text-[13px] font-medium text-white bg-[var(--pd-ink)] hover:bg-black transition-all shadow-xs no-underline"
               >
                 Get Started
                 <ArrowRight
-                  size={16}
-                  className="ml-2 group-hover:translate-x-1 transition-transform"
+                  size={14}
+                  className="ml-1.5 group-hover:translate-x-0.5 transition-transform"
                 />
               </Link>
             </nav>
@@ -104,6 +109,7 @@ const PublicHeader = () => {
         <div className="flex flex-col h-full pt-28 px-6 pb-8">
           <nav className="flex-1 flex flex-col space-y-2">
             {[
+              { label: "Features", path: "/features" },
               { label: "Pricing", path: "/pricing" },
               { label: "Public Ledger", path: "/search" },
               { label: "Verification", path: "/verify" },
