@@ -503,10 +503,10 @@ function MyCertificatesPage() {
                   const showTooltip = hoveredDay === data.day || (hoveredDay === null && maxCount > 0 && index === maxDayIndex);
                   
                   return (
-                    <div key={index} className="flex flex-col items-center flex-1 group/bar relative">
+                    <div key={index} className="flex flex-col items-center justify-end flex-1 h-full group/bar relative">
                       {/* Tooltip Card */}
                       {showTooltip && (
-                        <div className="absolute bottom-[calc(40px+50%)] z-20 bg-white border border-slate-200/80 rounded-lg py-1.5 px-2.5 shadow-md flex items-center gap-2 mb-2 animate-in fade-in slide-in-from-bottom-2 duration-300 pointer-events-none">
+                        <div className="absolute top-0 z-20 bg-white border border-slate-200/80 rounded-lg py-1.5 px-2.5 shadow-md flex items-center gap-2 mb-2 animate-in fade-in slide-in-from-bottom-2 duration-300 pointer-events-none">
                           <span className="text-[11px] font-bold text-slate-850">{data.count}</span>
                           <span className="text-[9px] font-semibold text-slate-400">
                             {certificates.length > 0 
@@ -530,17 +530,19 @@ function MyCertificatesPage() {
                         </div>
                       )}
 
-                      {/* Bar */}
-                      <div 
-                        onMouseEnter={() => setHoveredDay(data.day)}
-                        onMouseLeave={() => setHoveredDay(null)}
-                        style={{ height: `${Math.max(heightPercent, 8)}%` }}
-                        className={`w-12 rounded-t-md transition-all duration-300 relative cursor-pointer
-                          ${showTooltip 
-                            ? "bg-gradient-to-t from-indigo-600 to-indigo-500 shadow-sm shadow-indigo-500/10 scale-x-105" 
-                            : "bg-indigo-100/70 hover:bg-indigo-200/80"
-                          }`}
-                      />
+                      {/* Bar Container with definite height so CSS percentage heights render properly */}
+                      <div className="w-full h-34 flex items-end justify-center relative">
+                        <div 
+                          onMouseEnter={() => setHoveredDay(data.day)}
+                          onMouseLeave={() => setHoveredDay(null)}
+                          style={{ height: `${Math.max(heightPercent, 8)}%` }}
+                          className={`w-9 sm:w-11 rounded-t-md transition-all duration-300 relative cursor-pointer
+                            ${showTooltip 
+                              ? "bg-gradient-to-t from-indigo-600 to-indigo-500 shadow-sm shadow-indigo-500/10 scale-x-105" 
+                              : "bg-indigo-100/70 hover:bg-indigo-200/80"
+                            }`}
+                        />
+                      </div>
                       
                       {/* Day Label */}
                       <span className="text-[10px] font-semibold text-slate-400 mt-2.5 tracking-wider">{data.shortDay}</span>

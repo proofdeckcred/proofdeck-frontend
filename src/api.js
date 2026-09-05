@@ -292,11 +292,14 @@ export const acceptInvitation = (data) => API.post("/team/accept", data);
 export const transferQuota = (data) => API.post("/team/transfer-quota", data);
 
 // NOTIFICATIONS API
-export const getNotifications = (params = {}) => API.get(`/notifications?${new URLSearchParams(params).toString()}`);
+export const getNotifications = (params = {}) => {
+  const query = new URLSearchParams(params).toString();
+  return API.get(`/notifications/${query ? `?${query}` : ''}`);
+};
 export const getUnreadNotificationCount = () => API.get("/notifications/unread-count");
 export const markNotificationRead = (id) => API.patch(`/notifications/${id}/read`);
 export const markAllNotificationsRead = () => API.patch("/notifications/read-all");
 
 // BACKGROUND JOBS API
-export const getBackgroundJobs = () => API.get("/jobs");
+export const getBackgroundJobs = () => API.get("/jobs/");
 export const getJobStatus = (jobId) => API.get(`/jobs/${jobId}`);

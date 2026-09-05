@@ -205,10 +205,17 @@ function GroupsPage() {
   const handleSendBulkEmail = async (groupId) => {
     const promise = sendGroupBulkEmail(groupId);
     toast.promise(promise, {
-      loading: "Sending emails...",
+      loading: "Queueing background email dispatch...",
       success: (res) => {
-        handleViewGroup(viewingGroup);
-        return res.data.msg;
+        const jobId = res.data?.job_id;
+        if (jobId) {
+          localStorage.setItem("proofdeck_active_job_id", jobId.toString());
+          window.dispatchEvent(
+            new CustomEvent("proofdeck-job-started", { detail: { jobId } })
+          );
+        }
+        setTimeout(() => handleViewGroup(viewingGroup), 1000);
+        return res.data.msg || "Emails are being sent in the background!";
       },
       error: (err) => err.response?.data?.msg || "Failed to send emails.",
     });

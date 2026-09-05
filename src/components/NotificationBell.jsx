@@ -51,7 +51,9 @@ export default function NotificationBell() {
       if (res.data.unread_count !== undefined) {
         setUnreadCount(res.data.unread_count);
       }
-      if (res.data.total !== undefined) {
+      if (res.data.total_all !== undefined) {
+        setTotalCount(res.data.total_all);
+      } else if (res.data.total !== undefined) {
         setTotalCount(res.data.total);
       }
     } catch (e) {

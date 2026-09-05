@@ -92,6 +92,24 @@ export default function BackgroundJobIndicator({ jobId: propJobId }) {
   const processed = jobData?.processed_items || 0;
   const percentage = jobData?.percentage ?? (total > 0 ? Math.round((processed / total) * 100) : 0);
 
+  const isEmailJob = jobData?.job_type === 'bulk_send';
+
+  const titleText = isCompleted
+    ? (isEmailJob ? 'Email Dispatch Complete!' : 'Issuance Complete!')
+    : isFailed
+    ? (isEmailJob ? 'Email Dispatch Failed' : 'Issuance Failed')
+    : (isEmailJob ? 'Sending Bulk Emails...' : 'Issuing in Background...');
+
+  const detailText = isCompleted
+    ? (isEmailJob
+        ? `${jobData?.result_summary?.sent || processed} emails successfully sent.`
+        : `${jobData?.result_summary?.created || processed} certificates ready in your folder.`)
+    : isFailed
+    ? (jobData?.result_summary?.error || 'An error occurred during processing.')
+    : total > 0
+    ? `${processed} of ${total} ${isEmailJob ? 'emails delivered' : 'records completed'} (${percentage}%)`
+    : (isEmailJob ? 'Preparing recipient emails...' : 'Reading uploaded spreadsheet and queueing certificates...');
+
   // Positioned bottom-left (next to sidebar) to never obstruct the blue Support Widget at bottom-right
   return (
     <div className="fixed bottom-20 md:bottom-5 left-4 md:left-64 z-40 font-sans transition-all duration-300">
@@ -109,7 +127,7 @@ export default function BackgroundJobIndicator({ jobId: propJobId }) {
             <Loader2 className="w-3.5 h-3.5 text-indigo-400 animate-spin" />
           )}
           <span className="font-semibold text-[11px]">
-            {isCompleted ? 'Bulk Complete' : isFailed ? 'Failed' : `${processed}/${total} (${percentage}%)`}
+            {isCompleted ? (isEmailJob ? 'Emails Sent' : 'Bulk Complete') : isFailed ? 'Failed' : `${processed}/${total} (${percentage}%)`}
           </span>
           <ChevronUp size={12} className="text-slate-400" />
         </div>
@@ -133,11 +151,7 @@ export default function BackgroundJobIndicator({ jobId: propJobId }) {
               )}
 
               <span className="text-xs font-bold text-slate-900 truncate">
-                {isCompleted
-                  ? 'Issuance Complete!'
-                  : isFailed
-                  ? 'Issuance Failed'
-                  : 'Issuing in Background...'}
+                {titleText}
               </span>
             </div>
 
@@ -160,13 +174,7 @@ export default function BackgroundJobIndicator({ jobId: propJobId }) {
           </div>
 
           <p className="text-[11px] text-slate-500 m-0 leading-tight">
-            {isCompleted
-              ? `${jobData?.result_summary?.created || processed} certificates ready in your folder.`
-              : isFailed
-              ? (jobData?.result_summary?.error || 'An error occurred during processing.')
-              : total > 0
-              ? `Processing: ${processed} of ${total} records completed (${percentage}%)`
-              : 'Reading uploaded spreadsheet and queueing certificates...'}
+            {detailText}
           </p>
 
           {!isCompleted && !isFailed && (
