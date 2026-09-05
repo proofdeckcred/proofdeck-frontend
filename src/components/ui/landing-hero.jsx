@@ -276,7 +276,7 @@ export function LandingHero() {
 
         {/* ========================================================
             CENTERPIECE: Dashboard Mockup
-            Beautifully framed, crisp card container with subtle shadow
+            Vibrant blue showcase container matching FeaturesPage & Image 1
            ======================================================== */}
         <motion.div
           className="relative mt-12 sm:mt-16 w-full max-w-5xl mx-auto"
@@ -285,10 +285,13 @@ export function LandingHero() {
           transition={{ duration: 0.7, delay: 0.3 }}
         >
           <div 
-            className="rounded-2xl sm:rounded-3xl p-2 sm:p-3.5 bg-white/80 backdrop-blur-xs border border-[var(--pd-line)] relative z-10"
-            style={{ boxShadow: "0 25px 65px -15px rgba(11,11,18,0.16)" }}
+            className="rounded-3xl sm:rounded-[32px] p-4 sm:p-8 md:p-12 relative overflow-hidden shadow-2xl"
+            style={{
+              background: "linear-gradient(180deg, #00A3FF 0%, #0284C7 100%)"
+            }}
           >
-            <div className="rounded-xl sm:rounded-2xl overflow-hidden border border-gray-100 max-h-[440px] sm:max-h-[560px] md:max-h-[620px]">
+            {/* Center Dashboard Mockup */}
+            <div className="relative rounded-xl sm:rounded-2xl overflow-hidden bg-white shadow-2xl border border-white/20">
               <img
                 src="/images/features-page/dashboard.png"
                 alt="ProofDeck Dashboard Mockup"

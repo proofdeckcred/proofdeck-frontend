@@ -9,7 +9,7 @@ const TechDark = ({ data }) => {
               <div className="absolute top-0 left-0 w-full h-full opacity-20" 
                    style={{backgroundImage: `radial-gradient(${primary_color} 1px, transparent 1px)`, backgroundSize: '20px 20px'}}></div>
               
-              <div className="h-full flex flex-col justify-center p-12 relative z-10 border-l-8" style={{borderColor: primary_color}}>
+              <div className="h-full flex flex-col justify-center p-12 relative z-10">
                   <div className="flex items-center gap-4 mb-8 opacity-70">
                       {logo_url && <img src={logo_url.startsWith("blob:") ? logo_url : `${SERVER_BASE_URL}${logo_url}`} className="h-8 invert" alt="Logo"/>}
                       <span className="uppercase text-xs tracking-widest">System Validation</span>
@@ -23,7 +23,7 @@ const TechDark = ({ data }) => {
                       <span className="transform skew-x-12 inline-block">{recipient_name}</span>
                   </h2>
 
-                  <p className="text-gray-300 max-w-lg mb-8 border-l border-gray-700 pl-4">
+                  <p className="text-gray-300 max-w-lg mb-8">
                       {certificateBody} <span style={{color: primary_color}}>{course_title}</span>.
                       Skills verified algorithmically.
                   </p>
