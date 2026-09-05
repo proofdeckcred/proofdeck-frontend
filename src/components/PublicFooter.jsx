@@ -32,7 +32,7 @@ const PublicFooter = () => {
                   </svg>
                 )}
               />
-              <SocialLink href="https://www.linkedin.com/company/proofdeck" icon={Linkedin} />
+              <SocialLink href="https://www.linkedin.com/company/proofdeckhq" icon={Linkedin} />
               <SocialLink href="https://github.com/OmobolajiDurojaiye/CertifyMe" icon={Github} />
               <SocialLink href="#" icon={Instagram} />
             </div>
