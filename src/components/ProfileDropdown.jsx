@@ -67,15 +67,13 @@ export default function ProfileDropdown() {
               <span>All Settings</span>
             </button>
 
-            <div className="flex items-center justify-between px-3 py-2 text-xs font-medium text-slate-400 select-none">
-              <div className="flex items-center gap-2.5">
-                <Users className="w-4 h-4 text-slate-400 shrink-0" />
-                <span>Referrals</span>
-              </div>
-              <span className="text-[10px] font-semibold px-2 py-0.5 bg-slate-100 text-slate-500 rounded-full">
-                Soon
-              </span>
-            </div>
+            <button 
+              onClick={() => { setIsOpen(false); navigate('/dashboard/settings?tab=referrals'); }}
+              className="flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 rounded-lg cursor-pointer transition-colors"
+            >
+              <Users className="w-4 h-4 text-slate-500 shrink-0" />
+              <span>Referrals</span>
+            </button>
 
             <button 
               onClick={() => { setIsOpen(false); navigate('/dashboard/support'); }}

@@ -7,6 +7,7 @@ import {
   getTemplates,
   createCertificate,
   bulkCreateCertificates,
+  downloadBulkTemplate,
   getGroups,
   createGroup,
 } from "../api";
@@ -250,8 +251,20 @@ const SendInvitationPage = () => {
   };
 
   // Download CSV sample template
-  const handleDownloadTemplate = () => {
-    window.open(`${SERVER_BASE_URL}/api/certificates/bulk-template`, "_blank");
+  const handleDownloadTemplate = async () => {
+    try {
+      const response = await downloadBulkTemplate();
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("download", "proofdeck_bulk_template.csv");
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (e) {
+      window.open(`${SERVER_BASE_URL}/api/certificates/bulk-template`, "_blank");
+    }
   };
 
   // Bulk Form submission
