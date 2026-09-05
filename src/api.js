@@ -290,3 +290,13 @@ export const removeTeamMember = (memberId) => API.delete(`/team/members/${member
 export const getInvitationDetails = (token) => API.get(`/team/invite/${token}`);
 export const acceptInvitation = (data) => API.post("/team/accept", data);
 export const transferQuota = (data) => API.post("/team/transfer-quota", data);
+
+// NOTIFICATIONS API
+export const getNotifications = (params = {}) => API.get(`/notifications?${new URLSearchParams(params).toString()}`);
+export const getUnreadNotificationCount = () => API.get("/notifications/unread-count");
+export const markNotificationRead = (id) => API.patch(`/notifications/${id}/read`);
+export const markAllNotificationsRead = () => API.patch("/notifications/read-all");
+
+// BACKGROUND JOBS API
+export const getBackgroundJobs = () => API.get("/jobs");
+export const getJobStatus = (jobId) => API.get(`/jobs/${jobId}`);

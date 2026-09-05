@@ -412,10 +412,17 @@ const CreateCertificatePage = () => {
 
     const promise = bulkCreateCertificates(data);
     toast.promise(promise, {
-      loading: "Processing bulk certificates...",
+      loading: "Initiating background creation...",
       success: (response) => {
+        const jobId = response.data?.job_id;
+        if (jobId) {
+          localStorage.setItem("proofdeck_active_job_id", jobId.toString());
+          window.dispatchEvent(
+            new CustomEvent("proofdeck-job-started", { detail: { jobId } })
+          );
+        }
         setTimeout(() => navigate("/dashboard"), 1500);
-        return response.data.msg || "Bulk certificates created successfully!";
+        return response.data.msg || "Processing started in background!";
       },
       error: (err) => {
         setBulkSubmitting(false);

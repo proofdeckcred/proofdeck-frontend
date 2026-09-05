@@ -272,8 +272,15 @@ const SendInvitationPage = () => {
     toast.promise(promise, {
       loading: "Processing bulk invitations...",
       success: (response) => {
+        const jobId = response.data?.job_id;
+        if (jobId) {
+          localStorage.setItem("proofdeck_active_job_id", jobId.toString());
+          window.dispatchEvent(
+            new CustomEvent("proofdeck-job-started", { detail: { jobId } })
+          );
+        }
         setTimeout(() => navigate("/dashboard"), 1500);
-        return "Bulk invitations sent successfully!";
+        return response.data.msg || "Bulk invitations are processing in background!";
       },
       error: (err) => {
         setBulkSubmitting(false);

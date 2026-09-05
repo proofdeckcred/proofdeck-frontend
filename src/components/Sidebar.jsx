@@ -12,7 +12,6 @@ import {
   BarChart2,
   Settings,
   HelpCircle,
-  LogOut,
   Crown,
   ChevronLeft,
   ChevronRight,
@@ -38,12 +37,6 @@ function Sidebar() {
     });
   };
 
-  const handleLogout = (e) => {
-    e.preventDefault();
-    localStorage.removeItem("token");
-    localStorage.removeItem("workspaceContext");
-    navigate("/login");
-  };
 
   const renderTooltip = (props) => (
     <Tooltip id="button-tooltip" {...props}>
@@ -173,32 +166,6 @@ function Sidebar() {
         <div className="space-y-0.5">
           {renderNavLink("/dashboard/settings", <Settings />, "Settings")}
           {renderNavLink("/dashboard/support", <HelpCircle />, "Support")}
-
-          {/* Logout Button */}
-          {(() => {
-            const logoutBtn = (
-              <button
-                onClick={handleLogout}
-                className={`w-full flex items-center gap-2.5 py-2 rounded-lg text-red-600 hover:bg-red-50 hover:text-red-700 transition-colors font-medium text-xs text-left cursor-pointer ${
-                  isCollapsed ? "justify-center px-0 w-9 h-9 mx-auto" : "px-3 mt-1"
-                }`}
-              >
-                <LogOut size={18} />
-                {!isCollapsed && <span>Logout</span>}
-              </button>
-            );
-
-            return isCollapsed ? (
-              <OverlayTrigger
-                placement="right"
-                overlay={<Tooltip id="tooltip-logout">Logout</Tooltip>}
-              >
-                {logoutBtn}
-              </OverlayTrigger>
-            ) : (
-              logoutBtn
-            );
-          })()}
         </div>
 
         {/* User Mini Profile */}

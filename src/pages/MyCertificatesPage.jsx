@@ -399,15 +399,6 @@ function MyCertificatesPage() {
               >
                 Import
               </Link>
-
-              <button className="p-1.5 text-slate-400 hover:text-slate-600 bg-white rounded-lg border border-slate-100 hover:border-slate-200 transition-all relative">
-                <Bell className="w-4 h-4" />
-                <span className="absolute top-1 right-1 w-1.5 h-1.5 rounded-full bg-red-500"></span>
-              </button>
-
-              <div className="w-7 h-7 rounded-full bg-indigo-600 text-white flex items-center justify-center font-bold text-xs uppercase shadow-sm">
-                {user?.name ? user.name.charAt(0) : "U"}
-              </div>
             </div>
           </div>
         </div>

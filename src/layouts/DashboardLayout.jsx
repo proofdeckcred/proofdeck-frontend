@@ -5,6 +5,8 @@ import BottomNav from "../components/BottomNav";
 import useWindowSize from "../hooks/useWindowSize";
 import { UserProvider } from "../context/UserContext";
 import MobileWarning from "../components/MobileWarning";
+import DashboardTopbar from "../components/DashboardTopbar";
+import BackgroundJobIndicator from "../components/BackgroundJobIndicator";
 
 function DashboardLayout() {
   const { width } = useWindowSize();
@@ -33,6 +35,7 @@ function DashboardLayout() {
         flex-col: Stacks content vertically.
       */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden bg-gray-50 dark:bg-[var(--background-white)]">
+        {!isEditorPage && <DashboardTopbar />}
         {/* 
           SCROLLABLE REGION
           overflow-y-auto: Only this part scrolls, keeping sidebar fixed.
@@ -51,6 +54,9 @@ function DashboardLayout() {
 
       {/* MOBILE BOTTOM NAVIGATION */}
       {isMobile && <BottomNav />}
+
+      {/* GLOBAL BACKGROUND TASK INDICATOR */}
+      <BackgroundJobIndicator />
     </div>
   );
 
