@@ -1,5 +1,5 @@
 /* frontend/src/index.css */
-@import url("https://fonts.googleapis.com/css2?family=Alex+Brush&family=Cinzel:wght@400;600;700&family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=Great+Vibes&family=Inter:wght@400;500;600;700&family=Lexend:wght@300;400;500;600;700&family=Montserrat:wght@400;600;700&family=Oswald:wght@400;600;700&family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Poppins:wght@600;700&family=Prompt:wght@400;500;600;700&family=Sacramento&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Alex+Brush&family=Cinzel:wght@400;600;700&family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=Great+Vibes&family=Inter:wght@400;500;600;700&family=Lexend:wght@300;400;500;600;700&family=Montserrat:wght@400;600;700&family=Oswald:wght@400;600;700&family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400;1,600&family=Poppins:wght@600;700&family=Prompt:wght@400;500;600;700&family=Sacramento&display=swap");
 @import "tailwindcss";
 
 @font-face {
@@ -118,9 +118,9 @@ body {
   transition: background-color 0.3s ease, color 0.3s ease;
 }
 
-/* Force global font to Prompt (except template previews) */
+/* Force global font to Plus Jakarta Sans (Canva aesthetic) (except template previews) */
 html, body, button, input, select, textarea, h1, h2, h3, h4, h5, h6, span, p, a, label, li, ol, ul, table, th, td {
-  font-family: "Prompt", "Inter", sans-serif !important;
+  font-family: "Plus Jakarta Sans", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
 }
 
 /* Exclude template renderers and stages from global font forcing */
