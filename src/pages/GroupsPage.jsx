@@ -306,9 +306,10 @@ function GroupsPage() {
   const filteredCertificates = useMemo(() => {
     const baseCerts = viewingGroup ? (groupDetails?.certificates || []) : certificates;
     return baseCerts.filter((cert) => {
-      const matchesSearch =
-        cert.recipient_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        cert.course_title.toLowerCase().includes(searchTerm.toLowerCase());
+      const name = (cert.recipient_name || "").toLowerCase();
+      const course = (cert.course_title || "").toLowerCase();
+      const term = (searchTerm || "").toLowerCase().trim();
+      const matchesSearch = !term || name.includes(term) || course.includes(term);
 
       const matchesType =
         filterType === "all"
@@ -324,7 +325,7 @@ function GroupsPage() {
       } else if (sortBy === "oldest") {
         return new Date(a.issue_date || a.created_at).getTime() - new Date(b.issue_date || b.created_at).getTime();
       } else if (sortBy === "name") {
-        return a.recipient_name.localeCompare(b.recipient_name);
+        return (a.recipient_name || "").localeCompare(b.recipient_name || "");
       }
       return 0;
     });
@@ -642,7 +643,7 @@ function GroupsPage() {
                               {downloadingId === cert.id ? <div className="animate-spin h-3.5 w-3.5 border-2 border-slate-600 border-t-transparent rounded-full" /> : <Download className="w-3.5 h-3.5" />}
                             </button>
                             <Link
-                              to={`/dashboard/view/${cert.id}`}
+                              to={`/dashboard/view/${cert.verification_id || cert.id}`}
                               className="p-1.5 bg-white/10 hover:bg-white text-white hover:text-indigo-600 border border-white/20 hover:border-white rounded-lg transition-all shadow"
                               title="View Details"
                             >
@@ -750,9 +751,9 @@ function GroupsPage() {
               <CardSkeleton />
             ) : (
               <>
-                {groupDetails?.certificates.length > 0 ? (
+                {filteredCertificates.length > 0 ? (
                   <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
-                    {groupDetails.certificates.map((cert) => {
+                    {filteredCertificates.map((cert) => {
                       return (
                         <div key={cert.id} className="flex flex-col group/file">
                           {/* File Preview Card */}
@@ -780,7 +781,7 @@ function GroupsPage() {
                                 {downloadingId === cert.id ? <div className="animate-spin h-3.5 w-3.5 border-2 border-slate-600 border-t-transparent rounded-full" /> : <Download className="w-3.5 h-3.5" />}
                               </button>
                               <Link
-                                to={`/dashboard/view/${cert.id}`}
+                                to={`/dashboard/view/${cert.verification_id || cert.id}`}
                                 className="p-1.5 bg-white/10 hover:bg-white text-white hover:text-indigo-650 border border-white/20 hover:border-white rounded-lg transition-all shadow hover:text-indigo-600 hover:border-white"
                                 title="View Details"
                               >
@@ -808,12 +809,12 @@ function GroupsPage() {
 
                           {/* File Name underneath */}
                           <span className="text-xs font-semibold text-slate-800 mt-2.5 truncate w-full px-1 group-hover/file:text-indigo-600 transition-colors">
-                            {cert.recipient_name.replace(/\s+/g, "_")}.pdf
+                            {(cert.recipient_name || "Certificate").replace(/\s+/g, "_")}.pdf
                           </span>
                           
                           {/* File Info */}
                           <div className="flex items-center justify-between text-[9px] text-slate-400 mt-0.5 px-1 font-semibold">
-                            <span>{new Date(cert.issue_date).toLocaleDateString()}</span>
+                            <span>{cert.issue_date ? new Date(cert.issue_date).toLocaleDateString() : ""}</span>
                             <span className={cert.sent_at ? "text-emerald-600" : "text-slate-400"}>
                               {cert.sent_at ? "Emailed" : "Pending"}
                             </span>
@@ -825,16 +826,29 @@ function GroupsPage() {
                 ) : (
                   <div className="text-center py-16 bg-slate-50/50 rounded-xl border border-dashed border-slate-200">
                     <Folder size={32} className="text-slate-350 mx-auto mb-2" />
-                    <h4 className="text-xs font-bold text-slate-700">Empty batch</h4>
+                    <h4 className="text-xs font-bold text-slate-700">
+                      {groupDetails?.certificates?.length > 0 ? "No matching certificates" : "Empty batch"}
+                    </h4>
                     <p className="text-slate-400 text-[10px] mt-1 max-w-xs mx-auto">
-                      This batch does not have any certificates. Go to dashboard to issue a certificate to this group.
+                      {groupDetails?.certificates?.length > 0 
+                        ? "No certificates match the selected status filter or search query." 
+                        : "This batch does not have any certificates. Go to dashboard to issue a certificate to this group."}
                     </p>
-                    <Link
-                      to="/dashboard/bulk-create"
-                      className="mt-3 inline-flex items-center justify-center bg-white border border-slate-250 text-slate-700 rounded-lg py-1.5 px-3.5 hover:bg-slate-50 transition-all font-semibold text-xs shadow-sm decoration-none"
-                    >
-                      Bulk issue to this group
-                    </Link>
+                    {groupDetails?.certificates?.length > 0 ? (
+                      <button
+                        onClick={() => { setSearchTerm(""); setFilterType("all"); setSortBy("newest"); }}
+                        className="mt-3 inline-flex items-center justify-center bg-white border border-slate-250 text-slate-700 rounded-lg py-1.5 px-3.5 hover:bg-slate-50 transition-all font-semibold text-xs shadow-sm cursor-pointer"
+                      >
+                        Reset filters
+                      </button>
+                    ) : (
+                      <Link
+                        to="/dashboard/bulk-create"
+                        className="mt-3 inline-flex items-center justify-center bg-white border border-slate-250 text-slate-700 rounded-lg py-1.5 px-3.5 hover:bg-slate-50 transition-all font-semibold text-xs shadow-sm decoration-none"
+                      >
+                        Bulk issue to this group
+                      </Link>
+                    )}
                   </div>
                 )}
               </>

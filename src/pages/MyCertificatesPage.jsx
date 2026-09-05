@@ -704,7 +704,7 @@ function MyCertificatesPage() {
                                     {downloadingId === cert.id ? <div className="animate-spin h-3.5 w-3.5 border-2 border-slate-600 border-t-transparent rounded-full" /> : <Download className="w-3.5 h-3.5" />}
                                   </button>
                                   <Link
-                                    to={`/dashboard/view/${cert.id}`}
+                                    to={`/dashboard/view/${cert.verification_id || cert.id}`}
                                     className="p-1 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded transition-all"
                                     title="View Details"
                                   >

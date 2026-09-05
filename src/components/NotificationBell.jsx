@@ -76,26 +76,36 @@ export default function NotificationBell() {
   }, [isOpen, tab]);
 
   const handleMarkRead = async (id) => {
+    setNotifications(prev =>
+      prev.map(n => (n.id === id ? { ...n, is_read: true } : n))
+    );
+    setUnreadCount(prev => Math.max(0, prev - 1));
+
     try {
       await markNotificationRead(id);
-      setNotifications(prev =>
-        prev.map(n => (n.id === id ? { ...n, is_read: true } : n))
-      );
-      setUnreadCount(prev => Math.max(0, prev - 1));
     } catch (e) {
       console.error("Error marking notification read:", e);
+      fetchNotifications();
+      fetchUnreadCount();
     }
   };
 
   const handleMarkAllRead = async () => {
+    setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
+    setUnreadCount(0);
+
     try {
       await markAllNotificationsRead();
-      setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
-      setUnreadCount(0);
     } catch (e) {
       console.error("Error marking all read:", e);
+      fetchNotifications();
+      fetchUnreadCount();
     }
   };
+
+  const displayedNotifications = tab === 'unread' 
+    ? notifications.filter(n => !n.is_read) 
+    : notifications;
 
   return (
     <Popover.Root open={isOpen} onOpenChange={setIsOpen}>
@@ -168,7 +178,7 @@ export default function NotificationBell() {
           <div className="max-h-[380px] overflow-y-auto divide-y divide-slate-100">
             {loading ? (
               <div className="p-8 text-center text-xs text-slate-400">Loading notifications...</div>
-            ) : notifications.length === 0 ? (
+            ) : displayedNotifications.length === 0 ? (
               <div className="p-8 flex flex-col items-center justify-center text-center gap-2">
                 <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-400">
                   <BellOff className="w-5 h-5" />
@@ -177,11 +187,11 @@ export default function NotificationBell() {
                   {tab === 'unread' ? 'No unread notifications' : 'No notifications yet'}
                 </p>
                 <p className="text-[11px] text-slate-400 max-w-[200px]">
-                  When bulk operations or events complete, they will appear here.
+                  {tab === 'unread' ? 'You are all caught up!' : 'When bulk operations complete, they will appear here.'}
                 </p>
               </div>
             ) : (
-              notifications.map((n) => {
+              displayedNotifications.map((n) => {
                 const isUnread = !n.is_read;
                 return (
                   <div 

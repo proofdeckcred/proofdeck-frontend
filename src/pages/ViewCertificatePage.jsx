@@ -78,6 +78,11 @@ function ViewCertificatePage() {
 
         setCertificate(certData);
 
+        // Seamlessly upgrade URL from legacy numeric ID to secure verification_id
+        if (certData.verification_id && certId !== certData.verification_id) {
+          navigate(`/dashboard/view/${certData.verification_id}`, { replace: true });
+        }
+
         // Fetch full template to ensure we have all data needed for the renderer
         if (partialTemplate) {
           try {
