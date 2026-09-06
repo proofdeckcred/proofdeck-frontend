@@ -1,7 +1,9 @@
 # https://www.robotstxt.org/robotstxt.html
 
 User-agent: *
-Disallow:
+Disallow: /dashboard
+Disallow: /dashboard/
+Disallow: /forgot-password
 
 # Point search engines to the sitemap for better crawling
-Sitemap: https://proofdeck.app/sitemap.xml
+Sitemap: https://www.proofdeck.app/sitemap.xml

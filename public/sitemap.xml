@@ -1,42 +1,47 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
-    <loc>https://proofdeck.app/</loc>
+    <loc>https://www.proofdeck.app/</loc>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>https://proofdeck.app/pricing</loc>
+    <loc>https://www.proofdeck.app/features</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://www.proofdeck.app/pricing</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://proofdeck.app/contact</loc>
+    <loc>https://www.proofdeck.app/contact</loc>
     <changefreq>yearly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://proofdeck.app/docs</loc>
+    <loc>https://www.proofdeck.app/docs</loc>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://proofdeck.app/search</loc>
+    <loc>https://www.proofdeck.app/search</loc>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://proofdeck.app/verify</loc>
+    <loc>https://www.proofdeck.app/verify</loc>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://proofdeck.app/login</loc>
+    <loc>https://www.proofdeck.app/login</loc>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://proofdeck.app/signup</loc>
+    <loc>https://www.proofdeck.app/signup</loc>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
