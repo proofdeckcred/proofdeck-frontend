@@ -1,6 +1,7 @@
 import React, { useEffect } from "react";
 import { Routes, Route, useLocation } from "react-router-dom";
 import Lenis from "lenis";
+import "lenis/dist/lenis.css";
 
 // User-facing imports
 import DashboardLayout from "./layouts/DashboardLayout";
@@ -71,18 +72,16 @@ function ScrollToTop() {
     if (isAppPage) return;
 
     const lenis = new Lenis({
-      duration: 1.4,       // scroll duration — higher = slower, smoother
-      easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)), // ease-out expo
-      touchMultiplier: 1.5,
+      autoRaf: true,
+      duration: 1.5,         // slightly longer deceleration
+      smoothWheel: true,
+      wheelMultiplier: 0.85,  // slightly slower scroll per wheel tick
+      touchMultiplier: 1.2,
     });
 
-    function raf(time) {
-      lenis.raf(time);
-      requestAnimationFrame(raf);
-    }
-    requestAnimationFrame(raf);
-
-    return () => lenis.destroy();
+    return () => {
+      lenis.destroy();
+    };
   }, [pathname]);
 
   return null;
