@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import { Toaster, toast } from "react-hot-toast";
 import PublicHeader from "../components/PublicHeader";
@@ -8,6 +8,7 @@ import {
   Menu,
   X,
   ChevronRight,
+  ChevronDown,
   Copy,
   CheckCircle2,
   Code2,
@@ -18,10 +19,371 @@ import {
   Search,
   ExternalLink,
   Check,
+  Download,
   Smartphone
 } from "lucide-react";
 
-// --- Multi-language Code Snippet Viewer ---
+// --- Documentation Markdown Generator (for LLMs & Plain Text) ---
+const getDocsMarkdown = (baseUrl) => {
+  return `# ProofDeck REST API Documentation (v1.0)
+
+Base URL: ${baseUrl}
+Production Status: Active
+Authentication: X-API-Key HTTP Header
+
+---
+
+## 1. Overview
+ProofDeck provides a high-performance REST API for issuing, managing, and verifying tamper-proof digital credentials with dynamic PDF templates, cryptographic QR codes, and automated email delivery.
+
+---
+
+## 2. Authentication
+Every API request must be authenticated with your secret API key passed via the \`X-API-Key\` header:
+
+\`\`\`bash
+X-API-Key: pk_live_xxxxxxxxxxxxxxxx
+\`\`\`
+
+*Keep your API keys secret. Never expose them in frontend or client-side code.*
+
+---
+
+## 3. Endpoints
+
+### GET /account
+Fetch authenticated organization details, active plan role, remaining quota, and personal quotas.
+
+**Headers:**
+\`\`\`bash
+X-API-Key: pk_live_xxxxxxxx
+\`\`\`
+
+**Example Request:**
+\`\`\`bash
+curl -X GET '${baseUrl}/account' \\
+  -H 'X-API-Key: pk_live_xxxxxxxx'
+\`\`\`
+
+**Response (200 OK):**
+\`\`\`json
+{
+  "user_id": 42,
+  "name": "Alex Johnson",
+  "email": "alex@proofdeck.app",
+  "plan_role": "business_owner",
+  "available_quota": 150,
+  "personal_quota": 50,
+  "operating_context": "team"
+}
+\`\`\`
+
+---
+
+### GET /templates
+Retrieve all approved certificate templates available in your workspace.
+
+**Headers:**
+\`\`\`bash
+X-API-Key: pk_live_xxxxxxxx
+\`\`\`
+
+**Example Request:**
+\`\`\`bash
+curl -X GET '${baseUrl}/templates' \\
+  -H 'X-API-Key: pk_live_xxxxxxxx'
+\`\`\`
+
+**Response (200 OK):**
+\`\`\`json
+{
+  "templates": [
+    {
+      "id": 1,
+      "title": "Standard Completion Certificate",
+      "layout_style": "modern",
+      "is_public": true,
+      "created_at": "2026-08-15T10:30:00"
+    }
+  ]
+}
+\`\`\`
+
+---
+
+### POST /certificates
+Issue a single certificate, trigger dynamic PDF generation, and dispatch delivery email to the recipient.
+
+**Headers:**
+\`\`\`bash
+Content-Type: application/json
+X-API-Key: pk_live_xxxxxxxx
+\`\`\`
+
+**Request Body:**
+\`\`\`json
+{
+  "template_id": 1,
+  "recipient_name": "Jane Doe",
+  "recipient_email": "jane.doe@example.com",
+  "course_title": "Full-Stack Web Development",
+  "issue_date": "2026-09-04",
+  "extra_fields": {
+    "Grade": "Distinction",
+    "Duration": "12 Weeks"
+  }
+}
+\`\`\`
+
+**Example Request:**
+\`\`\`bash
+curl -X POST '${baseUrl}/certificates' \\
+  -H 'Content-Type: application/json' \\
+  -H 'X-API-Key: pk_live_xxxxxxxx' \\
+  -d '{
+    "template_id": 1,
+    "recipient_name": "Jane Doe",
+    "recipient_email": "jane.doe@example.com",
+    "course_title": "Full-Stack Web Development",
+    "extra_fields": {
+      "Grade": "Distinction",
+      "Duration": "12 Weeks"
+    }
+  }'
+\`\`\`
+
+**Response (201 Created):**
+\`\`\`json
+{
+  "msg": "Certificate created and dispatched successfully.",
+  "certificate_id": 1042,
+  "verification_id": "df849a29-3440-477d-826c-5e996932e123",
+  "verification_url": "https://www.proofdeck.app/verify/df849a29-3440-477d-826c-5e996932e123"
+}
+\`\`\`
+
+---
+
+### GET /certificates/{verification_id}
+Look up verified certificate details and metadata by unique verification UUID.
+
+**Headers:**
+\`\`\`bash
+X-API-Key: pk_live_xxxxxxxx
+\`\`\`
+
+**Example Request:**
+\`\`\`bash
+curl -X GET '${baseUrl}/certificates/df849a29-3440-477d-826c-5e996932e123' \\
+  -H 'X-API-Key: pk_live_xxxxxxxx'
+\`\`\`
+
+---
+
+### POST /certificates/{verification_id}/revoke
+Revoke a previously issued certificate immediately.
+
+**Headers:**
+\`\`\`bash
+X-API-Key: pk_live_xxxxxxxx
+\`\`\`
+
+**Example Request:**
+\`\`\`bash
+curl -X POST '${baseUrl}/certificates/df849a29-3440-477d-826c-5e996932e123/revoke' \\
+  -H 'X-API-Key: pk_live_xxxxxxxx'
+\`\`\`
+
+---
+
+## 4. HTTP Status Codes
+- **200 OK**: Request completed successfully.
+- **201 Created**: Credential created and dispatched.
+- **400 Bad Request**: Missing required parameters.
+- **401 Unauthorized**: Missing or invalid \`X-API-Key\`.
+- **402 Payment Required**: Insufficient credential credits.
+- **404 Not Found**: Specified certificate or template does not exist.
+- **429 Too Many Requests**: Rate limit reached (100 req/min).
+- **500 Server Error**: Internal system error.
+`;
+};
+
+// --- Copy Page Dropdown Component (Matches Image 1) ---
+const CopyPageDropdown = ({ onCopyMarkdown, onViewMarkdown }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const dropdownRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const handleCopy = () => {
+    onCopyMarkdown();
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  return (
+    <div className="relative inline-block text-left" ref={dropdownRef}>
+      {/* Main split button matching Image 1 */}
+      <div className="inline-flex rounded-xl shadow-2xs border border-slate-200 bg-white overflow-hidden">
+        <button
+          onClick={handleCopy}
+          className="inline-flex items-center gap-2 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors cursor-pointer"
+          title="Copy page as Markdown"
+        >
+          {copied ? (
+            <Check size={14} className="text-emerald-500" />
+          ) : (
+            <Copy size={14} className="text-slate-500" />
+          )}
+          <span>{copied ? "Copied!" : "Copy page"}</span>
+        </button>
+        <button
+          onClick={() => setIsOpen(!isOpen)}
+          className="px-2 py-1.5 border-l border-slate-200 text-slate-400 hover:text-slate-700 hover:bg-slate-50 transition-colors cursor-pointer"
+          title="More options"
+        >
+          <ChevronDown
+            size={13}
+            className={`transform transition-transform duration-200 ${
+              isOpen ? "rotate-180 text-indigo-600" : ""
+            }`}
+          />
+        </button>
+      </div>
+
+      {/* Floating popover dropdown matching Image 1 */}
+      {isOpen && (
+        <div className="absolute right-0 top-full mt-2 w-72 bg-white rounded-2xl border border-slate-200 shadow-xl p-1.5 z-50 animate-in fade-in zoom-in-95">
+          {/* Option 1: Copy page */}
+          <button
+            onClick={() => {
+              handleCopy();
+              setIsOpen(false);
+            }}
+            className="w-full text-left p-2.5 rounded-xl hover:bg-slate-50 flex items-start gap-3 transition-colors cursor-pointer group"
+          >
+            <div className="w-8 h-8 rounded-lg bg-slate-50 border border-slate-200 flex items-center justify-center text-slate-700 shrink-0 mt-0.5 group-hover:border-slate-300 group-hover:bg-white shadow-2xs">
+              <Copy size={14} />
+            </div>
+            <div>
+              <p className="text-xs font-bold text-slate-900 leading-tight">Copy page</p>
+              <p className="text-[11px] text-slate-500 mt-0.5 leading-snug">
+                Copy page as Markdown for LLMs
+              </p>
+            </div>
+          </button>
+
+          {/* Option 2: View as Markdown */}
+          <button
+            onClick={() => {
+              setIsOpen(false);
+              onViewMarkdown();
+            }}
+            className="w-full text-left p-2.5 rounded-xl hover:bg-slate-50 flex items-start gap-3 transition-colors cursor-pointer group"
+          >
+            <div className="w-8 h-8 rounded-lg bg-slate-50 border border-slate-200 flex items-center justify-center text-slate-700 shrink-0 mt-0.5 group-hover:border-slate-300 group-hover:bg-white shadow-2xs">
+              <FileText size={14} />
+            </div>
+            <div>
+              <p className="text-xs font-bold text-slate-900 leading-tight flex items-center gap-1">
+                View as Markdown <ExternalLink size={11} className="text-slate-400" />
+              </p>
+              <p className="text-[11px] text-slate-500 mt-0.5 leading-snug">
+                View this page as plain text
+              </p>
+            </div>
+          </button>
+        </div>
+      )}
+    </div>
+  );
+};
+
+// --- Markdown Viewer Modal ---
+const MarkdownModal = ({ isOpen, onClose, markdownContent }) => {
+  const [copied, setCopied] = useState(false);
+
+  if (!isOpen) return null;
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(markdownContent);
+    setCopied(true);
+    toast.success("Markdown copied to clipboard!");
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleDownload = () => {
+    const blob = new Blob([markdownContent], { type: "text/markdown;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "proofdeck-api-docs.md";
+    link.click();
+    URL.revokeObjectURL(url);
+    toast.success("Downloaded proofdeck-api-docs.md");
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-4 sm:p-6">
+      <div className="bg-white rounded-2xl max-w-3xl w-full max-h-[85vh] flex flex-col shadow-2xl border border-slate-200 overflow-hidden animate-in fade-in zoom-in-95">
+        {/* Modal Header */}
+        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 bg-slate-50">
+          <div className="flex items-center gap-2.5">
+            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+            <h3 className="font-bold text-sm text-slate-900 font-mono">
+              proofdeck-api-docs.md
+            </h3>
+            <span className="text-[10px] font-bold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded-full border border-indigo-100">
+              LLM Ready
+            </span>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleCopy}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-white hover:bg-slate-100 border border-slate-200 text-slate-700 transition-colors shadow-2xs cursor-pointer"
+            >
+              {copied ? <Check size={13} className="text-emerald-500" /> : <Copy size={13} />}
+              <span>{copied ? "Copied" : "Copy"}</span>
+            </button>
+            <button
+              onClick={handleDownload}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-white hover:bg-slate-100 border border-slate-200 text-slate-700 transition-colors shadow-2xs cursor-pointer"
+              title="Download as .md file"
+            >
+              <Download size={13} />
+              <span>Download</span>
+            </button>
+            <button
+              onClick={onClose}
+              className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-200/50 transition-colors ml-1 cursor-pointer"
+            >
+              <X size={18} />
+            </button>
+          </div>
+        </div>
+
+        {/* Modal Content */}
+        <div className="p-6 overflow-y-auto flex-grow custom-scrollbar bg-[#0B0F17]">
+          <pre className="text-xs font-mono leading-relaxed text-slate-200 select-all whitespace-pre-wrap">
+            <code>{markdownContent}</code>
+          </pre>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// --- Multi-language Code Snippet Viewer (Matches Image 2 Style: Matte Charcoal #0B0F17, clean underline tabs, NO macOS dots) ---
 const CodeSnippetTabs = ({ snippetGroup, title }) => {
   const [activeLang, setActiveLang] = useState("curl");
   const [copied, setCopied] = useState(false);
@@ -42,59 +404,56 @@ const CodeSnippetTabs = ({ snippetGroup, title }) => {
   ];
 
   return (
-    <div className="rounded-2xl overflow-hidden bg-[#0F172A] border border-slate-800 my-6 shadow-2xl ring-1 ring-white/10 group">
-      {/* Top Bar */}
-      <div className="flex flex-wrap items-center justify-between px-4 py-3 bg-[#1E293B]/70 border-b border-slate-800 backdrop-blur-sm gap-2">
-        <div className="flex items-center gap-3">
-          <div className="flex gap-1.5">
-            <div className="w-2.5 h-2.5 rounded-full bg-rose-500/80" />
-            <div className="w-2.5 h-2.5 rounded-full bg-amber-500/80" />
-            <div className="w-2.5 h-2.5 rounded-full bg-emerald-500/80" />
-          </div>
-          {title && <span className="text-xs font-medium text-slate-400 font-mono ml-2">{title}</span>}
-        </div>
-
-        {/* Tabs & Copy */}
-        <div className="flex items-center gap-2">
-          <div className="flex bg-slate-900/80 p-0.5 rounded-lg border border-slate-800">
-            {languages.map((lang) => (
+    <div className="rounded-2xl overflow-hidden bg-[#0B0F17] border border-white/10 my-6 shadow-2xl">
+      {/* Top Tab Bar matching Image 2 */}
+      <div className="flex items-center justify-between px-5 pt-3.5 pb-0 border-b border-white/10 bg-[#0B0F17]">
+        {/* Language Tabs */}
+        <div className="flex items-center gap-6">
+          {languages.map((lang) => {
+            const isActive = activeLang === lang.id;
+            return (
               <button
                 key={lang.id}
                 onClick={() => setActiveLang(lang.id)}
-                className={`px-2.5 py-1 text-[11px] font-mono font-medium rounded-md transition-all ${
-                  activeLang === lang.id
-                    ? "bg-indigo-600 text-white shadow-sm"
-                    : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/50"
+                className={`pb-3 text-xs sm:text-sm font-medium transition-colors relative cursor-pointer ${
+                  isActive
+                    ? "text-[#00A3FF] font-semibold"
+                    : "text-slate-400 hover:text-slate-200"
                 }`}
               >
                 {lang.label}
+                {isActive && (
+                  <span className="absolute bottom-0 left-0 right-0 h-[2px] bg-[#00A3FF] rounded-full" />
+                )}
               </button>
-            ))}
-          </div>
+            );
+          })}
+        </div>
 
+        {/* Minimal Copy Icon on Right (Image 2) */}
+        <div className="flex items-center gap-3 pb-3">
+          {title && (
+            <span className="hidden sm:inline text-xs font-mono text-slate-500">
+              {title}
+            </span>
+          )}
           <button
             onClick={handleCopy}
-            className="flex items-center gap-1.5 text-xs text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-700 px-2.5 py-1 rounded-lg border border-slate-700 transition-colors"
-            title="Copy Code"
+            className="text-slate-400 hover:text-white transition-colors p-1.5 rounded-lg hover:bg-white/5 cursor-pointer"
+            title="Copy code"
           >
             {copied ? (
-              <>
-                <CheckCircle2 size={13} className="text-emerald-400" />
-                <span className="text-emerald-400 font-medium">Copied</span>
-              </>
+              <Check size={16} className="text-emerald-400" />
             ) : (
-              <>
-                <Copy size={13} />
-                <span>Copy</span>
-              </>
+              <Copy size={16} />
             )}
           </button>
         </div>
       </div>
 
       {/* Code Area */}
-      <div className="p-5 overflow-x-auto custom-scrollbar">
-        <pre className="text-xs sm:text-sm font-mono leading-relaxed text-indigo-100/90 selection:bg-indigo-500/30">
+      <div className="p-5 sm:p-6 overflow-x-auto custom-scrollbar bg-[#0B0F17]">
+        <pre className="text-xs sm:text-sm font-mono leading-relaxed text-slate-200 selection:bg-[#00A3FF]/30">
           <code>{activeCode}</code>
         </pre>
       </div>
@@ -102,7 +461,7 @@ const CodeSnippetTabs = ({ snippetGroup, title }) => {
   );
 };
 
-// --- Single JSON Response Viewer ---
+// --- Single JSON Response Viewer (Matches Image 2 Style: Matte Charcoal #0B0F17, clean badge, NO macOS dots) ---
 const JSONResponseBlock = ({ code, status = "200 OK", title = "Response Payload" }) => {
   const [copied, setCopied] = useState(false);
 
@@ -116,15 +475,15 @@ const JSONResponseBlock = ({ code, status = "200 OK", title = "Response Payload"
   const isSuccess = status.startsWith("2");
 
   return (
-    <div className="rounded-2xl overflow-hidden bg-[#090D16] border border-slate-800/80 my-4 shadow-xl">
-      <div className="flex items-center justify-between px-4 py-2.5 bg-slate-900/90 border-b border-slate-800 text-xs font-mono">
-        <div className="flex items-center gap-2">
-          <span className="text-slate-400 font-medium">{title}</span>
+    <div className="rounded-2xl overflow-hidden bg-[#0B0F17] border border-white/10 my-4 shadow-xl">
+      <div className="flex items-center justify-between px-5 py-3 border-b border-white/10 bg-[#0B0F17] text-xs font-mono">
+        <div className="flex items-center gap-2.5">
+          <span className="text-slate-300 font-medium">{title}</span>
           <span
             className={`px-2 py-0.5 rounded text-[10px] font-bold ${
               isSuccess
-                ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
-                : "bg-rose-500/10 text-rose-400 border border-rose-500/20"
+                ? "bg-emerald-500/15 text-emerald-400 border border-emerald-500/30"
+                : "bg-rose-500/15 text-rose-400 border border-rose-500/30"
             }`}
           >
             {status}
@@ -132,14 +491,14 @@ const JSONResponseBlock = ({ code, status = "200 OK", title = "Response Payload"
         </div>
         <button
           onClick={handleCopy}
-          className="text-slate-400 hover:text-slate-200 transition-colors p-1"
+          className="text-slate-400 hover:text-white transition-colors p-1.5 rounded-lg hover:bg-white/5 cursor-pointer"
           title="Copy JSON"
         >
-          {copied ? <CheckCircle2 size={14} className="text-emerald-400" /> : <Copy size={14} />}
+          {copied ? <Check size={16} className="text-emerald-400" /> : <Copy size={16} />}
         </button>
       </div>
-      <div className="p-4 overflow-x-auto custom-scrollbar">
-        <pre className="text-xs font-mono text-emerald-300/90 leading-relaxed">
+      <div className="p-5 overflow-x-auto custom-scrollbar bg-[#0B0F17]">
+        <pre className="text-xs sm:text-sm font-mono text-emerald-400/95 leading-relaxed selection:bg-emerald-500/30">
           <code>{code}</code>
         </pre>
       </div>
@@ -233,6 +592,7 @@ function DocsPage() {
   const [activeSection, setActiveSection] = useState("intro");
   const [searchQuery, setSearchQuery] = useState("");
   const [baseUrlCopied, setBaseUrlCopied] = useState(false);
+  const [showMarkdownModal, setShowMarkdownModal] = useState(false);
 
   const prodBaseUrl = "https://api.proofdeck.app/api/v1";
 
@@ -241,6 +601,12 @@ function DocsPage() {
     setBaseUrlCopied(true);
     toast.success("Production Base URL copied!");
     setTimeout(() => setBaseUrlCopied(false), 2000);
+  };
+
+  const handleCopyAllMarkdown = () => {
+    const md = getDocsMarkdown(prodBaseUrl);
+    navigator.clipboard.writeText(md);
+    toast.success("Documentation copied as Markdown for LLMs!");
   };
 
   // Scroll spy
@@ -276,37 +642,37 @@ function DocsPage() {
   const snippets = {
     account: {
       curl: `curl -X GET '${prodBaseUrl}/account' \\\n  -H 'X-API-Key: pk_live_xxxxxxxx'`,
-      js: `const getAccount = async () => {\n  const res = await fetch('${prodBaseUrl}/account', {\n    headers: { 'X-API-Key': 'pk_live_xxxxxxxx' }\n  });\n  const data = await res.json();\n  console.log(data);\n};`,
-      python: `import requests\n\nresponse = requests.get(\n    "${prodBaseUrl}/account",\n    headers={"X-API-Key": "pk_live_xxxxxxxx"}\n)\nprint(response.json())`
+      js: `const response = await fetch('${prodBaseUrl}/account', {\n  method: 'GET',\n  headers: {\n    'X-API-Key': 'pk_live_xxxxxxxx'\n  }\n});\nconst data = await response.json();\nconsole.log(data);`,
+      python: `import requests\n\nresponse = requests.get(\n    '${prodBaseUrl}/account',\n    headers={'X-API-Key': 'pk_live_xxxxxxxx'}\n)\nprint(response.json())`
     },
     templates: {
       curl: `curl -X GET '${prodBaseUrl}/templates' \\\n  -H 'X-API-Key: pk_live_xxxxxxxx'`,
-      js: `const getTemplates = async () => {\n  const res = await fetch('${prodBaseUrl}/templates', {\n    headers: { 'X-API-Key': 'pk_live_xxxxxxxx' }\n  });\n  const data = await res.json();\n  console.log(data);\n};`,
-      python: `import requests\n\nresponse = requests.get(\n    "${prodBaseUrl}/templates",\n    headers={"X-API-Key": "pk_live_xxxxxxxx"}\n)\nprint(response.json())`
+      js: `const response = await fetch('${prodBaseUrl}/templates', {\n  method: 'GET',\n  headers: {\n    'X-API-Key': 'pk_live_xxxxxxxx'\n  }\n});\nconst templates = await response.json();\nconsole.log(templates);`,
+      python: `import requests\n\nresponse = requests.get(\n    '${prodBaseUrl}/templates',\n    headers={'X-API-Key': 'pk_live_xxxxxxxx'}\n)\nprint(response.json())`
     },
     createCert: {
-      curl: `curl -X POST '${prodBaseUrl}/certificates' \\\n  -H 'Content-Type: application/json' \\\n  -H 'X-API-Key: pk_live_xxxxxxxx' \\\n  -d '{\n    "template_id": 1,\n    "recipient_name": "Jane Doe",\n    "recipient_email": "jane.doe@example.com",\n    "course_title": "Full-Stack Web Development",\n    "issue_date": "2026-09-04",\n    "issuer_name": "Zitopy Tech Academy",\n    "extra_fields": {\n      "Grade": "Distinction",\n      "Duration": "12 Weeks"\n    }\n  }'`,
-      js: `const issueCert = async () => {\n  const res = await fetch('${prodBaseUrl}/certificates', {\n    method: 'POST',\n    headers: {\n      'Content-Type': 'application/json',\n      'X-API-Key': 'pk_live_xxxxxxxx'\n    },\n    body: JSON.stringify({\n      template_id: 1,\n      recipient_name: "Jane Doe",\n      recipient_email: "jane.doe@example.com",\n      course_title: "Full-Stack Web Development",\n      issue_date: "2026-09-04",\n      issuer_name: "Zitopy Tech Academy",\n      extra_fields: { Grade: "Distinction" }\n    })\n  });\n  const data = await res.json();\n  console.log(data);\n};`,
-      python: `import requests\n\nurl = "${prodBaseUrl}/certificates"\nheaders = {\n    "Content-Type": "application/json",\n    "X-API-Key": "pk_live_xxxxxxxx"\n}\npayload = {\n    "template_id": 1,\n    "recipient_name": "Jane Doe",\n    "recipient_email": "jane.doe@example.com",\n    "course_title": "Full-Stack Web Development",\n    "issue_date": "2026-09-04",\n    "issuer_name": "Zitopy Tech Academy"\n}\n\nresponse = requests.post(url, json=payload, headers=headers)\nprint(response.json())`
+      curl: `curl -X POST '${prodBaseUrl}/certificates' \\\n  -H 'Content-Type: application/json' \\\n  -H 'X-API-Key: pk_live_xxxxxxxx' \\\n  -d '{\n    "template_id": 1,\n    "recipient_name": "Jane Doe",\n    "recipient_email": "jane.doe@example.com",\n    "course_title": "Full-Stack Web Development",\n    "issue_date": "2026-09-04",\n    "extra_fields": {\n      "Grade": "Distinction",\n      "Duration": "12 Weeks"\n    }\n  }'`,
+      js: `const payload = {\n  template_id: 1,\n  recipient_name: "Jane Doe",\n  recipient_email: "jane.doe@example.com",\n  course_title: "Full-Stack Web Development",\n  extra_fields: { Grade: "Distinction", Duration: "12 Weeks" }\n};\n\nconst res = await fetch('${prodBaseUrl}/certificates', {\n  method: 'POST',\n  headers: {\n    'Content-Type': 'application/json',\n    'X-API-Key': 'pk_live_xxxxxxxx'\n  },\n  body: JSON.stringify(payload)\n});\nconst cert = await res.json();\nconsole.log(cert);`,
+      python: `import requests\n\npayload = {\n    "template_id": 1,\n    "recipient_name": "Jane Doe",\n    "recipient_email": "jane.doe@example.com",\n    "course_title": "Full-Stack Web Development",\n    "extra_fields": {"Grade": "Distinction", "Duration": "12 Weeks"}\n}\n\nresponse = requests.post(\n    '${prodBaseUrl}/certificates',\n    headers={\n        "Content-Type": "application/json",\n        "X-API-Key": "pk_live_xxxxxxxx"\n    },\n    json=payload\n)\nprint(response.json())`
     },
     getCert: {
       curl: `curl -X GET '${prodBaseUrl}/certificates/df849a29-3440-477d-826c-5e996932e123' \\\n  -H 'X-API-Key: pk_live_xxxxxxxx'`,
-      js: `const getCert = async (verificationId) => {\n  const res = await fetch(\`${prodBaseUrl}/certificates/\${verificationId}\`, {\n    headers: { 'X-API-Key': 'pk_live_xxxxxxxx' }\n  });\n  const data = await res.json();\n  console.log(data);\n};`,
+      js: `const verificationId = "df849a29-3440-477d-826c-5e996932e123";\nconst res = await fetch(\`\${prodBaseUrl}/certificates/\${verificationId}\`, {\n  headers: { 'X-API-Key': 'pk_live_xxxxxxxx' }\n});\nconst record = await res.json();\nconsole.log(record);`,
       python: `import requests\n\nverification_id = "df849a29-3440-477d-826c-5e996932e123"\nresponse = requests.get(\n    f"${prodBaseUrl}/certificates/{verification_id}",\n    headers={"X-API-Key": "pk_live_xxxxxxxx"}\n)\nprint(response.json())`
     },
     revokeCert: {
       curl: `curl -X POST '${prodBaseUrl}/certificates/df849a29-3440-477d-826c-5e996932e123/revoke' \\\n  -H 'X-API-Key: pk_live_xxxxxxxx'`,
-      js: `const revokeCert = async (verificationId) => {\n  const res = await fetch(\`${prodBaseUrl}/certificates/\${verificationId}/revoke\`, {\n    method: 'POST',\n    headers: { 'X-API-Key': 'pk_live_xxxxxxxx' }\n  });\n  const data = await res.json();\n  console.log(data);\n};`,
+      js: `const verificationId = "df849a29-3440-477d-826c-5e996932e123";\nconst res = await fetch(\`\${prodBaseUrl}/certificates/\${verificationId}/revoke\`, {\n  method: 'POST',\n  headers: { 'X-API-Key': 'pk_live_xxxxxxxx' }\n});\nconst result = await res.json();\nconsole.log(result);`,
       python: `import requests\n\nverification_id = "df849a29-3440-477d-826c-5e996932e123"\nresponse = requests.post(\n    f"${prodBaseUrl}/certificates/{verification_id}/revoke",\n    headers={"X-API-Key": "pk_live_xxxxxxxx"}\n)\nprint(response.json())`
     }
   };
 
   // --- Response Objects ---
   const responses = {
-    account: `{\n  "user_id": 42,\n  "name": "Alex Johnson",\n  "email": "alex@zitopy.com",\n  "plan_role": "business_owner",\n  "available_quota": 150,\n  "personal_quota": 50,\n  "operating_context": "team"\n}`,
+    account: `{\n  "user_id": 42,\n  "name": "Alex Johnson",\n  "email": "alex@proofdeck.app",\n  "plan_role": "business_owner",\n  "available_quota": 150,\n  "personal_quota": 50,\n  "operating_context": "team"\n}`,
     templates: `{\n  "templates": [\n    {\n      "id": 1,\n      "title": "Standard Completion Certificate",\n      "layout_style": "modern",\n      "is_public": true,\n      "created_at": "2026-08-15T10:30:00"\n    },\n    {\n      "id": 5,\n      "title": "Executive AI Leadership Award",\n      "layout_style": "classic",\n      "is_public": false,\n      "created_at": "2026-09-01T14:12:00"\n    }\n  ]\n}`,
     createCert: `{\n  "msg": "Certificate created and dispatched successfully.",\n  "certificate_id": 1042,\n  "verification_id": "df849a29-3440-477d-826c-5e996932e123",\n  "verification_url": "https://www.proofdeck.app/verify/df849a29-3440-477d-826c-5e996932e123"\n}`,
-    getCert: `{\n  "certificate_id": 1042,\n  "verification_id": "df849a29-3440-477d-826c-5e996932e123",\n  "recipient_name": "Jane Doe",\n  "recipient_email": "jane.doe@example.com",\n  "course_title": "Full-Stack Web Development",\n  "issuer_name": "Zitopy Tech Academy",\n  "issue_date": "2026-09-04T00:00:00",\n  "status": "valid",\n  "verification_url": "https://www.proofdeck.app/verify/df849a29-3440-477d-826c-5e996932e123",\n  "extra_fields": {\n    "Grade": "Distinction",\n    "Duration": "12 Weeks"\n  }\n}`,
+    getCert: `{\n  "certificate_id": 1042,\n  "verification_id": "df849a29-3440-477d-826c-5e996932e123",\n  "recipient_name": "Jane Doe",\n  "recipient_email": "jane.doe@example.com",\n  "course_title": "Full-Stack Web Development",\n  "issuer_name": "ProofDeck Academy",\n  "issue_date": "2026-09-04T00:00:00",\n  "status": "valid",\n  "verification_url": "https://www.proofdeck.app/verify/df849a29-3440-477d-826c-5e996932e123",\n  "extra_fields": {\n    "Grade": "Distinction",\n    "Duration": "12 Weeks"\n  }\n}`,
     revokeCert: `{\n  "msg": "Certificate df849a29-3440-477d-826c-5e996932e123 has been revoked successfully.",\n  "status": "revoked"\n}`
   };
 
@@ -450,9 +816,15 @@ function DocsPage() {
                   <Check size={13} /> Production Active
                 </span>
               </div>
-              <h1 className="text-3xl sm:text-4xl md:text-5xl font-black text-slate-900 mb-4 tracking-tight">
-                Developer API Guide
-              </h1>
+              <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
+                <h1 className="text-3xl sm:text-4xl md:text-5xl font-black text-slate-900 tracking-tight">
+                  Developer API Guide
+                </h1>
+                <CopyPageDropdown
+                  onCopyMarkdown={handleCopyAllMarkdown}
+                  onViewMarkdown={() => setShowMarkdownModal(true)}
+                />
+              </div>
               <p className="text-base sm:text-lg text-slate-600 leading-relaxed font-normal max-w-3xl">
                 Integrate automated credential generation, PDF certificate creation, bulk email dispatch, and instant verification into your platforms.
               </p>
@@ -673,6 +1045,13 @@ function DocsPage() {
           </div>
         </main>
       </div>
+
+      {/* Markdown Viewer Modal */}
+      <MarkdownModal
+        isOpen={showMarkdownModal}
+        onClose={() => setShowMarkdownModal(false)}
+        markdownContent={getDocsMarkdown(prodBaseUrl)}
+      />
 
       {/* Footer aligned next to fixed sidebar on desktop */}
       <div className="lg:ml-72 border-t border-slate-100 bg-white">

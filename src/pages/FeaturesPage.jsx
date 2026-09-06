@@ -126,76 +126,10 @@ export default function FeaturesPage() {
               </p>
             </div>
 
-            {/* 4-Card Feature Grid (2x2 layout strictly following Image 1) */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-14 items-stretch">
+            {/* 6-Card Feature Grid (3 rows x 2 cols) */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-16 items-stretch">
 
-              {/* CARD 1: Seamless Collaboration (Top Left) */}
-              <div 
-                className="bg-white rounded-2xl sm:rounded-3xl border border-[var(--pd-line)] p-6 sm:p-8 flex flex-col justify-between transition-all hover:border-[var(--pd-indigo)]/40 group"
-                style={{ boxShadow: "var(--pd-shadow)" }}
-              >
-                <div className="bg-[#F7F7FA] rounded-xl sm:rounded-2xl p-4 sm:p-6 border border-[var(--pd-line)] mb-6 overflow-hidden flex items-center justify-center min-h-[220px] sm:min-h-[260px] group-hover:bg-[#F3F2FC] transition-colors">
-                  <img
-                    src="/images/features-page/invite-team.png"
-                    alt="Seamless Collaboration"
-                    className="w-full h-auto max-h-[280px] object-contain rounded-lg shadow-sm"
-                  />
-                </div>
-                <div>
-                  <h3 className="text-xl sm:text-2xl font-bold text-[var(--pd-ink)] mb-2">
-                    Seamless Collaboration
-                  </h3>
-                  <p className="text-sm text-[var(--pd-mute)] leading-relaxed">
-                    Work together with your team effortlessly, share templates, invite staff, and manage issuance roles in real-time.
-                  </p>
-                </div>
-              </div>
-
-              {/* CARD 2: Real-Time Analytics (Top Right) */}
-              <div 
-                className="bg-white rounded-2xl sm:rounded-3xl border border-[var(--pd-line)] p-6 sm:p-8 flex flex-col justify-between transition-all hover:border-[var(--pd-indigo)]/40 group"
-                style={{ boxShadow: "var(--pd-shadow)" }}
-              >
-                <div className="bg-[#F7F7FA] rounded-xl sm:rounded-2xl p-4 sm:p-6 border border-[var(--pd-line)] mb-6 overflow-hidden flex items-center justify-center min-h-[220px] sm:min-h-[260px] group-hover:bg-[#F3F2FC] transition-colors">
-                  <img
-                    src="/images/features-page/analytics.png"
-                    alt="Time Management Tools & Analytics"
-                    className="w-full h-auto max-h-[280px] object-contain rounded-lg shadow-sm"
-                  />
-                </div>
-                <div>
-                  <h3 className="text-xl sm:text-2xl font-bold text-[var(--pd-ink)] mb-2">
-                    Real-Time Analytics & Tracking
-                  </h3>
-                  <p className="text-sm text-[var(--pd-mute)] leading-relaxed">
-                    Gain actionable insights into recipient engagement, delivery rates, verification scans, and credential program growth.
-                  </p>
-                </div>
-              </div>
-
-              {/* CARD 3: 1-Click LinkedIn Sharing (Bottom Left) */}
-              <div 
-                className="bg-white rounded-2xl sm:rounded-3xl border border-[var(--pd-line)] p-6 sm:p-8 flex flex-col justify-between transition-all hover:border-[var(--pd-indigo)]/40 group"
-                style={{ boxShadow: "var(--pd-shadow)" }}
-              >
-                <div className="bg-[#F7F7FA] rounded-xl sm:rounded-2xl p-4 sm:p-6 border border-[var(--pd-line)] mb-6 overflow-hidden flex items-center justify-center min-h-[220px] sm:min-h-[260px] group-hover:bg-[#F3F2FC] transition-colors">
-                  <img
-                    src="/images/features-page/proofdeck-share-to-linkedin.png"
-                    alt="1-Click LinkedIn and Social Sharing"
-                    className="w-full h-auto max-h-[280px] object-contain rounded-lg shadow-sm"
-                  />
-                </div>
-                <div>
-                  <h3 className="text-xl sm:text-2xl font-bold text-[var(--pd-ink)] mb-2">
-                    1-Click LinkedIn & Social Verification
-                  </h3>
-                  <p className="text-sm text-[var(--pd-mute)] leading-relaxed">
-                    Recipients add verified credentials directly to their LinkedIn Licenses & Certifications with automated issuer verification.
-                  </p>
-                </div>
-              </div>
-
-              {/* CARD 4: Visual Template Designer (Bottom Right) */}
+              {/* CARD 1: Visual Template Designer */}
               <div 
                 className="bg-white rounded-2xl sm:rounded-3xl border border-[var(--pd-line)] p-6 sm:p-8 flex flex-col justify-between transition-all hover:border-[var(--pd-indigo)]/40 group"
                 style={{ boxShadow: "var(--pd-shadow)" }}
@@ -208,11 +142,127 @@ export default function FeaturesPage() {
                   />
                 </div>
                 <div>
+                  <span className="pd-pill-label mb-3 inline-flex">Design Studio</span>
                   <h3 className="text-xl sm:text-2xl font-bold text-[var(--pd-ink)] mb-2">
                     Customizable Template Designer
                   </h3>
                   <p className="text-sm text-[var(--pd-mute)] leading-relaxed">
-                    Build and customize certificates with dynamic recipient tags, custom signatures, official logos, and high-resolution PDF exports.
+                    Build and customize certificates with dynamic recipient tags, authorized digital signatures, official company logos, and high-resolution PDF exports.
+                  </p>
+                </div>
+              </div>
+
+              {/* CARD 2: Instant Public Verification Portal */}
+              <div 
+                className="bg-white rounded-2xl sm:rounded-3xl border border-[var(--pd-line)] p-6 sm:p-8 flex flex-col justify-between transition-all hover:border-[var(--pd-indigo)]/40 group"
+                style={{ boxShadow: "var(--pd-shadow)" }}
+              >
+                <div className="bg-[#F7F7FA] rounded-xl sm:rounded-2xl p-4 sm:p-6 border border-[var(--pd-line)] mb-6 overflow-hidden flex items-center justify-center min-h-[220px] sm:min-h-[260px] group-hover:bg-[#F3F2FC] transition-colors">
+                  <img
+                    src="/images/features-page/verification-portal.png"
+                    alt="Instant Public Verification Portal"
+                    className="w-full h-auto max-h-[280px] object-contain rounded-lg shadow-sm"
+                  />
+                </div>
+                <div>
+                  <span className="pd-pill-label mb-3 inline-flex">Tamper-Proof</span>
+                  <h3 className="text-xl sm:text-2xl font-bold text-[var(--pd-ink)] mb-2">
+                    Instant Public Verification Portal
+                  </h3>
+                  <p className="text-sm text-[var(--pd-mute)] leading-relaxed">
+                    Every certificate includes a tamper-proof verification URL and scannable QR code. Employers and institutions can verify authenticity instantly on phone or desktop.
+                  </p>
+                </div>
+              </div>
+
+              {/* CARD 3: 1-Click LinkedIn Sharing */}
+              <div 
+                className="bg-white rounded-2xl sm:rounded-3xl border border-[var(--pd-line)] p-6 sm:p-8 flex flex-col justify-between transition-all hover:border-[var(--pd-indigo)]/40 group"
+                style={{ boxShadow: "var(--pd-shadow)" }}
+              >
+                <div className="bg-[#F7F7FA] rounded-xl sm:rounded-2xl p-4 sm:p-6 border border-[var(--pd-line)] mb-6 overflow-hidden flex items-center justify-center min-h-[220px] sm:min-h-[260px] group-hover:bg-[#F3F2FC] transition-colors">
+                  <img
+                    src="/images/features-page/proofdeck-share-to-linkedin.png"
+                    alt="1-Click LinkedIn and Social Sharing"
+                    className="w-full h-auto max-h-[280px] object-contain rounded-lg shadow-sm"
+                  />
+                </div>
+                <div>
+                  <span className="pd-pill-label mb-3 inline-flex">Social Growth</span>
+                  <h3 className="text-xl sm:text-2xl font-bold text-[var(--pd-ink)] mb-2">
+                    1-Click LinkedIn & Social Sharing
+                  </h3>
+                  <p className="text-sm text-[var(--pd-mute)] leading-relaxed">
+                    Recipients can add verified credentials directly to their LinkedIn Licenses & Certifications with verified issuer badge and certified credential ID.
+                  </p>
+                </div>
+              </div>
+
+              {/* CARD 4: Real-Time Analytics */}
+              <div 
+                className="bg-white rounded-2xl sm:rounded-3xl border border-[var(--pd-line)] p-6 sm:p-8 flex flex-col justify-between transition-all hover:border-[var(--pd-indigo)]/40 group"
+                style={{ boxShadow: "var(--pd-shadow)" }}
+              >
+                <div className="bg-[#F7F7FA] rounded-xl sm:rounded-2xl p-4 sm:p-6 border border-[var(--pd-line)] mb-6 overflow-hidden flex items-center justify-center min-h-[220px] sm:min-h-[260px] group-hover:bg-[#F3F2FC] transition-colors">
+                  <img
+                    src="/images/features-page/analytics.png"
+                    alt="Time Management Tools & Analytics"
+                    className="w-full h-auto max-h-[280px] object-contain rounded-lg shadow-sm"
+                  />
+                </div>
+                <div>
+                  <span className="pd-pill-label mb-3 inline-flex">Insights</span>
+                  <h3 className="text-xl sm:text-2xl font-bold text-[var(--pd-ink)] mb-2">
+                    Real-Time Analytics & Tracking
+                  </h3>
+                  <p className="text-sm text-[var(--pd-mute)] leading-relaxed">
+                    Gain actionable visibility into recipient engagement, email open and delivery rates, certificate downloads, and public verification traffic.
+                  </p>
+                </div>
+              </div>
+
+              {/* CARD 5: Seamless Collaboration */}
+              <div 
+                className="bg-white rounded-2xl sm:rounded-3xl border border-[var(--pd-line)] p-6 sm:p-8 flex flex-col justify-between transition-all hover:border-[var(--pd-indigo)]/40 group"
+                style={{ boxShadow: "var(--pd-shadow)" }}
+              >
+                <div className="bg-[#F7F7FA] rounded-xl sm:rounded-2xl p-4 sm:p-6 border border-[var(--pd-line)] mb-6 overflow-hidden flex items-center justify-center min-h-[220px] sm:min-h-[260px] group-hover:bg-[#F3F2FC] transition-colors">
+                  <img
+                    src="/images/features-page/invite-team.png"
+                    alt="Seamless Collaboration"
+                    className="w-full h-auto max-h-[280px] object-contain rounded-lg shadow-sm"
+                  />
+                </div>
+                <div>
+                  <span className="pd-pill-label mb-3 inline-flex">Workspaces</span>
+                  <h3 className="text-xl sm:text-2xl font-bold text-[var(--pd-ink)] mb-2">
+                    Seamless Team Collaboration
+                  </h3>
+                  <p className="text-sm text-[var(--pd-mute)] leading-relaxed">
+                    Work together with your colleagues effortlessly, share certificate templates, invite team members, and manage multi-user issuance roles.
+                  </p>
+                </div>
+              </div>
+
+              {/* CARD 6: Developer REST API & Webhooks */}
+              <div 
+                className="bg-white rounded-2xl sm:rounded-3xl border border-[var(--pd-line)] p-6 sm:p-8 flex flex-col justify-between transition-all hover:border-[var(--pd-indigo)]/40 group"
+                style={{ boxShadow: "var(--pd-shadow)" }}
+              >
+                <div className="bg-[#F7F7FA] rounded-xl sm:rounded-2xl p-4 sm:p-6 border border-[var(--pd-line)] mb-6 overflow-hidden flex items-center justify-center min-h-[220px] sm:min-h-[260px] group-hover:bg-[#F3F2FC] transition-colors">
+                  <img
+                    src="/images/features-page/api-guide.png"
+                    alt="Developer REST API Integration"
+                    className="w-full h-auto max-h-[280px] object-contain rounded-lg shadow-sm"
+                  />
+                </div>
+                <div>
+                  <span className="pd-pill-label mb-3 inline-flex">Developer Platform</span>
+                  <h3 className="text-xl sm:text-2xl font-bold text-[var(--pd-ink)] mb-2">
+                    Developer REST API & Integrations
+                  </h3>
+                  <p className="text-sm text-[var(--pd-mute)] leading-relaxed">
+                    Automate certificate generation directly from your own LMS, HR system, or application using our fast REST API, multi-language code examples, and webhooks.
                   </p>
                 </div>
               </div>
