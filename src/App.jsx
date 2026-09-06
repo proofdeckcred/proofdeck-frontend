@@ -1,5 +1,6 @@
 import React, { useEffect } from "react";
 import { Routes, Route, useLocation } from "react-router-dom";
+import Lenis from "lenis";
 
 // User-facing imports
 import DashboardLayout from "./layouts/DashboardLayout";
@@ -62,6 +63,26 @@ function ScrollToTop() {
 
   useEffect(() => {
     window.scrollTo(0, 0);
+  }, [pathname]);
+
+  // Initialize Lenis smooth scroll on public-facing pages only
+  useEffect(() => {
+    const isAppPage = pathname.startsWith('/dashboard') || pathname.startsWith('/admin');
+    if (isAppPage) return;
+
+    const lenis = new Lenis({
+      duration: 1.4,       // scroll duration — higher = slower, smoother
+      easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)), // ease-out expo
+      touchMultiplier: 1.5,
+    });
+
+    function raf(time) {
+      lenis.raf(time);
+      requestAnimationFrame(raf);
+    }
+    requestAnimationFrame(raf);
+
+    return () => lenis.destroy();
   }, [pathname]);
 
   return null;
