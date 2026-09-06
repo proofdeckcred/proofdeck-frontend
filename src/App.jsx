@@ -175,7 +175,7 @@ function App() {
 
           <Route path="*" element={<NotFoundPage />} />
         </Routes>
-        <SupportWidget />
+        {/* <SupportWidget /> */}
       </AdminAuthProvider>
     </UserProvider>
   );
