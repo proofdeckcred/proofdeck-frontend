@@ -252,10 +252,7 @@ export const deleteAdminCompany = (companyId) =>
 export const getEmailRecipients = () => API.get("/admin/messaging/recipients");
 export const sendAdminBulkEmail = (emailData) =>
   API.post("/admin/messaging/send-email", emailData);
-export const uploadEditorImage = (formData) =>
-  API.post("/uploads/editor-images", formData, {
-    headers: { "Content-Type": "multipart/form-data" },
-  });
+
 
 // Email Preferences & Unsubscribe
 export const getEmailPreferences = (token) => API.get(`/email/preferences?token=${encodeURIComponent(token)}`);
