@@ -11,10 +11,13 @@ import {
   LogOut,
   Mail,
   Shield,
+  X,
+  Radio,
+  Sliders,
 } from "lucide-react";
 import { useAdminAuth } from "../context/AdminAuthContext";
 
-function AdminSidebar() {
+function AdminSidebar({ onClose }) {
   const navigate = useNavigate();
   const { admin } = useAdminAuth();
   const isSuperAdmin = admin?.role === 'super_admin';
@@ -22,117 +25,161 @@ function AdminSidebar() {
   const handleLogout = (e) => {
     e.preventDefault();
     localStorage.removeItem("token");
+    localStorage.removeItem("adminToken");
     navigate("/admin/login");
   };
 
   const navItemClass = ({ isActive }) =>
-    `flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 font-medium text-sm ${
+    `flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition-all duration-200 text-xs font-semibold ${
       isActive
-        ? "bg-indigo-50 text-indigo-700"
-        : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+        ? "bg-indigo-50 text-[#5B4CF5] shadow-xs"
+        : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
     }`;
 
   return (
-    <aside className="w-64 bg-white border-r border-gray-200 flex flex-col h-screen sticky top-0 left-0 overflow-y-auto">
+    <aside className="w-64 bg-white border-r border-slate-200/80 flex flex-col h-full overflow-y-auto">
       {/* --- LOGO HEADER --- */}
-      <div className="p-6 border-b border-gray-100">
+      <div className="p-5 border-b border-slate-100 flex items-center justify-between">
         <Link
           to="/admin/dashboard"
-          className="flex items-center gap-3 no-underline"
+          onClick={onClose}
+          className="flex items-center gap-2.5 no-underline"
         >
           <img
             src="/logo.png"
             alt="ProofDeck"
-            className="w-10 h-10 object-contain"
+            className="w-8 h-8 object-contain"
           />
-          <span className="text-xl font-bold text-gray-900 tracking-tight">
-            ProofDeck <span className="text-indigo-600 text-xs">Admin</span>
-          </span>
+          <div>
+            <div className="text-base font-bold text-slate-900 tracking-tight leading-none">
+              ProofDeck
+            </div>
+            <span className="text-[10px] font-bold text-[#5B4CF5] uppercase tracking-wider">
+              Mission Control
+            </span>
+          </div>
         </Link>
+        {onClose && (
+          <button
+            onClick={onClose}
+            className="p-1 text-slate-400 hover:text-slate-700 md:hidden rounded-lg hover:bg-slate-100"
+          >
+            <X size={18} />
+          </button>
+        )}
       </div>
 
       {/* --- NAVIGATION LINKS --- */}
-      <div className="flex-1 px-4 py-6 space-y-1">
-        <NavLink to="/admin/dashboard" end className={navItemClass}>
-          <LayoutDashboard size={20} />
-          <span>Dashboard</span>
-        </NavLink>
-
-        {(isSuperAdmin || admin?.permissions?.view_users) && (
-            <NavLink to="/admin/users" className={navItemClass}>
-            <Users size={20} />
-            <span>User Management</span>
+      <div className="flex-1 px-3 py-5 space-y-6">
+        {/* Core Section */}
+        <div>
+          <div className="px-3.5 pb-2 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+            Command Center
+          </div>
+          <div className="space-y-1">
+            <NavLink to="/admin/dashboard" end className={navItemClass} onClick={onClose}>
+              <LayoutDashboard size={17} />
+              <span>Executive Pulse</span>
             </NavLink>
-        )}
+            {(isSuperAdmin || admin?.permissions?.view_analytics) && (
+              <NavLink to="/admin/analytics" className={navItemClass} onClick={onClose}>
+                <BarChart2 size={17} />
+                <span>Deep Analytics</span>
+              </NavLink>
+            )}
+          </div>
+        </div>
 
-        {(isSuperAdmin || admin?.permissions?.view_companies) && (
-            <NavLink to="/admin/companies" className={navItemClass}>
-            <Building size={20} />
-            <span>Companies</span>
-            </NavLink>
-        )}
+        {/* Directory & Issuers Section */}
+        <div>
+          <div className="px-3.5 pb-2 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+            Issuers & Registry
+          </div>
+          <div className="space-y-1">
+            {(isSuperAdmin || admin?.permissions?.view_users) && (
+              <NavLink to="/admin/users" className={navItemClass} onClick={onClose}>
+                <Users size={17} />
+                <span>User Management</span>
+              </NavLink>
+            )}
 
-        {(isSuperAdmin || admin?.permissions?.view_payments) && (
-            <NavLink to="/admin/payments" className={navItemClass}>
-            <CreditCard size={20} />
-            <span>Payments</span>
-            </NavLink>
-        )}
+            {(isSuperAdmin || admin?.permissions?.view_companies) && (
+              <NavLink to="/admin/companies" className={navItemClass} onClick={onClose}>
+                <Building size={17} />
+                <span>Companies</span>
+              </NavLink>
+            )}
 
-        {(isSuperAdmin || admin?.permissions?.view_certificates) && (
-            <NavLink to="/admin/certificates" className={navItemClass}>
-            <FileText size={20} />
-            <span>Certificates</span>
-            </NavLink>
-        )}
+            {(isSuperAdmin || admin?.permissions?.view_certificates) && (
+              <NavLink to="/admin/certificates" className={navItemClass} onClick={onClose}>
+                <FileText size={17} />
+                <span>Certificates Registry</span>
+              </NavLink>
+            )}
 
-        {(isSuperAdmin || admin?.permissions?.view_analytics) && (
-            <NavLink to="/admin/analytics" className={navItemClass}>
-            <BarChart2 size={20} />
-            <span>Analytics</span>
-            </NavLink>
-        )}
+            {(isSuperAdmin || admin?.permissions?.view_payments) && (
+              <NavLink to="/admin/payments" className={navItemClass} onClick={onClose}>
+                <CreditCard size={17} />
+                <span>Payments & Invoices</span>
+              </NavLink>
+            )}
+          </div>
+        </div>
 
-        {(isSuperAdmin || admin?.permissions?.view_support) && (
-            <NavLink to="/admin/support" className={navItemClass}>
-            <MessageSquare size={20} />
-            <span>Support Tickets</span>
-            </NavLink>
-        )}
+        {/* Communications Section */}
+        <div>
+          <div className="px-3.5 pb-2 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+            Communications
+          </div>
+          <div className="space-y-1">
+            {(isSuperAdmin || admin?.permissions?.view_messaging) && (
+              <NavLink to="/admin/broadcasts" className={navItemClass} onClick={onClose}>
+                <Mail size={17} />
+                <span>Email Broadcasts</span>
+              </NavLink>
+            )}
 
-        {(isSuperAdmin || admin?.permissions?.view_messaging) && (
-            <NavLink to="/admin/messaging" className={navItemClass}>
-            <MessageSquare size={20} />
-            <span>Direct Messaging</span>
-            </NavLink>
-        )}
+            {(isSuperAdmin || admin?.permissions?.view_messaging) && (
+              <NavLink to="/admin/messaging" className={navItemClass} onClick={onClose}>
+                <MessageSquare size={17} />
+                <span>Direct Messaging</span>
+              </NavLink>
+            )}
 
-        {(isSuperAdmin || admin?.permissions?.view_messaging) && (
-            <NavLink to="/admin/broadcasts" className={navItemClass}>
-            <Mail size={20} />
-            <span>Email Broadcasts</span>
-            </NavLink>
-        )}
-        
+            {(isSuperAdmin || admin?.permissions?.view_support) && (
+              <NavLink to="/admin/support" className={navItemClass} onClick={onClose}>
+                <Radio size={17} />
+                <span>Support Tickets</span>
+              </NavLink>
+            )}
+          </div>
+        </div>
+
+        {/* Administration Section */}
         {isSuperAdmin && (
-            <NavLink to="/admin/team" className={navItemClass}>
-              <Shield size={20} />
-              <span>Team</span>
-            </NavLink>
+          <div>
+            <div className="px-3.5 pb-2 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+              Governance
+            </div>
+            <div className="space-y-1">
+              <NavLink to="/admin/team" className={navItemClass} onClick={onClose}>
+                <Shield size={17} />
+                <span>Admin Team & Roles</span>
+              </NavLink>
+            </div>
+          </div>
         )}
       </div>
 
       {/* --- FOOTER SECTION --- */}
-      <div className="p-4 border-t border-gray-100 bg-gray-50/50">
-        <div className="space-y-1">
-          <button
-            onClick={handleLogout}
-            className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-red-600 hover:bg-red-50 hover:text-red-700 transition-colors font-medium text-sm text-left"
-          >
-            <LogOut size={20} />
-            <span>Logout</span>
-          </button>
-        </div>
+      <div className="p-3 border-t border-slate-100 bg-slate-50/50">
+        <button
+          onClick={handleLogout}
+          className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-red-600 hover:bg-red-50 hover:text-red-700 transition-colors font-semibold text-xs text-left cursor-pointer"
+        >
+          <LogOut size={16} />
+          <span>Sign Out</span>
+        </button>
       </div>
     </aside>
   );

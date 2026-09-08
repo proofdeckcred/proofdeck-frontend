@@ -1,15 +1,25 @@
 import React, { useState, useEffect } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import {
   Users,
   FileBadge,
   DollarSign,
   BarChart2,
   ListOrdered,
-  ShoppingCart,
   Loader2,
   AlertCircle,
   Inbox,
-  Activity
+  Activity,
+  Mail,
+  CreditCard,
+  FileText,
+  Radio,
+  Plus,
+  ArrowUpRight,
+  Shield,
+  RefreshCw,
+  TrendingUp,
+  Building,
 } from "lucide-react";
 import { Line } from "react-chartjs-2";
 import {
@@ -25,7 +35,6 @@ import {
   ArcElement
 } from "chart.js";
 import { getAdminDashboardStats } from "../api";
-import { Link } from "react-router-dom";
 import { useAdminAuth } from "../context/AdminAuthContext";
 import SystemHealthWidget from "../components/SystemHealthWidget";
 import { PulseCard, RevenueWidget, ChurnWidget, ActiveOrgsWidget } from "../components/DashboardWidgets";
@@ -50,6 +59,7 @@ const formatCurrency = (num) =>
   })}`;
 
 function AdminDashboardPage() {
+  const navigate = useNavigate();
   const { admin } = useAdminAuth();
   const isSuperAdmin = admin?.role === 'super_admin';
   const isBusinessAdmin = admin?.role === 'business_admin';
@@ -57,47 +67,65 @@ function AdminDashboardPage() {
 
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState("");
 
+  const fetchStats = async (isRefresh = false) => {
+    try {
+      if (isRefresh) setRefreshing(true);
+      else setLoading(true);
+      const responseData = await getAdminDashboardStats();
+      setData(responseData.data || responseData);
+      setError("");
+    } catch (err) {
+      setError("Failed to load dashboard stats. Please refresh.");
+      console.error("Dashboard Error:", err);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  };
+
   useEffect(() => {
-    const fetchStats = async () => {
-      try {
-        const responseData = await getAdminDashboardStats();
-        setData(responseData.data || responseData);
-      } catch (err) {
-        setError("Failed to load dashboard stats. Please refresh.");
-        console.error("Dashboard Error:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
     fetchStats();
   }, []);
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center h-[60vh]">
-        <Loader2 className="animate-spin text-indigo-600" size={48} />
+      <div className="flex flex-col justify-center items-center h-[60vh]">
+        <Loader2 className="animate-spin text-[#5B4CF5] mb-3" size={36} />
+        <span className="text-xs text-slate-400 font-medium">Synchronizing Mission Control...</span>
       </div>
     );
   }
 
-  if (error)
+  if (error) {
     return (
-      <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded flex items-center gap-2">
-        <AlertCircle size={20} />
-        {error}
+      <div className="bg-rose-50 border border-rose-200 text-rose-700 px-4 py-3 rounded-xl flex items-center justify-between shadow-xs">
+        <div className="flex items-center gap-2 text-xs font-semibold">
+          <AlertCircle size={16} />
+          {error}
+        </div>
+        <button
+          onClick={() => fetchStats()}
+          className="text-xs font-bold text-rose-800 underline cursor-pointer"
+        >
+          Retry
+        </button>
       </div>
     );
-  if (!data || (!data.kpi && !data.recent_users))
-    return (
-      <div className="bg-blue-50 border border-blue-200 text-blue-700 px-4 py-3 rounded flex items-center gap-2">
-        <Inbox size={20} />
-        No dashboard data found or database is empty.
-      </div>
-    );
+  }
 
-  const { kpi, recent_users, recent_payments, revenue_trend_30d, revenue_by_plan } = data;
+  if (!data || (!data.kpi && !data.recent_users)) {
+    return (
+      <div className="bg-indigo-50/50 border border-indigo-100 text-indigo-800 px-4 py-3 rounded-xl flex items-center gap-2 text-xs font-medium">
+        <Inbox size={16} />
+        No platform activity recorded yet.
+      </div>
+    );
+  }
+
+  const { kpi, recent_users, revenue_trend_30d, revenue_by_plan } = data;
 
   // Chart Data for Pulse Trend (Revenue)
   const revenueChartData = {
@@ -108,9 +136,12 @@ function AdminDashboardPage() {
       {
         label: "Daily Revenue (USD)",
         data: (revenue_trend_30d || []).map((item) => item.revenue),
-        borderColor: "#4f46e5",
-        backgroundColor: "rgba(79, 70, 229, 0.1)",
-        tension: 0.4,
+        borderColor: "#5B4CF5",
+        backgroundColor: "rgba(91, 76, 245, 0.08)",
+        pointBackgroundColor: "#5B4CF5",
+        pointBorderColor: "#FFFFFF",
+        pointHoverRadius: 5,
+        tension: 0.35,
         fill: true,
       },
     ],
@@ -119,205 +150,320 @@ function AdminDashboardPage() {
   const lineOptions = {
     responsive: true,
     maintainAspectRatio: false,
-    plugins: { legend: { display: false } },
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        backgroundColor: '#0F172A',
+        titleFont: { size: 11 },
+        bodyFont: { size: 12, weight: 'bold' },
+        padding: 10,
+        cornerRadius: 8,
+        displayColors: false,
+        callbacks: {
+          label: (context) => `$${Number(context.raw || 0).toLocaleString()} USD`
+        }
+      }
+    },
     scales: {
       y: { 
         beginAtZero: true, 
-        ticks: { callback: (value) => `$${value}`, color: '#94a3b8' },
-        grid: { color: '#334155' }
+        ticks: { 
+          callback: (value) => `$${value}`, 
+          color: '#94A3B8',
+          font: { size: 10 }
+        },
+        grid: { color: '#F1F5F9' }
       },
-      x: { grid: { display: false }, ticks: { color: '#94a3b8' } },
+      x: { 
+        grid: { display: false }, 
+        ticks: { color: '#94A3B8', font: { size: 10 } } 
+      },
     },
   };
 
+  // Quick Operations for Admin (matching User Dashboard quickActions format)
+  const adminQuickActions = [
+    {
+      title: "Email Broadcasts",
+      description: "Dispatch marketing and updates",
+      buttonText: "Compose",
+      icon: <Mail className="w-4 h-4 text-[#5B4CF5]" />,
+      onClick: () => navigate("/admin/broadcasts"),
+    },
+    {
+      title: "User Management",
+      description: "Adjust quotas, plans and roles",
+      buttonText: "Directory",
+      icon: <Users className="w-4 h-4 text-emerald-600" />,
+      onClick: () => navigate("/admin/users"),
+    },
+    {
+      title: "Payments & Invoices",
+      description: "Monitor Paystack and renewals",
+      buttonText: "Billing",
+      icon: <CreditCard className="w-4 h-4 text-amber-600" />,
+      onClick: () => navigate("/admin/payments"),
+    },
+    {
+      title: "Certificates Registry",
+      description: "Inspect live cryptographic proofs",
+      buttonText: "Ledger",
+      icon: <FileText className="w-4 h-4 text-indigo-600" />,
+      onClick: () => navigate("/admin/certificates"),
+    },
+    {
+      title: "Support Tickets",
+      description: "Resolve issuer help requests",
+      buttonText: "Tickets",
+      icon: <Radio className="w-4 h-4 text-purple-600" />,
+      onClick: () => navigate("/admin/support"),
+    },
+  ];
+
   return (
-    <div className="space-y-8 pb-10">
-      {/* Header */}
-      <div className="flex justify-between items-end">
+    <div className="space-y-6">
+      {/* --- 1. Executive Top Header --- */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-            <h1 className="text-3xl font-bold text-gray-900">Executive Pulse</h1>
-            <div className="flex items-center gap-3 mt-2">
-                <p className="text-sm text-gray-500 mb-0">
-                Performance overview for {new Date().toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
-                </p>
-                {isSuperAdmin && <span className="badge-pill bg-purple-100 text-purple-800 border-purple-200">Super Admin</span>}
-                {isBusinessAdmin && <span className="badge-pill bg-blue-100 text-blue-800 border-blue-200">Business Admin</span>}
-            </div>
+          <div className="flex items-center gap-2">
+            <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900">
+              Executive Pulse
+            </h1>
+            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-purple-50 text-purple-700 border border-purple-200/70">
+              {isSuperAdmin ? 'Super Admin' : isBusinessAdmin ? 'Business Admin' : 'Admin'}
+            </span>
+          </div>
+          <p className="text-xs text-slate-500 mt-1">
+            Real-time platform performance for {new Date().toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+          </p>
+        </div>
+
+        <div className="flex items-center gap-2.5">
+          <button
+            onClick={() => fetchStats(true)}
+            disabled={refreshing}
+            className="px-3 py-1.5 bg-white border border-slate-200/80 hover:bg-slate-50 text-slate-700 text-xs font-semibold rounded-lg shadow-xs transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+            title="Refresh statistics"
+          >
+            <RefreshCw size={13} className={refreshing ? 'animate-spin text-[#5B4CF5]' : 'text-slate-400'} />
+            <span>{refreshing ? 'Syncing...' : 'Sync'}</span>
+          </button>
+
+          {can('view_messaging') && (
+            <Link
+              to="/admin/broadcasts"
+              className="px-3.5 py-1.5 bg-[#5B4CF5] hover:bg-[#4738E8] text-white text-xs font-semibold rounded-lg shadow-xs transition-all flex items-center gap-1.5 no-underline"
+            >
+              <Plus size={14} />
+              <span>New Broadcast</span>
+            </Link>
+          )}
         </div>
       </div>
 
-       {/* System Health (Super Admin Only) */}
-       {isSuperAdmin && <SystemHealthWidget />}
+      {/* --- 2. System Vitals Bar (Super Admin Only) --- */}
+      {isSuperAdmin && <SystemHealthWidget />}
 
-       {/* 1. PULSE SECTION (Top Row) */}
-       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            {can('view_payments') && (
-                <PulseCard 
-                    title="Revenue Today"
-                    value={formatCurrency(kpi?.revenue_today)}
-                    subtext="vs yesterday" // Placeholder logic
-                    icon={DollarSign}
-                    color="bg-green-100" subColor="text-green-600"
-                    trend="up"
-                />
-            )}
-            {can('view_users') && (
-                <PulseCard 
-                    title="Total Users"
-                    value={formatNumber(kpi?.total_users)}
-                    subtext={`+${kpi?.new_users_30d} this month`}
-                    icon={Users}
-                    color="bg-indigo-100" subColor="text-indigo-600"
-                    trend="up"
-                />
-            )}
-             {can('view_certificates') && (
-                <PulseCard 
-                    title="Certs Issued"
-                    value={formatNumber(kpi?.total_certificates)}
-                    subtext={`+${kpi?.new_certs_30d} this month`}
-                    icon={FileBadge}
-                    color="bg-blue-100" subColor="text-blue-600"
-                    trend={kpi?.new_certs_30d > 0 ? "up" : "neutral"}
-                />
-            )}
+      {/* --- 3. Core Platform KPIs Bento Grid (User Dashboard Style) --- */}
+      <div className="border border-slate-200/80 bg-white rounded-xl shadow-xs overflow-hidden">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 divide-y sm:divide-y-0 sm:divide-x divide-slate-200/80">
+          {can('view_payments') && (
             <PulseCard 
-                title="Avg Certs/User"
-                value={kpi?.avg_certs_user}
-                subtext="Engagement Score"
-                icon={Activity}
-                color="bg-orange-100" subColor="text-orange-600"
+              title="Revenue Today"
+              value={formatCurrency(kpi?.revenue_today)}
+              subtext="Real-time intake"
+              icon={DollarSign}
+              color="bg-emerald-50 text-emerald-600"
+              trend="up"
             />
-       </div>
+          )}
 
-       {/* 2. MAIN GRID (Revenue & Engagement) */}
-       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Left Column: Financials & Trends */}
-            <div className="lg:col-span-2 space-y-6">
-                {can('view_analytics') ? (
-                    <RevenueWidget 
-                        revenueToday={kpi?.revenue_today}
-                        revenueMonth={kpi?.revenue_this_month}
-                        revenueTotal={kpi?.total_revenue}
-                        revenueByPlan={revenue_by_plan}
-                    />
-                ) : (
-                    <div className="h-64 bg-gray-50 rounded-xl border border-dashed border-gray-300 flex items-center justify-center text-gray-400">
-                        Revenue Analytics Hidden
-                    </div>
-                )}
+          {can('view_users') && (
+            <PulseCard 
+              title="Total Issuers"
+              value={formatNumber(kpi?.total_users)}
+              subtext={`+${kpi?.new_users_30d || 0} this month`}
+              icon={Users}
+              color="bg-indigo-50 text-[#5B4CF5]"
+              trend="up"
+            />
+          )}
 
-                 {/* Revenue Trend Chart */}
-                 {can('view_analytics') && (
-                    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                        <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
-                        <BarChart2 size={20} className="text-gray-400" /> Revenue Trend (30 Days)
-                        </h3>
-                        <div className="h-64">
-                             <Line data={revenueChartData} options={lineOptions} />
-                        </div>
-                    </div>
-                 )}
-            </div>
+          {can('view_certificates') && (
+            <PulseCard 
+              title="Certs Issued"
+              value={formatNumber(kpi?.total_certificates)}
+              subtext={`+${kpi?.new_certs_30d || 0} this month`}
+              icon={FileBadge}
+              color="bg-blue-50 text-blue-600"
+              trend={kpi?.new_certs_30d > 0 ? "up" : "neutral"}
+            />
+          )}
 
-            {/* Right Column: Churn, Active Orgs & Signups */}
-            <div className="lg:col-span-1 space-y-6">
-                 {can('view_companies') && (
-                     <div className="h-64">
-                         <ActiveOrgsWidget total={kpi?.total_companies} active30d={kpi?.active_companies_30d} />
-                     </div>
-                 )}
-
-                 {can('view_payments') && (
-                     <ChurnWidget 
-                        failedPayments={kpi?.failed_payments_30d} 
-                        expiredSubs={kpi?.expired_subs_count} 
-                    />
-                 )}
-
-                 {/* Signups List (Moved to Right Column) */}
-                 {can('view_users') && (
-                     <div className="bg-white rounded-xl shadow-sm border border-gray-200 flex flex-col h-[400px]">
-                        <div className="p-6 pb-4 border-b border-gray-100 flex justify-between items-center bg-white sticky top-0 z-10 rounded-t-xl">
-                            <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
-                                <ListOrdered size={20} className="text-gray-400" /> New Signups
-                            </h3>
-                            <Link to="/admin/users" className="text-sm text-indigo-600 hover:text-indigo-800 font-medium">View All</Link>
-                        </div>
-                        <div className="flex-1 overflow-y-auto">
-                            {recent_users && recent_users.length > 0 ? (
-                                <div className="divide-y divide-gray-100">
-                                {recent_users.map((user) => (
-                                    <Link to={`/admin/users/${user.id}`} key={user.id} className="p-4 flex items-center justify-between hover:bg-gray-50 no-underline text-current transition-colors">
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-8 h-8 rounded-full bg-indigo-50 flex items-center justify-center text-indigo-600 font-bold text-xs">
-                                                {user.name.charAt(0)}
-                                            </div>
-                                            <div>
-                                                <p className="font-medium text-sm text-gray-900 mb-0">{user.name}</p>
-                                                <p className="text-xs text-gray-500 mb-0">{user.email}</p>
-                                            </div>
-                                        </div>
-                                        <span className="text-xs text-gray-400">{new Date(user.date).toLocaleDateString()}</span>
-                                    </Link>
-                                ))}
-                                </div>
-                            ) : (
-                                <p className="text-center text-gray-500 p-8">No new users.</p>
-                            )}
-                        </div>
-                     </div>
-                 )}
-            </div>
-       </div>
-
-      {/* 3. Transaction Table (Bottom) */}
-      {can('view_payments') && (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-            <div className="p-6 border-b border-gray-100 flex justify-between items-center">
-                <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
-                    <ShoppingCart size={20} className="text-gray-400" /> Recent Transactions
-                </h3>
-                 <Link to="/admin/payments" className="text-sm text-indigo-600 hover:text-indigo-800 font-medium">View All</Link>
-            </div>
-            <div className="overflow-x-auto">
-            {recent_payments && recent_payments.length > 0 ? (
-                <table className="min-w-full divide-y divide-gray-200 text-sm">
-                <thead className="bg-gray-50">
-                    <tr>
-                    <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">User</th>
-                    <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Plan</th>
-                    <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Amount</th>
-                    <th className="px-6 py-3 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">Date</th>
-                    </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-100">
-                    {recent_payments.map((p) => (
-                    <tr key={p.id} className="hover:bg-gray-50 transition-colors">
-                        <td className="px-6 py-4 whitespace-nowrap font-medium text-gray-900">{p.user_name}</td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                            <span className="px-2 py-1 text-xs font-semibold uppercase rounded-full bg-indigo-100 text-indigo-800">{p.plan}</span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-gray-700">{formatCurrency(p.amount)}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-right text-gray-500">{new Date(p.date).toLocaleDateString()}</td>
-                    </tr>
-                    ))}
-                </tbody>
-                </table>
-            ) : (
-                <p className="text-center text-gray-500 p-8">No recent transactions.</p>
-            )}
-            </div>
+          <PulseCard 
+            title="Avg Certs / User"
+            value={kpi?.avg_certs_user || "0.0"}
+            subtext="Platform Engagement"
+            icon={Activity}
+            color="bg-amber-50 text-amber-600"
+            trend="neutral"
+          />
         </div>
-      )}
+      </div>
 
-       {/* Style override for badges since I used inline styles in previous edit, cleaning up */}
-       <style>{`
-         .badge-pill { display: inline-flex; align-items: center; gap: 4px; padding: 2px 10px; border-radius: 9999px; font-size: 0.75rem; font-weight: 500; border-width: 1px; }
-       `}</style>
+      {/* --- 4. Admin Quick Operations Strip (Matching User Dashboard Quick Actions) --- */}
+      <div>
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+            Quick Operations
+          </h3>
+          <span className="text-[10px] font-semibold text-slate-400">1-Click Platform Shortcuts</span>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+          {adminQuickActions.map((action, i) => (
+            <div
+              key={i}
+              onClick={action.onClick}
+              className="p-3.5 bg-white border border-slate-200/80 rounded-xl shadow-xs hover:shadow-sm hover:border-[#5B4CF5]/40 transition-all cursor-pointer flex flex-col justify-between group"
+            >
+              <div className="flex items-center justify-between mb-2">
+                <div className="p-2 bg-slate-50 group-hover:bg-indigo-50/60 rounded-lg transition-colors">
+                  {action.icon}
+                </div>
+                <ArrowUpRight className="w-3.5 h-3.5 text-slate-300 group-hover:text-[#5B4CF5] transition-colors" />
+              </div>
+              <div>
+                <h4 className="text-xs font-bold text-slate-900 group-hover:text-[#5B4CF5] transition-colors">
+                  {action.title}
+                </h4>
+                <p className="text-[10px] text-slate-400 line-clamp-1 mt-0.5">
+                  {action.description}
+                </p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* --- 5. Main Split (Financial Trends & Live Feeds) --- */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        {/* Left Column (8 cols): Revenue Analytics & Line Chart */}
+        <div className="lg:col-span-8 space-y-6">
+          {can('view_analytics') && (
+            <RevenueWidget 
+              revenueToday={kpi?.revenue_today}
+              revenueMonth={kpi?.revenue_this_month}
+              revenueTotal={kpi?.total_revenue}
+              revenueByPlan={revenue_by_plan}
+            />
+          )}
+
+          {can('view_analytics') && (
+            <div className="border border-slate-200/80 bg-white rounded-xl p-5 shadow-xs">
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <h3 className="text-sm font-bold text-slate-800">Revenue Trajectory (30 Days)</h3>
+                  <p className="text-[10px] text-slate-400">Daily gross payment intake in USD</p>
+                </div>
+                <div className="flex items-center gap-1 text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200/60">
+                  <TrendingUp size={13} />
+                  <span>30-Day Pacing</span>
+                </div>
+              </div>
+
+              <div className="h-64">
+                <Line data={revenueChartData} options={lineOptions} />
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Right Column (4 cols): Orgs, Churn & Recent Signups */}
+        <div className="lg:col-span-4 space-y-6">
+          {/* Active Organizations Meter */}
+          {can('view_companies') && (
+            <ActiveOrgsWidget total={kpi?.total_companies} active30d={kpi?.active_companies_30d} />
+          )}
+
+          {/* Churn & Failed Payments */}
+          {can('view_payments') && (
+            <ChurnWidget 
+              failedPayments={kpi?.failed_payments_30d} 
+              expiredSubs={kpi?.expired_subs_count} 
+            />
+          )}
+
+          {/* New Signups Live Stream */}
+          {can('view_users') && (
+            <div className="border border-slate-200/80 bg-white rounded-xl shadow-xs overflow-hidden">
+              <div className="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+                <div className="flex items-center gap-2">
+                  <ListOrdered size={15} className="text-[#5B4CF5]" />
+                  <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider mb-0">
+                    Recent Signups
+                  </h3>
+                </div>
+                <Link
+                  to="/admin/users"
+                  className="text-[11px] font-bold text-[#5B4CF5] hover:underline"
+                >
+                  View All →
+                </Link>
+              </div>
+
+              <div className="divide-y divide-slate-100 max-h-[360px] overflow-y-auto">
+                {recent_users && recent_users.length > 0 ? (
+                  recent_users.map((user) => (
+                    <div
+                      key={user.id}
+                      className="p-3.5 hover:bg-slate-50/50 transition-colors flex items-center justify-between gap-3"
+                    >
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-1.5">
+                          <p className="text-xs font-bold text-slate-900 truncate mb-0">
+                            {user.name || "Anonymous Issuer"}
+                          </p>
+                          <span className={`px-1.5 py-0.2 rounded text-[9px] font-bold uppercase ${
+                            user.plan === 'enterprise'
+                              ? 'bg-purple-50 text-purple-700 border border-purple-200/60'
+                              : user.plan === 'pro'
+                              ? 'bg-indigo-50 text-[#5B4CF5] border border-indigo-200/60'
+                              : 'bg-slate-100 text-slate-600'
+                          }`}>
+                            {user.plan || 'Starter'}
+                          </span>
+                        </div>
+                        <p className="text-[10px] text-slate-400 truncate mt-0.5">
+                          {user.email}
+                        </p>
+                      </div>
+
+                      <div className="text-right shrink-0">
+                        <span className="text-[10px] text-slate-400 block font-mono">
+                          {user.created_at ? new Date(user.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" }) : '—'}
+                        </span>
+                        <Link
+                          to={`/admin/users/${user.id}`}
+                          className="text-[10px] font-semibold text-[#5B4CF5] hover:underline mt-0.5 block"
+                        >
+                          Audit →
+                        </Link>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="p-6 text-center text-xs text-slate-400">
+                    No new signups in the last 7 days.
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 }
 
 export default AdminDashboardPage;
-
