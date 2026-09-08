@@ -28,6 +28,15 @@ function DashboardLayout() {
     });
   };
 
+  // Lock body overflow in dashboard so hover tooltips/portals never flash a second scrollbar or shake
+  React.useEffect(() => {
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prevOverflow;
+    };
+  }, []);
+
   return (
     <div className="flex h-screen bg-gray-50 dark:bg-[var(--background-white)] transition-colors duration-300 overflow-hidden w-full max-w-full">
       <MobileWarning />

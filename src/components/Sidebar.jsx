@@ -65,6 +65,8 @@ function Sidebar({ isCollapsed: propIsCollapsed, toggleSidebar: propToggleSideba
       return (
         <OverlayTrigger
           placement="right"
+          delay={{ show: 150, hide: 50 }}
+          popperConfig={{ strategy: "fixed" }}
           overlay={<Tooltip id={`tooltip-${label}`}>{label}</Tooltip>}
         >
           {linkContent}
@@ -196,6 +198,8 @@ function Sidebar({ isCollapsed: propIsCollapsed, toggleSidebar: propToggleSideba
             return isCollapsed ? (
               <OverlayTrigger
                 placement="right"
+                delay={{ show: 150, hide: 50 }}
+                popperConfig={{ strategy: "fixed" }}
                 overlay={
                   <Tooltip id="tooltip-profile">
                     {user.name} ({user.role} Plan)

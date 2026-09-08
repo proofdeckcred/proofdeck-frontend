@@ -20,6 +20,8 @@ export default function DashboardTopbar({ isCollapsed, toggleSidebar }) {
       <div className="hidden md:flex items-center gap-2">
         <OverlayTrigger
           placement="bottom"
+          delay={{ show: 150, hide: 50 }}
+          popperConfig={{ strategy: "fixed" }}
           overlay={
             <Tooltip id="sidebar-toggle-tip">
               {isCollapsed ? "Open sidebar" : "Close sidebar"}
