@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import {
   Mail, Send, Eye, Plus, Trash2, CheckCircle2, AlertCircle, ShieldAlert,
-  Loader2, RefreshCw, BarChart2, Layers, Check, HelpCircle, Image as ImageIcon
+  Loader2, RefreshCw, BarChart2, Layers, Check, HelpCircle, Image as ImageIcon,
+  GripVertical, ChevronUp, ChevronDown
 } from 'lucide-react';
 import {
   getAdminBroadcasts,
@@ -92,6 +93,53 @@ export default function AdminBroadcastsPage() {
 
   const updateBlock = (id, field, value) => {
     setBlocks(prev => prev.map(b => (b.id === id ? { ...b, [field]: value } : b)));
+  };
+
+  // Drag-and-drop & block reordering
+  const [draggedIndex, setDraggedIndex] = useState(null);
+  const [dragOverIndex, setDragOverIndex] = useState(null);
+
+  const moveBlock = (fromIndex, toIndex) => {
+    if (toIndex < 0 || toIndex >= blocks.length || fromIndex === toIndex) return;
+    setBlocks(prev => {
+      const updated = [...prev];
+      const [moved] = updated.splice(fromIndex, 1);
+      updated.splice(toIndex, 0, moved);
+      return updated;
+    });
+  };
+
+  const handleDragStart = (e, index) => {
+    const tagName = e.target.tagName?.toLowerCase();
+    if (['input', 'textarea', 'button', 'select'].includes(tagName)) {
+      e.preventDefault();
+      return;
+    }
+    setDraggedIndex(index);
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', index.toString());
+  };
+
+  const handleDragOver = (e, index) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    if (dragOverIndex !== index) {
+      setDragOverIndex(index);
+    }
+  };
+
+  const handleDrop = (e, index) => {
+    e.preventDefault();
+    if (draggedIndex !== null && draggedIndex !== index) {
+      moveBlock(draggedIndex, index);
+    }
+    setDraggedIndex(null);
+    setDragOverIndex(null);
+  };
+
+  const handleDragEnd = () => {
+    setDraggedIndex(null);
+    setDragOverIndex(null);
   };
 
   const handleSaveDraft = async () => {
@@ -458,20 +506,59 @@ export default function AdminBroadcastsPage() {
               {blocks.map((block, index) => (
                 <div
                   key={block.id}
-                  className="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm relative group space-y-3"
+                  draggable
+                  onDragStart={(e) => handleDragStart(e, index)}
+                  onDragOver={(e) => handleDragOver(e, index)}
+                  onDrop={(e) => handleDrop(e, index)}
+                  onDragEnd={handleDragEnd}
+                  className={`bg-white p-5 rounded-2xl border transition-all duration-150 relative group space-y-3 ${
+                    draggedIndex === index
+                      ? 'opacity-40 border-dashed border-[#5B4CF5] scale-[0.99] bg-indigo-50/20'
+                      : dragOverIndex === index
+                      ? 'border-[#5B4CF5] shadow-md ring-2 ring-indigo-200 bg-indigo-50/10'
+                      : 'border-gray-200 shadow-sm hover:border-gray-300'
+                  }`}
                 >
                   <div className="flex items-center justify-between">
-                    <span className="px-2.5 py-0.5 bg-indigo-50 text-[#5B4CF5] text-xs font-bold uppercase rounded-md">
-                      Block #{index + 1}: {block.type}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => removeBlock(block.id)}
-                      className="text-gray-400 hover:text-red-500 transition-colors p-1"
-                      title="Remove block"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
+                    <div className="flex items-center gap-2">
+                      <div
+                        className="cursor-grab active:cursor-grabbing text-gray-400 hover:text-[#5B4CF5] p-1 -ml-1 rounded transition-colors"
+                        title="Drag to reorder block"
+                      >
+                        <GripVertical className="w-4 h-4" />
+                      </div>
+                      <span className="px-2.5 py-0.5 bg-indigo-50 text-[#5B4CF5] text-xs font-bold uppercase rounded-md tracking-wide">
+                        Block #{index + 1}: {block.type}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <button
+                        type="button"
+                        onClick={() => moveBlock(index, index - 1)}
+                        disabled={index === 0}
+                        className="text-gray-400 hover:text-gray-700 disabled:opacity-25 disabled:cursor-not-allowed p-1 transition-colors rounded hover:bg-gray-100"
+                        title="Move Up"
+                      >
+                        <ChevronUp className="w-4 h-4" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => moveBlock(index, index + 1)}
+                        disabled={index === blocks.length - 1}
+                        className="text-gray-400 hover:text-gray-700 disabled:opacity-25 disabled:cursor-not-allowed p-1 transition-colors rounded hover:bg-gray-100"
+                        title="Move Down"
+                      >
+                        <ChevronDown className="w-4 h-4" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => removeBlock(block.id)}
+                        className="text-gray-400 hover:text-red-500 transition-colors p-1 ml-1 rounded hover:bg-red-50"
+                        title="Remove block"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
                   </div>
 
                   {block.type === 'heading' && (
