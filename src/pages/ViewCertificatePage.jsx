@@ -224,7 +224,7 @@ function ViewCertificatePage() {
     return (
       <div className="w-full pb-12 animate-pulse">
         {/* Navigation Header Skeleton */}
-        <div className="border-b border-slate-200/80 bg-white mb-6 -mt-6 -mx-4 sm:-mx-6 md:-mx-8 px-4 sm:px-6 md:px-8 py-3">
+        <div className="border-b border-slate-200/80 bg-white mb-6 -mt-6 px-4 py-3 rounded-b-lg">
           <div className="flex justify-between items-center max-w-[1600px] mx-auto h-8">
             <div className="w-1/3 bg-gray-200 h-4 rounded" />
             <div className="w-1/4 bg-gray-200 h-6 rounded" />
@@ -267,7 +267,7 @@ function ViewCertificatePage() {
       <div className="w-full pb-12">
         
         {/* --- 1. Top Navigation Bar (Header - Locked to Top) --- */}
-        <div className="border-b border-slate-200/80 bg-white mb-6 -mt-6 -mx-4 sm:-mx-6 md:-mx-8 px-4 sm:px-6 md:px-8 py-3">
+        <div className="border-b border-slate-200/80 bg-white mb-6 -mt-6 px-4 py-3 rounded-b-lg">
           <div className="flex items-center justify-between gap-4 max-w-[1600px] mx-auto">
             {/* Left Page Title & Status */}
             <div className="flex items-center gap-3">

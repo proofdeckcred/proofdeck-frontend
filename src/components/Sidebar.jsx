@@ -20,23 +20,23 @@ import {
 import { OverlayTrigger, Tooltip } from "react-bootstrap";
 import WorkspaceSwitcher from "./WorkspaceSwitcher";
 
-function Sidebar() {
+function Sidebar({ isCollapsed: propIsCollapsed, toggleSidebar: propToggleSidebar }) {
   const navigate = useNavigate();
   const { user, workspace, switchWorkspace } = useUser();
 
-  const [isCollapsed, setIsCollapsed] = useState(() => {
+  const [localCollapsed, setLocalCollapsed] = useState(() => {
     const saved = localStorage.getItem("sidebar-collapsed");
-    return saved !== null ? JSON.parse(saved) : true; // collapsible by default
+    return saved !== null ? JSON.parse(saved) : false;
   });
 
-  const toggleSidebar = () => {
-    setIsCollapsed((prev) => {
+  const isCollapsed = propIsCollapsed !== undefined ? propIsCollapsed : localCollapsed;
+  const toggleSidebar = propToggleSidebar || (() => {
+    setLocalCollapsed((prev) => {
       const next = !prev;
       localStorage.setItem("sidebar-collapsed", JSON.stringify(next));
       return next;
     });
-  };
-
+  });
 
   const renderTooltip = (props) => (
     <Tooltip id="button-tooltip" {...props}>
@@ -77,17 +77,10 @@ function Sidebar() {
 
   return (
     <aside
-      className={`relative bg-white border-r border-gray-200 flex flex-col h-screen sticky top-0 left-0 transition-all duration-300 z-40 ${
+      className={`relative bg-white border-r border-gray-200/80 flex flex-col h-screen sticky top-0 left-0 transition-all duration-300 ease-in-out z-40 select-none ${
         isCollapsed ? "w-16" : "w-60"
       }`}
     >
-      {/* --- COLLAPSE TOGGLE --- */}
-      <button
-        onClick={toggleSidebar}
-        className="absolute top-5 -right-3 bg-white border border-gray-200 rounded-full p-1 shadow-sm hover:shadow hover:bg-gray-50 text-gray-500 hover:text-gray-900 transition-all z-50 cursor-pointer"
-      >
-        {isCollapsed ? <ChevronRight size={10} /> : <ChevronLeft size={10} />}
-      </button>
 
       {/* --- LOGO HEADER --- */}
       <div
