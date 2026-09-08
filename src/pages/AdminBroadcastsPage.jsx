@@ -83,6 +83,7 @@ export default function AdminBroadcastsPage() {
         text: type === 'button' ? 'Get Started' : undefined,
         alt: type === 'image' ? 'ProofDeck Update' : undefined,
         caption: type === 'image' ? '' : undefined,
+        href: type === 'image' ? '' : undefined,
       }
     ]);
   };
@@ -669,6 +670,18 @@ export default function AdminBroadcastsPage() {
                           onChange={(e) => updateBlock(block.id, 'alt', e.target.value)}
                           placeholder="Alt text (e.g. Platform update preview)..."
                           className="px-3 py-2 rounded-xl border border-gray-300 text-sm"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-semibold text-gray-600 mb-1">
+                          Click-Through Link (Optional: Where users go when clicking the image)
+                        </label>
+                        <input
+                          type="text"
+                          value={block.href || ''}
+                          onChange={(e) => updateBlock(block.id, 'href', e.target.value)}
+                          placeholder="https://www.proofdeck.app/dashboard"
+                          className="w-full px-3 py-2 rounded-xl border border-gray-300 text-sm"
                         />
                       </div>
                       {block.url && (
