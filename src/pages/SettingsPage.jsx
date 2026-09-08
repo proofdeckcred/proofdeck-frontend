@@ -64,13 +64,13 @@ const Section = ({ title, icon: Icon, children, className = "" }) => (
 const PLAN_INFO = {
   starter: {
     name: "Starter",
-    priceNGN: "₦25,000",
-    priceUSD: "$18.00",
-    certs: "500",
-    costPerCert: "₦50 (~$0.03)",
-    description: "Ideal for workshops, bootcamps, and small cohorts.",
+    priceNGN: "₦15,000",
+    priceUSD: "$11.35",
+    certs: "100",
+    costPerCert: "₦150 (~$0.11)",
+    description: "Single event, small workshop, first-time test",
     features: [
-      "500 Credits Included",
+      "100 Credits Included",
       "Unlimited Template Designs",
       "Secure Email Delivery",
       "High-Res PDF Downloads",
@@ -79,47 +79,50 @@ const PLAN_INFO = {
   },
   growth: {
     name: "Growth",
-    priceNGN: "₦60,000",
-    priceUSD: "$42.00",
-    certs: "2,000",
-    costPerCert: "₦30 (~$0.02)",
-    description: "Ideal for schools and training centers issuing regularly.",
+    priceNGN: "₦45,000",
+    priceUSD: "$34.00",
+    certs: "400",
+    costPerCert: "₦112 (~$0.08)",
+    description: "Regular training academies, secondary schools",
     features: [
-      "2,000 Credits Included",
+      "400 Credits Included",
       "Unlimited Template Designs",
+      "Bulk Issuance via CSV / Excel",
+      "Batch ZIP Downloads",
       "Secure Email Delivery",
       "Priority Support Channel",
-      "Basic Verification Portal",
     ],
   },
   pro: {
     name: "Pro",
-    priceNGN: "₦100,000",
-    priceUSD: "$70.00",
-    certs: "5,000",
-    costPerCert: "₦20 (~$0.014)",
-    description: "For institutions needing automation and deeper integration.",
+    priceNGN: "₦90,000",
+    priceUSD: "$68.00",
+    certs: "1,200",
+    costPerCert: "₦75 (~$0.05)",
+    description: "Large bootcamps, institutes, multi-cohort schools",
     features: [
-      "5,000 Credits Included",
+      "1,200 Credits Included",
       "Everything in Growth",
-      "Developer API Access",
-      "Custom Logo & Branding",
-      "Custom Domain URL",
+      "Developer REST API Access",
+      "Custom Logo & Digital Signatures",
+      "1-Click 'Add to LinkedIn' Sharing",
+      "Team Workspace Collaboration",
     ],
   },
   enterprise: {
     name: "Enterprise",
-    priceNGN: "₦300,000",
-    priceUSD: "$200.00",
-    certs: "20,000",
-    costPerCert: "₦15 (~$0.01)",
-    description: "For universities, exam bodies, and large organizations.",
+    priceNGN: "₦250,000",
+    priceUSD: "$189.00",
+    certs: "5,000",
+    costPerCert: "₦50 (~$0.03)",
+    description: "Universities, professional exam bodies, government",
     features: [
-      "20,000 Credits Included",
-      "Dedicated Account Manager",
-      "SLA Support Guarantee",
-      "Developer API Access",
-      "Unlimited Webhooks & API",
+      "5,000 Credits Included",
+      "Everything in Pro",
+      "Exclusive High-Res PNG Image Downloads",
+      "Unlimited Bulk Processing",
+      "Multi-Seat Organization Access",
+      "Dedicated Support & Fast-Track Assistance",
     ],
   },
 };
@@ -239,7 +242,7 @@ const ReferralSection = () => {
             <div className="relative z-10">
               <h2 className="text-2xl font-bold mb-2">Give credits, Get credits</h2>
               <p className="text-indigo-100 mb-6 max-w-lg">
-                Refer a friend to ProofDeck. When they verify their account, they get 5 bonus credits and you get 10!
+                Refer a friend or colleague to ProofDeck. When they make their first plan purchase, you get 10% of their plan's credits instantly added to your account!
               </p>
               
               <div className="bg-white/10 backdrop-blur-md p-1 pl-4 rounded-lg inline-flex items-center gap-4 border border-white/20">

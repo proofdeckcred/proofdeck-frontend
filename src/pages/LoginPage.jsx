@@ -36,14 +36,10 @@ function LoginPage() {
     }
 
     try {
-      const res = await fetch("https://api.proofdeck.app/api/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
-      });
-      const data = await res.json();
+      const res = await loginUser({ email, password });
+      const data = res.data;
 
-      if (res.ok && data.access_token) {
+      if (data && data.access_token) {
         localStorage.setItem("token", data.access_token);
         window.location.href = "/dashboard";
       } else {
@@ -51,7 +47,8 @@ function LoginPage() {
         setLoading(false);
       }
     } catch (err) {
-      setError("Cannot connect to server. Please check your internet.");
+      const msg = err.response?.data?.msg || "Login failed. Please check your credentials.";
+      setError(msg);
       setLoading(false);
     }
   };

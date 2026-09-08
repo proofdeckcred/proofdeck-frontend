@@ -95,10 +95,10 @@ const Pricing = () => (
       <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 items-stretch pt-4">
         <PricingCard
           title="Starter"
-          price="₦25,000"
-          suffix="500 credential credits"
+          price="₦15,000"
+          suffix="100 credential credits"
           features={[
-            "500 Credits Included",
+            "100 Credits Included",
             "Unlimited Template Designs",
             "Secure Email Delivery",
             "High-Res PDF Downloads",
@@ -108,41 +108,44 @@ const Pricing = () => (
         />
         <PricingCard
           title="Growth"
-          price="₦60,000"
-          suffix="2,000 credential credits"
+          price="₦45,000"
+          suffix="400 credential credits"
           features={[
-            "2,000 Credits Included",
+            "400 Credits Included",
             "Unlimited Template Designs",
+            "Bulk Issuance (CSV / Excel)",
+            "Batch ZIP Downloads",
             "Secure Email Delivery",
             "Priority Support Channel",
-            "Basic Verification Portal",
           ]}
           link="/signup?plan=growth"
         />
         <PricingCard
           title="Pro"
-          price="₦100,000"
-          suffix="5,000 credential credits"
+          price="₦90,000"
+          suffix="1,200 credential credits"
           isPopular={true}
           features={[
-            "5,000 Credits Included",
+            "1,200 Credits Included",
             "Everything in Growth",
-            "Developer API Access",
-            "Custom Logo & Branding",
-            "Custom Domain URL",
+            "Developer REST API Access",
+            "Custom Logo & Digital Signatures",
+            "1-Click 'Add to LinkedIn' Sharing",
+            "Team Workspace Collaboration",
           ]}
           link="/signup?plan=pro"
         />
         <PricingCard
           title="Enterprise"
-          price="₦300,000"
-          suffix="20,000 credential credits"
+          price="₦250,000"
+          suffix="5,000 credential credits"
           features={[
-            "20,000 Credits Included",
-            "Dedicated Account Manager",
-            "SLA Support Guarantee",
-            "Developer API Access",
-            "Unlimited Webhooks & API",
+            "5,000 Credits Included",
+            "Everything in Pro",
+            "Exclusive High-Res PNG Image Downloads",
+            "Unlimited Bulk Processing",
+            "Multi-Seat Organization Access",
+            "Dedicated Support & Fast-Track Assistance",
           ]}
           link="/signup?plan=enterprise"
         />

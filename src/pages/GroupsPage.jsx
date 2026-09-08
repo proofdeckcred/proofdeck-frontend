@@ -11,6 +11,7 @@ import {
   getTemplates,
   sendCertificateEmail,
   getCertificatePDF,
+  getCertificatePNG,
   deleteCertificate,
 } from "../api";
 import toast, { Toaster } from "react-hot-toast";
@@ -286,6 +287,34 @@ function GroupsPage() {
         return "Download started!";
       },
       error: (err) => err.response?.data?.msg || "Failed to download PDF.",
+    });
+    promise.finally(() => setDownloadingId(null));
+  };
+
+  const handleDownloadPNG = (cert) => {
+    setDownloadingId(cert.id);
+    const promise = getCertificatePNG(cert.id);
+    toast.promise(promise, {
+      loading: "Generating PNG image...",
+      success: (response) => {
+        const url = window.URL.createObjectURL(new Blob([response.data], { type: "image/png" }));
+        const link = document.createElement("a");
+        link.href = url;
+        const saneName = cert.recipient_name?.replace(/[\W_]+/g, "_").replace(/^_+|_+$/g, "");
+        const filename = saneName ? `${saneName}.png` : `doc_${cert.verification_id || cert.id}.png`;
+        link.setAttribute("download", filename);
+        document.body.appendChild(link);
+        link.click();
+        link.parentNode.removeChild(link);
+        window.URL.revokeObjectURL(url);
+        return "PNG download started!";
+      },
+      error: (err) => {
+        if (err.response?.status === 403 && err.response?.data?.upgrade_required) {
+          return "PNG downloads are exclusively available on Enterprise.";
+        }
+        return err.response?.data?.msg || "Failed to download PNG.";
+      },
     });
     promise.finally(() => setDownloadingId(null));
   };

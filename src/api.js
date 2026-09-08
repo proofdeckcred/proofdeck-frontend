@@ -51,6 +51,24 @@ API.interceptors.response.use(
       }
     }
 
+    if (error.response && (error.response.status === 401 || error.response.status === 422)) {
+      const msg = error.response.data?.msg || "";
+      // If token is invalid, expired, or malformed, clear it so user isn't stuck in 422 loop
+      if (
+        error.response.status === 401 ||
+        msg.includes("Not enough segments") ||
+        msg.includes("Signature") ||
+        msg.includes("token") ||
+        msg.includes("Error loading the user")
+      ) {
+        if (localStorage.getItem("token") && !window.location.pathname.includes("/login")) {
+          localStorage.removeItem("token");
+          localStorage.removeItem("user");
+          window.location.href = "/login";
+        }
+      }
+    }
+
     if (error.response && error.response.status === 403) {
       const msg = error.response.data?.msg;
       if (msg === "Permission denied" || msg === "Template permission denied") {
@@ -135,6 +153,8 @@ export const advancedSearchCertificates = (params) => {
 };
 export const getCertificatePDF = (certId) =>
   API.get(`/certificates/${certId}/pdf`, { responseType: "blob" });
+export const getCertificatePNG = (certId) =>
+  API.get(`/certificates/${certId}/png`, { responseType: "blob" });
 
 // EMAILING
 export const sendCertificateEmail = (certId) =>
@@ -154,10 +174,11 @@ export const generateApiKey = () => API.post("/users/me/api-key");
 export const updateUserProfile = (data) => API.put("/users/me", data);
 
 // PAYMENTS
-export const initializePayment = (plan, provider = "paystack") =>
+export const initializePayment = (plan, provider = "bachs") =>
   API.post("/payments/initialize", { plan, provider });
 export const verifyPayment = (reference) =>
   API.get(`/payments/verify/${reference}`);
+export const getPublicPlans = () => API.get("/payments/plans");
 
 // USER ANALYTICS
 export const getUserAnalytics = () => API.get("/analytics/dashboard");

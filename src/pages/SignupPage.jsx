@@ -48,21 +48,16 @@ function SignupPage() {
         referral_code: formData.referral_code || undefined
       };
 
-      const res = await fetch("https://api.proofdeck.app/api/auth/register", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-      const data = await res.json();
-
-      if (res.ok) {
+      const res = await signupUser(payload);
+      if (res.status === 200 || res.status === 201) {
         window.location.href = `/verify-email?email=${encodeURIComponent(email)}`;
       } else {
-        setError(data.msg || "Signup failed. Please try again.");
+        setError(res.data?.msg || "Signup failed. Please try again.");
         setLoading(false);
       }
     } catch (err) {
-      setError("Cannot connect to server. Please check your internet.");
+      const msg = err.response?.data?.msg || "Cannot connect to server. Please try again.";
+      setError(msg);
       setLoading(false);
     }
   };

@@ -6,12 +6,14 @@ import { Spinner, Modal, Button } from "react-bootstrap";
 import {
   getCertificate,
   getCertificatePDF,
+  getCertificatePNG,
   updateCertificateStatus,
   getTemplates,
 } from "../api";
 import {
   Edit3,
   Download,
+  Image as ImageIcon,
   Maximize2,
   X,
   CheckCircle,
@@ -127,6 +129,38 @@ function ViewCertificatePage() {
       error: (err) => err.response?.data?.msg || "Failed to download PDF.",
     });
     promise.finally(() => setDownloading(false));
+  };
+
+  const [downloadingPng, setDownloadingPng] = useState(false);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+
+  const handleDownloadPNG = async () => {
+    setDownloadingPng(true);
+    const toastId = toast.loading("Generating PNG image...");
+    try {
+      const response = await getCertificatePNG(certId);
+      toast.dismiss(toastId);
+      const url = window.URL.createObjectURL(new Blob([response.data], { type: "image/png" }));
+      const link = document.createElement("a");
+      link.href = url;
+      const saneName = certificate.recipient_name?.replace(/[\W_]+/g, "_").replace(/^_+|_+$/g, "");
+      const filename = saneName ? `${saneName}.png` : `doc_${certificate.verification_id}.png`;
+      link.setAttribute("download", filename);
+      document.body.appendChild(link);
+      link.click();
+      link.parentNode.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      toast.success("Download started!");
+    } catch (err) {
+      toast.dismiss(toastId);
+      if (err.response?.status === 403 && err.response?.data?.upgrade_required) {
+        setShowUpgradeModal(true);
+      } else {
+        toast.error(err.response?.data?.msg || "Failed to download PNG image.");
+      }
+    } finally {
+      setDownloadingPng(false);
+    }
   };
 
   const handleStatusChange = (status) => {
@@ -311,6 +345,23 @@ function ViewCertificatePage() {
                   <Download size={13} />
                 )}
                 <span>Download PDF</span>
+              </button>
+
+              <button
+                onClick={handleDownloadPNG}
+                disabled={downloadingPng}
+                title="Download high-resolution PNG image (Enterprise exclusive)"
+                className="flex items-center gap-1.5 px-3 py-1.5 text-slate-800 bg-white hover:bg-indigo-50/50 hover:text-indigo-600 rounded-lg border border-slate-250 transition-all text-xs font-bold shadow-sm disabled:opacity-70 cursor-pointer"
+              >
+                {downloadingPng ? (
+                  <div className="animate-spin h-3.5 w-3.5 border-2 border-indigo-600 border-t-transparent rounded-full" />
+                ) : (
+                  <ImageIcon size={13} className="text-indigo-600" />
+                )}
+                <span>Download PNG</span>
+                <span className="text-[9px] bg-indigo-100 text-indigo-700 font-extrabold px-1.5 py-0.2 rounded-full uppercase tracking-wider">
+                  Enterprise
+                </span>
               </button>
             </div>
           </div>
@@ -512,6 +563,65 @@ function ViewCertificatePage() {
             >
               {pendingStatus === "revoked" ? "Confirm Revoke" : "Confirm Re-validate"}
             </button>
+          </Modal.Footer>
+        </Modal>
+
+        {/* Enterprise Upgrade Modal for PNG Downloads */}
+        <Modal 
+          show={showUpgradeModal} 
+          onHide={() => setShowUpgradeModal(false)}
+          centered
+          size="md"
+        >
+          <Modal.Header closeButton className="border-b border-gray-100 pb-3">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center font-black text-xs border border-indigo-100">
+                <ImageIcon size={16} />
+              </div>
+              <div>
+                <Modal.Title className="text-sm font-bold text-gray-900 mb-0">
+                  Enterprise Feature: PNG Image Export
+                </Modal.Title>
+                <p className="text-[11px] text-gray-500 mb-0 font-medium">
+                  High-resolution PNG generation requires an Enterprise plan
+                </p>
+              </div>
+            </div>
+          </Modal.Header>
+          <Modal.Body className="py-4 text-xs text-gray-600 space-y-3">
+            <p className="leading-relaxed">
+              Downloading certificates as ultra-crisp 300-DPI <strong>PNG images</strong> is exclusively available for organizations on the <strong>Enterprise</strong> plan.
+            </p>
+            <div className="bg-indigo-50/70 border border-indigo-100 rounded-xl p-3.5 space-y-1.5">
+              <p className="font-bold text-indigo-950 text-xs mb-1">What you get on Enterprise:</p>
+              <ul className="list-disc pl-4 space-y-1 text-indigo-900 text-[11px]">
+                <li>5,000 Credential Credits Included (₦50 / cert)</li>
+                <li>Exclusive High-Res PNG & PDF Downloads</li>
+                <li>Unlimited Bulk Issuance & Multi-Seat Access</li>
+                <li>Priority Dedicated Support & Onboarding</li>
+              </ul>
+            </div>
+          </Modal.Body>
+          <Modal.Footer className="border-t border-gray-100 py-2.5 flex justify-end gap-2">
+            <Button
+              variant="light"
+              size="sm"
+              onClick={() => setShowUpgradeModal(false)}
+              className="text-xs font-semibold text-gray-600"
+            >
+              Close
+            </Button>
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={() => {
+                setShowUpgradeModal(false);
+                navigate("/dashboard/settings");
+              }}
+              className="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold"
+            >
+              Upgrade to Enterprise
+            </Button>
           </Modal.Footer>
         </Modal>
 
