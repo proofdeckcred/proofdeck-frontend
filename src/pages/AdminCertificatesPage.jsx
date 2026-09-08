@@ -125,39 +125,48 @@ function AdminCertificatesPage() {
       )}
 
       {/* Overview Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 flex flex-col justify-center items-center text-center">
-             <div className="w-12 h-12 rounded-lg bg-indigo-100 flex items-center justify-center text-indigo-600 mb-3">
-                <FileCheck size={28}/>
-             </div>
-             <h3 className="text-3xl font-bold text-gray-900">{overview.total.toLocaleString()}</h3>
-             <p className="text-gray-500">Total Issued</p>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="bg-white p-4 sm:p-5 rounded-xl border border-slate-200/80 shadow-xs flex items-center justify-between">
+          <div>
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Total Issued</span>
+            <h3 className="text-2xl font-bold tracking-tight text-slate-900 mt-1">{overview.total.toLocaleString()}</h3>
+            <p className="text-[10px] text-slate-400 mt-0.5">Certificates generated</p>
+          </div>
+          <div className="w-10 h-10 rounded-xl bg-indigo-50 flex items-center justify-center text-[#5B4CF5] shrink-0">
+            <FileCheck size={20}/>
+          </div>
         </div>
         
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-            <h4 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">Top Users by Volume</h4>
-            <div className="space-y-2">
-                {overview.by_user.slice(0, 5).map((u) => (
-                    <div key={u.user_id} className="flex justify-between items-center text-sm">
-                        <span className="text-gray-700 truncate">{u.user_name}</span>
-                        <span className="bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded-full text-xs font-semibold">{u.count}</span>
-                    </div>
-                ))}
-                {overview.by_user.length === 0 && <span className="text-xs text-gray-400">No data available</span>}
-            </div>
+        <div className="bg-white p-4 sm:p-5 rounded-xl border border-slate-200/80 shadow-xs">
+          <div className="flex items-center justify-between mb-2.5">
+            <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Top Users by Volume</h4>
+            <span className="text-[10px] text-slate-400">Top 5</span>
+          </div>
+          <div className="space-y-1.5">
+            {overview.by_user.slice(0, 5).map((u) => (
+              <div key={u.user_id} className="flex justify-between items-center text-xs">
+                <span className="text-slate-700 truncate max-w-[180px]">{u.user_name}</span>
+                <span className="bg-indigo-50 text-[#5B4CF5] px-2 py-0.5 rounded-full text-[10px] font-bold">{u.count}</span>
+              </div>
+            ))}
+            {overview.by_user.length === 0 && <span className="text-xs text-slate-400">No data available</span>}
+          </div>
         </div>
 
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-            <h4 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">Top Templates</h4>
-            <div className="space-y-2">
-                 {overview.by_template.slice(0, 5).map((t) => (
-                    <div key={t.template_id} className="flex justify-between items-center text-sm">
-                        <span className="text-gray-700 truncate">{t.title}</span>
-                        <span className="bg-green-50 text-green-700 px-2 py-0.5 rounded-full text-xs font-semibold">{t.count}</span>
-                    </div>
-                ))}
-                 {overview.by_template.length === 0 && <span className="text-xs text-gray-400">No data available</span>}
-            </div>
+        <div className="bg-white p-4 sm:p-5 rounded-xl border border-slate-200/80 shadow-xs">
+          <div className="flex items-center justify-between mb-2.5">
+            <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Top Templates</h4>
+            <span className="text-[10px] text-slate-400">Top 5</span>
+          </div>
+          <div className="space-y-1.5">
+            {overview.by_template.slice(0, 5).map((t) => (
+              <div key={t.template_id} className="flex justify-between items-center text-xs">
+                <span className="text-slate-700 truncate max-w-[180px]">{t.title}</span>
+                <span className="bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-full text-[10px] font-bold">{t.count}</span>
+              </div>
+            ))}
+            {overview.by_template.length === 0 && <span className="text-xs text-slate-400">No data available</span>}
+          </div>
         </div>
       </div>
 

@@ -112,49 +112,68 @@ function AdminAnalyticsPage() {
          </div>
       </div>
 
-      {/* KPI Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-            <div className="flex justify-between items-start mb-4">
-                <div className="w-12 h-12 rounded-lg bg-blue-100 flex items-center justify-center text-blue-600">
-                    <Users size={24}/>
-                </div>
-                 <span className="text-xs font-semibold text-green-600 bg-green-50 px-2 py-0.5 rounded-full">+12%</span>
+      {/* KPI Bento Grid */}
+      <div className="border border-slate-200/80 bg-white rounded-xl shadow-xs overflow-hidden">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 divide-y sm:divide-y-0 sm:divide-x divide-slate-200/80">
+          <div className="p-4 sm:p-5 bg-white hover:bg-slate-50/20 transition-colors">
+            <div className="flex items-center justify-between mb-1.5 gap-2">
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Total Issuers</span>
+              <div className="p-1.5 rounded-lg bg-blue-50 text-blue-600">
+                <Users size={14}/>
+              </div>
             </div>
-            <h3 className="text-2xl font-bold text-gray-900">{formatNumber(kpi_stats.total_users)}</h3>
-            <p className="text-sm text-gray-500">Total Users</p>
-        </div>
+            <h3 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900 mt-1">
+              {formatNumber(kpi_stats.total_users)}
+            </h3>
+            <p className="text-[10px] text-emerald-600 font-medium mt-0.5 flex items-center gap-1">
+              <span>+12%</span> vs last period
+            </p>
+          </div>
 
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-            <div className="flex justify-between items-start mb-4">
-                <div className="w-12 h-12 rounded-lg bg-green-100 flex items-center justify-center text-green-600">
-                    <DollarSign size={24}/>
-                </div>
-                <span className="text-xs font-semibold text-green-600 bg-green-50 px-2 py-0.5 rounded-full">+8%</span>
+          <div className="p-4 sm:p-5 bg-white hover:bg-slate-50/20 transition-colors">
+            <div className="flex items-center justify-between mb-1.5 gap-2">
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Total Revenue</span>
+              <div className="p-1.5 rounded-lg bg-emerald-50 text-emerald-600">
+                <DollarSign size={14}/>
+              </div>
             </div>
-            <h3 className="text-2xl font-bold text-gray-900">${formatNumber(kpi_stats.total_revenue)}</h3>
-            <p className="text-sm text-gray-500">Total Revenue</p>
-        </div>
+            <h3 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900 mt-1">
+              ${formatNumber(kpi_stats.total_revenue)}
+            </h3>
+            <p className="text-[10px] text-emerald-600 font-medium mt-0.5 flex items-center gap-1">
+              <span>+8%</span> gross growth
+            </p>
+          </div>
 
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-             <div className="flex justify-between items-start mb-4">
-                <div className="w-12 h-12 rounded-lg bg-purple-100 flex items-center justify-center text-purple-600">
-                    <FileText size={24}/>
-                </div>
-                 <span className="text-xs font-semibold text-green-600 bg-green-50 px-2 py-0.5 rounded-full">+24%</span>
+          <div className="p-4 sm:p-5 bg-white hover:bg-slate-50/20 transition-colors">
+            <div className="flex items-center justify-between mb-1.5 gap-2">
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Total Certificates</span>
+              <div className="p-1.5 rounded-lg bg-purple-50 text-purple-600">
+                <FileText size={14}/>
+              </div>
             </div>
-            <h3 className="text-2xl font-bold text-gray-900">{formatNumber(kpi_stats.total_certificates)}</h3>
-            <p className="text-sm text-gray-500">Total Certificates</p>
-        </div>
+            <h3 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900 mt-1">
+              {formatNumber(kpi_stats.total_certificates)}
+            </h3>
+            <p className="text-[10px] text-emerald-600 font-medium mt-0.5 flex items-center gap-1">
+              <span>+24%</span> minted proofs
+            </p>
+          </div>
 
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-             <div className="flex justify-between items-start mb-4">
-                <div className="w-12 h-12 rounded-lg bg-orange-100 flex items-center justify-center text-orange-600">
-                    <TrendingUp size={24}/>
-                </div>
+          <div className="p-4 sm:p-5 bg-white hover:bg-slate-50/20 transition-colors">
+            <div className="flex items-center justify-between mb-1.5 gap-2">
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Avg Certs / User</span>
+              <div className="p-1.5 rounded-lg bg-amber-50 text-amber-600">
+                <TrendingUp size={14}/>
+              </div>
             </div>
-            <h3 className="text-2xl font-bold text-gray-900">{formatNumber(kpi_stats.avg_certs_per_user)}</h3>
-            <p className="text-sm text-gray-500">Avg. Certs / User</p>
+            <h3 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900 mt-1">
+              {formatNumber(kpi_stats.avg_certs_per_user)}
+            </h3>
+            <p className="text-[10px] text-slate-400 mt-0.5">
+              Engagement score
+            </p>
+          </div>
         </div>
       </div>
 

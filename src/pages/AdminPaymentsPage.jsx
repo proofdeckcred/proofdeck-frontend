@@ -60,28 +60,37 @@ function AdminPaymentsPage() {
       </div>
 
        {/* Stats Grid */}
-       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-                <div className="flex items-center justify-between mb-4">
-                    <div className="w-12 h-12 rounded-lg bg-green-100 flex items-center justify-center text-green-600">
-                        <TrendingUp size={24} />
-                    </div>
-                </div>
-                <h3 className="text-2xl font-bold text-gray-900">${stats.total_revenue.toLocaleString()}</h3>
-                <p className="text-sm text-gray-500">Total Revenue</p>
-            </div>
-             {Object.entries(stats.revenue_by_plan).map(([plan, amount]) => (
-                <div key={plan} className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-                    <div className="flex items-center justify-between mb-4">
-                        <div className="w-12 h-12 rounded-lg bg-indigo-50 flex items-center justify-center text-indigo-600">
-                            <CreditCard size={24} />
-                        </div>
-                         <span className="text-xs font-semibold uppercase bg-gray-100 px-2 py-1 rounded text-gray-600">{plan}</span>
-                    </div>
-                    <h3 className="text-2xl font-bold text-gray-900">${amount.toLocaleString()}</h3>
-                    <p className="text-sm text-gray-500">{plan} Revenue</p>
-                </div>
-            ))}
+       <div className="border border-slate-200/80 bg-white rounded-xl shadow-xs overflow-hidden">
+         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 divide-y sm:divide-y-0 sm:divide-x divide-slate-200/80">
+           {/* Total Revenue */}
+           <div className="p-4 sm:p-5 bg-white hover:bg-slate-50/20 transition-colors">
+             <div className="flex items-center justify-between mb-1.5 gap-2">
+               <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Total Revenue</span>
+               <div className="p-1.5 rounded-lg bg-emerald-50 text-emerald-600 shrink-0">
+                 <TrendingUp size={14} />
+               </div>
+             </div>
+             <h3 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900 mt-1">
+               ${stats.total_revenue.toLocaleString()}
+             </h3>
+             <p className="text-[10px] text-slate-400 mt-0.5">All-time payments</p>
+           </div>
+           {/* Revenue by Plan */}
+           {Object.entries(stats.revenue_by_plan).map(([plan, amount]) => (
+             <div key={plan} className="p-4 sm:p-5 bg-white hover:bg-slate-50/20 transition-colors">
+               <div className="flex items-center justify-between mb-1.5 gap-2">
+                 <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider capitalize">{plan} Tier</span>
+                 <div className="p-1.5 rounded-lg bg-indigo-50 text-[#5B4CF5] shrink-0">
+                   <CreditCard size={14} />
+                 </div>
+               </div>
+               <h3 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900 mt-1">
+                 ${amount.toLocaleString()}
+               </h3>
+               <p className="text-[10px] text-slate-400 mt-0.5">{plan} revenue</p>
+             </div>
+           ))}
+         </div>
        </div>
 
        {/* Filters */}
