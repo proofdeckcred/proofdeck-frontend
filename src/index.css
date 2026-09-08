@@ -158,21 +158,28 @@ html, body {
   width: 100%;
 }
 
-/* Modern Dark Pill Tooltips matching Bachs */
-.tooltip .tooltip-inner {
-  background-color: #0f172a !important; /* slate-900 */
-  color: #ffffff !important;
-  font-size: 11px !important;
-  font-weight: 500 !important;
-  padding: 5px 9px !important;
-  border-radius: 6px !important;
-  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1) !important;
+/* Modern Sleek Dark Capsule Tooltips matching Bachs */
+.tooltip {
+  pointer-events: none !important;
+  z-index: 99999 !important;
 }
-.tooltip .tooltip-arrow::before {
-  border-bottom-color: #0f172a !important;
-  border-top-color: #0f172a !important;
-  border-right-color: #0f172a !important;
-  border-left-color: #0f172a !important;
+
+.tooltip .tooltip-arrow {
+  display: none !important; /* Removes unnatural bulky square beak */
+}
+
+.tooltip .tooltip-inner {
+  background-color: #09090b !important; /* Rich deep black matching Bachs */
+  color: #ffffff !important;
+  font-size: 11.5px !important;
+  font-weight: 500 !important;
+  line-height: 1.4 !important;
+  letter-spacing: -0.01em !important;
+  padding: 5px 10px !important;
+  border-radius: 8px !important; /* Clean, natural rounded pill */
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25), 0 1px 3px rgba(0, 0, 0, 0.15) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  white-space: nowrap !important;
 }
 
 /* Force global font to Plus Jakarta Sans (Canva aesthetic) (except template previews) */
