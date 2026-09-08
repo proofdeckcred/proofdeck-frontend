@@ -35,6 +35,7 @@ import {
 import toast, { Toaster } from "react-hot-toast";
 import TemplateRenderer from "../components/templates/TemplateRenderer";
 import QRCode from "react-qr-code";
+import { useUser } from "../context/UserContext";
 
 // --- ERROR BOUNDARY ---
 class ErrorBoundary extends Component {
@@ -58,6 +59,8 @@ class ErrorBoundary extends Component {
 }
 
 function ViewCertificatePage() {
+  const { user } = useUser();
+  const isEnterprise = Boolean(user?.is_enterprise || user?.role === "enterprise" || user?.effective_role === "enterprise");
   const { certId } = useParams();
   const navigate = useNavigate();
   const [certificate, setCertificate] = useState(null);
@@ -347,22 +350,21 @@ function ViewCertificatePage() {
                 <span>Download PDF</span>
               </button>
 
-              <button
-                onClick={handleDownloadPNG}
-                disabled={downloadingPng}
-                title="Download high-resolution PNG image (Enterprise exclusive)"
-                className="flex items-center gap-1.5 px-3 py-1.5 text-slate-800 bg-white hover:bg-indigo-50/50 hover:text-indigo-600 rounded-lg border border-slate-250 transition-all text-xs font-bold shadow-sm disabled:opacity-70 cursor-pointer"
-              >
-                {downloadingPng ? (
-                  <div className="animate-spin h-3.5 w-3.5 border-2 border-indigo-600 border-t-transparent rounded-full" />
-                ) : (
-                  <ImageIcon size={13} className="text-indigo-600" />
-                )}
-                <span>Download PNG</span>
-                <span className="text-[9px] bg-indigo-100 text-indigo-700 font-extrabold px-1.5 py-0.2 rounded-full uppercase tracking-wider">
-                  Enterprise
-                </span>
-              </button>
+              {isEnterprise && (
+                <button
+                  onClick={handleDownloadPNG}
+                  disabled={downloadingPng}
+                  title="Download high-resolution PNG image"
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-slate-800 bg-white hover:bg-indigo-50/50 hover:text-indigo-600 rounded-lg border border-slate-250 transition-all text-xs font-bold shadow-sm disabled:opacity-70 cursor-pointer"
+                >
+                  {downloadingPng ? (
+                    <div className="animate-spin h-3.5 w-3.5 border-2 border-indigo-600 border-t-transparent rounded-full" />
+                  ) : (
+                    <ImageIcon size={13} className="text-indigo-600" />
+                  )}
+                  <span>Download PNG</span>
+                </button>
+              )}
             </div>
           </div>
         </div>

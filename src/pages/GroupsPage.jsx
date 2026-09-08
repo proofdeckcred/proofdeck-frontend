@@ -320,6 +320,16 @@ function GroupsPage() {
     promise.finally(() => setDownloadingId(null));
   };
 
+  const isEnterpriseUser = Boolean(user?.is_enterprise || user?.role === 'enterprise' || user?.effective_role === 'enterprise');
+
+  const onDownloadClick = (cert) => {
+    if (isEnterpriseUser) {
+      setDownloadFormatCert(cert);
+    } else {
+      handleDownload(cert);
+    }
+  };
+
   // --- Mappings & Filtering ---
   const getCertLayoutStyle = (cert) => {
     const globalCert = certificates.find(c => c.id === cert.id);
@@ -666,7 +676,7 @@ function GroupsPage() {
                               {sendingId === cert.id ? <div className="animate-spin h-3.5 w-3.5 border-2 border-indigo-600 border-t-transparent rounded-full" /> : <Mail className="w-3.5 h-3.5" />}
                             </button>
                             <button
-                              onClick={() => setDownloadFormatCert(cert)}
+                              onClick={() => onDownloadClick(cert)}
                               className="p-1.5 bg-white/10 hover:bg-white text-white hover:text-slate-800 border border-white/20 hover:border-white rounded-lg transition-all shadow"
                               title="Download Certificate"
                             >
@@ -804,7 +814,7 @@ function GroupsPage() {
                                 {sendingId === cert.id ? <div className="animate-spin h-3.5 w-3.5 border-2 border-indigo-600 border-t-transparent rounded-full" /> : <Mail className="w-3.5 h-3.5" />}
                               </button>
                               <button
-                                onClick={() => setDownloadFormatCert(cert)}
+                                onClick={() => onDownloadClick(cert)}
                                 className="p-1.5 bg-white/10 hover:bg-white text-white hover:text-slate-800 border border-white/20 hover:border-white rounded-lg transition-all shadow"
                                 title="Download Certificate"
                               >
@@ -1019,8 +1029,8 @@ function GroupsPage() {
         </Modal.Footer>
       </Modal>
 
-      {/* Download Format Modal */}
-      {downloadFormatCert && (
+      {/* Download Format Modal (Enterprise Only) */}
+      {downloadFormatCert && isEnterpriseUser && (
         <div className="fixed inset-0 bg-slate-950/40 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
           <div className="bg-white rounded-xl shadow-2xl p-5 max-w-xs w-full border border-slate-100 relative">
             <div className="text-center mb-4">

@@ -300,6 +300,16 @@ function MyCertificatesPage() {
     promise.finally(() => setDownloadingId(null));
   };
 
+  const isEnterpriseUser = Boolean(user?.is_enterprise || user?.role === 'enterprise' || user?.effective_role === 'enterprise');
+
+  const onDownloadClick = (cert) => {
+    if (isEnterpriseUser) {
+      setDownloadFormatCert(cert);
+    } else {
+      handleDownload(cert);
+    }
+  };
+
   const location = useLocation();
 
   const navLinks = [
@@ -726,7 +736,7 @@ function MyCertificatesPage() {
                                     {sendingId === cert.id ? <div className="animate-spin h-3 w-3 border-2 border-indigo-600 border-t-transparent rounded-full" /> : <Mail className="w-3.5 h-3.5" />}
                                   </button>
                                   <button
-                                    onClick={() => setDownloadFormatCert(cert)}
+                                    onClick={() => onDownloadClick(cert)}
                                     className="p-1 text-slate-400 hover:text-slate-800 hover:bg-slate-100 rounded transition-all"
                                     title="Download Certificate"
                                   >
@@ -958,8 +968,8 @@ function MyCertificatesPage() {
           </div>
         )}
 
-        {/* Download Format Modal */}
-        {downloadFormatCert && (
+        {/* Download Format Modal (Enterprise Only) */}
+        {downloadFormatCert && isEnterpriseUser && (
           <div className="fixed inset-0 bg-slate-950/40 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
             <div className="bg-white rounded-xl shadow-2xl p-5 max-w-xs w-full border border-slate-100 relative">
               <div className="text-center mb-4">
