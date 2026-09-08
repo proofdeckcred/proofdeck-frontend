@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import {
   getAdminBroadcasts,
+  getAdminBroadcastDetails,
   saveAdminBroadcast,
   previewAdminBroadcast,
   testSendAdminBroadcast,
@@ -257,16 +258,66 @@ export default function AdminBroadcastsPage() {
     }
   };
 
-  const handleLoadCampaign = (c) => {
-    setCampaignId(c.id);
-    setTitle(c.title);
-    setSubject(c.subject);
-    setTag(c.tag || 'PRODUCT ANNOUNCEMENT');
-    setOpeningWhy(c.opening_why || '');
-    setSegment(c.segment || 'all');
-    setBlocks(c.content_blocks || []);
-    setTestSentAt(c.test_sent_at);
+  const handleNewCampaign = () => {
+    setCampaignId(null);
+    setTitle('');
+    setSubject('');
+    setTag('PRODUCT ANNOUNCEMENT');
+    setOpeningWhy('');
+    setSegment('all');
+    setBlocks([
+      { id: Date.now(), type: 'heading', content: 'Transform How Credentials Are Proven' },
+      { id: Date.now() + 1, type: 'paragraph', content: 'Our new update ensures your students and graduates never have to wait weeks to verify their skills.' }
+    ]);
+    setTestSentAt(null);
+    setPreviewHtml('');
     setActiveTab('composer');
+    showNotice('success', 'Ready to compose a new campaign.');
+  };
+
+  const handleLoadCampaign = async (c) => {
+    try {
+      setLoading(true);
+      // Always fetch full details from server so all blocks & fields are guaranteed loaded
+      const res = await getAdminBroadcastDetails(c.id);
+      const data = res.data || c;
+      setCampaignId(data.id);
+      setTitle(data.title || '');
+      setSubject(data.subject || '');
+      setTag(data.tag || 'PRODUCT ANNOUNCEMENT');
+      setOpeningWhy(data.opening_why || '');
+      setSegment(data.segment || 'all');
+
+      let parsedBlocks = data.content_blocks;
+      if (typeof parsedBlocks === 'string') {
+        try {
+          parsedBlocks = JSON.parse(parsedBlocks);
+        } catch (e) {
+          parsedBlocks = [];
+        }
+      }
+      setBlocks(Array.isArray(parsedBlocks) ? parsedBlocks : []);
+      setTestSentAt(data.test_sent_at);
+      setActiveTab('composer');
+      showNotice('success', `Loaded "${data.title}" (${Array.isArray(parsedBlocks) ? parsedBlocks.length : 0} blocks)`);
+    } catch (err) {
+      // Fallback
+      setCampaignId(c.id);
+      setTitle(c.title || '');
+      setSubject(c.subject || '');
+      setTag(c.tag || 'PRODUCT ANNOUNCEMENT');
+      setOpeningWhy(c.opening_why || '');
+      setSegment(c.segment || 'all');
+      let fallbackBlocks = c.content_blocks;
+      if (typeof fallbackBlocks === 'string') {
+        try { fallbackBlocks = JSON.parse(fallbackBlocks); } catch (e) { fallbackBlocks = []; }
+      }
+      setBlocks(Array.isArray(fallbackBlocks) ? fallbackBlocks : []);
+      setTestSentAt(c.test_sent_at);
+      setActiveTab('composer');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -286,7 +337,14 @@ export default function AdminBroadcastsPage() {
         </div>
 
         {/* Action Controls */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3">
+          <button
+            onClick={handleNewCampaign}
+            className="px-3.5 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium rounded-xl transition-colors shadow-sm flex items-center gap-1.5"
+            title="Start a new blank campaign"
+          >
+            <Plus className="w-4 h-4" /> New
+          </button>
           <button
             onClick={handleSaveDraft}
             disabled={saving}

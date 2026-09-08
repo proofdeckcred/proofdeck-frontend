@@ -20,18 +20,18 @@ export default function UnsubscribePage() {
   });
 
   useEffect(() => {
-    if (!token) {
-      setError('No preferences token provided in the link.');
-      setLoading(false);
-      return;
-    }
+    const activeToken = token || 'preview';
 
     const fetchPrefs = async () => {
       try {
-        const res = await getEmailPreferences(token);
+        const res = await getEmailPreferences(activeToken);
         setUserData(res.data);
       } catch (err) {
-        setError(err.response?.data?.msg || 'Unable to load email preferences. The link may be invalid.');
+        if (!token) {
+          setError('No preferences token provided in the link. Please use the "Manage Preferences" link directly from your ProofDeck email.');
+        } else {
+          setError(err.response?.data?.msg || 'Unable to load email preferences. The link may be invalid or expired.');
+        }
       } finally {
         setLoading(false);
       }
@@ -109,6 +109,14 @@ export default function UnsubscribePage() {
             </div>
           ) : (
             <form onSubmit={handleSave} className="space-y-6">
+              {(!token || token === 'preview' || userData.is_preview) && (
+                <div className="p-3.5 bg-indigo-50 border border-indigo-100 rounded-xl text-xs text-[#5B4CF5] flex items-center gap-2.5">
+                  <ShieldCheck className="w-4 h-4 text-[#5B4CF5] flex-shrink-0" />
+                  <span>
+                    <strong>Preview Mode:</strong> You are viewing how recipients manage their preferences. Real email dispatches will automatically link each user's unique account.
+                  </span>
+                </div>
+              )}
               {userData.email && (
                 <div className="flex items-center gap-3 p-3.5 bg-[#F7F7FA] rounded-xl border border-[#E7E5F0]">
                   <Mail className="w-5 h-5 text-[#5B4CF5] flex-shrink-0" />
