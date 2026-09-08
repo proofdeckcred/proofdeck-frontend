@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
   Mail, Send, Eye, Plus, Trash2, CheckCircle2, AlertCircle, ShieldAlert,
-  Loader2, RefreshCw, BarChart2, Layers, Check, HelpCircle
+  Loader2, RefreshCw, BarChart2, Layers, Check, HelpCircle, Image as ImageIcon
 } from 'lucide-react';
 import {
   getAdminBroadcasts,
@@ -9,6 +9,7 @@ import {
   previewAdminBroadcast,
   testSendAdminBroadcast,
   sendAdminBroadcast,
+  uploadEditorImage,
 } from '../api';
 
 export default function AdminBroadcastsPage() {
@@ -68,6 +69,7 @@ export default function AdminBroadcastsPage() {
     if (type === 'paragraph') initialContent = 'Enter your message paragraph here...';
     if (type === 'callout') initialContent = 'Key takeaway or important instruction';
     if (type === 'button') initialContent = 'Claim Your Access';
+    if (type === 'image') initialContent = '';
 
     setBlocks(prev => [
       ...prev,
@@ -76,8 +78,10 @@ export default function AdminBroadcastsPage() {
         type,
         content: initialContent,
         title: type === 'callout' ? 'Important Update' : undefined,
-        url: type === 'button' ? 'https://www.proofdeck.app/dashboard' : undefined,
+        url: type === 'button' ? 'https://www.proofdeck.app/dashboard' : (type === 'image' ? 'https://www.proofdeck.app/images/landing_page_image/verification.png' : undefined),
         text: type === 'button' ? 'Get Started' : undefined,
+        alt: type === 'image' ? 'ProofDeck Update' : undefined,
+        caption: type === 'image' ? '' : undefined,
       }
     ]);
   };
@@ -441,6 +445,13 @@ export default function AdminBroadcastsPage() {
                   >
                     <Plus className="w-3.5 h-3.5" /> Button
                   </button>
+                  <button
+                    type="button"
+                    onClick={() => addBlock('image')}
+                    className="px-2.5 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-[#5B4CF5] rounded-lg text-xs font-semibold flex items-center gap-1"
+                  >
+                    <ImageIcon className="w-3.5 h-3.5" /> Image
+                  </button>
                 </div>
               </div>
 
@@ -518,6 +529,66 @@ export default function AdminBroadcastsPage() {
                         placeholder="Target URL (e.g. https://...)"
                         className="px-3 py-2 rounded-xl border border-gray-300 text-sm"
                       />
+                    </div>
+                  )}
+
+                  {block.type === 'image' && (
+                    <div className="space-y-3">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                          <label className="block text-xs font-semibold text-gray-600 mb-1">Image URL</label>
+                          <input
+                            type="text"
+                            value={block.url || ''}
+                            onChange={(e) => updateBlock(block.id, 'url', e.target.value)}
+                            placeholder="https://..."
+                            className="w-full px-3 py-2 rounded-xl border border-gray-300 text-sm"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-semibold text-gray-600 mb-1">Or Upload from Computer</label>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={async (e) => {
+                              const file = e.target.files[0];
+                              if (file) {
+                                const formData = new FormData();
+                                formData.append('image', file);
+                                try {
+                                  const res = await uploadEditorImage(formData);
+                                  updateBlock(block.id, 'url', res.data.imageUrl);
+                                  showNotice('success', 'Image uploaded successfully!');
+                                } catch (err) {
+                                  showNotice('error', 'Failed to upload image.');
+                                }
+                              }
+                            }}
+                            className="w-full text-xs text-gray-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-indigo-50 file:text-[#5B4CF5] hover:file:bg-indigo-100"
+                          />
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <input
+                          type="text"
+                          value={block.caption || ''}
+                          onChange={(e) => updateBlock(block.id, 'caption', e.target.value)}
+                          placeholder="Optional image caption..."
+                          className="px-3 py-2 rounded-xl border border-gray-300 text-sm"
+                        />
+                        <input
+                          type="text"
+                          value={block.alt || ''}
+                          onChange={(e) => updateBlock(block.id, 'alt', e.target.value)}
+                          placeholder="Alt text (e.g. Platform update preview)..."
+                          className="px-3 py-2 rounded-xl border border-gray-300 text-sm"
+                        />
+                      </div>
+                      {block.url && (
+                        <div className="mt-2 p-2 bg-gray-50 rounded-lg border border-gray-200">
+                          <img src={block.url} alt={block.alt || 'Preview'} className="max-h-40 rounded mx-auto object-contain" />
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
