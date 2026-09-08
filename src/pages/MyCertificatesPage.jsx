@@ -86,8 +86,8 @@ function MyCertificatesPage() {
   const [selectedCert, setSelectedCert] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Action States
   const [downloadingId, setDownloadingId] = useState(null);
+  const [downloadFormatCert, setDownloadFormatCert] = useState(null);
   const [sendingId, setSendingId] = useState(null);
   const [isBulkSending, setIsBulkSending] = useState(false);
   const [selectedCertIds, setSelectedCertIds] = useState(new Set());
@@ -726,9 +726,9 @@ function MyCertificatesPage() {
                                     {sendingId === cert.id ? <div className="animate-spin h-3 w-3 border-2 border-indigo-600 border-t-transparent rounded-full" /> : <Mail className="w-3.5 h-3.5" />}
                                   </button>
                                   <button
-                                    onClick={() => handleDownload(cert)}
+                                    onClick={() => setDownloadFormatCert(cert)}
                                     className="p-1 text-slate-400 hover:text-slate-800 hover:bg-slate-100 rounded transition-all"
-                                    title="Download"
+                                    title="Download Certificate"
                                   >
                                     {downloadingId === cert.id ? <div className="animate-spin h-3.5 w-3.5 border-2 border-slate-600 border-t-transparent rounded-full" /> : <Download className="w-3.5 h-3.5" />}
                                   </button>
@@ -952,6 +952,66 @@ function MyCertificatesPage() {
                   className="flex-1 px-3 py-2 text-white bg-red-600 hover:bg-red-700 rounded font-semibold transition-colors shadow-sm text-xs"
                 >
                   Delete
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Download Format Modal */}
+        {downloadFormatCert && (
+          <div className="fixed inset-0 bg-slate-950/40 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
+            <div className="bg-white rounded-xl shadow-2xl p-5 max-w-xs w-full border border-slate-100 relative">
+              <div className="text-center mb-4">
+                <div className="w-10 h-10 bg-indigo-50 rounded-full flex items-center justify-center mx-auto mb-2 text-indigo-600 border border-indigo-100">
+                  <Download className="w-5 h-5" />
+                </div>
+                <h3 className="text-sm font-bold text-slate-900">Download Format</h3>
+                <p className="text-slate-500 text-[11px] mt-1">
+                  Choose format for <strong>{downloadFormatCert.recipient_name}</strong>
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <button
+                  onClick={() => {
+                    const c = downloadFormatCert;
+                    setDownloadFormatCert(null);
+                    handleDownload(c);
+                  }}
+                  className="w-full py-2.5 px-3 bg-slate-50 hover:bg-indigo-50 hover:border-indigo-200 border border-slate-200 rounded-lg flex items-center justify-between transition-all group"
+                >
+                  <div className="flex items-center gap-2">
+                    <FileText className="w-4 h-4 text-slate-600 group-hover:text-indigo-600" />
+                    <span className="text-xs font-bold text-slate-800 group-hover:text-indigo-600">PDF Document</span>
+                  </div>
+                  <span className="text-[10px] text-slate-400 font-medium">Standard</span>
+                </button>
+
+                <button
+                  onClick={() => {
+                    const c = downloadFormatCert;
+                    setDownloadFormatCert(null);
+                    handleDownloadPNG(c);
+                  }}
+                  className="w-full py-2.5 px-3 bg-slate-50 hover:bg-purple-50 hover:border-purple-200 border border-slate-200 rounded-lg flex items-center justify-between transition-all group"
+                >
+                  <div className="flex items-center gap-2">
+                    <Award className="w-4 h-4 text-purple-600" />
+                    <span className="text-xs font-bold text-slate-800 group-hover:text-purple-600">PNG Image</span>
+                  </div>
+                  <span className="text-[9px] font-bold bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded border border-amber-200">
+                    Enterprise
+                  </span>
+                </button>
+              </div>
+
+              <div className="mt-4 pt-3 border-t border-slate-100">
+                <button
+                  onClick={() => setDownloadFormatCert(null)}
+                  className="w-full py-1.5 text-center text-xs text-slate-500 hover:text-slate-700 font-medium"
+                >
+                  Cancel
                 </button>
               </div>
             </div>
