@@ -252,6 +252,18 @@ export const deleteAdminCompany = (companyId) =>
 export const getEmailRecipients = () => API.get("/admin/messaging/recipients");
 export const sendAdminBulkEmail = (emailData) =>
   API.post("/admin/messaging/send-email", emailData);
+
+// Email Preferences & Unsubscribe
+export const getEmailPreferences = (token) => API.get(`/email/preferences?token=${encodeURIComponent(token)}`);
+export const updateEmailPreferences = (data) => API.post('/email/preferences', data);
+
+// Admin Broadcast Campaigns
+export const getAdminBroadcasts = () => API.get('/admin/broadcasts');
+export const getAdminBroadcastDetails = (id) => API.get(`/admin/broadcasts/${id}`);
+export const saveAdminBroadcast = (data) => API.post('/admin/broadcasts', data);
+export const previewAdminBroadcast = (data) => API.post('/admin/broadcasts/preview', data);
+export const testSendAdminBroadcast = (id, data) => API.post(`/admin/broadcasts/${id}/test-send`, data);
+export const sendAdminBroadcast = (id) => API.post(`/admin/broadcasts/${id}/send`);
 export const getAdminTransactions = (params = {}) =>
   API.get(
     `/admin/payments/transactions?${new URLSearchParams(params).toString()}`

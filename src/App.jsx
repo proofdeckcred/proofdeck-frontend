@@ -34,6 +34,7 @@ import FeaturesPage from "./pages/FeaturesPage";
 import ContactPage from "./pages/ContactPage"; // Import new page
 import LegalPage from "./pages/LegalPage";
 import SupportWidget from "./components/SupportWidget"; // Global Support Widget
+import UnsubscribePage from "./pages/UnsubscribePage";
 
 // Admin imports
 import AdminPortalPage from "./pages/AdminPortalPage";
@@ -52,6 +53,7 @@ import AdminSupportTicketDetailsPage from "./pages/AdminSupportTicketDetailsPage
 import AdminCompaniesPage from "./pages/AdminCompaniesPage";
 import AdminCompanyDetailsPage from "./pages/AdminCompanyDetailsPage";
 import AdminMessagingPage from "./pages/AdminMessagingPage";
+import AdminBroadcastsPage from "./pages/AdminBroadcastsPage";
 import AdminTeamPage from "./pages/AdminTeamPage"; // New Route
 
 import DocsPage from "./pages/DocsPage";
@@ -113,6 +115,7 @@ function App() {
           />
           <Route path="/search" element={<OpenLedgerPage />} />
           <Route path="/docs" element={<DocsPage />} />
+          <Route path="/email/unsubscribe" element={<UnsubscribePage />} />
 
           {/* Admin Routes */}
           <Route path="/admin/login" element={<AdminPortalPage />} />
@@ -140,6 +143,7 @@ function App() {
                 element={<AdminCompanyDetailsPage />}
               />
               <Route path="messaging" element={<AdminMessagingPage />} />
+              <Route path="broadcasts" element={<AdminBroadcastsPage />} />
               <Route path="team" element={<AdminTeamPage />} /> {/* New Route */}
             </Route>
           </Route>

@@ -102,8 +102,15 @@ function AdminSidebar() {
 
         {(isSuperAdmin || admin?.permissions?.view_messaging) && (
             <NavLink to="/admin/messaging" className={navItemClass}>
+            <MessageSquare size={20} />
+            <span>Direct Messaging</span>
+            </NavLink>
+        )}
+
+        {(isSuperAdmin || admin?.permissions?.view_messaging) && (
+            <NavLink to="/admin/broadcasts" className={navItemClass}>
             <Mail size={20} />
-            <span>Messaging</span>
+            <span>Email Broadcasts</span>
             </NavLink>
         )}
         
