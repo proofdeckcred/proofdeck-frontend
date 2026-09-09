@@ -42,17 +42,17 @@ const formatNumber = (num) => num?.toLocaleString() ?? "0";
 
 // --- STAT CARD ---
 const StatCard = ({ title, value, trend, isPositive }) => (
-  <div className="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-xs flex flex-col justify-between">
-    <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest">
+  <div className="bg-white rounded-xl sm:rounded-2xl border border-slate-200/80 p-3.5 sm:p-5 shadow-xs flex flex-col justify-between">
+    <span className="text-[9px] sm:text-[10px] font-extrabold text-slate-400 uppercase tracking-widest truncate">
       {title}
     </span>
-    <div className="flex items-baseline justify-between mt-3">
-      <span className="text-xl sm:text-2xl font-black text-slate-800 tracking-tight">
+    <div className="flex items-baseline justify-between mt-2 sm:mt-3 gap-1">
+      <span className="text-lg sm:text-2xl font-black text-slate-800 tracking-tight">
         {value}
       </span>
       {trend && (
         <span
-          className={`flex items-center gap-0.5 text-[10px] font-extrabold px-2 py-0.5 rounded-full ${
+          className={`flex items-center gap-0.5 text-[9px] sm:text-[10px] font-extrabold px-1.5 sm:px-2 py-0.5 rounded-full shrink-0 ${
             isPositive
               ? "text-emerald-700 bg-emerald-50 border border-emerald-100/50"
               : "text-rose-700 bg-rose-50 border border-rose-100/50"
@@ -67,7 +67,7 @@ const StatCard = ({ title, value, trend, isPositive }) => (
         </span>
       )}
     </div>
-    <span className="text-[9px] text-slate-400 font-bold uppercase mt-1">
+    <span className="text-[8px] sm:text-[9px] text-slate-400 font-bold uppercase mt-1 truncate">
       vs. previous period
     </span>
   </div>
@@ -292,7 +292,7 @@ const FullDashboard = ({ insights }) => {
   return (
     <>
       {/* 1. KPIs Row */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4 mb-6">
         {kpiCards.map((card, i) => (
           <StatCard
             key={i}
@@ -305,9 +305,9 @@ const FullDashboard = ({ insights }) => {
       </div>
 
       {/* 2. Charts Bento Row */}
-      <Row className="g-4 mb-6">
-        <Col lg={4}>
-          <div className="bg-white border border-slate-200/80 rounded-2xl p-5 h-80 flex flex-col justify-between shadow-3xs">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 mb-6">
+        <div className="col-span-12 lg:col-span-4">
+          <div className="bg-white border border-slate-200/80 rounded-xl sm:rounded-2xl p-4 sm:p-5 h-64 sm:h-80 flex flex-col justify-between shadow-3xs">
             <div className="flex items-center justify-between mb-3">
               <span className="text-[11px] font-black text-slate-800 uppercase tracking-wider">
                 Funnel Conversion Breakdown
@@ -317,15 +317,15 @@ const FullDashboard = ({ insights }) => {
               <Bar data={funnelData} options={chartOptions} />
             </div>
           </div>
-        </Col>
+        </div>
 
-        <Col lg={5}>
-          <div className="bg-white border border-slate-200/80 rounded-2xl p-5 h-80 flex flex-col justify-between shadow-3xs">
+        <div className="col-span-12 lg:col-span-5">
+          <div className="bg-white border border-slate-200/80 rounded-xl sm:rounded-2xl p-4 sm:p-5 h-64 sm:h-80 flex flex-col justify-between shadow-3xs">
             <div className="flex items-center justify-between mb-3">
               <span className="text-[11px] font-black text-slate-800 uppercase tracking-wider">
                 Traffic Trend
               </span>
-              <div className="flex gap-3 text-[9px] font-bold text-slate-400">
+              <div className="flex gap-2 sm:gap-3 text-[9px] font-bold text-slate-400">
                 <span className="flex items-center gap-1">
                   <span className="w-1.5 h-1.5 rounded-full bg-[#3b82f6]" />
                   QR Scan
@@ -340,10 +340,10 @@ const FullDashboard = ({ insights }) => {
               <Line data={trafficData} options={chartOptions} />
             </div>
           </div>
-        </Col>
+        </div>
 
-        <Col lg={3}>
-          <div className="bg-white border border-slate-200/80 rounded-2xl p-5 h-80 flex flex-col justify-between shadow-3xs">
+        <div className="col-span-12 lg:col-span-3">
+          <div className="bg-white border border-slate-200/80 rounded-xl sm:rounded-2xl p-4 sm:p-5 h-64 sm:h-80 flex flex-col justify-between shadow-3xs">
             <div className="flex items-center justify-between mb-3">
               <span className="text-[11px] font-black text-slate-800 uppercase tracking-wider">
                 Sharing By Channel
@@ -353,21 +353,21 @@ const FullDashboard = ({ insights }) => {
               <Bar data={platformData} options={horizontalChartOptions} />
             </div>
           </div>
-        </Col>
-      </Row>
+        </div>
+      </div>
 
       {/* 3. Bottom Row: Table & Targets */}
-      <Row className="g-4 mb-6">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 mb-6">
         {/* Left side: Table */}
-        <Col lg={8}>
-          <div className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-3xs">
+        <div className="col-span-12 lg:col-span-8">
+          <div className="bg-white border border-slate-200/80 rounded-xl sm:rounded-2xl p-4 sm:p-5 shadow-3xs overflow-hidden">
             <div className="flex items-center justify-between mb-4 pb-2 border-b border-slate-100">
               <span className="text-[11px] font-black text-slate-800 uppercase tracking-wider">
                 Credential Program Insights
               </span>
             </div>
-            <div className="table-responsive">
-              <table className="table table-borderless align-middle mb-0 text-slate-700">
+            <div className="overflow-x-auto">
+              <table className="w-full align-middle mb-0 text-slate-700 min-w-[500px]">
                 <thead>
                   <tr className="border-b border-slate-100 text-[10px] text-slate-400 font-extrabold uppercase tracking-wider">
                     <th className="pb-3 pl-0">Program</th>
@@ -413,11 +413,11 @@ const FullDashboard = ({ insights }) => {
               </table>
             </div>
           </div>
-        </Col>
+        </div>
 
         {/* Right side: Targets */}
-        <Col lg={4}>
-          <div className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-3xs h-100 flex flex-col justify-between">
+        <div className="col-span-12 lg:col-span-4">
+          <div className="bg-white border border-slate-200/80 rounded-xl sm:rounded-2xl p-4 sm:p-5 shadow-3xs h-full flex flex-col justify-between">
             <div>
               <div className="flex items-center justify-between mb-4 pb-2 border-b border-slate-100">
                 <span className="text-[11px] font-black text-slate-800 uppercase tracking-wider">
@@ -426,15 +426,15 @@ const FullDashboard = ({ insights }) => {
               </div>
 
               {/* Gauges representation */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-center mb-6">
+              <div className="grid grid-cols-3 gap-2 text-center mb-6">
                 {[
                   { label: "On Track", pct: "42%", color: "text-emerald-700 bg-emerald-50 border-emerald-100" },
                   { label: "At Risk", pct: "34%", color: "text-blue-700 bg-blue-50 border-blue-100" },
                   { label: "Off Track", pct: "24%", color: "text-rose-700 bg-rose-50 border-rose-100" },
                 ].map((gauge, i) => (
-                  <div key={i} className={`p-2.5 rounded-xl border ${gauge.color}`}>
-                    <p className="text-[8px] font-extrabold uppercase tracking-wider text-slate-400 mb-1">{gauge.label}</p>
-                    <p className="text-lg font-black">{gauge.pct}</p>
+                  <div key={i} className={`p-2 sm:p-2.5 rounded-xl border ${gauge.color}`}>
+                    <p className="text-[8px] font-extrabold uppercase tracking-wider text-slate-400 mb-1 truncate">{gauge.label}</p>
+                    <p className="text-base sm:text-lg font-black">{gauge.pct}</p>
                   </div>
                 ))}
               </div>
@@ -468,8 +468,8 @@ const FullDashboard = ({ insights }) => {
               <span>Target statistics scale relative to current weekly benchmarks.</span>
             </div>
           </div>
-        </Col>
-      </Row>
+        </div>
+      </div>
     </>
   );
 };

@@ -16,11 +16,12 @@ import {
   ChevronLeft,
   ChevronRight,
   Mail,
+  X,
 } from "lucide-react";
 import { OverlayTrigger, Tooltip } from "react-bootstrap";
 import WorkspaceSwitcher from "./WorkspaceSwitcher";
 
-function Sidebar({ isCollapsed: propIsCollapsed, toggleSidebar: propToggleSidebar }) {
+function Sidebar({ isCollapsed: propIsCollapsed, toggleSidebar: propToggleSidebar, onClose }) {
   const navigate = useNavigate();
   const { user, workspace, switchWorkspace } = useUser();
 
@@ -55,7 +56,14 @@ function Sidebar({ isCollapsed: propIsCollapsed, toggleSidebar: propToggleSideba
 
   const renderNavLink = (to, icon, label, end = false) => {
     const linkContent = (
-      <NavLink to={to} end={end} className={navItemClass}>
+      <NavLink 
+        to={to} 
+        end={end} 
+        onClick={() => {
+          if (onClose) onClose();
+        }}
+        className={navItemClass}
+      >
         {React.cloneElement(icon, { size: 18 })}
         {!isCollapsed && <span>{label}</span>}
       </NavLink>
@@ -90,7 +98,13 @@ function Sidebar({ isCollapsed: propIsCollapsed, toggleSidebar: propToggleSideba
           isCollapsed ? "p-3 justify-center" : "p-4 justify-between"
         }`}
       >
-        <Link to="/dashboard" className="flex items-center gap-2 no-underline">
+        <Link 
+          to="/dashboard" 
+          onClick={() => {
+            if (onClose) onClose();
+          }}
+          className="flex items-center gap-2 no-underline"
+        >
           <img
             src="/logo.png"
             alt="ProofDeck"
@@ -102,6 +116,15 @@ function Sidebar({ isCollapsed: propIsCollapsed, toggleSidebar: propToggleSideba
             </span>
           )}
         </Link>
+        {onClose && (
+          <button
+            onClick={onClose}
+            className="p-1.5 text-slate-400 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition-colors md:hidden"
+            aria-label="Close sidebar"
+          >
+            <X size={18} />
+          </button>
+        )}
       </div>
 
       {/* --- WORKSPACE SWITCHER --- */}

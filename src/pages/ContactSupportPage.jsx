@@ -166,15 +166,15 @@ function TicketList() {
       <Toaster position="top-right" />
 
       {/* --- 1. Top Navigation Bar (Header - Locked to Top) --- */}
-      <div className="border-b border-slate-200/80 bg-white mb-6 -mt-6 px-4 py-3 rounded-b-lg">
-        <div className="flex items-center justify-between gap-4 max-w-[1600px] mx-auto">
+      <div className="border-b border-slate-200/80 bg-white mb-4 sm:mb-6 -mt-6 px-4 py-3 rounded-b-lg">
+        <div className="flex items-center justify-between gap-3 max-w-[1600px] mx-auto">
           {/* Left: Page Title */}
-          <h1 className="text-sm font-bold text-slate-800 uppercase tracking-wider mb-0">Support Tickets</h1>
+          <h1 className="text-xs sm:text-sm font-bold text-slate-800 uppercase tracking-wider mb-0">Support Tickets</h1>
 
           {/* Right Action */}
           <Link
             to="/dashboard/support"
-            className="inline-flex items-center gap-1 text-xs font-semibold text-slate-650 hover:text-slate-855 decoration-none bg-slate-100 hover:bg-slate-200 px-3 py-1.5 rounded-lg transition-colors border border-slate-200/40 text-slate-600 hover:text-slate-850"
+            className="inline-flex items-center gap-1 text-xs font-semibold text-slate-650 hover:text-slate-855 decoration-none bg-slate-100 hover:bg-slate-200 px-2.5 sm:px-3 py-1.5 rounded-lg transition-colors border border-slate-200/40 text-slate-600 hover:text-slate-850"
           >
             <ArrowLeft size={13} />
             <span>Help Center</span>
@@ -182,17 +182,17 @@ function TicketList() {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4">
+      <div className="max-w-7xl mx-auto px-0 sm:px-4">
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-8">
         {/* CREATE TICKET FORM */}
-        <div className="lg:col-span-5 order-2 lg:order-1">
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 sticky top-6">
-            <div className="flex items-center gap-2 mb-6 border-b border-gray-100 pb-4">
+        <div className="lg:col-span-5 order-1 lg:order-1">
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6 static lg:sticky lg:top-6">
+            <div className="flex items-center gap-2 mb-4 sm:mb-6 border-b border-gray-100 pb-3 sm:pb-4">
               <div className="bg-indigo-50 p-2 rounded-lg text-indigo-600">
                 <PlusCircle size={20} />
               </div>
-              <h2 className="text-lg font-bold text-gray-900">
+              <h2 className="text-base sm:text-lg font-bold text-gray-900">
                 Create New Ticket
               </h2>
             </div>

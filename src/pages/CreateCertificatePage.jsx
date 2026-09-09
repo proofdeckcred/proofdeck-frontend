@@ -471,18 +471,19 @@ const CreateCertificatePage = () => {
       <Toaster position="top-right" />
 
       {/* --- 1. Top Navigation Bar (Header - Locked to Top) --- */}
-      <div className="border-b border-slate-200/80 bg-white mb-6 -mt-6 px-4 py-3 rounded-b-lg">
-        <div className="flex items-center justify-between gap-4 max-w-[1600px] mx-auto">
+      <div className="border-b border-slate-200/80 bg-white mb-4 sm:mb-6 -mt-6 px-4 py-3 rounded-b-lg">
+        <div className="flex items-center justify-between gap-3 max-w-[1600px] mx-auto">
           {/* Left: Page Title */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2.5 sm:gap-3">
             <Link
               to="/dashboard"
-              className="p-1.5 rounded-full hover:bg-slate-100 text-slate-500 transition-colors"
+              className="p-1.5 rounded-full hover:bg-slate-100 text-slate-500 transition-colors shrink-0"
+              aria-label="Back to dashboard"
             >
               <ArrowLeft size={16} />
             </Link>
             <div>
-              <h1 className="text-sm font-bold text-slate-800 uppercase tracking-wider mb-0">
+              <h1 className="text-xs sm:text-sm font-bold text-slate-800 uppercase tracking-wider mb-0 truncate">
                 {isEditMode ? "Edit Credential" : "Issue Credentials"}
               </h1>
             </div>
@@ -501,30 +502,32 @@ const CreateCertificatePage = () => {
             
             {/* Segmented Mode Selector Pills */}
             {!isEditMode && (
-              <div className="bg-slate-100/80 p-1 rounded-xl flex gap-1 mb-6 border border-slate-200/40">
+              <div className="bg-slate-100/80 p-1 rounded-xl flex gap-1 mb-5 border border-slate-200/40">
                 <button
                   type="button"
                   onClick={() => setCreationMode("single")}
-                  className={`flex-1 flex items-center justify-center gap-2 px-3 py-2 text-xs font-bold rounded-lg transition-all decoration-none ${
+                  className={`flex-1 flex items-center justify-center gap-1.5 px-2 sm:px-3 py-1.5 sm:py-2 text-[11px] sm:text-xs font-bold rounded-lg transition-all decoration-none ${
                     creationMode === "single"
                       ? "bg-white text-slate-900 shadow-sm border border-slate-200/30"
                       : "text-slate-500 hover:text-slate-850"
                   }`}
                 >
-                  <User size={13} />
-                  <span>Single Recipient</span>
+                  <User size={13} className="shrink-0" />
+                  <span>Single</span>
+                  <span className="hidden xs:inline">Recipient</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => setCreationMode("bulk")}
-                  className={`flex-1 flex items-center justify-center gap-2 px-3 py-2 text-xs font-bold rounded-lg transition-all decoration-none ${
+                  className={`flex-1 flex items-center justify-center gap-1.5 px-2 sm:px-3 py-1.5 sm:py-2 text-[11px] sm:text-xs font-bold rounded-lg transition-all decoration-none ${
                     creationMode === "bulk"
                       ? "bg-white text-slate-900 shadow-sm border border-slate-200/30"
                       : "text-slate-500 hover:text-slate-850"
                   }`}
                 >
-                  <Users size={13} />
-                  <span>Bulk Import (CSV)</span>
+                  <Users size={13} className="shrink-0" />
+                  <span>Bulk</span>
+                  <span className="hidden xs:inline">Import</span>
                 </button>
               </div>
             )}

@@ -49,13 +49,13 @@ import { Modal, Spinner, Button } from "react-bootstrap";
 
 const Section = ({ title, icon: Icon, children, className = "" }) => (
   <div
-    className={`bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6 ${className}`}
+    className={`bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6 mb-6 ${className}`}
   >
     <div className="flex items-center gap-3 mb-6 border-b border-gray-100 pb-4">
       <div className="p-2 bg-indigo-50 text-indigo-600 rounded-lg">
         <Icon size={20} />
       </div>
-      <h3 className="text-lg font-bold text-gray-900">{title}</h3>
+      <h3 className="text-base sm:text-lg font-bold text-gray-900">{title}</h3>
     </div>
     {children}
   </div>
@@ -648,34 +648,36 @@ function SettingsPage() {
       <Toaster position="top-right" />
 
       {/* --- 1. Top Navigation Bar (Header - Locked to Top) --- */}
-      <div className="border-b border-slate-200/80 bg-white mb-6 -mt-6 px-4 py-3 rounded-b-lg">
+      <div className="border-b border-slate-200/80 bg-white mb-4 sm:mb-6 -mt-6 px-4 py-3 rounded-b-lg">
         <div className="flex items-center justify-between gap-4 max-w-[1600px] mx-auto">
           {/* Left: Page Title */}
           <h1 className="text-sm font-bold text-slate-800 uppercase tracking-wider mb-0">Settings</h1>
         </div>
       </div>
 
-      <div className="max-w-5xl mx-auto px-4 mt-6">
-        <div className="bg-slate-100/80 p-1 rounded-xl inline-flex gap-1 mb-8 border border-slate-200/40">
-          {tabs.map((tab) => {
-            const isActive = activeTab === tab.id;
-            return (
-              <button
-                key={tab.id}
-                disabled={tab.locked}
-                onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-2 px-4 py-2 text-xs font-bold rounded-lg transition-all decoration-none ${
-                  isActive
-                    ? "bg-white text-slate-900 shadow-sm border border-slate-200/30"
-                    : "text-slate-500 hover:text-slate-800"
-                } ${tab.locked ? "opacity-40 cursor-not-allowed" : ""}`}
-              >
-                <tab.icon size={14} />
-                <span>{tab.label}</span>
-                {tab.locked && <Lock size={11} />}
-              </button>
-            );
-          })}
+      <div className="max-w-5xl mx-auto px-0 sm:px-4 mt-2 sm:mt-6">
+        <div className="overflow-x-auto scrollbar-none pb-2 mb-6 -mx-4 px-4 sm:mx-0 sm:px-0">
+          <div className="bg-slate-100/80 p-1 rounded-xl inline-flex gap-1 border border-slate-200/40 min-w-max">
+            {tabs.map((tab) => {
+              const isActive = activeTab === tab.id;
+              return (
+                <button
+                  key={tab.id}
+                  disabled={tab.locked}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`flex items-center gap-2 px-3.5 sm:px-4 py-2 text-xs font-bold rounded-lg transition-all decoration-none whitespace-nowrap ${
+                    isActive
+                      ? "bg-white text-slate-900 shadow-sm border border-slate-200/30"
+                      : "text-slate-500 hover:text-slate-800"
+                  } ${tab.locked ? "opacity-40 cursor-not-allowed" : ""}`}
+                >
+                  <tab.icon size={14} />
+                  <span>{tab.label}</span>
+                  {tab.locked && <Lock size={11} />}
+                </button>
+              );
+            })}
+          </div>
         </div>
 
       {activeTab === "profile" && (

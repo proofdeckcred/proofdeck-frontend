@@ -336,15 +336,15 @@ function TemplatesPage() {
       <Toaster position="top-right" />
 
       {/* --- 1. Top Navigation Bar (Header - Locked to Top) --- */}
-      <div className="border-b border-slate-200/80 bg-white mb-6 -mt-6 px-4 py-3 rounded-b-lg">
-        <div className="flex items-center justify-between gap-4 max-w-[1600px] mx-auto">
+      <div className="border-b border-slate-200/80 bg-white mb-4 sm:mb-6 -mt-6 px-4 py-3 rounded-b-lg">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 max-w-[1600px] mx-auto">
           {/* Left: Page Title */}
           <h1 className="text-sm font-bold text-slate-800 uppercase tracking-wider mb-0">Templates</h1>
 
           {/* Right Action */}
           <Link
             to="/dashboard/upload-template"
-            className="inline-flex items-center justify-center bg-slate-900 border border-slate-900 text-white rounded-lg py-1.5 px-3 hover:bg-black transition-all font-semibold text-xs shadow-sm decoration-none"
+            className="inline-flex items-center justify-center bg-slate-900 border border-slate-900 text-white rounded-lg py-1.5 px-3 hover:bg-black transition-all font-semibold text-xs shadow-sm decoration-none w-full sm:w-auto text-center"
           >
             <Brush size={14} className="mr-1.5 text-slate-250" />
             Open Visual Editor
@@ -355,7 +355,7 @@ function TemplatesPage() {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-12">
         {/* Creator Form */}
         <div className="col-span-12 lg:col-span-4">
-          <div className="bg-white rounded border border-slate-200 p-4 shadow-sm">
+          <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
             <div className="flex items-center gap-2 mb-4 pb-2 border-b border-slate-100">
               <LayoutTemplate size={16} className="text-indigo-600" />
               <h3 className="text-xs font-bold text-slate-800">
@@ -391,7 +391,7 @@ function TemplatesPage() {
                 <label className="block text-slate-700 font-semibold text-xs">
                   Colors
                 </label>
-                <div className="grid grid-cols-3 gap-2">
+                <div className="grid grid-cols-3 gap-1.5 sm:gap-2">
                   <FormColorInput
                     label="Primary"
                     name="primary_color"
@@ -413,7 +413,7 @@ function TemplatesPage() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3.5 pt-1">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 pt-1">
                 <FormInput
                   label="Heading"
                   name="custom_title"
@@ -430,7 +430,7 @@ function TemplatesPage() {
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-3.5 pt-1">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 pt-1">
                 <FormFileInput
                   label="Logo"
                   name="logo"
@@ -445,7 +445,7 @@ function TemplatesPage() {
 
               <button
                 type="submit"
-                className="w-full bg-slate-900 border border-slate-900 hover:bg-black text-white text-xs font-semibold py-2 px-4 rounded shadow-sm transition-all flex items-center justify-center gap-1.5 mt-2"
+                className="w-full bg-slate-900 border border-slate-900 hover:bg-black text-white text-xs font-semibold py-2 px-4 rounded-lg shadow-sm transition-all flex items-center justify-center gap-1.5 mt-2"
               >
                 <Plus size={14} /> Create Template
               </button>
@@ -453,9 +453,9 @@ function TemplatesPage() {
           </div>
         </div>
 
-        {/* Live Preview - Sticky */}
+        {/* Live Preview */}
         <div className="col-span-12 lg:col-span-8">
-          <div className="bg-slate-50 border border-slate-200 rounded p-4 sticky top-6 min-h-[350px] flex flex-col justify-between shadow-sm">
+          <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 static lg:sticky lg:top-6 min-h-[350px] flex flex-col justify-between shadow-sm">
             <div className="flex justify-between items-center mb-3">
               <div className="flex items-center gap-1.5 text-slate-700 font-bold text-xs">
                 <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />

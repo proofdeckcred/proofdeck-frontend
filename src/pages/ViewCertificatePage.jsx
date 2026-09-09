@@ -267,18 +267,18 @@ function ViewCertificatePage() {
       <div className="w-full pb-12">
         
         {/* --- 1. Top Navigation Bar (Header - Locked to Top) --- */}
-        <div className="border-b border-slate-200/80 bg-white mb-6 -mt-6 px-4 py-3 rounded-b-lg">
-          <div className="flex items-center justify-between gap-4 max-w-[1600px] mx-auto">
+        <div className="border-b border-slate-200/80 bg-white mb-4 sm:mb-6 -mt-6 px-4 py-3 rounded-b-lg">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 max-w-[1600px] mx-auto">
             {/* Left Page Title & Status */}
-            <div className="flex items-center gap-3">
-              <Link
-                to="/dashboard"
-                className="p-1.5 rounded-full hover:bg-slate-100 text-slate-500 transition-colors"
-              >
-                <ArrowLeft size={16} />
-              </Link>
-              <div className="flex items-center gap-2.5">
-                <h1 className="text-sm font-bold text-slate-800 uppercase tracking-wider mb-0">
+            <div className="flex items-center justify-between sm:justify-start gap-2.5 sm:gap-3">
+              <div className="flex items-center gap-2 sm:gap-3">
+                <Link
+                  to="/dashboard"
+                  className="p-1.5 rounded-full hover:bg-slate-100 text-slate-500 transition-colors"
+                >
+                  <ArrowLeft size={16} />
+                </Link>
+                <h1 className="text-xs sm:text-sm font-bold text-slate-800 uppercase tracking-wider mb-0 truncate">
                   {isInvitation 
                     ? "Invitation Details" 
                     : isReceipt 
@@ -286,25 +286,25 @@ function ViewCertificatePage() {
                     : "Certificate Details"
                   }
                 </h1>
-                
-                {/* Modern Status Badge */}
-                <span
-                  className={`px-2.5 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider flex items-center gap-1.5 border shadow-xs ${
-                    isValid
-                      ? "bg-emerald-50 text-emerald-700 border-emerald-200/70"
-                      : "bg-red-50 text-red-700 border-red-200/70"
-                  }`}
-                >
-                  <span className={`w-1.5 h-1.5 rounded-full ${
-                    isValid ? "bg-emerald-500 animate-status-pulse" : "bg-red-500"
-                  }`} />
-                  {certificate.status}
-                </span>
               </div>
+              
+              {/* Modern Status Badge */}
+              <span
+                className={`px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider flex items-center gap-1 border shadow-xs shrink-0 ${
+                  isValid
+                    ? "bg-emerald-50 text-emerald-700 border-emerald-200/70"
+                    : "bg-red-50 text-red-700 border-red-200/70"
+                }`}
+              >
+                <span className={`w-1.5 h-1.5 rounded-full ${
+                  isValid ? "bg-emerald-500 animate-status-pulse" : "bg-red-500"
+                }`} />
+                {certificate.status}
+              </span>
             </div>
 
             {/* Top Right Action Buttons */}
-            <div className="flex gap-2">
+            <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap sm:flex-nowrap">
               {isValid ? (
                 <button
                   onClick={() => { setPendingStatus("revoked"); setShowStatusModal(true); }}

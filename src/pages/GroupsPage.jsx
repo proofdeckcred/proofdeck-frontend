@@ -538,20 +538,32 @@ function GroupsPage() {
       <Toaster position="top-right" />
 
       {/* --- 1. Top Navigation Bar (Header - Locked to Top) --- */}
-      <div className="border-b border-slate-200/80 bg-white mb-6 -mt-6 px-4 py-3 rounded-b-lg">
-        <div className="flex items-center justify-between gap-4 max-w-[1600px] mx-auto">
-          {/* Left: Page Title */}
-          <h1 className="text-sm font-bold text-slate-800 uppercase tracking-wider mb-0">
-            {viewingGroup ? `Batch: ${viewingGroup.name}` : "Batches"}
-          </h1>
+      <div className="border-b border-slate-200/80 bg-white mb-4 sm:mb-6 -mt-6 px-4 py-3 rounded-b-lg">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 max-w-[1600px] mx-auto">
+          {/* Row 1: Page Title & Mobile Action */}
+          <div className="flex items-center justify-between">
+            <h1 className="text-sm font-bold text-slate-800 uppercase tracking-wider mb-0 truncate">
+              {viewingGroup ? `Batch: ${viewingGroup.name}` : "Batches"}
+            </h1>
 
-          {/* Right: Search, Filters, Create Button */}
-          <div className="flex items-center gap-3 self-end md:self-auto">
-            <div className="relative w-48 sm:w-60">
+            {!viewingGroup && (
+              <button
+                onClick={() => setShowCreateModal(true)}
+                className="sm:hidden inline-flex items-center justify-center bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg py-1 px-2.5 font-semibold text-xs shadow-sm"
+              >
+                <Plus size={13} className="mr-1 text-white" />
+                New Group
+              </button>
+            )}
+          </div>
+
+          {/* Row 2: Search, Filters, Desktop Create Button */}
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
+            <div className="relative flex-1 sm:w-56">
               <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 w-3.5 h-3.5" />
               <input
                 type="text"
-                placeholder={viewingGroup ? "Search certificates..." : "Search groups or credentials..."}
+                placeholder={viewingGroup ? "Search certificates..." : "Search batches..."}
                 className="w-full pl-8 pr-3 py-1.5 bg-slate-50 border border-slate-200/60 rounded-lg focus:bg-white focus:border-slate-400 transition-all text-xs outline-none"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
@@ -563,9 +575,9 @@ function GroupsPage() {
               <select
                 value={filterType}
                 onChange={(e) => setFilterType(e.target.value)}
-                className="px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-[11px] font-semibold text-slate-600 outline-none shadow-sm cursor-pointer"
+                className="flex-1 sm:flex-none px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-[11px] font-semibold text-slate-600 outline-none shadow-sm cursor-pointer"
               >
-                <option value="all">Status: All</option>
+                <option value="all">All Status</option>
                 <option value="emailed">Emailed</option>
                 <option value="draft">Pending</option>
               </select>
@@ -573,29 +585,29 @@ function GroupsPage() {
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value)}
-                className="px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-[11px] font-semibold text-slate-600 outline-none shadow-sm cursor-pointer"
+                className="flex-1 sm:flex-none px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-[11px] font-semibold text-slate-600 outline-none shadow-sm cursor-pointer"
               >
-                <option value="newest">Sort: Newest</option>
-                <option value="oldest">Sort: Oldest</option>
-                <option value="name">Sort: Name</option>
+                <option value="newest">Newest</option>
+                <option value="oldest">Oldest</option>
+                <option value="name">Name</option>
               </select>
-            </div>
 
-            {!viewingGroup && (
-              <button
-                onClick={() => setShowCreateModal(true)}
-                className="inline-flex items-center justify-center bg-indigo-650 hover:bg-indigo-700 text-white rounded-lg py-1.5 px-3.5 transition-all font-semibold text-xs shadow-sm bg-indigo-600"
-              >
-                <Plus size={14} className="mr-1.5 text-white" />
-                New Group
-              </button>
-            )}
+              {!viewingGroup && (
+                <button
+                  onClick={() => setShowCreateModal(true)}
+                  className="hidden sm:inline-flex items-center justify-center bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg py-1.5 px-3.5 transition-all font-semibold text-xs shadow-sm"
+                >
+                  <Plus size={14} className="mr-1.5 text-white" />
+                  New Group
+                </button>
+              )}
+            </div>
           </div>
         </div>
       </div>
 
       {/* --- 2. Main Cohesive Grid Panel --- */}
-      <div className="border border-slate-200/80 bg-white rounded-xl shadow-sm p-6 space-y-8">
+      <div className="border border-slate-200/80 bg-white rounded-xl shadow-sm p-4 sm:p-6 space-y-8">
         
         {/* --- VIEW 1: EXPLORER DASHBOARD (viewingGroup === null) --- */}
         {!viewingGroup ? (
@@ -608,15 +620,15 @@ function GroupsPage() {
               </div>
 
               {filteredGroups.length > 0 ? (
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-5">
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 sm:gap-5">
                   {filteredGroups.map((group) => (
                     <div key={group.id} className="flex flex-col group/folder">
                       {/* Folder Box */}
                       <div
                         onClick={() => handleViewGroup(group)}
-                        className="aspect-[1.5/1] bg-white border border-slate-200 hover:border-indigo-400 hover:shadow-md transition-all rounded-xl flex flex-col justify-between p-4 cursor-pointer relative"
+                        className="aspect-[1.5/1] bg-white border border-slate-200 hover:border-indigo-400 hover:shadow-md transition-all rounded-xl flex flex-col justify-between p-3 sm:p-4 cursor-pointer relative"
                       >
-                        <Folder className="w-10 h-10 text-indigo-500 fill-indigo-100/30 group-hover/folder:fill-indigo-100/60 transition-colors" />
+                        <Folder className="w-8 h-8 sm:w-10 sm:h-10 text-indigo-500 fill-indigo-100/30 group-hover/folder:fill-indigo-100/60 transition-colors" />
                         
                         <div className="flex justify-between items-center text-[10px] font-bold text-slate-400">
                           <span className="flex items-center gap-1">

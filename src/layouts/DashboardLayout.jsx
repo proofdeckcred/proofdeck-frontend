@@ -28,6 +28,17 @@ function DashboardLayout() {
     });
   };
 
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+
+  const toggleMobileSidebar = () => {
+    setMobileSidebarOpen((prev) => !prev);
+  };
+
+  // Close mobile sidebar whenever the route changes
+  React.useEffect(() => {
+    setMobileSidebarOpen(false);
+  }, [location.pathname]);
+
   // Lock body overflow in dashboard so hover tooltips/portals never flash a second scrollbar or shake
   React.useEffect(() => {
     const prevOverflow = document.body.style.overflow;
@@ -51,6 +62,21 @@ function DashboardLayout() {
       )}
 
       {/* 
+        MOBILE SIDEBAR OVERLAY / DRAWER 
+      */}
+      {mobileSidebarOpen && (
+        <div className="fixed inset-0 z-50 md:hidden flex animate-in fade-in duration-200">
+          <div
+            className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs transition-opacity"
+            onClick={() => setMobileSidebarOpen(false)}
+          />
+          <div className="relative flex-1 flex flex-col max-w-[280px] w-full bg-white z-50 shadow-2xl animate-in slide-in-from-left duration-300">
+            <Sidebar onClose={() => setMobileSidebarOpen(false)} />
+          </div>
+        </div>
+      )}
+
+      {/* 
         MAIN CONTENT AREA
         flex-1: Takes up all remaining space.
         min-w-0: Prevents flexbox overflow issues.
@@ -58,7 +84,11 @@ function DashboardLayout() {
       */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden bg-gray-50 dark:bg-[var(--background-white)]">
         {!isEditorPage && (
-          <DashboardTopbar isCollapsed={isCollapsed} toggleSidebar={toggleSidebar} />
+          <DashboardTopbar 
+            isCollapsed={isCollapsed} 
+            toggleSidebar={toggleSidebar} 
+            toggleMobileSidebar={toggleMobileSidebar}
+          />
         )}
         {/* 
           SCROLLABLE REGION
@@ -69,7 +99,7 @@ function DashboardLayout() {
           {isEditorPage ? (
             <Outlet />
           ) : (
-            <div className="max-w-[1600px] mx-auto px-4 sm:px-6 md:px-8 py-6 pb-20 md:pb-6 w-full overflow-x-hidden">
+            <div className="max-w-[1600px] mx-auto px-4 sm:px-6 md:px-8 py-6 pb-28 sm:pb-24 md:pb-8 w-full overflow-x-hidden">
               <Outlet />
             </div>
           )}
@@ -77,7 +107,7 @@ function DashboardLayout() {
       </div>
 
       {/* MOBILE BOTTOM NAVIGATION */}
-      {isMobile && <BottomNav />}
+      {isMobile && <BottomNav onOpenMenu={() => setMobileSidebarOpen(true)} />}
 
       {/* GLOBAL BACKGROUND TASK INDICATOR */}
       <BackgroundJobIndicator />

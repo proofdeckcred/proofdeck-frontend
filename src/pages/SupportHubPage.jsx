@@ -19,18 +19,18 @@ function SupportHubPage() {
   return (
     <div className="w-full pb-20">
       {/* --- 1. Top Navigation Bar (Header - Locked to Top) --- */}
-      <div className="border-b border-slate-200/80 bg-white mb-6 -mt-6 px-4 py-3 rounded-b-lg">
-        <div className="flex items-center justify-between gap-4 max-w-[1600px] mx-auto">
+      <div className="border-b border-slate-200/80 bg-white mb-4 sm:mb-6 -mt-6 px-4 py-3 rounded-b-lg">
+        <div className="flex items-center justify-between gap-3 max-w-[1600px] mx-auto">
           {/* Left: Page Title */}
-          <h1 className="text-sm font-bold text-slate-800 uppercase tracking-wider mb-0">Support Hub</h1>
+          <h1 className="text-xs sm:text-sm font-bold text-slate-800 uppercase tracking-wider mb-0">Support Hub</h1>
 
           {/* Right Action */}
           <Link
             to="/dashboard"
-            className="inline-flex items-center gap-1 text-xs font-semibold text-slate-600 hover:text-slate-800 decoration-none bg-slate-100 hover:bg-slate-200 px-3 py-1.5 rounded-lg transition-colors border border-slate-200/40"
+            className="inline-flex items-center gap-1 text-xs font-semibold text-slate-600 hover:text-slate-800 decoration-none bg-slate-100 hover:bg-slate-200 px-2.5 sm:px-3 py-1.5 rounded-lg transition-colors border border-slate-200/40"
           >
             <ArrowLeft size={13} />
-            <span>Back to Dashboard</span>
+            <span>Dashboard</span>
           </Link>
         </div>
       </div>
@@ -39,7 +39,7 @@ function SupportHubPage() {
       <div className="grid grid-cols-1 lg:grid-cols-12 border border-slate-200/80 bg-white rounded-xl overflow-hidden shadow-sm divide-y lg:divide-y-0 lg:divide-x divide-slate-200/80">
         
         {/* Left Column: Search & Articles Grid (col-span-8) */}
-        <div className="lg:col-span-8 p-6 space-y-6">
+        <div className="lg:col-span-8 p-4 sm:p-6 space-y-6">
           <div>
             <h2 className="text-sm font-bold text-slate-800">Browse Knowledge Base</h2>
             <p className="text-[10px] text-slate-400">Search guides and articles to solve common questions</p>

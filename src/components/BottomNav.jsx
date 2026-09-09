@@ -5,13 +5,13 @@ import {
   Folder,
   Plus,
   LayoutTemplate,
-  Settings,
+  Menu,
   FilePlus,
   Users,
 } from "lucide-react";
 import "../styles/BottomNav.css";
 
-function BottomNav() {
+function BottomNav({ onOpenMenu }) {
   const [showCreateOptions, setShowCreateOptions] = useState(false);
 
   const toggleCreateOptions = () => {
@@ -27,27 +27,42 @@ function BottomNav() {
     <>
       <nav className="bottom-nav">
         <NavLink to="/dashboard" className="bottom-nav-link" end>
-          <LayoutGrid size={24} />
-          <span>Dashboard</span>
+          <LayoutGrid size={20} />
+          <span className="mt-1">Overview</span>
         </NavLink>
         <NavLink to="/dashboard/groups" className="bottom-nav-link">
-          <Folder size={24} />
-          <span>Groups</span>
+          <Folder size={20} />
+          <span className="mt-1">Batches</span>
         </NavLink>
 
-        {/* This is now a button to toggle the modal */}
-        <div className="bottom-nav-create-btn" onClick={toggleCreateOptions}>
-          <Plus size={32} />
+        {/* Center Create Action Button */}
+        <div className="bottom-nav-create-wrapper">
+          <button 
+            type="button" 
+            className="bottom-nav-create-btn" 
+            onClick={toggleCreateOptions}
+            aria-label="Create Document"
+          >
+            <Plus size={24} />
+          </button>
         </div>
 
         <NavLink to="/dashboard/templates" className="bottom-nav-link">
-          <LayoutTemplate size={24} />
-          <span>Templates</span>
+          <LayoutTemplate size={20} />
+          <span className="mt-1">Templates</span>
         </NavLink>
-        <NavLink to="/dashboard/settings" className="bottom-nav-link">
-          <Settings size={24} />
-          <span>Settings</span>
-        </NavLink>
+        <button 
+          type="button" 
+          onClick={() => {
+            setShowCreateOptions(false);
+            if (onOpenMenu) onOpenMenu();
+          }} 
+          className="bottom-nav-btn"
+          aria-label="Open Navigation Menu"
+        >
+          <Menu size={20} />
+          <span className="mt-1">Menu</span>
+        </button>
       </nav>
 
       {/* Create Options Modal */}
