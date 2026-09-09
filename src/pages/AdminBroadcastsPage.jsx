@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import {
   Mail, Send, Eye, Plus, Trash2, CheckCircle2, AlertCircle, ShieldAlert,
   Loader2, RefreshCw, BarChart2, Layers, Check, HelpCircle, Image as ImageIcon,
-  GripVertical, ChevronUp, ChevronDown, Building2
+  GripVertical, ChevronUp, ChevronDown, Building2, Link as LinkIcon, Video, Play, ExternalLink
 } from 'lucide-react';
 import Select from 'react-select';
 import {
@@ -152,6 +152,7 @@ export default function AdminBroadcastsPage() {
     if (type === 'callout') initialContent = 'Key takeaway or important instruction';
     if (type === 'button') initialContent = 'Claim Your Access';
     if (type === 'image') initialContent = '';
+    if (type === 'video') initialContent = '';
 
     setBlocks(prev => [
       ...prev,
@@ -159,11 +160,18 @@ export default function AdminBroadcastsPage() {
         id: newId,
         type,
         content: initialContent,
-        title: type === 'callout' ? 'Important Update' : undefined,
-        url: type === 'button' ? 'https://www.proofdeck.app/dashboard' : (type === 'image' ? 'https://www.proofdeck.app/images/landing_page_image/verification.png' : undefined),
+        title: type === 'callout' ? 'Important Update' : (type === 'video' ? 'Watch Product Walkthrough' : undefined),
+        url: type === 'button'
+          ? 'https://www.proofdeck.app/dashboard'
+          : type === 'image'
+          ? 'https://www.proofdeck.app/images/landing_page_image/verification.png'
+          : type === 'video'
+          ? 'https://www.youtube.com/watch?v=dQw4w9WgXcQ'
+          : undefined,
+        thumbnail_url: type === 'video' ? 'https://img.youtube.com/vi/dQw4w9WgXcQ/hqdefault.jpg' : undefined,
         text: type === 'button' ? 'Get Started' : undefined,
         alt: type === 'image' ? 'ProofDeck Update' : undefined,
-        caption: type === 'image' ? '' : undefined,
+        caption: (type === 'image' || type === 'video') ? '' : undefined,
         href: type === 'image' ? '' : undefined,
       }
     ]);
@@ -174,7 +182,37 @@ export default function AdminBroadcastsPage() {
   };
 
   const updateBlock = (id, field, value) => {
-    setBlocks(prev => prev.map(b => (b.id === id ? { ...b, [field]: value } : b)));
+    setBlocks(prev => prev.map(b => {
+      if (b.id !== id) return b;
+      const updated = { ...b, [field]: value };
+      // Auto-extract YouTube video thumbnail when URL is updated on a video block
+      if (b.type === 'video' && field === 'url') {
+        const ytMatch = value.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=|shorts\/))([\w-]{11})/);
+        if (ytMatch) {
+          updated.thumbnail_url = `https://img.youtube.com/vi/${ytMatch[1]}/hqdefault.jpg`;
+          updated.video_id = ytMatch[1];
+        }
+      }
+      return updated;
+    }));
+  };
+
+  const handleInsertLink = (blockId, field = 'content') => {
+    const text = window.prompt('Enter the clickable text to display:', 'Click here');
+    if (!text) return;
+    const url = window.prompt('Enter the destination URL (e.g. https://www.proofdeck.app):', 'https://');
+    if (!url || url === 'https://') return;
+    const markdownLink = `[${text}](${url})`;
+
+    setBlocks(prev => prev.map(b => {
+      if (b.id !== blockId) return b;
+      const current = b[field] || '';
+      return {
+        ...b,
+        [field]: current ? `${current} ${markdownLink}` : markdownLink
+      };
+    }));
+    showNotice('success', `Inserted link [${text}](${url}) into block.`);
   };
 
   // Drag-and-drop & block reordering
@@ -712,6 +750,13 @@ export default function AdminBroadcastsPage() {
                   >
                     <ImageIcon className="w-3.5 h-3.5" /> Image
                   </button>
+                  <button
+                    type="button"
+                    onClick={() => addBlock('video')}
+                    className="px-2.5 py-1.5 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg text-xs font-semibold flex items-center gap-1"
+                  >
+                    <Video className="w-3.5 h-3.5" /> Video
+                  </button>
                 </div>
               </div>
 
@@ -784,13 +829,29 @@ export default function AdminBroadcastsPage() {
                   )}
 
                   {block.type === 'paragraph' && (
-                    <textarea
-                      rows={3}
-                      value={block.content}
-                      onChange={(e) => updateBlock(block.id, 'content', e.target.value)}
-                      placeholder="Write your email body paragraph..."
-                      className="w-full px-3 py-2 rounded-xl border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-[#5B4CF5]"
-                    />
+                    <div className="space-y-1.5">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-semibold text-gray-500">Text Content</span>
+                        <button
+                          type="button"
+                          onClick={() => handleInsertLink(block.id, 'content')}
+                          className="inline-flex items-center gap-1 text-xs text-[#5B4CF5] hover:text-[#4433E0] font-semibold bg-indigo-50 hover:bg-indigo-100 px-2 py-0.5 rounded-md transition-colors"
+                          title="Insert clickable link in text"
+                        >
+                          <LinkIcon className="w-3 h-3" /> Add Link
+                        </button>
+                      </div>
+                      <textarea
+                        rows={3}
+                        value={block.content}
+                        onChange={(e) => updateBlock(block.id, 'content', e.target.value)}
+                        placeholder="Write your email body paragraph... (Tip: use [link text](https://...) for links)"
+                        className="w-full px-3 py-2 rounded-xl border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-[#5B4CF5]"
+                      />
+                      <p className="text-[11px] text-gray-400">
+                        Tip: Click <b>Add Link</b> or write <code>[link text](https://your-link.com)</code> to create clickable text links.
+                      </p>
+                    </div>
                   )}
 
                   {block.type === 'callout' && (
@@ -802,13 +863,25 @@ export default function AdminBroadcastsPage() {
                         placeholder="Callout Box Title (e.g. Special Offer / Important Notice)"
                         className="w-full px-3 py-2 rounded-xl border border-gray-300 text-sm font-semibold"
                       />
-                      <textarea
-                        rows={2}
-                        value={block.content}
-                        onChange={(e) => updateBlock(block.id, 'content', e.target.value)}
-                        placeholder="Callout box body text..."
-                        className="w-full px-3 py-2 rounded-xl border border-gray-300 text-sm"
-                      />
+                      <div className="space-y-1">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-semibold text-gray-500">Callout Body</span>
+                          <button
+                            type="button"
+                            onClick={() => handleInsertLink(block.id, 'content')}
+                            className="inline-flex items-center gap-1 text-xs text-[#5B4CF5] hover:text-[#4433E0] font-semibold bg-indigo-50 hover:bg-indigo-100 px-2 py-0.5 rounded-md transition-colors"
+                          >
+                            <LinkIcon className="w-3 h-3" /> Add Link
+                          </button>
+                        </div>
+                        <textarea
+                          rows={2}
+                          value={block.content}
+                          onChange={(e) => updateBlock(block.id, 'content', e.target.value)}
+                          placeholder="Callout box body text..."
+                          className="w-full px-3 py-2 rounded-xl border border-gray-300 text-sm"
+                        />
+                      </div>
                     </div>
                   )}
 
@@ -900,6 +973,79 @@ export default function AdminBroadcastsPage() {
                           <img src={block.url} alt={block.alt || 'Preview'} className="max-h-40 rounded mx-auto object-contain" />
                         </div>
                       )}
+                    </div>
+                  )}
+
+                  {block.type === 'video' && (
+                    <div className="space-y-3">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                          <label className="block text-xs font-semibold text-gray-700 mb-1">
+                            YouTube / Video URL
+                          </label>
+                          <div className="relative">
+                            <input
+                              type="text"
+                              value={block.url || ''}
+                              onChange={(e) => updateBlock(block.id, 'url', e.target.value)}
+                              placeholder="https://www.youtube.com/watch?v=... or https://youtu.be/..."
+                              className="w-full pl-8 pr-3 py-2 rounded-xl border border-gray-300 text-sm focus:ring-2 focus:ring-[#5B4CF5] focus:outline-none"
+                            />
+                            <Video className="w-4 h-4 text-gray-400 absolute left-2.5 top-2.5" />
+                          </div>
+                        </div>
+                        <div>
+                          <label className="block text-xs font-semibold text-gray-700 mb-1">
+                            Video Title / Caption
+                          </label>
+                          <input
+                            type="text"
+                            value={block.title || ''}
+                            onChange={(e) => updateBlock(block.id, 'title', e.target.value)}
+                            placeholder="e.g. Watch: How ProofDeck Automates Credentials"
+                            className="w-full px-3 py-2 rounded-xl border border-gray-300 text-sm focus:ring-2 focus:ring-[#5B4CF5] focus:outline-none"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Video Thumbnail Preview Card with Play Overlay */}
+                      {block.thumbnail_url ? (
+                        <div className="rounded-xl border border-gray-200 overflow-hidden bg-slate-950 relative max-w-md mx-auto group shadow-sm">
+                          <img
+                            src={block.thumbnail_url}
+                            alt={block.title || 'Video preview'}
+                            className="w-full h-44 object-cover opacity-90 group-hover:opacity-100 transition-opacity"
+                          />
+                          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                            <div className="w-14 h-10 bg-red-600/90 rounded-xl flex items-center justify-center shadow-lg group-hover:scale-105 transition-transform">
+                              <Play className="w-5 h-5 text-white fill-white ml-0.5" />
+                            </div>
+                          </div>
+                          <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/85 to-transparent p-2.5">
+                            <p className="text-xs text-white font-medium truncate">
+                              {block.title || 'Click to watch video'}
+                            </p>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="p-4 bg-gray-50 border border-dashed border-gray-300 rounded-xl text-center text-xs text-gray-400">
+                          Paste a YouTube link above to automatically load the video preview thumbnail with play button.
+                        </div>
+                      )}
+
+                      <div className="flex items-center justify-between text-xs text-gray-400">
+                        <span>Automatically pulls the YouTube preview thumbnail and overlays a play button.</span>
+                        {block.url && (
+                          <a
+                            href={block.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-indigo-600 hover:text-indigo-700 font-medium inline-flex items-center gap-1"
+                          >
+                            Test Link <ExternalLink className="w-3 h-3" />
+                          </a>
+                        )}
+                      </div>
                     </div>
                   )}
                 </div>
