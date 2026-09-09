@@ -114,18 +114,18 @@ const FeatureCard = ({ feature, index }) => {
       >
         <div className="grid grid-cols-1 md:grid-cols-2 gap-0 items-stretch">
           {/* Left Column: Text Content */}
-          <div className="p-8 md:p-12 flex flex-col justify-center bg-white">
-            <span className="pd-pill-label mb-5">{feature.subtitle}</span>
+          <div className="p-6 sm:p-8 md:p-12 flex flex-col justify-center bg-white">
+            <span className="pd-pill-label mb-4 sm:mb-5">{feature.subtitle}</span>
 
-            <h3 className="text-2xl md:text-3xl font-black text-[#15131F] mb-4 leading-tight tracking-tight">
+            <h3 className="text-xl sm:text-2xl md:text-3xl font-black text-[#15131F] mb-3 sm:mb-4 leading-tight tracking-tight">
               {feature.title}
             </h3>
 
-            <p className="text-[#68647A] leading-relaxed mb-6 text-sm md:text-[15px] font-medium">
+            <p className="text-[#68647A] leading-relaxed mb-5 sm:mb-6 text-sm md:text-[15px] font-medium">
               {feature.description}
             </p>
 
-            <ul className="space-y-3">
+            <ul className="space-y-2.5 sm:space-y-3">
               {feature.benefits.map((benefit, i) => (
                 <li key={i} className="flex items-center gap-3 text-[#15131F]">
                   <span className="w-1.5 h-1.5 rounded-full bg-[var(--pd-indigo)] shrink-0 mt-1.5" />
@@ -136,19 +136,32 @@ const FeatureCard = ({ feature, index }) => {
           </div>
 
           {/* Right Column: Visual Preview Cover */}
-          <div className="relative hidden md:block overflow-hidden min-h-[380px] bg-[#FAFAF9] border-l border-[#E6E4ED]">
+          <div className="relative overflow-hidden bg-gradient-to-br from-[#F8F7FC] to-[#F0EEF8] md:bg-[#FAFAF9] border-t md:border-t-0 md:border-l border-[#E6E4ED] p-4 sm:p-6 md:p-0 min-h-[200px] sm:min-h-[260px] md:min-h-[380px] flex items-center justify-center">
             {feature.image ? (
-              <img
-                src={feature.image}
-                alt={feature.title}
-                className="absolute inset-0 w-full h-full object-cover transform hover:scale-102 transition-transform duration-500 object-left-top"
-              />
+              <>
+                {/* Mobile Preview Frame */}
+                <div className="w-full md:hidden relative rounded-xl sm:rounded-2xl overflow-hidden shadow-lg border border-[#E0DDF0] bg-white">
+                  <img
+                    src={feature.image}
+                    alt={feature.title}
+                    className="w-full h-auto max-h-[240px] sm:max-h-[300px] object-cover object-top"
+                    loading="lazy"
+                  />
+                </div>
+
+                {/* Desktop Full Cover */}
+                <img
+                  src={feature.image}
+                  alt={feature.title}
+                  className="hidden md:block absolute inset-0 w-full h-full object-cover transform hover:scale-102 transition-transform duration-500 object-left-top"
+                />
+              </>
             ) : (
-              <div className="absolute inset-0 flex items-center justify-center p-8 bg-[#FAFAF9]">
+              <div className="flex items-center justify-center p-6 sm:p-8 w-full">
                 <div className="relative w-full max-w-xs flex flex-col items-center">
-                  <div className="aspect-square rounded-2xl bg-white border border-[#E6E4ED] shadow-2xs flex items-center justify-center relative overflow-hidden w-40 h-40">
+                  <div className="aspect-square rounded-2xl bg-white border border-[#E6E4ED] shadow-2xs flex items-center justify-center relative overflow-hidden w-32 h-32 md:w-40 md:h-40">
                     <feature.icon
-                      size={64}
+                      size={56}
                       strokeWidth={1.2}
                       className="text-[#4A3AA8] opacity-40"
                     />
