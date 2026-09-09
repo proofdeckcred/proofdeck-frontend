@@ -2,7 +2,8 @@ import React, { useState, useEffect, useMemo } from 'react';
 import {
   Mail, Send, Eye, Plus, Trash2, CheckCircle2, AlertCircle, ShieldAlert,
   Loader2, RefreshCw, BarChart2, Layers, Check, HelpCircle, Image as ImageIcon,
-  GripVertical, ChevronUp, ChevronDown, Building2, Link as LinkIcon, Video, Play, ExternalLink
+  GripVertical, ChevronUp, ChevronDown, Building2, Link as LinkIcon, Video, Play, ExternalLink,
+  Users, UserCheck
 } from 'lucide-react';
 import Select from 'react-select';
 import {
@@ -14,6 +15,7 @@ import {
   sendAdminBroadcast,
   uploadEditorImage,
   getAdminCompanies,
+  getAdminUsers,
 } from '../api';
 
 const selectStyles = {
@@ -83,6 +85,11 @@ export default function AdminBroadcastsPage() {
   const [selectedCompanies, setSelectedCompanies] = useState([]);
   const [companiesList, setCompaniesList] = useState([]);
   const [loadingCompanies, setLoadingCompanies] = useState(false);
+
+  const [selectedUsers, setSelectedUsers] = useState([]);
+  const [usersList, setUsersList] = useState([]);
+  const [loadingUsers, setLoadingUsers] = useState(false);
+
   const [blocks, setBlocks] = useState([
     { id: 1, type: 'heading', content: 'Transform How Credentials Are Proven' },
     { id: 2, type: 'paragraph', content: 'Our new update ensures your students and graduates never have to wait weeks to verify their skills.' }
@@ -100,6 +107,7 @@ export default function AdminBroadcastsPage() {
   useEffect(() => {
     fetchCampaigns();
     fetchCompanies();
+    fetchUsers();
   }, []);
 
   const fetchCompanies = async () => {
@@ -111,6 +119,18 @@ export default function AdminBroadcastsPage() {
       console.error('Failed to load companies:', err);
     } finally {
       setLoadingCompanies(false);
+    }
+  };
+
+  const fetchUsers = async () => {
+    try {
+      setLoadingUsers(true);
+      const res = await getAdminUsers({ limit: 1000 });
+      setUsersList(res.data.users || []);
+    } catch (err) {
+      console.error('Failed to load users:', err);
+    } finally {
+      setLoadingUsers(false);
     }
   };
 
@@ -126,6 +146,57 @@ export default function AdminBroadcastsPage() {
       };
     });
   }, [companiesList]);
+
+  const userOptions = useMemo(() => {
+    return usersList.map((u) => {
+      const dateStr = u.signup_date
+        ? new Date(u.signup_date).toLocaleDateString(undefined, { month: 'short', year: 'numeric' })
+        : '';
+      const companyStr = u.company_name && u.company_name !== 'N/A' ? ` · ${u.company_name}` : '';
+      return {
+        value: u.id,
+        label: `${u.name || 'User'} (${u.email})${companyStr}${dateStr ? ` · Joined ${dateStr}` : ''}`,
+        user: u,
+      };
+    });
+  }, [usersList]);
+
+  // Sync selected labels if list loaded after campaign loaded
+  useEffect(() => {
+    if (companiesList.length > 0 && selectedCompanies.some(c => c.label?.startsWith('Company #'))) {
+      setSelectedCompanies(prev => prev.map(item => {
+        if (item.label?.startsWith('Company #')) {
+          const found = companiesList.find(c => c.id === item.value);
+          if (found) {
+            return {
+              value: found.id,
+              label: `${found.name} — ${found.owner_name || 'Owner'}${found.owner_email ? ` (${found.owner_email})` : ''}`,
+              company: found
+            };
+          }
+        }
+        return item;
+      }));
+    }
+  }, [companiesList]);
+
+  useEffect(() => {
+    if (usersList.length > 0 && selectedUsers.some(u => u.label?.startsWith('User #'))) {
+      setSelectedUsers(prev => prev.map(item => {
+        if (item.label?.startsWith('User #')) {
+          const found = usersList.find(u => u.id === item.value);
+          if (found) {
+            return {
+              value: found.id,
+              label: `${found.name || 'User'} (${found.email})${found.company_name && found.company_name !== 'N/A' ? ` · ${found.company_name}` : ''}`,
+              user: found
+            };
+          }
+        }
+        return item;
+      }));
+    }
+  }, [usersList]);
 
   const fetchCampaigns = async () => {
     try {
@@ -278,6 +349,7 @@ export default function AdminBroadcastsPage() {
         content_blocks: blocks,
         segment,
         target_companies: selectedCompanies.map(c => c.value),
+        target_users: selectedUsers.map(u => u.value),
       });
       setCampaignId(res.data.id);
       showNotice('success', 'Campaign draft saved successfully.');
@@ -329,6 +401,7 @@ export default function AdminBroadcastsPage() {
           content_blocks: blocks,
           segment,
           target_companies: selectedCompanies.map(c => c.value),
+          target_users: selectedUsers.map(u => u.value),
         });
         targetId = res.data.id;
         setCampaignId(targetId);
@@ -365,9 +438,21 @@ export default function AdminBroadcastsPage() {
       showNotice('error', 'Please select at least one company to target.');
       return;
     }
+    if (segment === 'users' && selectedUsers.length === 0) {
+      showNotice('error', 'Please select at least one user to target.');
+      return;
+    }
+    if (segment === 'custom' && selectedCompanies.length === 0 && selectedUsers.length === 0) {
+      showNotice('error', 'Please select at least one company or user to target.');
+      return;
+    }
 
     const confirmMsg = segment === 'companies'
       ? `Are you sure you want to broadcast this campaign to the ${selectedCompanies.length} selected company/companies?`
+      : segment === 'users'
+      ? `Are you sure you want to broadcast this campaign to the ${selectedUsers.length} selected user(s)?`
+      : segment === 'custom'
+      ? `Are you sure you want to broadcast this campaign to the ${selectedCompanies.length} selected companies and ${selectedUsers.length} selected users?`
       : `Are you sure you want to broadcast this campaign to the "${segment.toUpperCase()}" segment?`;
 
     if (!window.confirm(confirmMsg)) {
@@ -395,6 +480,7 @@ export default function AdminBroadcastsPage() {
     setOpeningWhy('');
     setSegment('all');
     setSelectedCompanies([]);
+    setSelectedUsers([]);
     setBlocks([
       { id: Date.now(), type: 'heading', content: 'Transform How Credentials Are Proven' },
       { id: Date.now() + 1, type: 'paragraph', content: 'Our new update ensures your students and graduates never have to wait weeks to verify their skills.' }
@@ -432,6 +518,20 @@ export default function AdminBroadcastsPage() {
         setSelectedCompanies([]);
       }
 
+      if (data.target_users && Array.isArray(data.target_users)) {
+        const selected = data.target_users.map(id => {
+          const found = usersList.find(u => u.id === id);
+          return found ? {
+            value: found.id,
+            label: `${found.name || 'User'} (${found.email})${found.company_name && found.company_name !== 'N/A' ? ` · ${found.company_name}` : ''}`,
+            user: found
+          } : { value: id, label: `User #${id}` };
+        });
+        setSelectedUsers(selected);
+      } else {
+        setSelectedUsers([]);
+      }
+
       let parsedBlocks = data.content_blocks;
       if (typeof parsedBlocks === 'string') {
         try {
@@ -453,6 +553,7 @@ export default function AdminBroadcastsPage() {
       setOpeningWhy(c.opening_why || '');
       setSegment(c.segment || 'all');
       setSelectedCompanies([]);
+      setSelectedUsers([]);
       let fallbackBlocks = c.content_blocks;
       if (typeof fallbackBlocks === 'string') {
         try { fallbackBlocks = JSON.parse(fallbackBlocks); } catch (e) { fallbackBlocks = []; }
@@ -643,6 +744,8 @@ export default function AdminBroadcastsPage() {
                   >
                     <option value="all">All Non-Suspended Users</option>
                     <option value="companies">Specific Companies / Organizations</option>
+                    <option value="users">Specific Individual Users</option>
+                    <option value="custom">Combined (Specific Companies & Users)</option>
                     <option value="active">Active Issuers (Active in last 60 days)</option>
                     <option value="inactive">Quiet Users (Inactive for 60+ days)</option>
                   </select>
@@ -650,7 +753,7 @@ export default function AdminBroadcastsPage() {
               </div>
 
               {/* Specific Companies Targeting Box */}
-              {segment === 'companies' && (
+              {(segment === 'companies' || segment === 'custom') && (
                 <div className="p-4 bg-indigo-50/60 border border-indigo-100 rounded-2xl space-y-2.5 shadow-2xs">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5">
                     <div className="flex items-center gap-2">
@@ -685,6 +788,51 @@ export default function AdminBroadcastsPage() {
                       <button
                         type="button"
                         onClick={() => setSelectedCompanies([])}
+                        className="text-xs text-red-600 hover:text-red-700 font-semibold transition-colors self-start sm:self-auto"
+                      >
+                        Clear Selection
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Specific Users Targeting Box */}
+              {(segment === 'users' || segment === 'custom') && (
+                <div className="p-4 bg-emerald-50/60 border border-emerald-100 rounded-2xl space-y-2.5 shadow-2xs">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5">
+                    <div className="flex items-center gap-2">
+                      <div className="w-6 h-6 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center">
+                        <Users className="w-3.5 h-3.5" />
+                      </div>
+                      <label className="text-xs font-bold uppercase tracking-wider text-emerald-950">
+                        Target Specific Users
+                      </label>
+                    </div>
+                    <span className="text-xs text-emerald-700 font-semibold bg-emerald-100/80 px-2.5 py-0.5 rounded-full border border-emerald-200/60">
+                      {selectedUsers.length} {selectedUsers.length === 1 ? 'user' : 'users'} selected
+                    </span>
+                  </div>
+
+                  <Select
+                    isMulti
+                    options={userOptions}
+                    value={selectedUsers}
+                    onChange={setSelectedUsers}
+                    placeholder="Search by user name, email, company, or month (e.g. Oct 2025)..."
+                    styles={selectStyles}
+                    isLoading={loadingUsers}
+                    noOptionsMessage={() => (loadingUsers ? "Loading users..." : "No users found")}
+                  />
+
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between text-xs text-gray-500 pt-1 gap-2">
+                    <span className="text-emerald-900/70">
+                      Emails will be dispatched directly to the selected individual user accounts.
+                    </span>
+                    {selectedUsers.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => setSelectedUsers([])}
                         className="text-xs text-red-600 hover:text-red-700 font-semibold transition-colors self-start sm:self-auto"
                       >
                         Clear Selection
