@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   Mail, Send, Eye, Plus, Trash2, CheckCircle2, AlertCircle, ShieldAlert,
   Loader2, RefreshCw, BarChart2, Layers, Check, HelpCircle, Image as ImageIcon,
-  GripVertical, ChevronUp, ChevronDown
+  GripVertical, ChevronUp, ChevronDown, Building2
 } from 'lucide-react';
+import Select from 'react-select';
 import {
   getAdminBroadcasts,
   getAdminBroadcastDetails,
@@ -12,7 +13,57 @@ import {
   testSendAdminBroadcast,
   sendAdminBroadcast,
   uploadEditorImage,
+  getAdminCompanies,
 } from '../api';
+
+const selectStyles = {
+  control: (base, state) => ({
+    ...base,
+    borderColor: state.isFocused ? '#5B4CF5' : '#E2E8F0',
+    borderRadius: '0.75rem',
+    padding: '3px',
+    boxShadow: state.isFocused ? '0 0 0 2px rgba(91, 76, 245, 0.2)' : 'none',
+    backgroundColor: '#FFFFFF',
+    ':hover': {
+      borderColor: '#5B4CF5'
+    }
+  }),
+  multiValue: (base) => ({
+    ...base,
+    backgroundColor: '#EEEDFA',
+    borderRadius: '0.5rem',
+    padding: '1px 4px',
+  }),
+  multiValueLabel: (base) => ({
+    ...base,
+    color: '#4338CA',
+    fontWeight: '600',
+    fontSize: '0.8rem',
+  }),
+  multiValueRemove: (base) => ({
+    ...base,
+    color: '#4338CA',
+    borderRadius: '0.375rem',
+    ':hover': {
+      backgroundColor: '#DDD9F8',
+      color: '#312E81',
+    },
+  }),
+  option: (base, state) => ({
+    ...base,
+    backgroundColor: state.isSelected ? '#5B4CF5' : state.isFocused ? '#F4F3FF' : '#FFFFFF',
+    color: state.isSelected ? '#FFFFFF' : '#1F2937',
+    fontSize: '0.85rem',
+    cursor: 'pointer',
+    padding: '8px 12px',
+  }),
+  menu: (base) => ({
+    ...base,
+    borderRadius: '0.75rem',
+    boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)',
+    zIndex: 50,
+  })
+};
 
 export default function AdminBroadcastsPage() {
   const [activeTab, setActiveTab] = useState('composer'); // 'composer' | 'preview' | 'history'
@@ -29,6 +80,9 @@ export default function AdminBroadcastsPage() {
   const [tag, setTag] = useState('PRODUCT ANNOUNCEMENT');
   const [openingWhy, setOpeningWhy] = useState('');
   const [segment, setSegment] = useState('all');
+  const [selectedCompanies, setSelectedCompanies] = useState([]);
+  const [companiesList, setCompaniesList] = useState([]);
+  const [loadingCompanies, setLoadingCompanies] = useState(false);
   const [blocks, setBlocks] = useState([
     { id: 1, type: 'heading', content: 'Transform How Credentials Are Proven' },
     { id: 2, type: 'paragraph', content: 'Our new update ensures your students and graduates never have to wait weeks to verify their skills.' }
@@ -45,7 +99,33 @@ export default function AdminBroadcastsPage() {
 
   useEffect(() => {
     fetchCampaigns();
+    fetchCompanies();
   }, []);
+
+  const fetchCompanies = async () => {
+    try {
+      setLoadingCompanies(true);
+      const res = await getAdminCompanies({ limit: 500 });
+      setCompaniesList(res.data.companies || []);
+    } catch (err) {
+      console.error('Failed to load companies:', err);
+    } finally {
+      setLoadingCompanies(false);
+    }
+  };
+
+  const companyOptions = useMemo(() => {
+    return companiesList.map((c) => {
+      const dateStr = c.created_at
+        ? new Date(c.created_at).toLocaleDateString(undefined, { month: 'short', year: 'numeric' })
+        : '';
+      return {
+        value: c.id,
+        label: `${c.name} — ${c.owner_name || 'Owner'}${c.owner_email ? ` (${c.owner_email})` : ''}${dateStr ? ` · Joined ${dateStr}` : ''}`,
+        company: c,
+      };
+    });
+  }, [companiesList]);
 
   const fetchCampaigns = async () => {
     try {
@@ -159,6 +239,7 @@ export default function AdminBroadcastsPage() {
         opening_why: openingWhy,
         content_blocks: blocks,
         segment,
+        target_companies: selectedCompanies.map(c => c.value),
       });
       setCampaignId(res.data.id);
       showNotice('success', 'Campaign draft saved successfully.');
@@ -209,6 +290,7 @@ export default function AdminBroadcastsPage() {
           opening_why: openingWhy,
           content_blocks: blocks,
           segment,
+          target_companies: selectedCompanies.map(c => c.value),
         });
         targetId = res.data.id;
         setCampaignId(targetId);
@@ -241,7 +323,16 @@ export default function AdminBroadcastsPage() {
       return;
     }
 
-    if (!window.confirm(`Are you sure you want to broadcast this campaign to the "${segment.toUpperCase()}" segment?`)) {
+    if (segment === 'companies' && selectedCompanies.length === 0) {
+      showNotice('error', 'Please select at least one company to target.');
+      return;
+    }
+
+    const confirmMsg = segment === 'companies'
+      ? `Are you sure you want to broadcast this campaign to the ${selectedCompanies.length} selected company/companies?`
+      : `Are you sure you want to broadcast this campaign to the "${segment.toUpperCase()}" segment?`;
+
+    if (!window.confirm(confirmMsg)) {
       return;
     }
 
@@ -265,6 +356,7 @@ export default function AdminBroadcastsPage() {
     setTag('PRODUCT ANNOUNCEMENT');
     setOpeningWhy('');
     setSegment('all');
+    setSelectedCompanies([]);
     setBlocks([
       { id: Date.now(), type: 'heading', content: 'Transform How Credentials Are Proven' },
       { id: Date.now() + 1, type: 'paragraph', content: 'Our new update ensures your students and graduates never have to wait weeks to verify their skills.' }
@@ -288,6 +380,20 @@ export default function AdminBroadcastsPage() {
       setOpeningWhy(data.opening_why || '');
       setSegment(data.segment || 'all');
 
+      if (data.target_companies && Array.isArray(data.target_companies)) {
+        const selected = data.target_companies.map(id => {
+          const found = companiesList.find(comp => comp.id === id);
+          return found ? {
+            value: found.id,
+            label: `${found.name} — ${found.owner_name || 'Owner'}${found.owner_email ? ` (${found.owner_email})` : ''}`,
+            company: found
+          } : { value: id, label: `Company #${id}` };
+        });
+        setSelectedCompanies(selected);
+      } else {
+        setSelectedCompanies([]);
+      }
+
       let parsedBlocks = data.content_blocks;
       if (typeof parsedBlocks === 'string') {
         try {
@@ -308,6 +414,7 @@ export default function AdminBroadcastsPage() {
       setTag(c.tag || 'PRODUCT ANNOUNCEMENT');
       setOpeningWhy(c.opening_why || '');
       setSegment(c.segment || 'all');
+      setSelectedCompanies([]);
       let fallbackBlocks = c.content_blocks;
       if (typeof fallbackBlocks === 'string') {
         try { fallbackBlocks = JSON.parse(fallbackBlocks); } catch (e) { fallbackBlocks = []; }
@@ -494,14 +601,60 @@ export default function AdminBroadcastsPage() {
                   <select
                     value={segment}
                     onChange={(e) => setSegment(e.target.value)}
-                    className="w-full px-3.5 py-2 rounded-xl border border-gray-300 text-sm focus:ring-2 focus:ring-[#5B4CF5] focus:outline-none bg-white"
+                    className="w-full px-3.5 py-2 rounded-xl border border-gray-300 text-sm focus:ring-2 focus:ring-[#5B4CF5] focus:outline-none bg-white font-medium"
                   >
                     <option value="all">All Non-Suspended Users</option>
+                    <option value="companies">Specific Companies / Organizations</option>
                     <option value="active">Active Issuers (Active in last 60 days)</option>
                     <option value="inactive">Quiet Users (Inactive for 60+ days)</option>
                   </select>
                 </div>
               </div>
+
+              {/* Specific Companies Targeting Box */}
+              {segment === 'companies' && (
+                <div className="p-4 bg-indigo-50/60 border border-indigo-100 rounded-2xl space-y-2.5 shadow-2xs">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5">
+                    <div className="flex items-center gap-2">
+                      <div className="w-6 h-6 rounded-lg bg-indigo-100 text-[#5B4CF5] flex items-center justify-center">
+                        <Building2 className="w-3.5 h-3.5" />
+                      </div>
+                      <label className="text-xs font-bold uppercase tracking-wider text-indigo-950">
+                        Target Specific Companies
+                      </label>
+                    </div>
+                    <span className="text-xs text-indigo-700 font-semibold bg-indigo-100/80 px-2.5 py-0.5 rounded-full border border-indigo-200/60">
+                      {selectedCompanies.length} {selectedCompanies.length === 1 ? 'company' : 'companies'} selected
+                    </span>
+                  </div>
+
+                  <Select
+                    isMulti
+                    options={companyOptions}
+                    value={selectedCompanies}
+                    onChange={setSelectedCompanies}
+                    placeholder="Search by company name, owner, email, or month (e.g. Oct 2025)..."
+                    styles={selectStyles}
+                    isLoading={loadingCompanies}
+                    noOptionsMessage={() => (loadingCompanies ? "Loading companies..." : "No companies found")}
+                  />
+
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between text-xs text-gray-500 pt-1 gap-2">
+                    <span className="text-indigo-900/70">
+                      Emails will be dispatched to the owners and active team members of the selected organizations.
+                    </span>
+                    {selectedCompanies.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => setSelectedCompanies([])}
+                        className="text-xs text-red-600 hover:text-red-700 font-semibold transition-colors self-start sm:self-auto"
+                      >
+                        Clear Selection
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )}
 
               <div>
                 <label className="block text-xs font-semibold uppercase tracking-wider text-gray-600 mb-1">
