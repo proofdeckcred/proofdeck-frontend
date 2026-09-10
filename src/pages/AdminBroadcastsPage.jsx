@@ -464,7 +464,20 @@ export default function AdminBroadcastsPage() {
 
     try {
       setDispatching(true);
-      const res = await sendAdminBroadcast(campaignId);
+      // Auto-save latest changes (recipients, content, segment) first
+      await saveAdminBroadcast({
+        id: campaignId,
+        title,
+        subject,
+        tag,
+        opening_why: openingWhy,
+        content_blocks: blocks,
+        segment,
+        target_companies: selectedCompanies.map(c => c.value),
+        target_users: selectedUsers.map(u => u.value),
+      });
+
+      const res = await sendAdminBroadcast(campaignId, { force: true });
       showNotice('success', res.data.msg);
       fetchCampaigns();
       setActiveTab('history');

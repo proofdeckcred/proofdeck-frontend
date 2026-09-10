@@ -264,8 +264,8 @@ export const getAdminBroadcastDetails = (id) => API.get(`/admin/broadcasts/${id}
 export const saveAdminBroadcast = (data) => API.post('/admin/broadcasts', data);
 export const previewAdminBroadcast = (data) => API.post('/admin/broadcasts/preview', data);
 export const testSendAdminBroadcast = (id, data) => API.post(`/admin/broadcasts/${id}/test-send`, data);
-export const sendAdminBroadcast = (id) => API.post(`/admin/broadcasts/${id}/send`);
-export const resetAdminBroadcast = (id) => API.post(`/admin/broadcasts/${id}/reset`);
+export const sendAdminBroadcast = (id, data = {}) => API.post(`/admin/broadcasts/${id}/send`, data);
+export const resetAdminBroadcast = (id, data = {}) => API.post(`/admin/broadcasts/${id}/reset`, data);
 export const getAdminTransactions = (params = {}) =>
   API.get(
     `/admin/payments/transactions?${new URLSearchParams(params).toString()}`
