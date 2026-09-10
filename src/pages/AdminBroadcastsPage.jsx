@@ -13,6 +13,7 @@ import {
   previewAdminBroadcast,
   testSendAdminBroadcast,
   sendAdminBroadcast,
+  resetAdminBroadcast,
   uploadEditorImage,
   getAdminCompanies,
   getAdminUsers,
@@ -77,6 +78,7 @@ export default function AdminBroadcastsPage() {
 
   // Form State
   const [campaignId, setCampaignId] = useState(null);
+  const [campaignStatus, setCampaignStatus] = useState('draft');
   const [title, setTitle] = useState('');
   const [subject, setSubject] = useState('');
   const [tag, setTag] = useState('PRODUCT ANNOUNCEMENT');
@@ -352,6 +354,7 @@ export default function AdminBroadcastsPage() {
         target_users: selectedUsers.map(u => u.value),
       });
       setCampaignId(res.data.id);
+      setCampaignStatus(res.data.status || 'draft');
       showNotice('success', 'Campaign draft saved successfully.');
       fetchCampaigns();
     } catch (err) {
@@ -474,6 +477,7 @@ export default function AdminBroadcastsPage() {
 
   const handleNewCampaign = () => {
     setCampaignId(null);
+    setCampaignStatus('draft');
     setTitle('');
     setSubject('');
     setTag('PRODUCT ANNOUNCEMENT');
@@ -498,6 +502,7 @@ export default function AdminBroadcastsPage() {
       const res = await getAdminBroadcastDetails(c.id);
       const data = res.data || c;
       setCampaignId(data.id);
+      setCampaignStatus(data.status || 'draft');
       setTitle(data.title || '');
       setSubject(data.subject || '');
       setTag(data.tag || 'PRODUCT ANNOUNCEMENT');
@@ -547,6 +552,7 @@ export default function AdminBroadcastsPage() {
     } catch (err) {
       // Fallback
       setCampaignId(c.id);
+      setCampaignStatus(c.status || 'draft');
       setTitle(c.title || '');
       setSubject(c.subject || '');
       setTag(c.tag || 'PRODUCT ANNOUNCEMENT');
@@ -561,6 +567,25 @@ export default function AdminBroadcastsPage() {
       setBlocks(Array.isArray(fallbackBlocks) ? fallbackBlocks : []);
       setTestSentAt(c.test_sent_at);
       setActiveTab('composer');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleResetCampaign = async (id) => {
+    const targetId = id || campaignId;
+    if (!targetId) return;
+    if (!window.confirm('Reset this campaign back to Draft? This will allow you to edit recipients and re-send.')) return;
+    try {
+      setLoading(true);
+      const res = await resetAdminBroadcast(targetId);
+      showNotice('success', res.data.msg);
+      fetchCampaigns();
+      if (campaignId === targetId) {
+        setCampaignStatus('draft');
+      }
+    } catch (err) {
+      showNotice('error', err.response?.data?.msg || 'Failed to reset campaign.');
     } finally {
       setLoading(false);
     }
@@ -684,6 +709,25 @@ export default function AdminBroadcastsPage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Main Composer Left Col */}
           <div className="lg:col-span-2 space-y-6">
+            {campaignStatus === 'sending' && (
+              <div className="p-4 bg-amber-50 border border-amber-200 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs text-amber-900 shadow-2xs">
+                <div className="flex items-center gap-2.5">
+                  <AlertCircle className="w-5 h-5 text-amber-600 flex-shrink-0" />
+                  <div>
+                    <span className="font-bold text-amber-950 block sm:inline mr-1">Campaign is in "Sending" status.</span>
+                    <span>If this broadcast was interrupted or stuck, reset it back to draft to edit your recipients and re-dispatch.</span>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => handleResetCampaign(campaignId)}
+                  className="px-3.5 py-1.5 bg-amber-600 hover:bg-amber-700 text-white font-semibold rounded-xl text-xs transition-colors flex-shrink-0"
+                >
+                  Reset to Draft
+                </button>
+              </div>
+            )}
+
             {/* Metadata Card */}
             <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm space-y-4">
               <div>
@@ -1390,12 +1434,22 @@ export default function AdminBroadcastsPage() {
                         {c.stats?.bounces || 0}
                       </td>
                       <td className="px-6 py-4 text-right">
-                        <button
-                          onClick={() => handleLoadCampaign(c)}
-                          className="text-xs font-semibold text-[#5B4CF5] hover:underline"
-                        >
-                          Edit / View
-                        </button>
+                        <div className="flex items-center justify-end gap-3">
+                          {c.status === 'sending' && (
+                            <button
+                              onClick={() => handleResetCampaign(c.id)}
+                              className="text-xs font-semibold text-amber-600 hover:text-amber-700 hover:underline"
+                            >
+                              Reset to Draft
+                            </button>
+                          )}
+                          <button
+                            onClick={() => handleLoadCampaign(c)}
+                            className="text-xs font-semibold text-[#5B4CF5] hover:underline"
+                          >
+                            Edit / View
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}
