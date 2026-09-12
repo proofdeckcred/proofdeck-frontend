@@ -21,24 +21,40 @@ const DraggableText = ({
   onDragMove,
   onDragEnd,
 }) => {
-  const shapeRef = useRef();
+  const groupRef = useRef();
   const trRef = useRef();
+  const [isHovered, setIsHovered] = useState(false);
 
   useEffect(() => {
-    if (isSelected) {
-      trRef.current.nodes([shapeRef.current]);
+    if (isSelected && trRef.current && groupRef.current) {
+      trRef.current.nodes([groupRef.current]);
       trRef.current.getLayer().batchDraw();
     }
   }, [isSelected]);
 
+  const handleSelect = (e) => {
+    if (e) {
+      e.cancelBubble = true;
+    }
+    onSelect();
+  };
+
+  const width = shapeProps.width || 200;
+  const height = shapeProps.height || 30;
+
   return (
     <>
-      <Text
-        onClick={onSelect}
-        onTap={onSelect}
-        ref={shapeRef}
-        {...shapeProps}
+      <Group
+        ref={groupRef}
+        x={shapeProps.x}
+        y={shapeProps.y}
+        rotation={shapeProps.rotation || 0}
         draggable
+        onClick={handleSelect}
+        onTap={handleSelect}
+        onMouseDown={handleSelect}
+        onTouchStart={handleSelect}
+        onDragStart={handleSelect}
         onDragMove={(e) => onDragMove(e)}
         onDragEnd={(e) => {
           onDragEnd();
@@ -48,8 +64,18 @@ const DraggableText = ({
             y: e.target.y(),
           });
         }}
+        onMouseEnter={(e) => {
+          setIsHovered(true);
+          const stage = e.target.getStage();
+          if (stage) stage.container().style.cursor = "move";
+        }}
+        onMouseLeave={(e) => {
+          setIsHovered(false);
+          const stage = e.target.getStage();
+          if (stage) stage.container().style.cursor = "default";
+        }}
         onTransformEnd={() => {
-          const node = shapeRef.current;
+          const node = groupRef.current;
           const scaleX = node.scaleX();
           const scaleY = node.scaleY();
           node.scaleX(1);
@@ -58,24 +84,58 @@ const DraggableText = ({
             ...shapeProps,
             x: node.x(),
             y: node.y(),
-            width: Math.max(5, node.width() * scaleX),
-            height: Math.max(5, node.height() * scaleY),
+            width: Math.max(20, width * scaleX),
+            height: Math.max(10, height * scaleY),
             rotation: node.rotation(),
           });
         }}
-      />
+      >
+        {/* Full-coverage Hit & Boundary Rectangle */}
+        <Rect
+          x={0}
+          y={0}
+          width={width}
+          height={height}
+          fill="rgba(0, 0, 0, 0.001)"
+          stroke={
+            isSelected
+              ? "transparent"
+              : isHovered
+              ? "rgba(99, 102, 241, 0.85)"
+              : "rgba(148, 163, 184, 0.45)"
+          }
+          strokeWidth={isHovered ? 1.5 : 1}
+          dash={isSelected ? undefined : [4, 4]}
+          cornerRadius={2}
+          listening={true}
+        />
+        <Text
+          x={0}
+          y={0}
+          width={width}
+          height={height}
+          text={shapeProps.text}
+          fontSize={shapeProps.fontSize}
+          fontFamily={shapeProps.fontFamily}
+          fill={shapeProps.fill}
+          align={shapeProps.align}
+          fontStyle={shapeProps.fontStyle}
+          verticalAlign={shapeProps.verticalAlign || "middle"}
+          listening={false}
+        />
+      </Group>
       {isSelected && (
         <Transformer
           ref={trRef}
           keepRatio={false}
           anchorStroke="#4f46e5"
           anchorFill="#ffffff"
-          anchorSize={6}
+          anchorSize={7}
           borderStroke="#4f46e5"
           borderStrokeWidth={1.5}
           rotateAnchorOffset={15}
           boundBoxFunc={(oldBox, newBox) => {
-            if (newBox.width < 5 || newBox.height < 5) {
+            if (newBox.width < 15 || newBox.height < 10) {
               return oldBox;
             }
             return newBox;
@@ -96,23 +156,37 @@ const DraggableQR = ({
 }) => {
   const groupRef = useRef();
   const trRef = useRef();
+  const [isHovered, setIsHovered] = useState(false);
 
   useEffect(() => {
-    if (isSelected) {
+    if (isSelected && trRef.current && groupRef.current) {
       trRef.current.nodes([groupRef.current]);
       trRef.current.getLayer().batchDraw();
     }
   }, [isSelected]);
 
+  const handleSelect = (e) => {
+    if (e) {
+      e.cancelBubble = true;
+    }
+    onSelect();
+  };
+
+  const width = shapeProps.width || 100;
+  const height = shapeProps.height || 100;
+
   return (
     <>
       <Group
-        onClick={onSelect}
-        onTap={onSelect}
+        onClick={handleSelect}
+        onTap={handleSelect}
+        onMouseDown={handleSelect}
+        onTouchStart={handleSelect}
+        onDragStart={handleSelect}
         ref={groupRef}
         x={shapeProps.x}
         y={shapeProps.y}
-        rotation={shapeProps.rotation}
+        rotation={shapeProps.rotation || 0}
         draggable
         onDragMove={(e) => onDragMove(e)}
         onDragEnd={(e) => {
@@ -122,6 +196,16 @@ const DraggableQR = ({
             x: e.target.x(),
             y: e.target.y(),
           });
+        }}
+        onMouseEnter={(e) => {
+          setIsHovered(true);
+          const stage = e.target.getStage();
+          if (stage) stage.container().style.cursor = "move";
+        }}
+        onMouseLeave={(e) => {
+          setIsHovered(false);
+          const stage = e.target.getStage();
+          if (stage) stage.container().style.cursor = "default";
         }}
         onTransformEnd={() => {
           const node = groupRef.current;
@@ -133,24 +217,35 @@ const DraggableQR = ({
             ...shapeProps,
             x: node.x(),
             y: node.y(),
-            width: Math.max(5, shapeProps.width * scaleX),
-            height: Math.max(5, shapeProps.height * scaleY),
+            width: Math.max(20, width * scaleX),
+            height: Math.max(20, height * scaleY),
             rotation: node.rotation(),
           });
         }}
       >
         <Rect
-          width={shapeProps.width}
-          height={shapeProps.height}
+          x={0}
+          y={0}
+          width={width}
+          height={height}
           fill="white"
-          stroke="black"
-          strokeWidth={1}
+          stroke={
+            isSelected
+              ? "transparent"
+              : isHovered
+              ? "rgba(99, 102, 241, 0.9)"
+              : "rgba(0, 0, 0, 0.7)"
+          }
+          strokeWidth={isHovered ? 1.5 : 1}
           cornerRadius={2}
+          listening={true}
         />
         <Text
+          x={0}
+          y={0}
           text="QR Code"
-          width={shapeProps.width}
-          height={shapeProps.height}
+          width={width}
+          height={height}
           align="center"
           verticalAlign="middle"
           fontSize={12}
@@ -164,12 +259,12 @@ const DraggableQR = ({
           keepRatio={true}
           anchorStroke="#4f46e5"
           anchorFill="#ffffff"
-          anchorSize={6}
+          anchorSize={7}
           borderStroke="#4f46e5"
           borderStrokeWidth={1.5}
           rotateAnchorOffset={15}
           boundBoxFunc={(oldBox, newBox) => {
-            if (newBox.width < 5 || newBox.height < 5) {
+            if (newBox.width < 20 || newBox.height < 20) {
               return oldBox;
             }
             return newBox;

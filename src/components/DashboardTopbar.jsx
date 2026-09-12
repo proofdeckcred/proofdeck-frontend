@@ -7,13 +7,13 @@ import ProfileDropdown from './ProfileDropdown';
 
 export default function DashboardTopbar({ isCollapsed, toggleSidebar, toggleMobileSidebar }) {
   return (
-    <header className="flex bg-white dark:bg-[#09090D] border-b border-slate-200/80 dark:border-[#1F1F28] px-4 sm:px-6 md:px-8 py-2.5 items-center justify-between sticky top-0 z-30 shrink-0 transition-colors duration-300">
+    <header className="flex bg-white border-b border-slate-200/80 px-4 sm:px-6 md:px-8 py-2.5 items-center justify-between sticky top-0 z-30 shrink-0">
       {/* Mobile Left: Drawer Toggle + Branding */}
       <div className="flex items-center gap-2 md:hidden">
         {toggleMobileSidebar && (
           <button
             onClick={toggleMobileSidebar}
-            className="p-1.5 -ml-1 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-[#16161F] rounded-lg transition-colors cursor-pointer flex items-center justify-center focus:outline-none"
+            className="p-1.5 -ml-1 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer flex items-center justify-center focus:outline-none"
             aria-label="Open mobile navigation"
           >
             <Menu size={20} />
@@ -21,7 +21,7 @@ export default function DashboardTopbar({ isCollapsed, toggleSidebar, toggleMobi
         )}
         <Link to="/dashboard" className="flex items-center gap-2 no-underline">
           <img src="/logo.png" alt="ProofDeck" className="w-7 h-7 object-contain" />
-          <span className="text-sm font-bold text-slate-900 dark:text-white tracking-tight">ProofDeck</span>
+          <span className="text-sm font-bold text-slate-900 tracking-tight">ProofDeck</span>
         </Link>
       </div>
 
@@ -39,10 +39,10 @@ export default function DashboardTopbar({ isCollapsed, toggleSidebar, toggleMobi
         >
           <button
             onClick={toggleSidebar}
-            className="p-1.5 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-[#16161F] rounded-lg transition-colors cursor-pointer flex items-center justify-center border border-transparent hover:border-slate-200 dark:hover:border-[#1F1F28] focus:outline-none"
+            className="p-1.5 text-slate-500 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer flex items-center justify-center border border-transparent hover:border-slate-200 focus:outline-none"
             aria-label={isCollapsed ? "Open sidebar" : "Close sidebar"}
           >
-            <PanelLeft size={18} className="text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors" />
+            <PanelLeft size={18} className="text-slate-600 hover:text-slate-900 transition-colors" />
           </button>
         </OverlayTrigger>
       </div>

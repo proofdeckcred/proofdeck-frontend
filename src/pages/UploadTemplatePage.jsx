@@ -291,10 +291,12 @@ const PRESET_TEMPLATES = [
   }
 ];
 
-const DraggablePlaceholder = ({ placeholder }) => (
+const DraggablePlaceholder = ({ placeholder, onAdd }) => (
   <div
     draggable
-    className="text-[11px] bg-white border border-gray-200 hover:border-indigo-500 hover:shadow-sm text-gray-700 p-2.5 rounded-lg cursor-grab active:cursor-grabbing mb-2 transition-all flex items-center justify-between group select-none"
+    onClick={onAdd}
+    title="Drag onto canvas or click to add"
+    className="text-[11px] bg-white border border-gray-200 hover:border-indigo-500 hover:shadow-sm text-gray-700 p-2.5 rounded-lg cursor-grab active:cursor-grabbing mb-2 transition-all flex items-center justify-between group select-none cursor-pointer"
     onDragStart={(e) => {
       e.dataTransfer.setData("text/plain", JSON.stringify(placeholder));
     }}
@@ -522,6 +524,36 @@ const UploadTemplatePage = () => {
     }
   };
 
+  const handleAddPlaceholder = (placeholder) => {
+    const defaultWidth = placeholder.defaultWidth || 250;
+    const isQr = placeholder.isQr || false;
+
+    const centerX = canvasSize.width / 2;
+    const centerY = canvasSize.height / 2;
+
+    const newElement = {
+      id: `el_${Math.random().toString(36).substring(2, 11)}`,
+      type: "placeholder",
+      text: placeholder.value,
+      x: isQr ? centerX - 50 : Math.max(20, centerX - defaultWidth / 2),
+      y: isQr ? centerY - 50 : Math.max(20, centerY - 15),
+      width: isQr ? 100 : defaultWidth,
+      height: isQr ? 100 : 30,
+      fontSize: 20,
+      fontFamily: "Times New Roman",
+      fill: "#000000",
+      align: isQr ? "center" : "left",
+      fontStyle: "normal",
+      rotation: 0,
+      verticalAlign: "middle",
+      isQr,
+    };
+
+    setElements((prev) => [...prev, newElement]);
+    setSelectedId(newElement.id);
+    setIsRightSidebarOpen(true);
+  };
+
   const handleDrop = (e) => {
     e.preventDefault();
     if (!stageRef.current) return;
@@ -562,7 +594,9 @@ const UploadTemplatePage = () => {
       newElement.height = 100;
     }
 
-    setElements([...elements, newElement]);
+    setElements((prev) => [...prev, newElement]);
+    setSelectedId(newElement.id);
+    setIsRightSidebarOpen(true);
   };
 
   const handleSaveTemplate = async () => {
@@ -796,7 +830,11 @@ const UploadTemplatePage = () => {
                 </p>
                 <div className="space-y-1">
                   {activePlaceholders.map((p) => (
-                    <DraggablePlaceholder key={p.value} placeholder={p} />
+                    <DraggablePlaceholder
+                      key={p.value}
+                      placeholder={p}
+                      onAdd={() => handleAddPlaceholder(p)}
+                    />
                   ))}
                 </div>
               </div>
@@ -888,7 +926,10 @@ const UploadTemplatePage = () => {
                     {elements.map((el) => (
                       <div
                         key={el.id}
-                        onClick={() => setSelectedId(el.id)}
+                        onClick={() => {
+                          setSelectedId(el.id);
+                          setIsRightSidebarOpen(true);
+                        }}
                         className={`flex items-center justify-between p-2 rounded-lg border text-[11px] cursor-pointer transition-all ${
                           selectedId === el.id
                             ? "bg-indigo-50 border-indigo-200 text-indigo-700 font-semibold shadow-sm"
@@ -1070,7 +1111,10 @@ const UploadTemplatePage = () => {
                   elements={elements}
                   setElements={setElements}
                   selectedId={selectedId}
-                  setSelectedId={setSelectedId}
+                  setSelectedId={(id) => {
+                    setSelectedId(id);
+                    if (id) setIsRightSidebarOpen(true);
+                  }}
                   canvasSize={canvasSize}
                   showGrid={showGrid}
                   zoomScale={zoomScale}

@@ -112,11 +112,11 @@ export default function NotificationBell() {
       <Popover.Trigger asChild>
         <button
           aria-label="Notifications"
-          className="relative p-2 text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 bg-white hover:bg-slate-50 dark:bg-[#121217] dark:hover:bg-[#181822] rounded-lg border border-slate-200 dark:border-[#1F1F28] transition-all cursor-pointer focus:outline-none"
+          className="relative p-2 text-slate-500 hover:text-slate-700 bg-white hover:bg-slate-50 rounded-lg border border-slate-200 transition-all cursor-pointer focus:outline-none"
         >
           <Bell className="w-4 h-4" />
           {unreadCount > 0 && (
-            <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 bg-indigo-600 text-white text-[10px] font-bold rounded-full flex items-center justify-center border-2 border-white dark:border-[#09090D] shadow-xs">
+            <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 bg-indigo-600 text-white text-[10px] font-bold rounded-full flex items-center justify-center border-2 border-white shadow-xs">
               {unreadCount > 99 ? '99+' : unreadCount}
             </span>
           )}
@@ -125,17 +125,17 @@ export default function NotificationBell() {
       
       <Popover.Portal>
         <Popover.Content 
-          className="w-88 bg-white dark:bg-[#121217] rounded-2xl shadow-xl border border-slate-200 dark:border-[#1F1F28] z-50 overflow-hidden flex flex-col font-sans animate-in fade-in-50 zoom-in-95 duration-150 transition-colors"
+          className="w-88 bg-white rounded-2xl shadow-xl border border-slate-200 z-50 overflow-hidden flex flex-col font-sans animate-in fade-in-50 zoom-in-95 duration-150"
           sideOffset={8}
           align="end"
         >
           {/* Header */}
-          <div className="px-4 py-3.5 border-b border-slate-100 dark:border-[#1F1F28] flex justify-between items-center">
-            <h3 className="font-bold text-slate-900 dark:text-slate-100 text-sm">Notifications</h3>
+          <div className="px-4 py-3.5 border-b border-slate-100 flex justify-between items-center">
+            <h3 className="font-bold text-slate-900 text-sm">Notifications</h3>
             {unreadCount > 0 && (
               <button 
                 onClick={handleMarkAllRead}
-                className="text-xs text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 font-medium cursor-pointer transition-colors flex items-center gap-1"
+                className="text-xs text-indigo-600 hover:text-indigo-800 font-medium cursor-pointer transition-colors flex items-center gap-1"
               >
                 <Check className="w-3.5 h-3.5" />
                 Mark all read
@@ -144,17 +144,17 @@ export default function NotificationBell() {
           </div>
           
           {/* Bachs-style Tabs with counters */}
-          <div className="grid grid-cols-2 gap-2 p-3 bg-slate-50/60 dark:bg-[#0E0E14] border-b border-slate-100 dark:border-[#1F1F28]">
+          <div className="grid grid-cols-2 gap-2 p-3 bg-slate-50/60 border-b border-slate-100">
             <button 
               onClick={() => setTab('unread')}
               className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
                 tab === 'unread' 
-                  ? 'bg-indigo-50/70 dark:bg-indigo-950/40 border-indigo-200 dark:border-indigo-800/60 shadow-2xs' 
-                  : 'bg-white dark:bg-[#15151C] border-slate-200 dark:border-[#1F1F28] hover:border-slate-300 dark:hover:border-slate-700'
+                  ? 'bg-indigo-50/70 border-indigo-200 shadow-2xs' 
+                  : 'bg-white border-slate-200 hover:border-slate-300'
               }`}
             >
-              <div className="text-[11px] font-medium text-slate-500 dark:text-slate-400">Unread</div>
-              <div className={`text-lg font-bold ${tab === 'unread' ? 'text-indigo-700 dark:text-indigo-300' : 'text-slate-800 dark:text-slate-200'}`}>
+              <div className="text-[11px] font-medium text-slate-500">Unread</div>
+              <div className={`text-lg font-bold ${tab === 'unread' ? 'text-indigo-700' : 'text-slate-800'}`}>
                 {unreadCount}
               </div>
             </button>
@@ -163,30 +163,30 @@ export default function NotificationBell() {
               onClick={() => setTab('all')}
               className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
                 tab === 'all' 
-                  ? 'bg-indigo-50/70 dark:bg-indigo-950/40 border-indigo-200 dark:border-indigo-800/60 shadow-2xs' 
-                  : 'bg-white dark:bg-[#15151C] border-slate-200 dark:border-[#1F1F28] hover:border-slate-300 dark:hover:border-slate-700'
+                  ? 'bg-indigo-50/70 border-indigo-200 shadow-2xs' 
+                  : 'bg-white border-slate-200 hover:border-slate-300'
               }`}
             >
-              <div className="text-[11px] font-medium text-slate-500 dark:text-slate-400">All</div>
-              <div className={`text-lg font-bold ${tab === 'all' ? 'text-indigo-700 dark:text-indigo-300' : 'text-slate-800 dark:text-slate-200'}`}>
+              <div className="text-[11px] font-medium text-slate-500">All</div>
+              <div className={`text-lg font-bold ${tab === 'all' ? 'text-indigo-700' : 'text-slate-800'}`}>
                 {totalCount || notifications.length}
               </div>
             </button>
           </div>
           
           {/* Notification List */}
-          <div className="max-h-[380px] overflow-y-auto divide-y divide-slate-100 dark:divide-[#1F1F28]">
+          <div className="max-h-[380px] overflow-y-auto divide-y divide-slate-100">
             {loading ? (
               <div className="p-8 text-center text-xs text-slate-400">Loading notifications...</div>
             ) : displayedNotifications.length === 0 ? (
               <div className="p-8 flex flex-col items-center justify-center text-center gap-2">
-                <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-[#181822] flex items-center justify-center text-slate-400">
+                <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-400">
                   <BellOff className="w-5 h-5" />
                 </div>
-                <p className="text-xs font-medium text-slate-600 dark:text-slate-300">
+                <p className="text-xs font-medium text-slate-600">
                   {tab === 'unread' ? 'No unread notifications' : 'No notifications yet'}
                 </p>
-                <p className="text-[11px] text-slate-400 dark:text-slate-500 max-w-[200px]">
+                <p className="text-[11px] text-slate-400 max-w-[200px]">
                   {tab === 'unread' ? 'You are all caught up!' : 'When bulk operations complete, they will appear here.'}
                 </p>
               </div>
@@ -196,27 +196,27 @@ export default function NotificationBell() {
                 return (
                   <div 
                     key={n.id} 
-                    className={`p-3.5 hover:bg-slate-50/80 dark:hover:bg-[#181822] cursor-pointer transition-colors relative flex flex-col gap-1 ${
-                      isUnread ? 'bg-indigo-50/30 dark:bg-[#6E62F9]/10' : ''
+                    className={`p-3.5 hover:bg-slate-50/80 cursor-pointer transition-colors relative flex flex-col gap-1 ${
+                      isUnread ? 'bg-indigo-50/30' : ''
                     }`}
                     onClick={() => isUnread && handleMarkRead(n.id)}
                   >
                     <div className="flex justify-between items-start gap-2">
                       <div className="flex items-center gap-1.5 min-w-0">
                         {isUnread && (
-                          <span className="w-1.5 h-1.5 rounded-full bg-indigo-600 dark:bg-[#6E62F9] shrink-0" />
+                          <span className="w-1.5 h-1.5 rounded-full bg-indigo-600 shrink-0" />
                         )}
-                        <span className="text-xs font-bold text-slate-900 dark:text-slate-100 truncate">
+                        <span className="text-xs font-bold text-slate-900 truncate">
                           {n.title}
                         </span>
                       </div>
-                      <span className="text-[10px] text-slate-400 dark:text-slate-500 shrink-0 font-medium">
+                      <span className="text-[10px] text-slate-400 shrink-0 font-medium">
                         {formatRelativeTime(n.created_at)}
                       </span>
                     </div>
 
                     {n.message && (
-                      <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed m-0 pl-3">
+                      <p className="text-xs text-slate-600 leading-relaxed m-0 pl-3">
                         {n.message}
                       </p>
                     )}

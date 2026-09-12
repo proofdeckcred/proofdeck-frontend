@@ -199,6 +199,18 @@ const TextElementControls = ({ element, onUpdate, onDelete, onDone }) => {
     <div className="space-y-3.5 p-3 border border-gray-100 rounded-xl bg-white shadow-sm">
       {commonHeader("Text Element Properties")}
 
+      {/* Text Content / Variable */}
+      <div>
+        <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Text / Variable Content</label>
+        <input
+          type="text"
+          value={element.text || ""}
+          onChange={(e) => onUpdate({ text: e.target.value })}
+          placeholder="e.g. {{recipient_name}} or Certificate Title"
+          className="w-full mt-1 p-1.5 text-xs font-medium border border-gray-200 rounded focus:outline-none focus:ring-1 focus:ring-indigo-500 bg-white"
+        />
+      </div>
+
       {/* Font Family */}
       <div>
         <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Font Family</label>
