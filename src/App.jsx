@@ -9,6 +9,7 @@ import LandingPage from "./pages/LandingPage";
 import LoginPage from "./pages/LoginPage";
 import { UserProvider } from "./context/UserContext";
 import { AdminAuthProvider } from "./context/AdminAuthContext";
+import { ThemeProvider } from "./context/ThemeContext";
 import SignupPage from "./pages/SignupPage";
 import MyCertificatesPage from "./pages/MyCertificatesPage";
 import CreateCertificatePage from "./pages/CreateCertificatePage";
@@ -91,9 +92,10 @@ function ScrollToTop() {
 
 function App() {
   return (
-    <UserProvider>
-      <AdminAuthProvider>
-        <ScrollToTop />
+    <ThemeProvider>
+      <UserProvider>
+        <AdminAuthProvider>
+          <ScrollToTop />
         <Routes>
           {/* Public routes */}
           <Route path="/" element={<LandingPage />} />
@@ -180,8 +182,9 @@ function App() {
           <Route path="*" element={<NotFoundPage />} />
         </Routes>
         {/* <SupportWidget /> */}
-      </AdminAuthProvider>
-    </UserProvider>
+        </AdminAuthProvider>
+      </UserProvider>
+    </ThemeProvider>
   );
 }
 

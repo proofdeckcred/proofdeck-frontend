@@ -1,6 +1,7 @@
 /* frontend/src/index.css */
 @import url("https://fonts.googleapis.com/css2?family=Alex+Brush&family=Cinzel:wght@400;600;700&family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=Great+Vibes&family=Inter:wght@400;500;600;700&family=Lexend:wght@300;400;500;600;700&family=Montserrat:wght@400;600;700&family=Oswald:wght@400;600;700&family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400;1,600&family=Poppins:wght@600;700&family=Prompt:wght@400;500;600;700&family=Sacramento&display=swap");
 @import "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *));
 
 @font-face {
   font-family: 'Product Sans';
@@ -118,30 +119,83 @@
 }
 
 .dark {
-  --background: 222.2 84% 4.9%;
+  --background: 240 18% 4%;
   --foreground: 210 40% 98%;
-  --card: 222.2 84% 4.9%;
+  --card: 240 14% 7%;
   --card-foreground: 210 40% 98%;
-  --popover: 222.2 84% 4.9%;
+  --popover: 240 14% 7%;
   --popover-foreground: 210 40% 98%;
-  --primary: 210 40% 98%;
-  --primary-foreground: 222.2 47.4% 11.2%;
-  --secondary: 217.2 32.6% 17.5%;
+  --primary: 250 89% 65%;
+  --primary-foreground: 210 40% 98%;
+  --secondary: 240 12% 12%;
   --secondary-foreground: 210 40% 98%;
-  --muted: 217.2 32.6% 17.5%;
+  --muted: 240 10% 14%;
   --muted-foreground: 215 20.2% 65.1%;
-  --accent: 217.2 32.6% 17.5%;
+  --accent: 240 12% 12%;
   --accent-foreground: 210 40% 98%;
   --destructive: 0 62.8% 30.6%;
   --destructive-foreground: 210 40% 98%;
-  --border: 217.2 32.6% 17.5%;
-  --input: 217.2 32.6% 17.5%;
-  --ring: 212.7 26.8% 83.9%;
+  --border: 240 11% 14%;
+  --input: 240 11% 14%;
+  --ring: 250 89% 65%;
+
+  /* === Antigravity Deep Dark ProofDeck Tokens === */
+  --pd-ink: #F7F7FA;
+  --pd-indigo: #6E62F9;
+  --pd-indigo-dark: #5B4CF5;
+  --pd-amber: #F0B752;
+  --pd-paper: #09090D;
+  --pd-paper-dot: #191922;
+  --pd-card: #121217;
+  --pd-line: #1F1F28;
+  --pd-mute: #8E8EA0;
+  --pd-success: #2CD68A;
+
+  --background-white: #09090D;
+  --text-slate: #EDEDF2;
+  --text-slate-light: #94A3B8;
+  --sidebar-bg: #07070A;
+  --sidebar-text: #94A3B8;
+  --sidebar-text-active: #FFFFFF;
+  --border-color: #1F1F28;
+  --card-bg: #121217;
+  --input-bg: #16161D;
 }
 
+/* ==========================================================================
+   Antigravity Dark Mode: View Transitions API (Top-Left Circular Reveal)
+   ========================================================================== */
 
-/* Dark mode styles are now imported from ./dark_theme.css */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
 
+::view-transition-old(root) {
+  z-index: 1;
+}
+
+::view-transition-new(root) {
+  z-index: 999999;
+  animation: reveal-from-top-left 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes reveal-from-top-left {
+  from {
+    clip-path: circle(0px at 0 0);
+  }
+  to {
+    clip-path: circle(160vmax at 0 0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation: none !important;
+  }
+}
 
 html {
   scroll-padding-top: 80px;
@@ -151,6 +205,11 @@ body {
   background-color: var(--background-white);
   color: var(--text-slate);
   transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.dark body {
+  background-color: #09090D;
+  color: #EDEDF2;
 }
 
 /* Modern Sleek Dark Capsule Tooltips matching Bachs */
@@ -221,6 +280,14 @@ textarea::-webkit-scrollbar-thumb {
   border: 1px solid transparent !important;
 }
 
+.dark ::-webkit-scrollbar-thumb,
+.dark html::-webkit-scrollbar-thumb,
+.dark body::-webkit-scrollbar-thumb,
+.dark div::-webkit-scrollbar-thumb,
+.dark textarea::-webkit-scrollbar-thumb {
+  background: #272733 !important;
+}
+
 ::-webkit-scrollbar-thumb:hover,
 html::-webkit-scrollbar-thumb:hover,
 body::-webkit-scrollbar-thumb:hover,
@@ -229,10 +296,22 @@ textarea::-webkit-scrollbar-thumb:hover {
   background: #94a3b8 !important; /* slate-400 */
 }
 
+.dark ::-webkit-scrollbar-thumb:hover,
+.dark html::-webkit-scrollbar-thumb:hover,
+.dark body::-webkit-scrollbar-thumb:hover,
+.dark div::-webkit-scrollbar-thumb:hover,
+.dark textarea::-webkit-scrollbar-thumb:hover {
+  background: #3c3c4e !important;
+}
+
 /* Firefox thin scrollbar */
 html, body, *, div, textarea {
   scrollbar-width: thin !important;
   scrollbar-color: #cbd5e1 transparent !important;
+}
+
+.dark, .dark html, .dark body, .dark *, .dark div, .dark textarea {
+  scrollbar-color: #272733 transparent !important;
 }
 
 /* Global Button Loading Spinner Styles */
