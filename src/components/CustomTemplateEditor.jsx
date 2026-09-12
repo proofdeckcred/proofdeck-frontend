@@ -96,7 +96,7 @@ const DraggableText = ({
           y={0}
           width={width}
           height={height}
-          fill="rgba(0, 0, 0, 0.001)"
+          fill="transparent"
           stroke={
             isSelected
               ? "transparent"
@@ -108,6 +108,16 @@ const DraggableText = ({
           dash={isSelected ? undefined : [4, 4]}
           cornerRadius={2}
           listening={true}
+          hitFunc={(context, shape) => {
+            context.beginPath();
+            context.rect(0, 0, shape.width(), shape.height());
+            context.closePath();
+            context.fillStrokeShape(shape);
+          }}
+          onClick={handleSelect}
+          onTap={handleSelect}
+          onMouseDown={handleSelect}
+          onTouchStart={handleSelect}
         />
         <Text
           x={0}
@@ -121,7 +131,11 @@ const DraggableText = ({
           align={shapeProps.align}
           fontStyle={shapeProps.fontStyle}
           verticalAlign={shapeProps.verticalAlign || "middle"}
-          listening={false}
+          listening={true}
+          onClick={handleSelect}
+          onTap={handleSelect}
+          onMouseDown={handleSelect}
+          onTouchStart={handleSelect}
         />
       </Group>
       {isSelected && (
@@ -239,6 +253,16 @@ const DraggableQR = ({
           strokeWidth={isHovered ? 1.5 : 1}
           cornerRadius={2}
           listening={true}
+          hitFunc={(context, shape) => {
+            context.beginPath();
+            context.rect(0, 0, shape.width(), shape.height());
+            context.closePath();
+            context.fillStrokeShape(shape);
+          }}
+          onClick={handleSelect}
+          onTap={handleSelect}
+          onMouseDown={handleSelect}
+          onTouchStart={handleSelect}
         />
         <Text
           x={0}
@@ -250,7 +274,11 @@ const DraggableQR = ({
           verticalAlign="middle"
           fontSize={12}
           fill="black"
-          listening={false}
+          listening={true}
+          onClick={handleSelect}
+          onTap={handleSelect}
+          onMouseDown={handleSelect}
+          onTouchStart={handleSelect}
         />
       </Group>
       {isSelected && (
@@ -494,6 +522,7 @@ const CustomTemplateEditor = ({
           stroke="#ddd"
           strokeWidth={1}
           dash={[4, 4]}
+          listening={false}
         />
       );
     }
@@ -505,6 +534,7 @@ const CustomTemplateEditor = ({
           stroke="#ddd"
           strokeWidth={1}
           dash={[4, 4]}
+          listening={false}
         />
       );
     }
@@ -577,6 +607,7 @@ const CustomTemplateEditor = ({
                   stroke="rgb(0, 161, 255)"
                   strokeWidth={1}
                   dash={[4, 6]}
+                  listening={false}
                 />
               );
             } else {
@@ -592,6 +623,7 @@ const CustomTemplateEditor = ({
                   stroke="rgb(0, 161, 255)"
                   strokeWidth={1}
                   dash={[4, 6]}
+                  listening={false}
                 />
               );
             }
