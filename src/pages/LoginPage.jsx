@@ -1,8 +1,8 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { loginUser } from "../api";
+import { loginUser, resendVerificationEmail } from "../api";
 import { useUser } from "../context/UserContext";
-import { Mail, Lock, Loader2, AlertCircle, Eye, EyeOff } from "lucide-react";
+import { Mail, Lock, Loader2, AlertCircle, Eye, EyeOff, ArrowRight, CheckCircle } from "lucide-react";
 import AuthLayout from "../layouts/AuthLayout";
 
 function LoginPage() {
@@ -10,6 +10,10 @@ function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [isUnverified, setIsUnverified] = useState(false);
+  const [unverifiedEmail, setUnverifiedEmail] = useState("");
+  const [resending, setResending] = useState(false);
+  const [resendMessage, setResendMessage] = useState("");
   const { refreshUser } = useUser();
   const navigate = useNavigate();
 
@@ -18,10 +22,28 @@ function LoginPage() {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
+  const handleResendCode = async () => {
+    const targetEmail = (unverifiedEmail || formData.email || "").trim();
+    if (!targetEmail) return;
+
+    setResending(true);
+    setResendMessage("");
+    try {
+      const res = await resendVerificationEmail(targetEmail);
+      setResendMessage(res.data?.msg || "A new 6-digit code has been sent to your email.");
+    } catch (err) {
+      setResendMessage(err.response?.data?.msg || "Failed to resend code. Please try again.");
+    } finally {
+      setResending(false);
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError("");
+    setIsUnverified(false);
+    setResendMessage("");
 
     const email = (
       document.getElementById("email")?.value || formData.email || ""
@@ -47,8 +69,19 @@ function LoginPage() {
         setLoading(false);
       }
     } catch (err) {
-      const msg = err.response?.data?.msg || "Login failed. Please check your credentials.";
-      setError(msg);
+      const isAccountUnverified =
+        err.response?.data?.unverified ||
+        err.response?.data?.msg?.toLowerCase().includes("not verified");
+
+      if (isAccountUnverified) {
+        setIsUnverified(true);
+        setUnverifiedEmail(email);
+        setError("");
+      } else {
+        setIsUnverified(false);
+        const msg = err.response?.data?.msg || "Login failed. Please check your credentials.";
+        setError(msg);
+      }
       setLoading(false);
     }
   };
@@ -62,12 +95,47 @@ function LoginPage() {
       linkLabel="Don't have an account?"
     >
       <form onSubmit={handleSubmit} className="space-y-6">
-        {error && (
+        {isUnverified ? (
+          <div className="bg-amber-50 border-l-4 border-amber-500 p-4 rounded-r-xl space-y-3 animate-in fade-in slide-in-from-top-2">
+            <div className="flex items-start gap-3">
+              <AlertCircle className="text-amber-600 shrink-0 mt-0.5" size={18} />
+              <div className="flex-1">
+                <p className="text-sm text-amber-900 font-bold">Account Not Verified</p>
+                <p className="text-xs text-amber-700 mt-0.5">
+                  Your account is registered but must be verified before you can sign in.
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 pt-1 flex-wrap">
+              <Link
+                to={`/verify-email?email=${encodeURIComponent(unverifiedEmail || formData.email)}`}
+                state={{ email: unverifiedEmail || formData.email }}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-lg shadow-sm transition-all"
+              >
+                <span>Enter Verification Code</span>
+                <ArrowRight size={13} />
+              </Link>
+              <button
+                type="button"
+                onClick={handleResendCode}
+                disabled={resending}
+                className="text-xs font-semibold text-indigo-600 hover:text-indigo-800 bg-white border border-gray-200 px-3 py-1.5 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 cursor-pointer"
+              >
+                {resending ? "Sending code..." : "Resend Code"}
+              </button>
+            </div>
+            {resendMessage && (
+              <p className="text-xs text-indigo-700 font-medium flex items-center gap-1 mt-1">
+                <CheckCircle size={13} /> {resendMessage}
+              </p>
+            )}
+          </div>
+        ) : error ? (
           <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded-r-md flex items-start gap-3 animate-in fade-in slide-in-from-top-2">
             <AlertCircle className="text-red-500 shrink-0 mt-0.5" size={18} />
             <p className="text-sm text-red-700 font-medium">{error}</p>
           </div>
-        )}
+        ) : null}
 
         <div className="space-y-5">
           <div>

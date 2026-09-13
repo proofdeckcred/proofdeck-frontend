@@ -50,7 +50,9 @@ function SignupPage() {
 
       const res = await signupUser(payload);
       if (res.status === 200 || res.status === 201) {
-        window.location.href = `/verify-email?email=${encodeURIComponent(email)}`;
+        navigate(`/verify-email?email=${encodeURIComponent(email)}`, {
+          state: { email },
+        });
       } else {
         setError(res.data?.msg || "Signup failed. Please try again.");
         setLoading(false);
