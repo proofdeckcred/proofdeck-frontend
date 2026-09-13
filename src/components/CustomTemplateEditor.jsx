@@ -28,15 +28,28 @@ const DraggableText = ({
   useEffect(() => {
     if (isSelected && trRef.current && groupRef.current) {
       trRef.current.nodes([groupRef.current]);
+      trRef.current.forceUpdate();
       trRef.current.getLayer().batchDraw();
     }
-  }, [isSelected]);
+  }, [
+    isSelected,
+    shapeProps.x,
+    shapeProps.y,
+    shapeProps.width,
+    shapeProps.height,
+    shapeProps.fontSize,
+    shapeProps.fontFamily,
+    shapeProps.rotation,
+  ]);
 
   const handleSelect = (e) => {
     if (e) {
       e.cancelBubble = true;
       if (e.evt) {
         e.evt.cancelBubble = true;
+        if (typeof e.evt.stopPropagation === "function") {
+          e.evt.stopPropagation();
+        }
       }
     }
     onSelect();
@@ -93,14 +106,32 @@ const DraggableText = ({
           });
         }}
       >
-        {/* Full-coverage Hit Rectangle: Solid white with 0.001 opacity guarantees 100% reliable hit testing in Konva without obscuring template artwork */}
+        {/*
+          100% Reliable Hit Rectangle:
+          - fill="white" gives the hit canvas solid pixels with colorKey
+          - sceneFunc draws nothing (completely transparent on screen), or a subtle tint on hover
+          - hitFunc draws a full rectangular path that guarantees 100% hit coverage
+        */}
         <Rect
           x={0}
           y={0}
           width={width}
           height={height}
-          fill="#ffffff"
-          opacity={0.001}
+          fill="white"
+          sceneFunc={(context, shape) => {
+            if (isHovered && !isSelected) {
+              context.beginPath();
+              context.rect(0, 0, shape.width(), shape.height());
+              context.fillStyle = "rgba(99, 102, 241, 0.08)";
+              context.fill();
+            }
+          }}
+          hitFunc={(context, shape) => {
+            context.beginPath();
+            context.rect(0, 0, shape.width(), shape.height());
+            context.closePath();
+            context.fillShape(shape);
+          }}
           listening={true}
           onClick={handleSelect}
           onTap={handleSelect}
@@ -125,6 +156,7 @@ const DraggableText = ({
           cornerRadius={2}
           listening={false}
         />
+        {/* Visible Text with active hit testing */}
         <Text
           x={0}
           y={0}
@@ -137,7 +169,11 @@ const DraggableText = ({
           align={shapeProps.align}
           fontStyle={shapeProps.fontStyle}
           verticalAlign={shapeProps.verticalAlign || "middle"}
-          listening={false}
+          listening={true}
+          onClick={handleSelect}
+          onTap={handleSelect}
+          onMouseDown={handleSelect}
+          onTouchStart={handleSelect}
         />
       </Group>
       {isSelected && (
@@ -177,15 +213,26 @@ const DraggableQR = ({
   useEffect(() => {
     if (isSelected && trRef.current && groupRef.current) {
       trRef.current.nodes([groupRef.current]);
+      trRef.current.forceUpdate();
       trRef.current.getLayer().batchDraw();
     }
-  }, [isSelected]);
+  }, [
+    isSelected,
+    shapeProps.x,
+    shapeProps.y,
+    shapeProps.width,
+    shapeProps.height,
+    shapeProps.rotation,
+  ]);
 
   const handleSelect = (e) => {
     if (e) {
       e.cancelBubble = true;
       if (e.evt) {
         e.evt.cancelBubble = true;
+        if (typeof e.evt.stopPropagation === "function") {
+          e.evt.stopPropagation();
+        }
       }
     }
     onSelect();
@@ -273,7 +320,11 @@ const DraggableQR = ({
           verticalAlign="middle"
           fontSize={12}
           fill="black"
-          listening={false}
+          listening={true}
+          onClick={handleSelect}
+          onTap={handleSelect}
+          onMouseDown={handleSelect}
+          onTouchStart={handleSelect}
         />
       </Group>
       {isSelected && (
@@ -498,9 +549,13 @@ const CustomTemplateEditor = ({
   };
 
   const checkDeselect = (e) => {
-    const clickedOnEmpty =
-      e.target === e.target.getStage() || e.target.getClassName() === "Image";
-    if (clickedOnEmpty) {
+    // Only deselect if explicitly clicking on the stage background itself or background Image
+    const isStage = e.target === e.target.getStage();
+    const isImage =
+      e.target &&
+      typeof e.target.getClassName === "function" &&
+      e.target.getClassName() === "Image";
+    if (isStage || isImage) {
       setSelectedId(null);
     }
   };
@@ -550,6 +605,8 @@ const CustomTemplateEditor = ({
         height={canvasSize.height * zoomScale}
         scaleX={zoomScale}
         scaleY={zoomScale}
+        onClick={checkDeselect}
+        onTap={checkDeselect}
         onMouseDown={checkDeselect}
         onTouchStart={checkDeselect}
       >

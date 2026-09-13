@@ -1,4 +1,4 @@
-import React, { useState, useRef, createRef, useEffect, useCallback } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import toast, { Toaster } from "react-hot-toast";
 import {
@@ -332,7 +332,7 @@ const UploadTemplatePage = () => {
   const [isRightSidebarOpen, setIsRightSidebarOpen] = useState(true);
   
   const fileInputRef = useRef(null);
-  const stageRef = createRef();
+  const stageRef = useRef(null);
   const workspaceRef = useRef(null);
   const [zoomMode, setZoomMode] = useState("fit"); // 'fit' or 'manual'
 
