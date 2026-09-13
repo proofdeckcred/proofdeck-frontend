@@ -18,8 +18,6 @@ const DraggableText = ({
   isSelected,
   onSelect,
   onChange,
-  onDragMove,
-  onDragEnd,
 }) => {
   const groupRef = useRef();
   const trRef = useRef();
@@ -42,19 +40,6 @@ const DraggableText = ({
     shapeProps.rotation,
   ]);
 
-  const handleSelect = (e) => {
-    if (e) {
-      e.cancelBubble = true;
-      if (e.evt) {
-        e.evt.cancelBubble = true;
-        if (typeof e.evt.stopPropagation === "function") {
-          e.evt.stopPropagation();
-        }
-      }
-    }
-    onSelect();
-  };
-
   const width = shapeProps.width || 200;
   const height = shapeProps.height || 30;
 
@@ -66,18 +51,22 @@ const DraggableText = ({
         y={shapeProps.y}
         rotation={shapeProps.rotation || 0}
         draggable
-        onClick={handleSelect}
-        onTap={handleSelect}
-        onMouseDown={handleSelect}
-        onTouchStart={handleSelect}
-        onDragStart={handleSelect}
-        onDragMove={(e) => onDragMove(e)}
+        onClick={(e) => {
+          e.cancelBubble = true;
+          onSelect();
+        }}
+        onTap={(e) => {
+          e.cancelBubble = true;
+          onSelect();
+        }}
+        onDragStart={() => {
+          onSelect();
+        }}
         onDragEnd={(e) => {
-          onDragEnd();
           onChange({
             ...shapeProps,
-            x: e.target.x(),
-            y: e.target.y(),
+            x: Math.round(e.target.x()),
+            y: Math.round(e.target.y()),
           });
         }}
         onMouseEnter={(e) => {
@@ -133,10 +122,14 @@ const DraggableText = ({
             context.fillShape(shape);
           }}
           listening={true}
-          onClick={handleSelect}
-          onTap={handleSelect}
-          onMouseDown={handleSelect}
-          onTouchStart={handleSelect}
+          onClick={(e) => {
+            e.cancelBubble = true;
+            onSelect();
+          }}
+          onTap={(e) => {
+            e.cancelBubble = true;
+            onSelect();
+          }}
         />
         {/* Visual Border Rectangle */}
         <Rect
@@ -170,10 +163,14 @@ const DraggableText = ({
           fontStyle={shapeProps.fontStyle}
           verticalAlign={shapeProps.verticalAlign || "middle"}
           listening={true}
-          onClick={handleSelect}
-          onTap={handleSelect}
-          onMouseDown={handleSelect}
-          onTouchStart={handleSelect}
+          onClick={(e) => {
+            e.cancelBubble = true;
+            onSelect();
+          }}
+          onTap={(e) => {
+            e.cancelBubble = true;
+            onSelect();
+          }}
         />
       </Group>
       {isSelected && (
@@ -203,8 +200,6 @@ const DraggableQR = ({
   isSelected,
   onSelect,
   onChange,
-  onDragMove,
-  onDragEnd,
 }) => {
   const groupRef = useRef();
   const trRef = useRef();
@@ -225,42 +220,33 @@ const DraggableQR = ({
     shapeProps.rotation,
   ]);
 
-  const handleSelect = (e) => {
-    if (e) {
-      e.cancelBubble = true;
-      if (e.evt) {
-        e.evt.cancelBubble = true;
-        if (typeof e.evt.stopPropagation === "function") {
-          e.evt.stopPropagation();
-        }
-      }
-    }
-    onSelect();
-  };
-
   const width = shapeProps.width || 100;
   const height = shapeProps.height || 100;
 
   return (
     <>
       <Group
-        onClick={handleSelect}
-        onTap={handleSelect}
-        onMouseDown={handleSelect}
-        onTouchStart={handleSelect}
-        onDragStart={handleSelect}
         ref={groupRef}
         x={shapeProps.x}
         y={shapeProps.y}
         rotation={shapeProps.rotation || 0}
         draggable
-        onDragMove={(e) => onDragMove(e)}
+        onClick={(e) => {
+          e.cancelBubble = true;
+          onSelect();
+        }}
+        onTap={(e) => {
+          e.cancelBubble = true;
+          onSelect();
+        }}
+        onDragStart={() => {
+          onSelect();
+        }}
         onDragEnd={(e) => {
-          onDragEnd();
           onChange({
             ...shapeProps,
-            x: e.target.x(),
-            y: e.target.y(),
+            x: Math.round(e.target.x()),
+            y: Math.round(e.target.y()),
           });
         }}
         onMouseEnter={(e) => {
@@ -305,10 +291,14 @@ const DraggableQR = ({
           strokeWidth={isHovered ? 1.5 : 1}
           cornerRadius={2}
           listening={true}
-          onClick={handleSelect}
-          onTap={handleSelect}
-          onMouseDown={handleSelect}
-          onTouchStart={handleSelect}
+          onClick={(e) => {
+            e.cancelBubble = true;
+            onSelect();
+          }}
+          onTap={(e) => {
+            e.cancelBubble = true;
+            onSelect();
+          }}
         />
         <Text
           x={0}
@@ -321,10 +311,14 @@ const DraggableQR = ({
           fontSize={12}
           fill="black"
           listening={true}
-          onClick={handleSelect}
-          onTap={handleSelect}
-          onMouseDown={handleSelect}
-          onTouchStart={handleSelect}
+          onClick={(e) => {
+            e.cancelBubble = true;
+            onSelect();
+          }}
+          onTap={(e) => {
+            e.cancelBubble = true;
+            onSelect();
+          }}
         />
       </Group>
       {isSelected && (
@@ -363,7 +357,6 @@ const CustomTemplateEditor = ({
   zoomScale = 1,
 }) => {
   const [image] = useImage(backgroundImageUrl, "anonymous");
-  const [guides, setGuides] = useState([]);
 
   // --- Keyboard Precision Control & Deletion ---
   useEffect(() => {
@@ -407,146 +400,6 @@ const CustomTemplateEditor = ({
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [selectedId, setElements, setSelectedId]);
-
-  // --- Snapping Logic ---
-  const getLineGuideStops = (skipShape) => {
-    const vertical = [0, canvasSize.width / 2, canvasSize.width];
-    const horizontal = [0, canvasSize.height / 2, canvasSize.height];
-
-    // Optional: Add snapping to other elements
-    elements.forEach((guideItem) => {
-      if (guideItem.id === skipShape.id()) return;
-      // Center snapping only to keep it clean
-      vertical.push(guideItem.x + guideItem.width / 2);
-      horizontal.push(guideItem.y + guideItem.height / 2);
-    });
-
-    return { vertical, horizontal };
-  };
-
-  const getObjectSnappingEdges = (node) => {
-    const box = node.getClientRect({ relativeTo: stageRef.current });
-    const absPos = node.absolutePosition();
-
-    return {
-      vertical: [
-        {
-          guide: Math.round(box.x),
-          offset: Math.round(absPos.x - box.x),
-          snap: "start",
-        },
-        {
-          guide: Math.round(box.x + box.width / 2),
-          offset: Math.round(absPos.x - box.x - box.width / 2),
-          snap: "center",
-        },
-        {
-          guide: Math.round(box.x + box.width),
-          offset: Math.round(absPos.x - box.x - box.width),
-          snap: "end",
-        },
-      ],
-      horizontal: [
-        {
-          guide: Math.round(box.y),
-          offset: Math.round(absPos.y - box.y),
-          snap: "start",
-        },
-        {
-          guide: Math.round(box.y + box.height / 2),
-          offset: Math.round(absPos.y - box.y - box.height / 2),
-          snap: "center",
-        },
-        {
-          guide: Math.round(box.y + box.height),
-          offset: Math.round(absPos.y - box.y - box.height),
-          snap: "end",
-        },
-      ],
-    };
-  };
-
-  const getGuides = (lineGuideStops, itemBounds) => {
-    const resultV = [];
-    const resultH = [];
-    const GUIDELINE_OFFSET = 5;
-
-    lineGuideStops.vertical.forEach((lineGuide) => {
-      itemBounds.vertical.forEach((itemBound) => {
-        const diff = Math.abs(lineGuide - itemBound.guide);
-        if (diff < GUIDELINE_OFFSET) {
-          resultV.push({
-            lineGuide,
-            diff,
-            snap: itemBound.snap,
-            offset: itemBound.offset,
-          });
-        }
-      });
-    });
-
-    lineGuideStops.horizontal.forEach((lineGuide) => {
-      itemBounds.horizontal.forEach((itemBound) => {
-        const diff = Math.abs(lineGuide - itemBound.guide);
-        if (diff < GUIDELINE_OFFSET) {
-          resultH.push({
-            lineGuide,
-            diff,
-            snap: itemBound.snap,
-            offset: itemBound.offset,
-          });
-        }
-      });
-    });
-
-    const minV = resultV.sort((a, b) => a.diff - b.diff)[0];
-    const minH = resultH.sort((a, b) => a.diff - b.diff)[0];
-    const guides = [];
-    if (minV)
-      guides.push({
-        lineGuide: minV.lineGuide,
-        offset: minV.offset,
-        orientation: "V",
-        snap: minV.snap,
-      });
-    if (minH)
-      guides.push({
-        lineGuide: minH.lineGuide,
-        offset: minH.offset,
-        orientation: "H",
-        snap: minH.snap,
-      });
-    return guides;
-  };
-
-  const handleDragMove = (e) => {
-    const layer = e.target.getLayer();
-    setGuides([]); // Clear previous guides
-
-    const lineGuideStops = getLineGuideStops(e.target);
-    const itemBounds = getObjectSnappingEdges(e.target);
-    const guides = getGuides(lineGuideStops, itemBounds);
-
-    if (!guides.length) return;
-
-    // Draw Guides
-    setGuides(guides);
-
-    // Force Snap
-    const absPos = e.target.absolutePosition();
-    guides.forEach((lg) => {
-      if (lg.orientation === "V") {
-        absPos.x = lg.lineGuide + lg.offset;
-      } else if (lg.orientation === "H") {
-        absPos.y = lg.lineGuide + lg.offset;
-      }
-    });
-    e.target.absolutePosition(absPos);
-  };
-
-  const handleDragEnd = () => {
-    setGuides([]);
-  };
 
   const checkDeselect = (e) => {
     // Only deselect if explicitly clicking on the stage background itself or background Image
@@ -633,8 +486,6 @@ const CustomTemplateEditor = ({
                 });
                 setElements(updatedElements);
               },
-              onDragMove: handleDragMove,
-              onDragEnd: handleDragEnd,
             };
 
             return el.isQr ? (
@@ -642,43 +493,6 @@ const CustomTemplateEditor = ({
             ) : (
               <DraggableText {...props} />
             );
-          })}
-
-          {/* Guide Lines */}
-          {guides.map((guide, i) => {
-            if (guide.orientation === "V") {
-              return (
-                <Line
-                  key={i}
-                  points={[
-                    guide.lineGuide,
-                    0,
-                    guide.lineGuide,
-                    canvasSize.height,
-                  ]}
-                  stroke="rgb(0, 161, 255)"
-                  strokeWidth={1}
-                  dash={[4, 6]}
-                  listening={false}
-                />
-              );
-            } else {
-              return (
-                <Line
-                  key={i}
-                  points={[
-                    0,
-                    guide.lineGuide,
-                    canvasSize.width,
-                    guide.lineGuide,
-                  ]}
-                  stroke="rgb(0, 161, 255)"
-                  strokeWidth={1}
-                  dash={[4, 6]}
-                  listening={false}
-                />
-              );
-            }
           })}
         </Layer>
       </Stage>
