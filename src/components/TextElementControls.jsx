@@ -1,8 +1,10 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   Trash2,
   Bold,
   Italic,
+  Underline,
+  Strikethrough,
   AlignLeft,
   AlignCenter,
   AlignRight,
@@ -11,6 +13,8 @@ import {
   ChevronUp,
   ChevronDown,
   Check,
+  RotateCw,
+  Copy,
 } from "lucide-react";
 
 const FONT_FAMILIES = [
@@ -36,13 +40,33 @@ const FONT_FAMILIES = [
   "Comic Sans MS",
 ];
 
+const FONT_SIZE_PRESETS = [12, 16, 20, 24, 32, 48, 64, 72];
+
+const COLOR_PRESETS = [
+  "#000000", "#FFFFFF", "#1e293b", "#4b5563", "#94a3b8",
+  "#ef4444", "#f97316", "#eab308", "#22c55e", "#3b82f6",
+  "#6366f1", "#a855f7", "#ec4899", "#14b8a6", "#d97706",
+  "#1e3a8a",
+];
+
 const TextElementControls = ({ element, onUpdate, onDelete, onDone }) => {
+  const [showColorGrid, setShowColorGrid] = useState(false);
+
   const handleStyleToggle = (style) => {
     const currentStyle = element.fontStyle || "normal";
     if (currentStyle.includes(style)) {
       onUpdate({ fontStyle: currentStyle.replace(style, "").trim() || "normal" });
     } else {
       onUpdate({ fontStyle: `${currentStyle === "normal" ? "" : currentStyle} ${style}`.trim() });
+    }
+  };
+
+  const handleDecorationToggle = (decoration) => {
+    const current = element.textDecoration || "";
+    if (current.includes(decoration)) {
+      onUpdate({ textDecoration: current.replace(decoration, "").trim() });
+    } else {
+      onUpdate({ textDecoration: `${current} ${decoration}`.trim() });
     }
   };
 
@@ -117,10 +141,10 @@ const TextElementControls = ({ element, onUpdate, onDelete, onDone }) => {
 
   const coordinatesSection = (
     <div className="space-y-1.5 pt-2 border-t border-gray-100 mt-2">
-      <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">Coordinates & Size</span>
+      <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">Position & Size</span>
       <div className="grid grid-cols-4 gap-1.5">
         <div>
-          <label className="text-[9px] text-gray-400 block font-medium">X (px)</label>
+          <label className="text-[9px] text-gray-400 block font-medium">X</label>
           <input
             type="number"
             value={Math.round(element.x)}
@@ -129,7 +153,7 @@ const TextElementControls = ({ element, onUpdate, onDelete, onDone }) => {
           />
         </div>
         <div>
-          <label className="text-[9px] text-gray-400 block font-medium">Y (px)</label>
+          <label className="text-[9px] text-gray-400 block font-medium">Y</label>
           <input
             type="number"
             value={Math.round(element.y)}
@@ -138,7 +162,7 @@ const TextElementControls = ({ element, onUpdate, onDelete, onDone }) => {
           />
         </div>
         <div>
-          <label className="text-[9px] text-gray-400 block font-medium">Width</label>
+          <label className="text-[9px] text-gray-400 block font-medium">W</label>
           <input
             type="number"
             value={Math.round(element.width)}
@@ -147,13 +171,13 @@ const TextElementControls = ({ element, onUpdate, onDelete, onDone }) => {
           />
         </div>
         <div>
-          <label className="text-[9px] text-gray-400 block font-medium">Height</label>
+          <label className="text-[9px] text-gray-400 block font-medium">H</label>
           <input
             type="number"
             value={Math.round(element.height)}
             onChange={(e) => handleCoordinateChange("height", e.target.value)}
             className="w-full mt-0.5 p-1 text-[11px] border border-gray-200 rounded focus:outline-none focus:ring-1 focus:ring-indigo-500 bg-gray-50/50"
-            disabled={element.isQr} // QR dimensions are square
+            disabled={element.isQr}
           />
         </div>
       </div>
@@ -185,6 +209,30 @@ const TextElementControls = ({ element, onUpdate, onDelete, onDone }) => {
           </div>
         </div>
 
+        {/* Rotation */}
+        <div className="space-y-1 pt-2 border-t border-gray-100 mt-2">
+          <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">Rotation</span>
+          <div className="flex items-center gap-2">
+            <input
+              type="range"
+              min={0}
+              max={360}
+              value={element.rotation || 0}
+              onChange={(e) => onUpdate({ rotation: parseInt(e.target.value, 10) })}
+              className="flex-1 accent-indigo-600 h-1.5 bg-gray-100 rounded-lg cursor-pointer"
+            />
+            <div className="flex items-center gap-0.5">
+              <input
+                type="number"
+                value={Math.round(element.rotation || 0)}
+                onChange={(e) => onUpdate({ rotation: parseInt(e.target.value, 10) || 0 })}
+                className="w-12 p-1 text-[11px] border border-gray-200 rounded focus:outline-none bg-gray-50/50 text-center"
+              />
+              <span className="text-[9px] text-gray-400">°</span>
+            </div>
+          </div>
+        </div>
+
         {coordinatesSection}
         {arrangeSection}
 
@@ -196,12 +244,12 @@ const TextElementControls = ({ element, onUpdate, onDelete, onDone }) => {
   }
 
   return (
-    <div className="space-y-3.5 p-3 border border-gray-100 rounded-xl bg-white shadow-sm">
+    <div className="space-y-3 p-3 border border-gray-100 rounded-xl bg-white shadow-sm">
       {commonHeader("Text Element Properties")}
 
       {/* Text Content / Variable */}
       <div>
-        <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Text / Variable Content</label>
+        <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Text / Variable</label>
         <input
           type="text"
           value={element.text || ""}
@@ -227,49 +275,99 @@ const TextElementControls = ({ element, onUpdate, onDelete, onDone }) => {
         </select>
       </div>
 
-      {/* Font Size & Color */}
-      <div className="grid grid-cols-2 gap-3">
-        <div>
-          <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Size (px)</label>
-          <div className="flex items-center gap-1.5 mt-1">
-            <input
-              type="number"
-              value={element.fontSize || ""}
-              onChange={(e) => {
-                const val = e.target.value;
-                if (val === "") {
-                  onUpdate({ fontSize: "" });
-                } else {
-                  const parsed = parseInt(val, 10);
-                  if (!isNaN(parsed)) {
-                    onUpdate({ fontSize: Math.max(1, parsed) });
-                  }
+      {/* Font Size with presets */}
+      <div>
+        <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Font Size</label>
+        <div className="flex items-center gap-1.5 mt-1">
+          <input
+            type="number"
+            value={element.fontSize || ""}
+            onChange={(e) => {
+              const val = e.target.value;
+              if (val === "") {
+                onUpdate({ fontSize: "" });
+              } else {
+                const parsed = parseInt(val, 10);
+                if (!isNaN(parsed)) {
+                  onUpdate({ fontSize: Math.max(1, parsed) });
                 }
-              }}
-              onBlur={() => {
-                if (!element.fontSize || isNaN(element.fontSize)) {
-                  onUpdate({ fontSize: 60 });
-                }
-              }}
-              className="w-full p-1 text-xs border border-gray-200 rounded focus:outline-none focus:ring-1 focus:ring-indigo-500 bg-white"
-            />
-          </div>
+              }
+            }}
+            onBlur={() => {
+              if (!element.fontSize || isNaN(element.fontSize)) {
+                onUpdate({ fontSize: 60 });
+              }
+            }}
+            className="w-16 p-1 text-xs border border-gray-200 rounded focus:outline-none focus:ring-1 focus:ring-indigo-500 bg-white text-center"
+          />
+          <span className="text-[9px] text-gray-400">px</span>
         </div>
-        <div>
-          <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Color</label>
-          <div className="flex items-center gap-1.5 mt-1 border border-gray-200 rounded p-0.5 bg-gray-50/50 w-full h-[26px]">
-            <input
-              type="color"
-              value={element.fill}
-              onChange={(e) => onUpdate({ fill: e.target.value })}
-              className="w-6 h-full rounded cursor-pointer border-0 p-0"
-            />
-            <span className="text-[9px] font-mono text-gray-500 select-all">{element.fill}</span>
-          </div>
+        {/* Quick size presets */}
+        <div className="flex flex-wrap gap-1 mt-1.5">
+          {FONT_SIZE_PRESETS.map((size) => (
+            <button
+              key={size}
+              onClick={() => onUpdate({ fontSize: size })}
+              className={`text-[9px] px-1.5 py-0.5 rounded border transition-all cursor-pointer ${
+                element.fontSize === size
+                  ? "bg-indigo-600 text-white border-indigo-600"
+                  : "bg-gray-50 text-gray-500 border-gray-200 hover:border-indigo-300 hover:text-indigo-600"
+              }`}
+            >
+              {size}
+            </button>
+          ))}
         </div>
       </div>
 
-      {/* Formatting & Alignment */}
+      {/* Color with swatches */}
+      <div>
+        <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Color</label>
+        <div className="flex items-center gap-1.5 mt-1">
+          <input
+            type="color"
+            value={element.fill}
+            onChange={(e) => onUpdate({ fill: e.target.value })}
+            className="w-7 h-7 rounded cursor-pointer border border-gray-200 p-0"
+          />
+          <input
+            type="text"
+            value={element.fill}
+            onChange={(e) => {
+              const val = e.target.value;
+              if (/^#[0-9A-Fa-f]{0,6}$/.test(val)) {
+                onUpdate({ fill: val });
+              }
+            }}
+            className="flex-1 p-1 text-[10px] font-mono border border-gray-200 rounded focus:outline-none focus:ring-1 focus:ring-indigo-500 bg-gray-50/50"
+          />
+          <button
+            onClick={() => setShowColorGrid(!showColorGrid)}
+            className="text-[8px] px-1.5 py-1 rounded border border-gray-200 text-gray-500 hover:text-indigo-600 hover:border-indigo-300 transition-colors cursor-pointer"
+          >
+            {showColorGrid ? "Hide" : "Swatches"}
+          </button>
+        </div>
+        {showColorGrid && (
+          <div className="grid grid-cols-8 gap-1 mt-1.5 p-1.5 bg-gray-50 rounded border border-gray-100">
+            {COLOR_PRESETS.map((color) => (
+              <button
+                key={color}
+                onClick={() => onUpdate({ fill: color })}
+                className={`w-5 h-5 rounded-sm cursor-pointer border transition-all hover:scale-110 ${
+                  element.fill === color
+                    ? "border-indigo-500 ring-1 ring-indigo-300 scale-110"
+                    : "border-gray-200"
+                }`}
+                style={{ backgroundColor: color }}
+                title={color}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Formatting: Bold, Italic, Underline, Strikethrough */}
       <div className="grid grid-cols-2 gap-3">
         <div>
           <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mb-1">Styles</label>
@@ -295,6 +393,28 @@ const TextElementControls = ({ element, onUpdate, onDelete, onDone }) => {
               title="Italic"
             >
               <Italic size={11} />
+            </button>
+            <button
+              onClick={() => handleDecorationToggle("underline")}
+              className={`p-1.5 rounded transition-all cursor-pointer ${
+                element.textDecoration?.includes("underline")
+                  ? "bg-indigo-600 text-white"
+                  : "text-gray-500 hover:text-gray-800"
+              }`}
+              title="Underline"
+            >
+              <Underline size={11} />
+            </button>
+            <button
+              onClick={() => handleDecorationToggle("line-through")}
+              className={`p-1.5 rounded transition-all cursor-pointer ${
+                element.textDecoration?.includes("line-through")
+                  ? "bg-indigo-600 text-white"
+                  : "text-gray-500 hover:text-gray-800"
+              }`}
+              title="Strikethrough"
+            >
+              <Strikethrough size={11} />
             </button>
           </div>
         </div>
@@ -333,8 +453,89 @@ const TextElementControls = ({ element, onUpdate, onDelete, onDone }) => {
         </div>
       </div>
 
+      {/* Opacity */}
+      <div className="space-y-1 pt-2 border-t border-gray-100 mt-2">
+        <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">Opacity</span>
+        <div className="flex items-center gap-2">
+          <input
+            type="range"
+            min={0}
+            max={100}
+            value={Math.round((element.opacity != null ? element.opacity : 1) * 100)}
+            onChange={(e) => onUpdate({ opacity: parseInt(e.target.value, 10) / 100 })}
+            className="flex-1 accent-indigo-600 h-1.5 bg-gray-100 rounded-lg cursor-pointer"
+          />
+          <span className="text-[10px] font-mono text-gray-500 w-8 text-right">
+            {Math.round((element.opacity != null ? element.opacity : 1) * 100)}%
+          </span>
+        </div>
+      </div>
+
+      {/* Rotation */}
+      <div className="space-y-1 pt-2 border-t border-gray-100 mt-2">
+        <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">Rotation</span>
+        <div className="flex items-center gap-2">
+          <input
+            type="range"
+            min={0}
+            max={360}
+            value={element.rotation || 0}
+            onChange={(e) => onUpdate({ rotation: parseInt(e.target.value, 10) })}
+            className="flex-1 accent-indigo-600 h-1.5 bg-gray-100 rounded-lg cursor-pointer"
+          />
+          <div className="flex items-center gap-0.5">
+            <input
+              type="number"
+              value={Math.round(element.rotation || 0)}
+              onChange={(e) => onUpdate({ rotation: parseInt(e.target.value, 10) || 0 })}
+              className="w-12 p-1 text-[11px] border border-gray-200 rounded focus:outline-none bg-gray-50/50 text-center"
+            />
+            <span className="text-[9px] text-gray-400">°</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Letter Spacing & Line Height */}
+      <div className="grid grid-cols-2 gap-3 pt-2 border-t border-gray-100 mt-2">
+        <div>
+          <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">Letter Spacing</label>
+          <div className="flex items-center gap-1 mt-1">
+            <input
+              type="number"
+              value={element.letterSpacing || 0}
+              onChange={(e) => onUpdate({ letterSpacing: parseFloat(e.target.value) || 0 })}
+              step={0.5}
+              className="w-full p-1 text-[11px] border border-gray-200 rounded focus:outline-none focus:ring-1 focus:ring-indigo-500 bg-gray-50/50"
+            />
+            <span className="text-[9px] text-gray-400">px</span>
+          </div>
+        </div>
+        <div>
+          <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">Line Height</label>
+          <div className="flex items-center gap-1 mt-1">
+            <input
+              type="number"
+              value={element.lineHeight || 1}
+              onChange={(e) => onUpdate({ lineHeight: parseFloat(e.target.value) || 1 })}
+              step={0.1}
+              min={0.5}
+              max={3}
+              className="w-full p-1 text-[11px] border border-gray-200 rounded focus:outline-none focus:ring-1 focus:ring-indigo-500 bg-gray-50/50"
+            />
+            <span className="text-[9px] text-gray-400">×</span>
+          </div>
+        </div>
+      </div>
+
       {coordinatesSection}
       {arrangeSection}
+
+      {/* Keyboard shortcuts hint */}
+      <div className="text-[9px] text-gray-400 mt-2 leading-relaxed bg-gray-50 p-2 rounded border border-gray-100">
+        <span className="font-bold text-gray-500 block mb-0.5">Shortcuts</span>
+        <span className="block">Arrow keys: move 1px · Shift+Arrow: 10px</span>
+        <span className="block">Ctrl+D: duplicate · Del: delete · Esc: deselect</span>
+      </div>
     </div>
   );
 };

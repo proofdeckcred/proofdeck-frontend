@@ -11,13 +11,121 @@ import {
 } from "react-konva";
 import useImage from "use-image";
 
-// --- Sub-components ---
+// ─── Constants ──────────────────────────────────────────────
+const SNAP_THRESHOLD = 5; // px proximity to snap
+const GUIDELINE_COLOR = "#6366f1"; // indigo-500
+const GUIDELINE_DASH = [4, 4];
+
+// ─── Snapping Utilities ─────────────────────────────────────
+
+/**
+ * Gather all interesting snap lines from existing elements + canvas edges/centers.
+ * Returns { vertical: number[], horizontal: number[] } – the x/y values to snap to.
+ */
+const getSnapLines = (skipNodeId, elements, canvasSize) => {
+  const vertical = new Set();
+  const horizontal = new Set();
+
+  // Canvas edges + center
+  vertical.add(0);
+  vertical.add(canvasSize.width / 2);
+  vertical.add(canvasSize.width);
+  horizontal.add(0);
+  horizontal.add(canvasSize.height / 2);
+  horizontal.add(canvasSize.height);
+
+  // Other element edges + centers
+  elements.forEach((el) => {
+    if (el.id === skipNodeId) return;
+    const w = el.width || 200;
+    const h = el.height || 30;
+    // Left, center, right
+    vertical.add(el.x);
+    vertical.add(el.x + w / 2);
+    vertical.add(el.x + w);
+    // Top, center, bottom
+    horizontal.add(el.y);
+    horizontal.add(el.y + h / 2);
+    horizontal.add(el.y + h);
+  });
+
+  return {
+    vertical: [...vertical],
+    horizontal: [...horizontal],
+  };
+};
+
+/**
+ * Given a dragging node's edges + center, find the closest snap for each axis.
+ * Returns { x: number|null, y: number|null, guides: Array<{points, orientation}> }
+ */
+const getSnappedPosition = (nodeX, nodeY, nodeW, nodeH, snapLines) => {
+  const guides = [];
+
+  // Check all 3 anchor points on each axis
+  const nodeXAnchors = [nodeX, nodeX + nodeW / 2, nodeX + nodeW];
+  const nodeYAnchors = [nodeY, nodeY + nodeH / 2, nodeY + nodeH];
+
+  let bestDx = null;
+  let bestAbsDx = SNAP_THRESHOLD + 1;
+  let bestDy = null;
+  let bestAbsDy = SNAP_THRESHOLD + 1;
+  let snapGuideX = null;
+  let snapGuideY = null;
+
+  // Vertical snap lines (affect x position)
+  for (const anchor of nodeXAnchors) {
+    for (const line of snapLines.vertical) {
+      const dist = Math.abs(anchor - line);
+      if (dist < SNAP_THRESHOLD && dist < bestAbsDx) {
+        bestAbsDx = dist;
+        bestDx = line - anchor;
+        snapGuideX = line;
+      }
+    }
+  }
+
+  // Horizontal snap lines (affect y position)
+  for (const anchor of nodeYAnchors) {
+    for (const line of snapLines.horizontal) {
+      const dist = Math.abs(anchor - line);
+      if (dist < SNAP_THRESHOLD && dist < bestAbsDy) {
+        bestAbsDy = dist;
+        bestDy = line - anchor;
+        snapGuideY = line;
+      }
+    }
+  }
+
+  if (snapGuideX !== null) {
+    guides.push({
+      points: [snapGuideX, -9999, snapGuideX, 9999],
+      orientation: "V",
+    });
+  }
+  if (snapGuideY !== null) {
+    guides.push({
+      points: [-9999, snapGuideY, 9999, snapGuideY],
+      orientation: "H",
+    });
+  }
+
+  return {
+    x: bestDx !== null ? nodeX + bestDx : null,
+    y: bestDy !== null ? nodeY + bestDy : null,
+    guides,
+  };
+};
+
+// ─── DraggableText ──────────────────────────────────────────
 
 const DraggableText = ({
   shapeProps,
   isSelected,
   onSelect,
   onChange,
+  onDragMoveSnap,
+  onDragEndSnap,
 }) => {
   const groupRef = useRef();
   const trRef = useRef();
@@ -47,6 +155,7 @@ const DraggableText = ({
     <>
       <Group
         ref={groupRef}
+        id={shapeProps.id}
         x={shapeProps.x}
         y={shapeProps.y}
         rotation={shapeProps.rotation || 0}
@@ -62,7 +171,13 @@ const DraggableText = ({
         onDragStart={() => {
           onSelect();
         }}
+        onDragMove={(e) => {
+          if (onDragMoveSnap) {
+            onDragMoveSnap(e, shapeProps.id, width, height);
+          }
+        }}
         onDragEnd={(e) => {
+          if (onDragEndSnap) onDragEndSnap();
           onChange({
             ...shapeProps,
             x: Math.round(e.target.x()),
@@ -87,34 +202,21 @@ const DraggableText = ({
           node.scaleY(1);
           onChange({
             ...shapeProps,
-            x: node.x(),
-            y: node.y(),
-            width: Math.max(20, width * scaleX),
-            height: Math.max(10, height * scaleY),
+            x: Math.round(node.x()),
+            y: Math.round(node.y()),
+            width: Math.max(20, Math.round(width * scaleX)),
+            height: Math.max(10, Math.round(height * scaleY)),
             rotation: node.rotation(),
           });
         }}
       >
-        {/*
-          100% Reliable Hit Rectangle:
-          - fill="white" gives the hit canvas solid pixels with colorKey
-          - sceneFunc draws nothing (completely transparent on screen), or a subtle tint on hover
-          - hitFunc draws a full rectangular path that guarantees 100% hit coverage
-        */}
+        {/* Hit-detection rectangle: invisible on screen, solid on hit canvas */}
         <Rect
           x={0}
           y={0}
           width={width}
           height={height}
-          fill="white"
-          sceneFunc={(context, shape) => {
-            if (isHovered && !isSelected) {
-              context.beginPath();
-              context.rect(0, 0, shape.width(), shape.height());
-              context.fillStyle = "rgba(99, 102, 241, 0.08)";
-              context.fill();
-            }
-          }}
+          fill="transparent"
           hitFunc={(context, shape) => {
             context.beginPath();
             context.rect(0, 0, shape.width(), shape.height());
@@ -122,21 +224,20 @@ const DraggableText = ({
             context.fillShape(shape);
           }}
           listening={true}
-          onClick={(e) => {
-            e.cancelBubble = true;
-            onSelect();
-          }}
-          onTap={(e) => {
-            e.cancelBubble = true;
-            onSelect();
-          }}
         />
-        {/* Visual Border Rectangle */}
+        {/* Visual border — dashed when unselected, tinted on hover */}
         <Rect
           x={0}
           y={0}
           width={width}
           height={height}
+          fill={
+            isSelected
+              ? "rgba(99, 102, 241, 0.04)"
+              : isHovered
+              ? "rgba(99, 102, 241, 0.06)"
+              : "transparent"
+          }
           stroke={
             isSelected
               ? "transparent"
@@ -149,7 +250,7 @@ const DraggableText = ({
           cornerRadius={2}
           listening={false}
         />
-        {/* Visible Text with active hit testing */}
+        {/* Visible Text */}
         <Text
           x={0}
           y={0}
@@ -162,15 +263,11 @@ const DraggableText = ({
           align={shapeProps.align}
           fontStyle={shapeProps.fontStyle}
           verticalAlign={shapeProps.verticalAlign || "middle"}
-          listening={true}
-          onClick={(e) => {
-            e.cancelBubble = true;
-            onSelect();
-          }}
-          onTap={(e) => {
-            e.cancelBubble = true;
-            onSelect();
-          }}
+          opacity={shapeProps.opacity != null ? shapeProps.opacity : 1}
+          letterSpacing={shapeProps.letterSpacing || 0}
+          lineHeight={shapeProps.lineHeight || 1}
+          textDecoration={shapeProps.textDecoration || ""}
+          listening={false}
         />
       </Group>
       {isSelected && (
@@ -180,9 +277,21 @@ const DraggableText = ({
           anchorStroke="#4f46e5"
           anchorFill="#ffffff"
           anchorSize={7}
+          anchorCornerRadius={2}
           borderStroke="#4f46e5"
           borderStrokeWidth={1.5}
-          rotateAnchorOffset={15}
+          rotateAnchorOffset={20}
+          rotateAnchorCursor="grab"
+          enabledAnchors={[
+            "top-left",
+            "top-center",
+            "top-right",
+            "middle-right",
+            "bottom-right",
+            "bottom-center",
+            "bottom-left",
+            "middle-left",
+          ]}
           boundBoxFunc={(oldBox, newBox) => {
             if (newBox.width < 15 || newBox.height < 10) {
               return oldBox;
@@ -195,11 +304,15 @@ const DraggableText = ({
   );
 };
 
+// ─── DraggableQR ────────────────────────────────────────────
+
 const DraggableQR = ({
   shapeProps,
   isSelected,
   onSelect,
   onChange,
+  onDragMoveSnap,
+  onDragEndSnap,
 }) => {
   const groupRef = useRef();
   const trRef = useRef();
@@ -227,6 +340,7 @@ const DraggableQR = ({
     <>
       <Group
         ref={groupRef}
+        id={shapeProps.id}
         x={shapeProps.x}
         y={shapeProps.y}
         rotation={shapeProps.rotation || 0}
@@ -242,7 +356,13 @@ const DraggableQR = ({
         onDragStart={() => {
           onSelect();
         }}
+        onDragMove={(e) => {
+          if (onDragMoveSnap) {
+            onDragMoveSnap(e, shapeProps.id, width, height);
+          }
+        }}
         onDragEnd={(e) => {
+          if (onDragEndSnap) onDragEndSnap();
           onChange({
             ...shapeProps,
             x: Math.round(e.target.x()),
@@ -267,14 +387,15 @@ const DraggableQR = ({
           node.scaleY(1);
           onChange({
             ...shapeProps,
-            x: node.x(),
-            y: node.y(),
-            width: Math.max(20, width * scaleX),
-            height: Math.max(20, height * scaleY),
+            x: Math.round(node.x()),
+            y: Math.round(node.y()),
+            width: Math.max(20, Math.round(width * scaleX)),
+            height: Math.max(20, Math.round(height * scaleY)),
             rotation: node.rotation(),
           });
         }}
       >
+        {/* QR background + hit area */}
         <Rect
           x={0}
           y={0}
@@ -291,15 +412,39 @@ const DraggableQR = ({
           strokeWidth={isHovered ? 1.5 : 1}
           cornerRadius={2}
           listening={true}
-          onClick={(e) => {
-            e.cancelBubble = true;
-            onSelect();
-          }}
-          onTap={(e) => {
-            e.cancelBubble = true;
-            onSelect();
-          }}
         />
+        {/* QR grid pattern for visual clarity */}
+        {(() => {
+          const cells = 5;
+          const cellW = width / cells;
+          const cellH = height / cells;
+          const qrPattern = [
+            [1,1,1,0,1],
+            [1,0,1,0,0],
+            [1,1,1,0,1],
+            [0,0,0,0,1],
+            [1,0,1,1,1],
+          ];
+          const rects = [];
+          for (let r = 0; r < cells; r++) {
+            for (let c = 0; c < cells; c++) {
+              if (qrPattern[r][c]) {
+                rects.push(
+                  <Rect
+                    key={`qr-${r}-${c}`}
+                    x={c * cellW + cellW * 0.15}
+                    y={r * cellH + cellH * 0.15}
+                    width={cellW * 0.7}
+                    height={cellH * 0.7}
+                    fill="rgba(0,0,0,0.15)"
+                    listening={false}
+                  />
+                );
+              }
+            }
+          }
+          return rects;
+        })()}
         <Text
           x={0}
           y={0}
@@ -308,17 +453,10 @@ const DraggableQR = ({
           height={height}
           align="center"
           verticalAlign="middle"
-          fontSize={12}
-          fill="black"
-          listening={true}
-          onClick={(e) => {
-            e.cancelBubble = true;
-            onSelect();
-          }}
-          onTap={(e) => {
-            e.cancelBubble = true;
-            onSelect();
-          }}
+          fontSize={Math.max(9, Math.min(12, width / 8))}
+          fill="rgba(0,0,0,0.6)"
+          fontStyle="bold"
+          listening={false}
         />
       </Group>
       {isSelected && (
@@ -328,9 +466,11 @@ const DraggableQR = ({
           anchorStroke="#4f46e5"
           anchorFill="#ffffff"
           anchorSize={7}
+          anchorCornerRadius={2}
           borderStroke="#4f46e5"
           borderStrokeWidth={1.5}
-          rotateAnchorOffset={15}
+          rotateAnchorOffset={20}
+          rotateAnchorCursor="grab"
           boundBoxFunc={(oldBox, newBox) => {
             if (newBox.width < 20 || newBox.height < 20) {
               return oldBox;
@@ -343,7 +483,7 @@ const DraggableQR = ({
   );
 };
 
-// --- Main Editor Component ---
+// ─── Main Editor Component ──────────────────────────────────
 
 const CustomTemplateEditor = ({
   stageRef,
@@ -357,25 +497,54 @@ const CustomTemplateEditor = ({
   zoomScale = 1,
 }) => {
   const [image] = useImage(backgroundImageUrl, "anonymous");
+  const [guides, setGuides] = useState([]);
 
-  // --- Keyboard Precision Control & Deletion ---
+  // ── Keyboard: Precision Move, Delete, Duplicate, Deselect ──
   useEffect(() => {
     const handleKeyDown = (e) => {
-      if (!selectedId) return;
+      // Don't interfere with form inputs
+      const activeTag = document.activeElement?.tagName?.toLowerCase();
+      if (activeTag === "input" || activeTag === "textarea" || activeTag === "select") {
+        return;
+      }
 
-      if (e.key === "Delete" || e.key === "Backspace") {
-        // Prevent default browser behavior if focusing on canvas
-        const activeTag = document.activeElement?.tagName?.toLowerCase();
-        if (activeTag === "input" || activeTag === "textarea" || activeTag === "select") {
-          return; // Don't delete elements when typing in inputs!
-        }
+      // Escape → deselect
+      if (e.key === "Escape") {
         e.preventDefault();
-        setElements((prevElements) => prevElements.filter((el) => el.id !== selectedId));
         setSelectedId(null);
         return;
       }
 
-      const MOVE_STEP = e.shiftKey ? 10 : 1; // Shift + Arrow = 10px, else 1px
+      if (!selectedId) return;
+
+      // Delete / Backspace → remove element
+      if (e.key === "Delete" || e.key === "Backspace") {
+        e.preventDefault();
+        setElements((prev) => prev.filter((el) => el.id !== selectedId));
+        setSelectedId(null);
+        return;
+      }
+
+      // Ctrl+D → duplicate selected element
+      if ((e.ctrlKey || e.metaKey) && e.key === "d") {
+        e.preventDefault();
+        setElements((prev) => {
+          const source = prev.find((el) => el.id === selectedId);
+          if (!source) return prev;
+          const clone = {
+            ...source,
+            id: `el_${Math.random().toString(36).substring(2, 11)}`,
+            x: source.x + 20,
+            y: source.y + 20,
+          };
+          setSelectedId(clone.id);
+          return [...prev, clone];
+        });
+        return;
+      }
+
+      // Arrow keys → precision move
+      const MOVE_STEP = e.shiftKey ? 10 : 1;
       let dx = 0;
       let dy = 0;
 
@@ -387,8 +556,8 @@ const CustomTemplateEditor = ({
 
       e.preventDefault();
 
-      setElements((prevElements) =>
-        prevElements.map((el) => {
+      setElements((prev) =>
+        prev.map((el) => {
           if (el.id === selectedId) {
             return { ...el, x: el.x + dx, y: el.y + dy };
           }
@@ -401,19 +570,48 @@ const CustomTemplateEditor = ({
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [selectedId, setElements, setSelectedId]);
 
-  const checkDeselect = (e) => {
-    // Only deselect if explicitly clicking on the stage background itself or background Image
-    const isStage = e.target === e.target.getStage();
-    const isImage =
-      e.target &&
-      typeof e.target.getClassName === "function" &&
-      e.target.getClassName() === "Image";
-    if (isStage || isImage) {
-      setSelectedId(null);
-    }
-  };
+  // ── Deselect when clicking empty space ──
+  // CRITICAL FIX: Only use onClick/onTap — NOT onMouseDown/onTouchStart.
+  // onMouseDown fires BEFORE onClick on child elements, causing a race
+  // condition that deselects before the element can re-select itself.
+  const checkDeselect = useCallback(
+    (e) => {
+      const clickedOnEmpty =
+        e.target === e.target.getStage() ||
+        (e.target.getClassName && e.target.getClassName() === "Image");
+      if (clickedOnEmpty) {
+        setSelectedId(null);
+      }
+    },
+    [setSelectedId]
+  );
 
-  // Grid lines
+  // ── Snap-on-drag handler ──
+  const handleDragMoveSnap = useCallback(
+    (e, nodeId, nodeW, nodeH) => {
+      const node = e.target;
+      const snapLineData = getSnapLines(nodeId, elements, canvasSize);
+      const snap = getSnappedPosition(
+        node.x(),
+        node.y(),
+        nodeW,
+        nodeH,
+        snapLineData
+      );
+
+      if (snap.x !== null) node.x(snap.x);
+      if (snap.y !== null) node.y(snap.y);
+
+      setGuides(snap.guides);
+    },
+    [elements, canvasSize]
+  );
+
+  const handleDragEndSnap = useCallback(() => {
+    setGuides([]);
+  }, []);
+
+  // ── Grid lines ──
   const gridSize = 50;
   const gridLines = [];
   if (showGrid) {
@@ -422,9 +620,8 @@ const CustomTemplateEditor = ({
         <Line
           key={`v${i}`}
           points={[i * gridSize, 0, i * gridSize, canvasSize.height]}
-          stroke="#ddd"
-          strokeWidth={1}
-          dash={[4, 4]}
+          stroke="rgba(0,0,0,0.06)"
+          strokeWidth={0.5}
           listening={false}
         />
       );
@@ -434,13 +631,31 @@ const CustomTemplateEditor = ({
         <Line
           key={`h${j}`}
           points={[0, j * gridSize, canvasSize.width, j * gridSize]}
-          stroke="#ddd"
-          strokeWidth={1}
-          dash={[4, 4]}
+          stroke="rgba(0,0,0,0.06)"
+          strokeWidth={0.5}
           listening={false}
         />
       );
     }
+    // Canvas center crosshair (subtle)
+    gridLines.push(
+      <Line
+        key="center-v"
+        points={[canvasSize.width / 2, 0, canvasSize.width / 2, canvasSize.height]}
+        stroke="rgba(99, 102, 241, 0.12)"
+        strokeWidth={0.5}
+        dash={[8, 8]}
+        listening={false}
+      />,
+      <Line
+        key="center-h"
+        points={[0, canvasSize.height / 2, canvasSize.width, canvasSize.height / 2]}
+        stroke="rgba(99, 102, 241, 0.12)"
+        strokeWidth={0.5}
+        dash={[8, 8]}
+        listening={false}
+      />
+    );
   }
 
   return (
@@ -460,17 +675,21 @@ const CustomTemplateEditor = ({
         scaleY={zoomScale}
         onClick={checkDeselect}
         onTap={checkDeselect}
-        onMouseDown={checkDeselect}
-        onTouchStart={checkDeselect}
+        /* ─── NO onMouseDown/onTouchStart here! ─── */
+        /* That was the bug: mousedown fires before click,     */
+        /* causing checkDeselect to null selectedId before      */
+        /* the element's onClick can set it. Removing these     */
+        /* two lines is the critical fix.                       */
       >
         <Layer>
           {showGrid && gridLines}
 
+          {/* Background image — listening={true} so clicking it deselects */}
           <Image
             image={image}
             width={canvasSize.width}
             height={canvasSize.height}
-            listening={false} // Allow clicking through image to deselect
+            listening={true}
           />
 
           {elements.map((el) => {
@@ -486,6 +705,8 @@ const CustomTemplateEditor = ({
                 });
                 setElements(updatedElements);
               },
+              onDragMoveSnap: handleDragMoveSnap,
+              onDragEndSnap: handleDragEndSnap,
             };
 
             return el.isQr ? (
@@ -495,6 +716,22 @@ const CustomTemplateEditor = ({
             );
           })}
         </Layer>
+
+        {/* Snap guide lines — separate layer so they render on top */}
+        {guides.length > 0 && (
+          <Layer listening={false}>
+            {guides.map((guide, i) => (
+              <Line
+                key={`guide-${i}`}
+                points={guide.points}
+                stroke={GUIDELINE_COLOR}
+                strokeWidth={1}
+                dash={GUIDELINE_DASH}
+                listening={false}
+              />
+            ))}
+          </Layer>
+        )}
       </Stage>
     </div>
   );
