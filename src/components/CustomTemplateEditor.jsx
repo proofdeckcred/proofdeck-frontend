@@ -210,13 +210,23 @@ const DraggableText = ({
           });
         }}
       >
-        {/* Hit-detection rectangle: invisible on screen, solid on hit canvas */}
+        {/* Hit-detection rectangle: fill="white" so Konva registers it on hit canvas.
+            sceneFunc draws nothing (or hover tint) so it's invisible on screen.
+            hitFunc guarantees solid colorKey pixels on the hit canvas for click detection. */}
         <Rect
           x={0}
           y={0}
           width={width}
           height={height}
-          fill="transparent"
+          fill="white"
+          sceneFunc={(context, shape) => {
+            if (isHovered && !isSelected) {
+              context.beginPath();
+              context.rect(0, 0, shape.width(), shape.height());
+              context.fillStyle = "rgba(99, 102, 241, 0.06)";
+              context.fill();
+            }
+          }}
           hitFunc={(context, shape) => {
             context.beginPath();
             context.rect(0, 0, shape.width(), shape.height());
@@ -224,20 +234,21 @@ const DraggableText = ({
             context.fillShape(shape);
           }}
           listening={true}
+          onClick={(e) => {
+            e.cancelBubble = true;
+            onSelect();
+          }}
+          onTap={(e) => {
+            e.cancelBubble = true;
+            onSelect();
+          }}
         />
-        {/* Visual border — dashed when unselected, tinted on hover */}
+        {/* Visual border — dashed when unselected */}
         <Rect
           x={0}
           y={0}
           width={width}
           height={height}
-          fill={
-            isSelected
-              ? "rgba(99, 102, 241, 0.04)"
-              : isHovered
-              ? "rgba(99, 102, 241, 0.06)"
-              : "transparent"
-          }
           stroke={
             isSelected
               ? "transparent"
@@ -250,7 +261,7 @@ const DraggableText = ({
           cornerRadius={2}
           listening={false}
         />
-        {/* Visible Text */}
+        {/* Visible Text — listening so clicks on text characters also select */}
         <Text
           x={0}
           y={0}
@@ -267,7 +278,15 @@ const DraggableText = ({
           letterSpacing={shapeProps.letterSpacing || 0}
           lineHeight={shapeProps.lineHeight || 1}
           textDecoration={shapeProps.textDecoration || ""}
-          listening={false}
+          listening={true}
+          onClick={(e) => {
+            e.cancelBubble = true;
+            onSelect();
+          }}
+          onTap={(e) => {
+            e.cancelBubble = true;
+            onSelect();
+          }}
         />
       </Group>
       {isSelected && (
@@ -412,6 +431,14 @@ const DraggableQR = ({
           strokeWidth={isHovered ? 1.5 : 1}
           cornerRadius={2}
           listening={true}
+          onClick={(e) => {
+            e.cancelBubble = true;
+            onSelect();
+          }}
+          onTap={(e) => {
+            e.cancelBubble = true;
+            onSelect();
+          }}
         />
         {/* QR grid pattern for visual clarity */}
         {(() => {
@@ -456,7 +483,15 @@ const DraggableQR = ({
           fontSize={Math.max(9, Math.min(12, width / 8))}
           fill="rgba(0,0,0,0.6)"
           fontStyle="bold"
-          listening={false}
+          listening={true}
+          onClick={(e) => {
+            e.cancelBubble = true;
+            onSelect();
+          }}
+          onTap={(e) => {
+            e.cancelBubble = true;
+            onSelect();
+          }}
         />
       </Group>
       {isSelected && (
