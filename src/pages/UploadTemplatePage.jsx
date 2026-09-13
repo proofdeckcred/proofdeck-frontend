@@ -560,7 +560,14 @@ const UploadTemplatePage = () => {
 
     stageRef.current.setPointersPositions(e);
     const pos = stageRef.current.getPointerPosition();
-    const placeholder = JSON.parse(e.dataTransfer.getData("text/plain"));
+    if (!pos) return;
+
+    let placeholder;
+    try {
+      placeholder = JSON.parse(e.dataTransfer.getData("text/plain"));
+    } catch {
+      return;
+    }
 
     const defaultWidth = placeholder.defaultWidth || 250;
     const isQr = placeholder.isQr || false;
@@ -569,14 +576,24 @@ const UploadTemplatePage = () => {
     const dropX = pos.x / zoomScale;
     const dropY = pos.y / zoomScale;
 
+    const elemW = isQr ? 100 : defaultWidth;
+    const elemH = isQr ? 100 : 30;
+
+    const elemX = Math.round(
+      Math.max(0, Math.min(canvasSize.width - elemW, dropX - elemW / 2))
+    );
+    const elemY = Math.round(
+      Math.max(0, Math.min(canvasSize.height - elemH, dropY - elemH / 2))
+    );
+
     const newElement = {
       id: `el_${Math.random().toString(36).substring(2, 11)}`,
       type: "placeholder",
       text: placeholder.value,
-      x: dropX - defaultWidth / 2,
-      y: dropY - 15,
-      width: defaultWidth,
-      height: 30,
+      x: elemX,
+      y: elemY,
+      width: elemW,
+      height: elemH,
       fontSize: 20,
       fontFamily: "Times New Roman",
       fill: "#000000",
@@ -586,13 +603,6 @@ const UploadTemplatePage = () => {
       verticalAlign: "middle",
       isQr,
     };
-
-    if (isQr) {
-      newElement.x = dropX - 50;
-      newElement.y = dropY - 50;
-      newElement.width = 100;
-      newElement.height = 100;
-    }
 
     setElements((prev) => [...prev, newElement]);
     setSelectedId(newElement.id);

@@ -1,4 +1,5 @@
 import React, { useRef, useEffect, useState, useCallback } from "react";
+import Konva from "konva";
 import {
   Stage,
   Layer,
@@ -129,13 +130,12 @@ const DraggableText = ({
 }) => {
   const groupRef = useRef();
   const trRef = useRef();
-  const [isHovered, setIsHovered] = useState(false);
 
   useEffect(() => {
     if (isSelected && trRef.current && groupRef.current) {
       trRef.current.nodes([groupRef.current]);
       trRef.current.forceUpdate();
-      trRef.current.getLayer().batchDraw();
+      trRef.current.getLayer()?.batchDraw();
     }
   }, [
     isSelected,
@@ -168,9 +168,6 @@ const DraggableText = ({
           e.cancelBubble = true;
           onSelect();
         }}
-        onDragStart={() => {
-          onSelect();
-        }}
         onDragMove={(e) => {
           if (onDragMoveSnap) {
             onDragMoveSnap(e, shapeProps.id, width, height);
@@ -183,14 +180,13 @@ const DraggableText = ({
             x: Math.round(e.target.x()),
             y: Math.round(e.target.y()),
           });
+          onSelect();
         }}
         onMouseEnter={(e) => {
-          setIsHovered(true);
           const stage = e.target.getStage();
           if (stage) stage.container().style.cursor = "move";
         }}
         onMouseLeave={(e) => {
-          setIsHovered(false);
           const stage = e.target.getStage();
           if (stage) stage.container().style.cursor = "default";
         }}
@@ -210,29 +206,17 @@ const DraggableText = ({
           });
         }}
       >
-        {/* Hit-detection rectangle: fill="white" so Konva registers it on hit canvas.
-            sceneFunc draws nothing (or hover tint) so it's invisible on screen.
-            hitFunc guarantees solid colorKey pixels on the hit canvas for click detection. */}
+        {/* Solid hit detection across entire bounding box + dashed visual guide */}
         <Rect
           x={0}
           y={0}
           width={width}
           height={height}
-          fill="white"
-          sceneFunc={(context, shape) => {
-            if (isHovered && !isSelected) {
-              context.beginPath();
-              context.rect(0, 0, shape.width(), shape.height());
-              context.fillStyle = "rgba(99, 102, 241, 0.06)";
-              context.fill();
-            }
-          }}
-          hitFunc={(context, shape) => {
-            context.beginPath();
-            context.rect(0, 0, shape.width(), shape.height());
-            context.closePath();
-            context.fillShape(shape);
-          }}
+          fill="rgba(0, 0, 0, 0.001)"
+          stroke={isSelected ? "transparent" : "rgba(99, 102, 241, 0.45)"}
+          strokeWidth={1}
+          dash={isSelected ? undefined : [4, 4]}
+          cornerRadius={2}
           listening={true}
           onClick={(e) => {
             e.cancelBubble = true;
@@ -243,25 +227,7 @@ const DraggableText = ({
             onSelect();
           }}
         />
-        {/* Visual border — dashed when unselected */}
-        <Rect
-          x={0}
-          y={0}
-          width={width}
-          height={height}
-          stroke={
-            isSelected
-              ? "transparent"
-              : isHovered
-              ? "rgba(99, 102, 241, 0.85)"
-              : "rgba(148, 163, 184, 0.45)"
-          }
-          strokeWidth={isHovered ? 1.5 : 1}
-          dash={isSelected ? undefined : [4, 4]}
-          cornerRadius={2}
-          listening={false}
-        />
-        {/* Visible Text — listening so clicks on text characters also select */}
+        {/* Visible Text */}
         <Text
           x={0}
           y={0}
@@ -278,15 +244,7 @@ const DraggableText = ({
           letterSpacing={shapeProps.letterSpacing || 0}
           lineHeight={shapeProps.lineHeight || 1}
           textDecoration={shapeProps.textDecoration || ""}
-          listening={true}
-          onClick={(e) => {
-            e.cancelBubble = true;
-            onSelect();
-          }}
-          onTap={(e) => {
-            e.cancelBubble = true;
-            onSelect();
-          }}
+          listening={false}
         />
       </Group>
       {isSelected && (
@@ -335,13 +293,12 @@ const DraggableQR = ({
 }) => {
   const groupRef = useRef();
   const trRef = useRef();
-  const [isHovered, setIsHovered] = useState(false);
 
   useEffect(() => {
     if (isSelected && trRef.current && groupRef.current) {
       trRef.current.nodes([groupRef.current]);
       trRef.current.forceUpdate();
-      trRef.current.getLayer().batchDraw();
+      trRef.current.getLayer()?.batchDraw();
     }
   }, [
     isSelected,
@@ -372,9 +329,6 @@ const DraggableQR = ({
           e.cancelBubble = true;
           onSelect();
         }}
-        onDragStart={() => {
-          onSelect();
-        }}
         onDragMove={(e) => {
           if (onDragMoveSnap) {
             onDragMoveSnap(e, shapeProps.id, width, height);
@@ -387,14 +341,13 @@ const DraggableQR = ({
             x: Math.round(e.target.x()),
             y: Math.round(e.target.y()),
           });
+          onSelect();
         }}
         onMouseEnter={(e) => {
-          setIsHovered(true);
           const stage = e.target.getStage();
           if (stage) stage.container().style.cursor = "move";
         }}
         onMouseLeave={(e) => {
-          setIsHovered(false);
           const stage = e.target.getStage();
           if (stage) stage.container().style.cursor = "default";
         }}
@@ -424,11 +377,10 @@ const DraggableQR = ({
           stroke={
             isSelected
               ? "transparent"
-              : isHovered
-              ? "rgba(99, 102, 241, 0.9)"
-              : "rgba(0, 0, 0, 0.7)"
+              : "rgba(99, 102, 241, 0.45)"
           }
-          strokeWidth={isHovered ? 1.5 : 1}
+          strokeWidth={1}
+          dash={isSelected ? undefined : [4, 4]}
           cornerRadius={2}
           listening={true}
           onClick={(e) => {
@@ -446,11 +398,11 @@ const DraggableQR = ({
           const cellW = width / cells;
           const cellH = height / cells;
           const qrPattern = [
-            [1,1,1,0,1],
-            [1,0,1,0,0],
-            [1,1,1,0,1],
-            [0,0,0,0,1],
-            [1,0,1,1,1],
+            [1, 1, 1, 0, 1],
+            [1, 0, 1, 0, 0],
+            [1, 1, 1, 0, 1],
+            [0, 0, 0, 1, 0],
+            [1, 0, 1, 1, 1],
           ];
           const rects = [];
           for (let r = 0; r < cells; r++) {
@@ -483,15 +435,7 @@ const DraggableQR = ({
           fontSize={Math.max(9, Math.min(12, width / 8))}
           fill="rgba(0,0,0,0.6)"
           fontStyle="bold"
-          listening={true}
-          onClick={(e) => {
-            e.cancelBubble = true;
-            onSelect();
-          }}
-          onTap={(e) => {
-            e.cancelBubble = true;
-            onSelect();
-          }}
+          listening={false}
         />
       </Group>
       {isSelected && (
@@ -532,7 +476,7 @@ const CustomTemplateEditor = ({
   zoomScale = 1,
 }) => {
   const [image] = useImage(backgroundImageUrl, "anonymous");
-  const [guides, setGuides] = useState([]);
+  const guidesLayerRef = useRef(null);
 
   // ── Keyboard: Precision Move, Delete, Duplicate, Deselect ──
   useEffect(() => {
@@ -621,7 +565,7 @@ const CustomTemplateEditor = ({
     [setSelectedId]
   );
 
-  // ── Snap-on-drag handler ──
+  // ── Snap-on-drag handler (imperative, zero React re-renders) ──
   const handleDragMoveSnap = useCallback(
     (e, nodeId, nodeW, nodeH) => {
       const node = e.target;
@@ -637,13 +581,32 @@ const CustomTemplateEditor = ({
       if (snap.x !== null) node.x(snap.x);
       if (snap.y !== null) node.y(snap.y);
 
-      setGuides(snap.guides);
+      const guidesLayer = guidesLayerRef.current;
+      if (guidesLayer) {
+        guidesLayer.destroyChildren();
+        snap.guides.forEach((guide) => {
+          guidesLayer.add(
+            new Konva.Line({
+              points: guide.points,
+              stroke: GUIDELINE_COLOR,
+              strokeWidth: 1,
+              dash: GUIDELINE_DASH,
+              listening: false,
+            })
+          );
+        });
+        guidesLayer.batchDraw();
+      }
     },
     [elements, canvasSize]
   );
 
   const handleDragEndSnap = useCallback(() => {
-    setGuides([]);
+    const guidesLayer = guidesLayerRef.current;
+    if (guidesLayer) {
+      guidesLayer.destroyChildren();
+      guidesLayer.batchDraw();
+    }
   }, []);
 
   // ── Grid lines ──
@@ -710,11 +673,6 @@ const CustomTemplateEditor = ({
         scaleY={zoomScale}
         onClick={checkDeselect}
         onTap={checkDeselect}
-        /* ─── NO onMouseDown/onTouchStart here! ─── */
-        /* That was the bug: mousedown fires before click,     */
-        /* causing checkDeselect to null selectedId before      */
-        /* the element's onClick can set it. Removing these     */
-        /* two lines is the critical fix.                       */
       >
         <Layer>
           {showGrid && gridLines}
@@ -752,21 +710,8 @@ const CustomTemplateEditor = ({
           })}
         </Layer>
 
-        {/* Snap guide lines — separate layer so they render on top */}
-        {guides.length > 0 && (
-          <Layer listening={false}>
-            {guides.map((guide, i) => (
-              <Line
-                key={`guide-${i}`}
-                points={guide.points}
-                stroke={GUIDELINE_COLOR}
-                strokeWidth={1}
-                dash={GUIDELINE_DASH}
-                listening={false}
-              />
-            ))}
-          </Layer>
-        )}
+        {/* Snap guide lines — dedicated layer updated imperatively for maximum performance */}
+        <Layer ref={guidesLayerRef} listening={false} />
       </Stage>
     </div>
   );
