@@ -35,6 +35,9 @@ const DraggableText = ({
   const handleSelect = (e) => {
     if (e) {
       e.cancelBubble = true;
+      if (e.evt) {
+        e.evt.cancelBubble = true;
+      }
     }
     onSelect();
   };
@@ -90,13 +93,26 @@ const DraggableText = ({
           });
         }}
       >
-        {/* Full-coverage Hit & Boundary Rectangle */}
+        {/* Full-coverage Hit Rectangle: Solid white with 0.001 opacity guarantees 100% reliable hit testing in Konva without obscuring template artwork */}
         <Rect
           x={0}
           y={0}
           width={width}
           height={height}
-          fill="transparent"
+          fill="#ffffff"
+          opacity={0.001}
+          listening={true}
+          onClick={handleSelect}
+          onTap={handleSelect}
+          onMouseDown={handleSelect}
+          onTouchStart={handleSelect}
+        />
+        {/* Visual Border Rectangle */}
+        <Rect
+          x={0}
+          y={0}
+          width={width}
+          height={height}
           stroke={
             isSelected
               ? "transparent"
@@ -107,17 +123,7 @@ const DraggableText = ({
           strokeWidth={isHovered ? 1.5 : 1}
           dash={isSelected ? undefined : [4, 4]}
           cornerRadius={2}
-          listening={true}
-          hitFunc={(context, shape) => {
-            context.beginPath();
-            context.rect(0, 0, shape.width(), shape.height());
-            context.closePath();
-            context.fillStrokeShape(shape);
-          }}
-          onClick={handleSelect}
-          onTap={handleSelect}
-          onMouseDown={handleSelect}
-          onTouchStart={handleSelect}
+          listening={false}
         />
         <Text
           x={0}
@@ -131,11 +137,7 @@ const DraggableText = ({
           align={shapeProps.align}
           fontStyle={shapeProps.fontStyle}
           verticalAlign={shapeProps.verticalAlign || "middle"}
-          listening={true}
-          onClick={handleSelect}
-          onTap={handleSelect}
-          onMouseDown={handleSelect}
-          onTouchStart={handleSelect}
+          listening={false}
         />
       </Group>
       {isSelected && (
@@ -182,6 +184,9 @@ const DraggableQR = ({
   const handleSelect = (e) => {
     if (e) {
       e.cancelBubble = true;
+      if (e.evt) {
+        e.evt.cancelBubble = true;
+      }
     }
     onSelect();
   };
@@ -253,12 +258,6 @@ const DraggableQR = ({
           strokeWidth={isHovered ? 1.5 : 1}
           cornerRadius={2}
           listening={true}
-          hitFunc={(context, shape) => {
-            context.beginPath();
-            context.rect(0, 0, shape.width(), shape.height());
-            context.closePath();
-            context.fillStrokeShape(shape);
-          }}
           onClick={handleSelect}
           onTap={handleSelect}
           onMouseDown={handleSelect}
@@ -274,11 +273,7 @@ const DraggableQR = ({
           verticalAlign="middle"
           fontSize={12}
           fill="black"
-          listening={true}
-          onClick={handleSelect}
-          onTap={handleSelect}
-          onMouseDown={handleSelect}
-          onTouchStart={handleSelect}
+          listening={false}
         />
       </Group>
       {isSelected && (
