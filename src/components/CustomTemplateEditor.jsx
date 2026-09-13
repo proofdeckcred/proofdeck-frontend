@@ -119,6 +119,7 @@ const getSnappedPosition = (nodeX, nodeY, nodeW, nodeH, snapLines) => {
 };
 
 // ─── DraggableText ──────────────────────────────────────────
+// NOTE: No Transformer here. A single global Transformer lives in CustomTemplateEditor.
 
 const DraggableText = ({
   shapeProps,
@@ -129,155 +130,104 @@ const DraggableText = ({
   onDragEndSnap,
 }) => {
   const groupRef = useRef();
-  const trRef = useRef();
-
-  useEffect(() => {
-    if (isSelected && trRef.current && groupRef.current) {
-      trRef.current.nodes([groupRef.current]);
-      trRef.current.forceUpdate();
-      trRef.current.getLayer()?.batchDraw();
-    }
-  }, [
-    isSelected,
-    shapeProps.x,
-    shapeProps.y,
-    shapeProps.width,
-    shapeProps.height,
-    shapeProps.fontSize,
-    shapeProps.fontFamily,
-    shapeProps.rotation,
-  ]);
 
   const width = shapeProps.width || 200;
   const height = shapeProps.height || 30;
 
   return (
-    <>
-      <Group
-        ref={groupRef}
-        id={shapeProps.id}
-        x={shapeProps.x}
-        y={shapeProps.y}
-        rotation={shapeProps.rotation || 0}
-        draggable
-        onClick={(e) => {
-          e.cancelBubble = true;
-          onSelect();
-        }}
-        onTap={(e) => {
-          e.cancelBubble = true;
-          onSelect();
-        }}
-        onDragMove={(e) => {
-          if (onDragMoveSnap) {
-            onDragMoveSnap(e, shapeProps.id, width, height);
-          }
-        }}
-        onDragEnd={(e) => {
-          if (onDragEndSnap) onDragEndSnap();
-          onChange({
-            ...shapeProps,
-            x: Math.round(e.target.x()),
-            y: Math.round(e.target.y()),
-          });
-          onSelect();
-        }}
-        onMouseEnter={(e) => {
-          const stage = e.target.getStage();
-          if (stage) stage.container().style.cursor = "move";
-        }}
-        onMouseLeave={(e) => {
-          const stage = e.target.getStage();
-          if (stage) stage.container().style.cursor = "default";
-        }}
-        onTransformEnd={() => {
-          const node = groupRef.current;
-          const scaleX = node.scaleX();
-          const scaleY = node.scaleY();
-          node.scaleX(1);
-          node.scaleY(1);
-          onChange({
-            ...shapeProps,
-            x: Math.round(node.x()),
-            y: Math.round(node.y()),
-            width: Math.max(20, Math.round(width * scaleX)),
-            height: Math.max(10, Math.round(height * scaleY)),
-            rotation: node.rotation(),
-          });
-        }}
-      >
-        {/* Solid hit detection across entire bounding box + dashed visual guide */}
-        <Rect
-          x={0}
-          y={0}
-          width={width}
-          height={height}
-          fill="rgba(0, 0, 0, 0.001)"
-          stroke={isSelected ? "transparent" : "rgba(99, 102, 241, 0.45)"}
-          strokeWidth={1}
-          dash={isSelected ? undefined : [4, 4]}
-          cornerRadius={2}
-          listening={true}
-          onClick={(e) => {
-            e.cancelBubble = true;
-            onSelect();
-          }}
-          onTap={(e) => {
-            e.cancelBubble = true;
-            onSelect();
-          }}
-        />
-        {/* Visible Text */}
-        <Text
-          x={0}
-          y={0}
-          width={width}
-          height={height}
-          text={shapeProps.text}
-          fontSize={shapeProps.fontSize}
-          fontFamily={shapeProps.fontFamily}
-          fill={shapeProps.fill}
-          align={shapeProps.align}
-          fontStyle={shapeProps.fontStyle}
-          verticalAlign={shapeProps.verticalAlign || "middle"}
-          opacity={shapeProps.opacity != null ? shapeProps.opacity : 1}
-          letterSpacing={shapeProps.letterSpacing || 0}
-          lineHeight={shapeProps.lineHeight || 1}
-          textDecoration={shapeProps.textDecoration || ""}
-          listening={false}
-        />
-      </Group>
-      {isSelected && (
-        <Transformer
-          ref={trRef}
-          keepRatio={false}
-          anchorStroke="#4f46e5"
-          anchorFill="#ffffff"
-          anchorSize={7}
-          anchorCornerRadius={2}
-          borderStroke="#4f46e5"
-          borderStrokeWidth={1.5}
-          rotateAnchorOffset={20}
-          rotateAnchorCursor="grab"
-          enabledAnchors={[
-            "top-left",
-            "top-center",
-            "top-right",
-            "middle-right",
-            "bottom-right",
-            "bottom-center",
-            "bottom-left",
-            "middle-left",
-          ]}
-          boundBoxFunc={(oldBox, newBox) => {
-            if (newBox.width < 15 || newBox.height < 10) {
-              return oldBox;
-            }
-            return newBox;
-          }}
-        />
-      )}
-    </>
+    <Group
+      ref={groupRef}
+      id={shapeProps.id}
+      x={shapeProps.x}
+      y={shapeProps.y}
+      rotation={shapeProps.rotation || 0}
+      draggable
+      onClick={(e) => {
+        e.cancelBubble = true;
+        onSelect();
+      }}
+      onTap={(e) => {
+        e.cancelBubble = true;
+        onSelect();
+      }}
+      onDragMove={(e) => {
+        if (onDragMoveSnap) {
+          onDragMoveSnap(e, shapeProps.id, width, height);
+        }
+      }}
+      onDragEnd={(e) => {
+        if (onDragEndSnap) onDragEndSnap();
+        onChange({
+          ...shapeProps,
+          x: Math.round(e.target.x()),
+          y: Math.round(e.target.y()),
+        });
+        onSelect();
+      }}
+      onMouseEnter={(e) => {
+        const stage = e.target.getStage();
+        if (stage) stage.container().style.cursor = "move";
+      }}
+      onMouseLeave={(e) => {
+        const stage = e.target.getStage();
+        if (stage) stage.container().style.cursor = "default";
+      }}
+      onTransformEnd={() => {
+        const node = groupRef.current;
+        if (!node) return;
+        const scaleX = node.scaleX();
+        const scaleY = node.scaleY();
+        node.scaleX(1);
+        node.scaleY(1);
+        onChange({
+          ...shapeProps,
+          x: Math.round(node.x()),
+          y: Math.round(node.y()),
+          width: Math.max(20, Math.round(width * scaleX)),
+          height: Math.max(10, Math.round(height * scaleY)),
+          rotation: node.rotation(),
+        });
+      }}
+    >
+      {/* FIX: rgba(255,255,255,0.01) → alpha≈3 in RGBA8 hit canvas (>0 = hittable).
+          Old fill rgba(0,0,0,0.001) rounded to alpha=0 in the hit canvas,
+          making Konva treat the entire rect as transparent. Every click fell
+          through to whatever element was rendered first underneath. */}
+      <Rect
+        x={0}
+        y={0}
+        width={width}
+        height={height}
+        fill="rgba(255,255,255,0.01)"
+        stroke={isSelected ? "transparent" : "rgba(99, 102, 241, 0.45)"}
+        strokeWidth={1}
+        dash={isSelected ? undefined : [4, 4]}
+        strokeScaleEnabled={false}
+        cornerRadius={2}
+        listening={true}
+        perfectDrawEnabled={false}
+        hitStrokeWidth={0}
+      />
+      {/* Text listening=true — contributes its own bounding-box hit surface */}
+      <Text
+        x={0}
+        y={0}
+        width={width}
+        height={height}
+        text={shapeProps.text}
+        fontSize={shapeProps.fontSize}
+        fontFamily={shapeProps.fontFamily}
+        fill={shapeProps.fill}
+        align={shapeProps.align}
+        fontStyle={shapeProps.fontStyle}
+        verticalAlign={shapeProps.verticalAlign || "middle"}
+        opacity={shapeProps.opacity != null ? shapeProps.opacity : 1}
+        letterSpacing={shapeProps.letterSpacing || 0}
+        lineHeight={shapeProps.lineHeight || 1}
+        textDecoration={shapeProps.textDecoration || ""}
+        listening={true}
+      />
+    </Group>
   );
 };
 
@@ -292,173 +242,124 @@ const DraggableQR = ({
   onDragEndSnap,
 }) => {
   const groupRef = useRef();
-  const trRef = useRef();
-
-  useEffect(() => {
-    if (isSelected && trRef.current && groupRef.current) {
-      trRef.current.nodes([groupRef.current]);
-      trRef.current.forceUpdate();
-      trRef.current.getLayer()?.batchDraw();
-    }
-  }, [
-    isSelected,
-    shapeProps.x,
-    shapeProps.y,
-    shapeProps.width,
-    shapeProps.height,
-    shapeProps.rotation,
-  ]);
 
   const width = shapeProps.width || 100;
   const height = shapeProps.height || 100;
 
   return (
-    <>
-      <Group
-        ref={groupRef}
-        id={shapeProps.id}
-        x={shapeProps.x}
-        y={shapeProps.y}
-        rotation={shapeProps.rotation || 0}
-        draggable
-        onClick={(e) => {
-          e.cancelBubble = true;
-          onSelect();
-        }}
-        onTap={(e) => {
-          e.cancelBubble = true;
-          onSelect();
-        }}
-        onDragMove={(e) => {
-          if (onDragMoveSnap) {
-            onDragMoveSnap(e, shapeProps.id, width, height);
-          }
-        }}
-        onDragEnd={(e) => {
-          if (onDragEndSnap) onDragEndSnap();
-          onChange({
-            ...shapeProps,
-            x: Math.round(e.target.x()),
-            y: Math.round(e.target.y()),
-          });
-          onSelect();
-        }}
-        onMouseEnter={(e) => {
-          const stage = e.target.getStage();
-          if (stage) stage.container().style.cursor = "move";
-        }}
-        onMouseLeave={(e) => {
-          const stage = e.target.getStage();
-          if (stage) stage.container().style.cursor = "default";
-        }}
-        onTransformEnd={() => {
-          const node = groupRef.current;
-          const scaleX = node.scaleX();
-          const scaleY = node.scaleY();
-          node.scaleX(1);
-          node.scaleY(1);
-          onChange({
-            ...shapeProps,
-            x: Math.round(node.x()),
-            y: Math.round(node.y()),
-            width: Math.max(20, Math.round(width * scaleX)),
-            height: Math.max(20, Math.round(height * scaleY)),
-            rotation: node.rotation(),
-          });
-        }}
-      >
-        {/* QR background + hit area */}
-        <Rect
-          x={0}
-          y={0}
-          width={width}
-          height={height}
-          fill="white"
-          stroke={
-            isSelected
-              ? "transparent"
-              : "rgba(99, 102, 241, 0.45)"
-          }
-          strokeWidth={1}
-          dash={isSelected ? undefined : [4, 4]}
-          cornerRadius={2}
-          listening={true}
-          onClick={(e) => {
-            e.cancelBubble = true;
-            onSelect();
-          }}
-          onTap={(e) => {
-            e.cancelBubble = true;
-            onSelect();
-          }}
-        />
-        {/* QR grid pattern for visual clarity */}
-        {(() => {
-          const cells = 5;
-          const cellW = width / cells;
-          const cellH = height / cells;
-          const qrPattern = [
-            [1, 1, 1, 0, 1],
-            [1, 0, 1, 0, 0],
-            [1, 1, 1, 0, 1],
-            [0, 0, 0, 1, 0],
-            [1, 0, 1, 1, 1],
-          ];
-          const rects = [];
-          for (let r = 0; r < cells; r++) {
-            for (let c = 0; c < cells; c++) {
-              if (qrPattern[r][c]) {
-                rects.push(
-                  <Rect
-                    key={`qr-${r}-${c}`}
-                    x={c * cellW + cellW * 0.15}
-                    y={r * cellH + cellH * 0.15}
-                    width={cellW * 0.7}
-                    height={cellH * 0.7}
-                    fill="rgba(0,0,0,0.15)"
-                    listening={false}
-                  />
-                );
-              }
+    <Group
+      ref={groupRef}
+      id={shapeProps.id}
+      x={shapeProps.x}
+      y={shapeProps.y}
+      rotation={shapeProps.rotation || 0}
+      draggable
+      onClick={(e) => {
+        e.cancelBubble = true;
+        onSelect();
+      }}
+      onTap={(e) => {
+        e.cancelBubble = true;
+        onSelect();
+      }}
+      onDragMove={(e) => {
+        if (onDragMoveSnap) {
+          onDragMoveSnap(e, shapeProps.id, width, height);
+        }
+      }}
+      onDragEnd={(e) => {
+        if (onDragEndSnap) onDragEndSnap();
+        onChange({
+          ...shapeProps,
+          x: Math.round(e.target.x()),
+          y: Math.round(e.target.y()),
+        });
+        onSelect();
+      }}
+      onMouseEnter={(e) => {
+        const stage = e.target.getStage();
+        if (stage) stage.container().style.cursor = "move";
+      }}
+      onMouseLeave={(e) => {
+        const stage = e.target.getStage();
+        if (stage) stage.container().style.cursor = "default";
+      }}
+      onTransformEnd={() => {
+        const node = groupRef.current;
+        if (!node) return;
+        const scaleX = node.scaleX();
+        const scaleY = node.scaleY();
+        node.scaleX(1);
+        node.scaleY(1);
+        onChange({
+          ...shapeProps,
+          x: Math.round(node.x()),
+          y: Math.round(node.y()),
+          width: Math.max(20, Math.round(width * scaleX)),
+          height: Math.max(20, Math.round(height * scaleY)),
+          rotation: node.rotation(),
+        });
+      }}
+    >
+      {/* QR background + hit area — white fill = alpha 255, always hittable */}
+      <Rect
+        x={0}
+        y={0}
+        width={width}
+        height={height}
+        fill="white"
+        stroke={isSelected ? "transparent" : "rgba(99, 102, 241, 0.45)"}
+        strokeWidth={1}
+        dash={isSelected ? undefined : [4, 4]}
+        cornerRadius={2}
+        listening={true}
+      />
+      {/* QR grid pattern for visual clarity */}
+      {(() => {
+        const cells = 5;
+        const cellW = width / cells;
+        const cellH = height / cells;
+        const qrPattern = [
+          [1, 1, 1, 0, 1],
+          [1, 0, 1, 0, 0],
+          [1, 1, 1, 0, 1],
+          [0, 0, 0, 1, 0],
+          [1, 0, 1, 1, 1],
+        ];
+        const rects = [];
+        for (let r = 0; r < cells; r++) {
+          for (let c = 0; c < cells; c++) {
+            if (qrPattern[r][c]) {
+              rects.push(
+                <Rect
+                  key={`qr-${r}-${c}`}
+                  x={c * cellW + cellW * 0.15}
+                  y={r * cellH + cellH * 0.15}
+                  width={cellW * 0.7}
+                  height={cellH * 0.7}
+                  fill="rgba(0,0,0,0.15)"
+                  listening={false}
+                />
+              );
             }
           }
-          return rects;
-        })()}
-        <Text
-          x={0}
-          y={0}
-          text="QR Code"
-          width={width}
-          height={height}
-          align="center"
-          verticalAlign="middle"
-          fontSize={Math.max(9, Math.min(12, width / 8))}
-          fill="rgba(0,0,0,0.6)"
-          fontStyle="bold"
-          listening={false}
-        />
-      </Group>
-      {isSelected && (
-        <Transformer
-          ref={trRef}
-          keepRatio={true}
-          anchorStroke="#4f46e5"
-          anchorFill="#ffffff"
-          anchorSize={7}
-          anchorCornerRadius={2}
-          borderStroke="#4f46e5"
-          borderStrokeWidth={1.5}
-          rotateAnchorOffset={20}
-          rotateAnchorCursor="grab"
-          boundBoxFunc={(oldBox, newBox) => {
-            if (newBox.width < 20 || newBox.height < 20) {
-              return oldBox;
-            }
-            return newBox;
-          }}
-        />
-      )}
-    </>
+        }
+        return rects;
+      })()}
+      <Text
+        x={0}
+        y={0}
+        text="QR Code"
+        width={width}
+        height={height}
+        align="center"
+        verticalAlign="middle"
+        fontSize={Math.max(9, Math.min(12, width / 8))}
+        fill="rgba(0,0,0,0.6)"
+        fontStyle="bold"
+        listening={false}
+      />
+    </Group>
   );
 };
 
@@ -477,6 +378,27 @@ const CustomTemplateEditor = ({
 }) => {
   const [image] = useImage(backgroundImageUrl, "anonymous");
   const guidesLayerRef = useRef(null);
+
+  // ── SINGLE global Transformer ──
+  // One Transformer for the entire canvas. When selectedId changes,
+  // this effect finds the Konva node by id and attaches it.
+  // Having one Transformer per element causes stale ref conflicts — only
+  // the first-rendered element responds to clicks/drags.
+  const trRef = useRef();
+
+  useEffect(() => {
+    if (!trRef.current || !stageRef?.current) return;
+    if (selectedId) {
+      const node = stageRef.current.findOne("#" + selectedId);
+      if (node) {
+        trRef.current.nodes([node]);
+        trRef.current.getLayer()?.batchDraw();
+      }
+    } else {
+      trRef.current.nodes([]);
+      trRef.current.getLayer()?.batchDraw();
+    }
+  }, [selectedId, stageRef]);
 
   // ── Keyboard: Precision Move, Delete, Duplicate, Deselect ──
   useEffect(() => {
@@ -708,6 +630,38 @@ const CustomTemplateEditor = ({
               <DraggableText {...props} />
             );
           })}
+
+          {/* ── SINGLE global Transformer ──
+              Wired to the selected node via the useEffect above.
+              This is the ONLY Transformer; per-element ones were removed. */}
+          <Transformer
+            ref={trRef}
+            keepRatio={false}
+            anchorStroke="#4f46e5"
+            anchorFill="#ffffff"
+            anchorSize={8}
+            anchorCornerRadius={2}
+            borderStroke="#4f46e5"
+            borderStrokeWidth={1.5}
+            rotateAnchorOffset={20}
+            rotateAnchorCursor="grab"
+            enabledAnchors={[
+              "top-left",
+              "top-center",
+              "top-right",
+              "middle-right",
+              "bottom-right",
+              "bottom-center",
+              "bottom-left",
+              "middle-left",
+            ]}
+            boundBoxFunc={(oldBox, newBox) => {
+              if (newBox.width < 15 || newBox.height < 10) {
+                return oldBox;
+              }
+              return newBox;
+            }}
+          />
         </Layer>
 
         {/* Snap guide lines — dedicated layer updated imperatively for maximum performance */}
