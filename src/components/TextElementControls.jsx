@@ -8,6 +8,9 @@ import {
   AlignLeft,
   AlignCenter,
   AlignRight,
+  AlignVerticalJustifyStart,
+  AlignVerticalJustifyCenter,
+  AlignVerticalJustifyEnd,
   ArrowUpToLine,
   ArrowDownToLine,
   ChevronUp,
@@ -367,87 +370,132 @@ const TextElementControls = ({ element, onUpdate, onDelete, onDone }) => {
         )}
       </div>
 
-      {/* Formatting: Bold, Italic, Underline, Strikethrough */}
-      <div className="grid grid-cols-2 gap-3">
-        <div>
-          <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mb-1">Styles</label>
-          <div className="flex rounded-md border border-gray-200 p-0.5 w-max bg-gray-50">
-            <button
-              onClick={() => handleStyleToggle("bold")}
-              className={`p-1.5 rounded transition-all cursor-pointer ${
-                element.fontStyle?.includes("bold")
-                  ? "bg-indigo-600 text-white font-bold"
-                  : "text-gray-500 hover:text-gray-800"
-              }`}
-              title="Bold"
-            >
-              <Bold size={11} />
-            </button>
-            <button
-              onClick={() => handleStyleToggle("italic")}
-              className={`p-1.5 rounded transition-all cursor-pointer ${
-                element.fontStyle?.includes("italic")
-                  ? "bg-indigo-600 text-white italic"
-                  : "text-gray-500 hover:text-gray-800"
-              }`}
-              title="Italic"
-            >
-              <Italic size={11} />
-            </button>
-            <button
-              onClick={() => handleDecorationToggle("underline")}
-              className={`p-1.5 rounded transition-all cursor-pointer ${
-                element.textDecoration?.includes("underline")
-                  ? "bg-indigo-600 text-white"
-                  : "text-gray-500 hover:text-gray-800"
-              }`}
-              title="Underline"
-            >
-              <Underline size={11} />
-            </button>
-            <button
-              onClick={() => handleDecorationToggle("line-through")}
-              className={`p-1.5 rounded transition-all cursor-pointer ${
-                element.textDecoration?.includes("line-through")
-                  ? "bg-indigo-600 text-white"
-                  : "text-gray-500 hover:text-gray-800"
-              }`}
-              title="Strikethrough"
-            >
-              <Strikethrough size={11} />
-            </button>
+      {/* Formatting: Bold, Italic, Underline, Strikethrough & Alignments */}
+      <div className="space-y-2.5">
+        <div className="grid grid-cols-2 gap-2">
+          <div>
+            <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mb-1">Styles</label>
+            <div className="flex rounded-md border border-gray-200 p-0.5 w-max bg-gray-50">
+              <button
+                onClick={() => handleStyleToggle("bold")}
+                className={`p-1.5 rounded transition-all cursor-pointer ${
+                  element.fontStyle?.includes("bold")
+                    ? "bg-indigo-600 text-white font-bold"
+                    : "text-gray-500 hover:text-gray-800"
+                }`}
+                title="Bold"
+              >
+                <Bold size={11} />
+              </button>
+              <button
+                onClick={() => handleStyleToggle("italic")}
+                className={`p-1.5 rounded transition-all cursor-pointer ${
+                  element.fontStyle?.includes("italic")
+                    ? "bg-indigo-600 text-white italic"
+                    : "text-gray-500 hover:text-gray-800"
+                }`}
+                title="Italic"
+              >
+                <Italic size={11} />
+              </button>
+              <button
+                onClick={() => handleDecorationToggle("underline")}
+                className={`p-1.5 rounded transition-all cursor-pointer ${
+                  element.textDecoration?.includes("underline")
+                    ? "bg-indigo-600 text-white"
+                    : "text-gray-500 hover:text-gray-800"
+                }`}
+                title="Underline"
+              >
+                <Underline size={11} />
+              </button>
+              <button
+                onClick={() => handleDecorationToggle("line-through")}
+                className={`p-1.5 rounded transition-all cursor-pointer ${
+                  element.textDecoration?.includes("line-through")
+                    ? "bg-indigo-600 text-white"
+                    : "text-gray-500 hover:text-gray-800"
+                }`}
+                title="Strikethrough"
+              >
+                <Strikethrough size={11} />
+              </button>
+            </div>
+          </div>
+
+          <div>
+            <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mb-1">H-Align</label>
+            <div className="flex rounded-md border border-gray-200 p-0.5 w-max bg-gray-50">
+              <button
+                onClick={() => onUpdate({ align: "left" })}
+                className={`p-1.5 rounded transition-all cursor-pointer ${
+                  (!element.align || element.align === "left") ? "bg-indigo-600 text-white" : "text-gray-500 hover:text-gray-800"
+                }`}
+                title="Align Left"
+              >
+                <AlignLeft size={11} />
+              </button>
+              <button
+                onClick={() => onUpdate({ align: "center" })}
+                className={`p-1.5 rounded transition-all cursor-pointer ${
+                  element.align === "center" ? "bg-indigo-600 text-white" : "text-gray-500 hover:text-gray-800"
+                }`}
+                title="Align Center"
+              >
+                <AlignCenter size={11} />
+              </button>
+              <button
+                onClick={() => onUpdate({ align: "right" })}
+                className={`p-1.5 rounded transition-all cursor-pointer ${
+                  element.align === "right" ? "bg-indigo-600 text-white" : "text-gray-500 hover:text-gray-800"
+                }`}
+                title="Align Right"
+              >
+                <AlignRight size={11} />
+              </button>
+            </div>
           </div>
         </div>
 
+        {/* Vertical Align */}
         <div>
-          <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mb-1">Align</label>
-          <div className="flex rounded-md border border-gray-200 p-0.5 w-max bg-gray-50">
+          <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mb-1">V-Align (Vertical)</label>
+          <div className="flex rounded-md border border-gray-200 p-0.5 w-max bg-gray-50 gap-0.5">
             <button
-              onClick={() => onUpdate({ align: "left" })}
-              className={`p-1.5 rounded transition-all cursor-pointer ${
-                element.align === "left" ? "bg-indigo-600 text-white" : "text-gray-500 hover:text-gray-800"
+              onClick={() => onUpdate({ verticalAlign: "top" })}
+              className={`px-2 py-1 rounded text-[10px] font-semibold flex items-center gap-1 transition-all cursor-pointer ${
+                element.verticalAlign === "top"
+                  ? "bg-indigo-600 text-white shadow-sm"
+                  : "text-gray-500 hover:text-gray-800"
               }`}
-              title="Align Left"
+              title="Align Top"
             >
-              <AlignLeft size={11} />
+              <AlignVerticalJustifyStart size={11} />
+              <span>Top</span>
             </button>
             <button
-              onClick={() => onUpdate({ align: "center" })}
-              className={`p-1.5 rounded transition-all cursor-pointer ${
-                element.align === "center" ? "bg-indigo-600 text-white" : "text-gray-500 hover:text-gray-800"
+              onClick={() => onUpdate({ verticalAlign: "middle" })}
+              className={`px-2 py-1 rounded text-[10px] font-semibold flex items-center gap-1 transition-all cursor-pointer ${
+                (!element.verticalAlign || element.verticalAlign === "middle")
+                  ? "bg-indigo-600 text-white shadow-sm"
+                  : "text-gray-500 hover:text-gray-800"
               }`}
-              title="Align Center"
+              title="Align Middle"
             >
-              <AlignCenter size={11} />
+              <AlignVerticalJustifyCenter size={11} />
+              <span>Middle</span>
             </button>
             <button
-              onClick={() => onUpdate({ align: "right" })}
-              className={`p-1.5 rounded transition-all cursor-pointer ${
-                element.align === "right" ? "bg-indigo-600 text-white" : "text-gray-500 hover:text-gray-800"
+              onClick={() => onUpdate({ verticalAlign: "bottom" })}
+              className={`px-2 py-1 rounded text-[10px] font-semibold flex items-center gap-1 transition-all cursor-pointer ${
+                element.verticalAlign === "bottom"
+                  ? "bg-indigo-600 text-white shadow-sm"
+                  : "text-gray-500 hover:text-gray-800"
               }`}
-              title="Align Right"
+              title="Align Bottom"
             >
-              <AlignRight size={11} />
+              <AlignVerticalJustifyEnd size={11} />
+              <span>Bottom</span>
             </button>
           </div>
         </div>

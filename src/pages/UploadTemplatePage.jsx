@@ -323,6 +323,8 @@ const UploadTemplatePage = () => {
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
   const [selectedId, setSelectedId] = useState(null);
   const [canvasSize, setCanvasSize] = useState({ width: 842, height: 595 });
+  const [customVariables, setCustomVariables] = useState([]);
+  const [newVarName, setNewVarName] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoading, setIsLoading] = useState(!!templateId);
   const [showGrid, setShowGrid] = useState(true);
@@ -423,33 +425,81 @@ const UploadTemplatePage = () => {
       const fetchTemplateData = async () => {
         try {
           const response = await getTemplate(templateId);
-          const { title, layout_data } = response.data;
-          setTemplateTitle(title);
+          const { title } = response.data;
+          setTemplateTitle(title || "");
 
-          if (layout_data) {
-            if (layout_data.type) setTemplateType(layout_data.type);
-
-            const loadedElements = (layout_data.elements || []).map(
-              (el, index) => ({
-                ...el,
-                id:
-                  el.id ||
-                  `el_${Math.random().toString(36).substring(2, 11)}_${index}`,
-              })
-            );
-            setElements(loadedElements);
-            setCanvasSize(layout_data.canvas || { width: 842, height: 595 });
-            if (layout_data.background?.image) {
-              setTemplateImageUrl(
-                layout_data.background.image.startsWith("data:")
-                  ? layout_data.background.image
-                  : `${SERVER_BASE_URL}${layout_data.background.image}`
-              );
+          let layoutData = response.data.layout_data;
+          if (typeof layoutData === "string") {
+            try {
+              layoutData = JSON.parse(layoutData);
+            } catch (e) {
+              console.error("Failed to parse layout_data:", e);
+              layoutData = {};
             }
-            setHistory([loadedElements]);
-            setCurrentStep(0);
           }
+          layoutData = layoutData || {};
+
+          if (layoutData.type) setTemplateType(layoutData.type);
+
+          const loadedElements = (layoutData.elements || []).map(
+            (el, index) => ({
+              ...el,
+              id:
+                el.id ||
+                `el_${Math.random().toString(36).substring(2, 11)}_${index}`,
+              verticalAlign: el.verticalAlign || "middle",
+              align: el.align || (el.isQr ? "center" : "left"),
+            })
+          );
+          setElements(loadedElements);
+          setCanvasSize(layoutData.canvas || { width: 842, height: 595 });
+
+          // Extract existing custom variables from layout_data and from elements
+          const customVars = layoutData.custom_fields || [];
+          const customFromElements = [];
+          const standardTags = new Set([
+            "recipient_name", "course_title", "issue_date", "issuer_name",
+            "verification_id", "signature", "qr_code", "amount"
+          ]);
+          loadedElements.forEach((el) => {
+            if (el.text) {
+              const matches = el.text.match(/{{([^}]+)}}/g);
+              if (matches) {
+                matches.forEach((m) => {
+                  const tag = m.replace(/[{}]/g, "").trim().toLowerCase();
+                  if (!standardTags.has(tag)) {
+                    const formattedName = tag
+                      .split("_")
+                      .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+                      .join(" ");
+                    if (!customVars.some((v) => v.value === `{{${tag}}}`) && !customFromElements.some((v) => v.value === `{{${tag}}}`)) {
+                      customFromElements.push({
+                        name: formattedName,
+                        value: `{{${tag}}}`,
+                        defaultWidth: 250,
+                      });
+                    }
+                  }
+                });
+              }
+            }
+          });
+          setCustomVariables([...customVars, ...customFromElements]);
+
+          const rawBg = layoutData.background?.image || response.data.background_url;
+          if (rawBg) {
+            let fullBgUrl = rawBg;
+            if (!rawBg.startsWith("data:") && !rawBg.startsWith("blob:") && !rawBg.startsWith("http://") && !rawBg.startsWith("https://")) {
+              const cleanBase = SERVER_BASE_URL.replace(/\/+$/, "");
+              const cleanPath = rawBg.startsWith("/") ? rawBg : `/${rawBg}`;
+              fullBgUrl = `${cleanBase}${cleanPath}`;
+            }
+            setTemplateImageUrl(fullBgUrl);
+          }
+          setHistory([loadedElements]);
+          setCurrentStep(0);
         } catch (error) {
+          console.error("Fetch template error:", error);
           toast.error("Failed to load template data.");
           navigate("/dashboard/templates");
         } finally {
@@ -609,6 +659,42 @@ const UploadTemplatePage = () => {
     setIsRightSidebarOpen(true);
   };
 
+  const handleAddCustomVariable = () => {
+    if (!newVarName.trim()) return;
+    const cleanTag = newVarName
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9_]/g, "_")
+      .replace(/^_+|_+$/g, "");
+    
+    if (!cleanTag) return;
+    const value = `{{${cleanTag}}}`;
+
+    if (
+      activePlaceholders.some((p) => p.value === value) ||
+      customVariables.some((cv) => cv.value === value)
+    ) {
+      toast.error("A variable with this name already exists.");
+      return;
+    }
+
+    const formattedName = newVarName.trim();
+    const newVar = {
+      name: formattedName,
+      value,
+      defaultWidth: 250,
+      isCustom: true,
+    };
+
+    setCustomVariables((prev) => [...prev, newVar]);
+    setNewVarName("");
+    toast.success(`Added "${formattedName}" variable!`);
+  };
+
+  const handleDeleteCustomVariable = (varValue) => {
+    setCustomVariables((prev) => prev.filter((v) => v.value !== varValue));
+  };
+
   const handleSaveTemplate = async () => {
     if (!templateTitle.trim())
       return toast.error("Please provide a title for your template.");
@@ -621,6 +707,7 @@ const UploadTemplatePage = () => {
     const layoutData = {
       type: templateType,
       canvas: canvasSize,
+      custom_fields: customVariables,
       elements: elements.map((el) => ({
         id: el.id,
         type: "placeholder",
@@ -632,18 +719,25 @@ const UploadTemplatePage = () => {
         fontSize: el.fontSize,
         fontFamily: el.fontFamily,
         fill: el.fill,
-        align: el.align,
-        fontStyle: el.fontStyle,
-        rotation: el.rotation,
-        verticalAlign: el.verticalAlign,
-        isQr: el.isQr,
+        align: el.align || "left",
+        fontStyle: el.fontStyle || "normal",
+        rotation: el.rotation || 0,
+        verticalAlign: el.verticalAlign || "middle",
+        isQr: !!el.isQr,
       })),
     };
 
     if (!templateImageFile && templateImageUrl) {
-      const relativePath = templateImageUrl.startsWith("data:")
-        ? templateImageUrl
-        : templateImageUrl.replace(SERVER_BASE_URL, "");
+      let relativePath = templateImageUrl;
+      if (!relativePath.startsWith("data:") && !relativePath.startsWith("blob:")) {
+        try {
+          const urlObj = new URL(relativePath);
+          relativePath = urlObj.pathname;
+        } catch (e) {
+          const cleanServer = SERVER_BASE_URL.replace(/\/+$/, "");
+          relativePath = relativePath.replace(cleanServer, "");
+        }
+      }
       layoutData.background = { image: relativePath };
     }
 
@@ -846,6 +940,70 @@ const UploadTemplatePage = () => {
                       onAdd={() => handleAddPlaceholder(p)}
                     />
                   ))}
+                </div>
+
+                {/* Custom Variables Section */}
+                <div className="mt-4 pt-3 border-t border-gray-100">
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">
+                      Custom Fields
+                    </span>
+                    <span className="text-[8px] text-indigo-500 font-medium">
+                      + Add extra
+                    </span>
+                  </div>
+
+                  <div className="flex gap-1 mb-2">
+                    <input
+                      type="text"
+                      placeholder="e.g. Assistant Sig"
+                      value={newVarName}
+                      onChange={(e) => setNewVarName(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          handleAddCustomVariable();
+                        }
+                      }}
+                      className="flex-1 px-2 py-1 text-[11px] border border-gray-200 rounded focus:outline-none focus:border-indigo-500 bg-white"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleAddCustomVariable}
+                      className="bg-indigo-600 hover:bg-indigo-700 text-white px-2 py-1 rounded text-xs font-bold transition-all shadow-xs shrink-0 flex items-center justify-center"
+                      title="Add Custom Variable"
+                    >
+                      <Plus size={12} />
+                    </button>
+                  </div>
+
+                  {customVariables.length > 0 ? (
+                    <div className="space-y-1">
+                      {customVariables.map((cv) => (
+                        <div key={cv.value} className="relative group/cv">
+                          <DraggablePlaceholder
+                            placeholder={cv}
+                            onAdd={() => handleAddPlaceholder(cv)}
+                          />
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDeleteCustomVariable(cv.value);
+                            }}
+                            className="absolute right-1.5 top-2 text-gray-300 hover:text-red-500 opacity-0 group-hover/cv:opacity-100 transition-opacity p-0.5 bg-white/90 rounded"
+                            title="Remove variable"
+                          >
+                            <Trash2 size={11} />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-[9px] text-gray-400 italic">
+                      Add variables like Assistant Signature, Instructor, etc.
+                    </p>
+                  )}
                 </div>
               </div>
             ) : leftTab === "presets" ? (

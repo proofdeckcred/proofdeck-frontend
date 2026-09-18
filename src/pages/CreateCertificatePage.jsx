@@ -1,6 +1,6 @@
 // frontend/src/pages/CreateCertificatePage.jsx
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useNavigate, useParams, Link, useLocation } from "react-router-dom";
 import Papa from "papaparse";
 import {
@@ -33,6 +33,8 @@ import {
   UploadCloud,
   Download,
   Users,
+  Pencil,
+  Sparkles,
 } from "lucide-react";
 import { Spinner } from "react-bootstrap";
 import toast, { Toaster } from "react-hot-toast";
@@ -203,9 +205,49 @@ const CreateCertificatePage = () => {
     setCustomFields(newFields);
   };
 
+  // Detect template-specific custom placeholders (e.g. {{assistant_signature}})
+  const templateCustomPlaceholders = useMemo(() => {
+    if (!selectedTemplate || selectedTemplate.layout_style !== "visual") return [];
+    let layoutData = selectedTemplate.layout_data;
+    if (typeof layoutData === "string") {
+      try { layoutData = JSON.parse(layoutData); } catch (e) { layoutData = {}; }
+    }
+    const standard = new Set([
+      "recipient_name", "course_title", "issue_date", "issuer_name",
+      "signature", "verification_id", "qr_code", "amount"
+    ]);
+    const detected = [];
+    (layoutData?.elements || []).forEach((el) => {
+      if (el.text) {
+        const matches = el.text.match(/{{([^}]+)}}/g);
+        if (matches) {
+          matches.forEach((m) => {
+            const rawKey = m.replace(/[{}]/g, "").trim();
+            const lowerKey = rawKey.toLowerCase();
+            if (!standard.has(lowerKey) && !detected.some((d) => d.key === lowerKey)) {
+              const label = rawKey
+                .replace(/_/g, " ")
+                .split(" ")
+                .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+                .join(" ");
+              detected.push({ key: lowerKey, label });
+            }
+          });
+        }
+      }
+    });
+    (layoutData?.custom_fields || []).forEach((cf) => {
+      const cleanKey = cf.value.replace(/[{}]/g, "").trim().toLowerCase();
+      if (!standard.has(cleanKey) && !detected.some((d) => d.key === cleanKey)) {
+        detected.push({ key: cleanKey, label: cf.name || cleanKey });
+      }
+    });
+    return detected;
+  }, [selectedTemplate]);
+
   // Sync custom fields & amount
   useEffect(() => {
-    const extras = {};
+    const extras = { ...(formData.extra_fields || {}) };
     if (amount) extras.amount = amount;
 
     customFields.forEach((field) => {
@@ -613,6 +655,44 @@ const CreateCertificatePage = () => {
                   onChange={handleChange}
                 />
 
+                {/* TEMPLATE CUSTOM PLACEHOLDERS (Auto-mapped) */}
+                {templateCustomPlaceholders.length > 0 && (
+                  <div className="pt-3.5 border-t border-slate-100">
+                    <div className="flex items-center gap-1.5 mb-2.5">
+                      <Sparkles size={13} className="text-indigo-600" />
+                      <label className="block text-xs font-bold text-slate-800">
+                        Template Custom Fields
+                      </label>
+                    </div>
+                    <div className="space-y-2 bg-indigo-50/40 p-2.5 rounded-xl border border-indigo-100/70">
+                      {templateCustomPlaceholders.map(({ key, label }) => (
+                        <div key={key}>
+                          <label className="block text-[11px] font-semibold text-slate-700 mb-1 flex items-center justify-between">
+                            <span>{label}</span>
+                            <span className="text-[9px] font-mono text-indigo-500 font-normal">{`{{${key}}}`}</span>
+                          </label>
+                          <input
+                            type="text"
+                            placeholder={`Enter ${label}...`}
+                            className="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded text-xs focus:outline-none focus:border-indigo-500 shadow-xs"
+                            value={formData.extra_fields?.[key] || ""}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              setFormData((prev) => ({
+                                ...prev,
+                                extra_fields: {
+                                  ...(prev.extra_fields || {}),
+                                  [key]: val,
+                                },
+                              }));
+                            }}
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
                 {/* DYNAMIC FIELDS SECTION */}
                 <div className="pt-3.5 border-t border-slate-100">
                   <div className="flex justify-between items-center mb-2.5">
@@ -784,15 +864,28 @@ const CreateCertificatePage = () => {
                 <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-status-pulse" />
                 <span>WYSIWYG Live Preview</span>
               </h3>
-              {selectedTemplate && (
-                <button
-                  className="p-1.5 text-slate-500 hover:text-slate-800 hover:bg-white border border-transparent hover:border-slate-200 rounded transition-all shadow-sm bg-white/50 flex items-center gap-1.5 text-xs font-medium"
-                  onClick={() => setShowFullscreen(true)}
-                >
-                  <Maximize2 size={14} />
-                  <span>Expand</span>
-                </button>
-              )}
+              <div className="flex items-center gap-1.5">
+                {selectedTemplate && selectedTemplate.layout_style === "visual" && !selectedTemplate.is_public && (
+                  <button
+                    type="button"
+                    onClick={() => navigate(`/dashboard/upload-template/${selectedTemplate.id}`)}
+                    className="p-1.5 text-indigo-600 hover:text-indigo-800 hover:bg-indigo-50 border border-indigo-200 rounded transition-all shadow-xs flex items-center gap-1 text-xs font-semibold"
+                    title="Edit Template Layout in Visual Editor"
+                  >
+                    <Pencil size={12} />
+                    <span>Edit Template</span>
+                  </button>
+                )}
+                {selectedTemplate && (
+                  <button
+                    className="p-1.5 text-slate-500 hover:text-slate-800 hover:bg-white border border-transparent hover:border-slate-200 rounded transition-all shadow-sm bg-white/50 flex items-center gap-1.5 text-xs font-medium"
+                    onClick={() => setShowFullscreen(true)}
+                  >
+                    <Maximize2 size={14} />
+                    <span>Expand</span>
+                  </button>
+                )}
+              </div>
             </div>
 
             <div className="w-full bg-slate-50 rounded-xl border border-slate-200/60 overflow-hidden flex items-center justify-center p-4 min-h-[350px] shadow-inner">

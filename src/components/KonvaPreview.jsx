@@ -34,7 +34,16 @@ const KonvaPreview = ({ layoutData, dynamicData }) => {
     return () => window.removeEventListener("resize", updateDimensions);
   }, []);
 
-  if (!layoutData) {
+  let data = layoutData;
+  if (typeof data === "string") {
+    try {
+      data = JSON.parse(data);
+    } catch (e) {
+      data = {};
+    }
+  }
+
+  if (!data) {
     return (
       <div className="flex items-center justify-center h-full bg-gray-100 rounded-lg">
         <p className="text-gray-500">No visual template data available.</p>
@@ -42,18 +51,19 @@ const KonvaPreview = ({ layoutData, dynamicData }) => {
     );
   }
 
-  const baseWidth = layoutData?.canvas?.width || 842;
-  const baseHeight = layoutData?.canvas?.height || 595;
+  const baseWidth = data?.canvas?.width || 842;
+  const baseHeight = data?.canvas?.height || 595;
   const scaleX = dimensions.width / baseWidth;
   const scaleY = dimensions.height / baseHeight;
 
-  const backgroundImageSrc = layoutData?.background?.image
-    ? (layoutData.background.image.startsWith("http") || layoutData.background.image.startsWith("data:") || layoutData.background.image.startsWith("blob:"))
-      ? layoutData.background.image
-      : `${SERVER_BASE_URL}${layoutData.background.image}`
+  const rawBg = data?.background?.image;
+  const backgroundImageSrc = rawBg
+    ? (rawBg.startsWith("http") || rawBg.startsWith("data:") || rawBg.startsWith("blob:"))
+      ? rawBg
+      : `${SERVER_BASE_URL.replace(/\/+$/, "")}${rawBg.startsWith("/") ? rawBg : `/${rawBg}`}`
     : null;
 
-  const textElements = (layoutData?.elements || []).map((el) => {
+  const textElements = (data?.elements || []).map((el) => {
     let text = el.text || "";
     if (dynamicData) {
       const recipientName = dynamicData.recipient_name || "Recipient Name";
@@ -71,7 +81,6 @@ const KonvaPreview = ({ layoutData, dynamicData }) => {
 
       // Receipt specific logic
       let amount = "0.00";
-      // Try to parse amount from course title if it contains currency symbols, else default
       if (
         courseTitle &&
         (courseTitle.includes("$") || courseTitle.includes("₦"))
@@ -89,6 +98,29 @@ const KonvaPreview = ({ layoutData, dynamicData }) => {
         .replace(/{{course_title}}/gi, courseTitle)
         .replace(/{{verification_id}}/gi, verificationId)
         .replace(/{{amount}}/gi, amount);
+
+      // Replace custom fields from extra_fields
+      if (dynamicData.extra_fields) {
+        let extra = dynamicData.extra_fields;
+        if (typeof extra === "string") {
+          try {
+            extra = JSON.parse(extra);
+          } catch (e) {
+            extra = {};
+          }
+        }
+        if (typeof extra === "object" && extra !== null) {
+          Object.entries(extra).forEach(([k, v]) => {
+            if (v !== undefined && v !== null) {
+              const reg1 = new RegExp(`{{${k}}}`, "gi");
+              text = text.replace(reg1, String(v));
+              const cleanK = k.replace(/_/g, " ");
+              const reg2 = new RegExp(`{{${cleanK}}}`, "gi");
+              text = text.replace(reg2, String(v));
+            }
+          });
+        }
+      }
     }
     return { ...el, text };
   });
@@ -141,8 +173,10 @@ const KonvaPreview = ({ layoutData, dynamicData }) => {
                 fontFamily={el.fontFamily || "Arial"}
                 fill={el.fill || "#000"}
                 align={el.align || "left"}
+                verticalAlign={el.verticalAlign || "middle"}
                 rotation={el.rotation || 0}
                 width={el.width ? el.width * scaleX : undefined}
+                height={el.height ? el.height * scaleY : undefined}
                 fontStyle={el.fontStyle}
               />
             );

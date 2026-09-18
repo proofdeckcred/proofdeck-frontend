@@ -779,15 +779,26 @@ const TemplateCard = ({
                <span className="text-[9px] font-mono text-slate-400 select-all">#{template.id}</span>
            </div>
            
-           {!template.is_public && (
-            <button 
-              onClick={() => onDeleteClick(template)}
-              className="text-slate-400 hover:text-red-600 transition-colors p-1 hover:bg-red-50 rounded"
-              title="Delete Template"
-            >
-              <Trash2 size={13} />
-            </button>
-           )}
+           <div className="flex items-center gap-1">
+             {(!template.is_premium || isPro) && (
+               <button 
+                 onClick={() => onEditClick(template)}
+                 className="text-slate-400 hover:text-indigo-600 transition-colors p-1 hover:bg-indigo-50 rounded flex items-center gap-1"
+                 title="Edit Template"
+               >
+                 <Edit size={13} />
+               </button>
+             )}
+             {!template.is_public && (
+               <button 
+                 onClick={() => onDeleteClick(template)}
+                 className="text-slate-400 hover:text-red-600 transition-colors p-1 hover:bg-red-50 rounded"
+                 title="Delete Template"
+               >
+                 <Trash2 size={13} />
+               </button>
+             )}
+           </div>
         </div>
       </div>
     </div>
