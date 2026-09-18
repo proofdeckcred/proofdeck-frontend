@@ -681,9 +681,8 @@ function GroupsPage() {
                           <div className="bg-slate-950/65 opacity-0 group-hover:opacity-100 transition-opacity absolute inset-0 flex items-center justify-center gap-1.5 z-10">
                             <button
                               onClick={() => handleSendEmail(cert.id)}
-                              disabled={!!cert.sent_at}
                               className="p-1.5 bg-white/10 hover:bg-white text-white hover:text-indigo-600 border border-white/20 hover:border-white rounded-lg transition-all shadow"
-                              title="Send Email"
+                              title={cert.sent_at ? "Resend Email" : "Send Email"}
                             >
                               {sendingId === cert.id ? <div className="animate-spin h-3.5 w-3.5 border-2 border-indigo-600 border-t-transparent rounded-full" /> : <Mail className="w-3.5 h-3.5" />}
                             </button>
@@ -819,9 +818,8 @@ function GroupsPage() {
                             <div className="bg-slate-950/65 opacity-0 group-hover:opacity-100 transition-opacity absolute inset-0 flex items-center justify-center gap-1.5 z-10">
                               <button
                                 onClick={() => handleSendEmail(cert.id)}
-                                disabled={!!cert.sent_at}
                                 className="p-1.5 bg-white/10 hover:bg-white text-white hover:text-indigo-650 border border-white/20 hover:border-white rounded-lg transition-all shadow hover:text-indigo-600 hover:border-white"
-                                title="Send Email"
+                                title={cert.sent_at ? "Resend Email" : "Send Email"}
                               >
                                 {sendingId === cert.id ? <div className="animate-spin h-3.5 w-3.5 border-2 border-indigo-600 border-t-transparent rounded-full" /> : <Mail className="w-3.5 h-3.5" />}
                               </button>

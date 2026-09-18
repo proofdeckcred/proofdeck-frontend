@@ -214,10 +214,12 @@ function MyCertificatesPage() {
       success: (res) => {
         fetchData();
         setSelectedCertIds(new Set());
-        const { sent, failed } = res.data;
-        return `Process complete! Sent: ${sent.length}, Failed: ${
-          failed?.length || 0
-        }.`;
+        const sentCount = typeof res.data?.sent === 'number' ? res.data.sent : (Array.isArray(res.data?.sent) ? res.data.sent.length : ids.length);
+        const errorCount = Array.isArray(res.data?.errors) ? res.data.errors.length : 0;
+        if (errorCount > 0) {
+          return `Sent ${sentCount} emails (${errorCount} failed).`;
+        }
+        return res.data?.msg || `Successfully sent ${sentCount} emails.`;
       },
       error: (err) => err.response?.data?.msg || "Bulk send failed.",
     });
@@ -267,7 +269,18 @@ function MyCertificatesPage() {
         window.URL.revokeObjectURL(url);
         return "Download started!";
       },
-      error: (err) => err.response?.data?.msg || "Failed to download PDF.",
+      error: async (err) => {
+        if (err.response?.data instanceof Blob) {
+          try {
+            const text = await err.response.data.text();
+            const json = JSON.parse(text);
+            return json.msg || "Failed to download PDF.";
+          } catch {
+            // fallback
+          }
+        }
+        return err.response?.data?.msg || "Failed to download PDF.";
+      },
     });
     promise.finally(() => setDownloadingId(null));
   };
@@ -290,9 +303,18 @@ function MyCertificatesPage() {
         window.URL.revokeObjectURL(url);
         return "PNG download started!";
       },
-      error: (err) => {
-        if (err.response?.status === 403 && err.response?.data?.upgrade_required) {
-          return "PNG downloads are exclusively available on Enterprise.";
+      error: async (err) => {
+        if (err.response?.status === 403) {
+          return "PNG image downloads are exclusively available on Enterprise plan.";
+        }
+        if (err.response?.data instanceof Blob) {
+          try {
+            const text = await err.response.data.text();
+            const json = JSON.parse(text);
+            return json.msg || "Failed to download PNG.";
+          } catch {
+            // fallback
+          }
         }
         return err.response?.data?.msg || "Failed to download PNG.";
       },
@@ -745,9 +767,8 @@ function MyCertificatesPage() {
                                   <div className="flex items-center justify-end gap-0.5 opacity-60 group-hover:opacity-100 transition-opacity">
                                     <button
                                       onClick={() => handleSendEmail(cert.id)}
-                                      disabled={!!cert.sent_at}
                                       className="p-1 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded transition-all"
-                                      title="Send Email"
+                                      title={cert.sent_at ? "Resend Email" : "Send Email"}
                                     >
                                       {sendingId === cert.id ? <div className="animate-spin h-3 w-3 border-2 border-indigo-600 border-t-transparent rounded-full" /> : <Mail className="w-3.5 h-3.5" />}
                                     </button>
@@ -849,9 +870,8 @@ function MyCertificatesPage() {
                               <div className="flex items-center gap-1.5">
                                 <button
                                   onClick={() => handleSendEmail(cert.id)}
-                                  disabled={!!cert.sent_at}
-                                  className="p-1.5 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors disabled:opacity-40"
-                                  title="Send Email"
+                                  className="p-1.5 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
+                                  title={cert.sent_at ? "Resend Email" : "Send Email"}
                                 >
                                   {sendingId === cert.id ? (
                                     <div className="animate-spin h-3.5 w-3.5 border-2 border-indigo-600 border-t-transparent rounded-full" />
