@@ -219,8 +219,11 @@ export const sendContactMessage = (contactData) =>
   API.post("/contact/", contactData);
 
 // MISC
-export const downloadBulkTemplate = () =>
-  API.get("/certificates/bulk-template", { responseType: "blob" });
+export const downloadBulkTemplate = (templateId) =>
+  API.get("/certificates/bulk-template", {
+    params: templateId ? { template_id: templateId } : {},
+    responseType: "blob",
+  });
 export const uploadEditorImage = (formData) =>
   API.post("/uploads/editor-images", formData, {
     headers: { "Content-Type": "multipart/form-data" },

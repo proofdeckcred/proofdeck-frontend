@@ -437,7 +437,7 @@ const CreateCertificatePage = () => {
   // Download CSV sample template
   const handleDownloadTemplate = async () => {
     try {
-      const response = await downloadBulkTemplate();
+      const response = await downloadBulkTemplate(formData.template_id);
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement("a");
       link.href = url;
@@ -447,7 +447,7 @@ const CreateCertificatePage = () => {
       link.remove();
       window.URL.revokeObjectURL(url);
     } catch (e) {
-      window.open(`${SERVER_BASE_URL}/api/certificates/bulk-template`, "_blank");
+      window.open(`${SERVER_BASE_URL}/api/certificates/bulk-template${formData.template_id ? `?template_id=${formData.template_id}` : ''}`, "_blank");
     }
   };
 
