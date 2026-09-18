@@ -1,6 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { Linkedin, Github, Globe, ArrowUpRight, Instagram } from "lucide-react";
+import { Linkedin, Github, ArrowUpRight, Instagram } from "lucide-react";
 
 const PublicFooter = () => {
   return (
@@ -95,20 +95,16 @@ const PublicFooter = () => {
         </div>
 
         {/* Bottom Bar */}
-        <div className="pt-8 border-t border-slate-200 flex flex-col md:flex-row justify-between items-center gap-4">
+        <div className="pt-8 border-t border-slate-200 flex flex-col md:flex-row justify-between items-center gap-4 text-center md:text-left">
           <p className="text-xs text-slate-400 font-medium">
-            &copy; {new Date().getFullYear()} ProofDeck. All rights reserved.
+            &copy; {new Date().getFullYear()} ProofDeck &middot; A BMDL Technologies Ltd. product &middot; RC 9840518
           </p>
-          <div className="flex items-center gap-1.5 text-xs font-medium text-slate-400">
-            <span>Built by</span>
-            <a
-              href="https://www.bolaji.tech/"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-1 text-indigo-500 hover:text-indigo-600 transition-colors font-bold no-underline"
-            >
-              Bolaji <Globe size={12} />
-            </a>
+          <div className="flex items-center gap-4 text-xs font-medium text-slate-400">
+            <Link to="/legal?tab=privacy" className="hover:text-slate-600 transition-colors no-underline">Privacy</Link>
+            <span>&middot;</span>
+            <Link to="/legal?tab=terms" className="hover:text-slate-600 transition-colors no-underline">Terms</Link>
+            <span>&middot;</span>
+            <Link to="/legal?tab=security" className="hover:text-slate-600 transition-colors no-underline">Security</Link>
           </div>
         </div>
       </div>

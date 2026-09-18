@@ -60,10 +60,10 @@ const AuthLayout = ({ children, title, subtitle, linkText, linkTo, linkLabel }) 
 
         {/* Footer */}
         <div className="relative z-10 text-sm text-indigo-200 flex justify-between items-center animate-in fade-in duration-700 delay-300">
-             <p>© {new Date().getFullYear()} {APP_NAME}. All rights reserved.</p>
+             <p>© {new Date().getFullYear()} {APP_NAME} &middot; A BMDL Technologies Ltd. product &middot; RC 9840518</p>
              <div className="flex gap-4">
-                <a href="#" className="hover:text-white transition-colors">Privacy</a>
-                <a href="#" className="hover:text-white transition-colors">Terms</a>
+                <Link to="/legal?tab=privacy" className="hover:text-white transition-colors no-underline">Privacy</Link>
+                <Link to="/legal?tab=terms" className="hover:text-white transition-colors no-underline">Terms</Link>
              </div>
         </div>
       </div>
