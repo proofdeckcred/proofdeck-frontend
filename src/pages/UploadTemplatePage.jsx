@@ -714,7 +714,7 @@ const UploadTemplatePage = () => {
   // Handle uploading full background
   const handleBackgroundUpload = (e) => {
     const file = e.target.files[0];
-    if (file && (file.type === "image/png" || file.type === "image/jpeg")) {
+    if (file && (file.type === "image/png" || file.type === "image/jpeg" || file.type === "image/webp")) {
       const reader = new FileReader();
       reader.onload = (event) => {
         const img = new Image();
@@ -725,7 +725,11 @@ const UploadTemplatePage = () => {
           setCanvasSize({ width: canvasWidth, height: canvasHeight });
           setTemplateImageUrl(event.target.result);
           setTemplateImageFile(file);
-          toast.success("Background uploaded!");
+          // Clear initial sample placeholders so user can place their own elements cleanly
+          setElements([]);
+          setSelectedId(null);
+          setBackgroundConfig((prev) => ({ ...prev, border: false }));
+          toast.success("Background uploaded! Canvas cleared for your custom placeholders.");
         };
         img.src = event.target.result;
       };
@@ -733,6 +737,28 @@ const UploadTemplatePage = () => {
     } else {
       toast.error("Please upload a PNG or JPG image.");
     }
+    e.target.value = "";
+  };
+
+  const handleClearAllLayers = () => {
+    if (elements.length === 0) return;
+    if (window.confirm("Are you sure you want to clear all layers from the canvas?")) {
+      setElements([]);
+      setSelectedId(null);
+      toast.success("All layers cleared!");
+    }
+  };
+
+  const handleApplyColorToAllText = (color) => {
+    setElements((prev) =>
+      prev.map((el) => {
+        if (el.type === "text" || el.type === "placeholder") {
+          return { ...el, fill: color };
+        }
+        return el;
+      })
+    );
+    toast.success("Updated color for all text!", { id: "text-color-all" });
   };
 
   const handleSelectPreset = (preset) => {
@@ -919,14 +945,11 @@ const UploadTemplatePage = () => {
           <div className="bg-gray-100 p-0.5 rounded-lg flex text-xs font-semibold mr-1 border border-gray-200/60">
             <button
               onClick={() => setTemplateType("certificate")}
-              className={`px-2.5 py-1 rounded-md flex items-center gap-1.5 transition-all cursor-pointer ${
-                templateType === "certificate"
-                  ? "bg-white text-indigo-600 shadow-xs"
-                  : "text-gray-500 hover:text-gray-700"
-              }`}
+              className="px-2.5 py-1 rounded-md flex items-center gap-1.5 transition-all cursor-default bg-white text-indigo-600 shadow-xs font-medium"
             >
               <FileBadge size={13} /> Certificate
             </button>
+            {/* Commented out for now - will be updated later:
             <button
               onClick={() => setTemplateType("receipt")}
               className={`px-2.5 py-1 rounded-md flex items-center gap-1.5 transition-all cursor-pointer ${
@@ -947,6 +970,7 @@ const UploadTemplatePage = () => {
             >
               <Mail size={13} /> Invitation
             </button>
+            */}
           </div>
 
           {/* Grid Toggle */}
@@ -1127,6 +1151,50 @@ const UploadTemplatePage = () => {
                         </span>
                         <Plus size={14} className="text-gray-400 group-hover:text-indigo-600" />
                       </button>
+                    </div>
+                  </div>
+
+                  {/* Bulk Text Color: Apply to All Texts */}
+                  <div className="pt-3 border-t border-gray-100">
+                    <div className="flex items-center justify-between mb-1.5">
+                      <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider mb-0 flex items-center gap-1">
+                        <Palette size={12} className="text-indigo-600" /> All Texts Color
+                      </p>
+                      <input
+                        type="color"
+                        defaultValue="#1e3a8a"
+                        onChange={(e) => handleApplyColorToAllText(e.target.value)}
+                        className="w-5 h-5 rounded cursor-pointer border border-gray-200 p-0"
+                        title="Pick custom color to apply to all text elements"
+                      />
+                    </div>
+                    <p className="text-[9px] text-gray-400 mb-2 leading-relaxed">
+                      Change the color of all texts at once, or select any text to customize individually.
+                    </p>
+                    <div className="grid grid-cols-6 gap-1.5">
+                      {[
+                        { name: "Black", value: "#111827" },
+                        { name: "Navy", value: "#1e3a8a" },
+                        { name: "ProofDeck Blue", value: "#2563eb" },
+                        { name: "Gold", value: "#d97706" },
+                        { name: "Emerald", value: "#065f46" },
+                        { name: "Burgundy", value: "#881337" },
+                        { name: "Charcoal", value: "#334155" },
+                        { name: "Purple", value: "#581c87" },
+                        { name: "Amber", value: "#b45309" },
+                        { name: "Slate", value: "#64748b" },
+                        { name: "Light Gray", value: "#94a3b8" },
+                        { name: "White", value: "#ffffff" },
+                      ].map((swatch) => (
+                        <button
+                          key={swatch.value}
+                          type="button"
+                          onClick={() => handleApplyColorToAllText(swatch.value)}
+                          className="h-6 rounded border border-gray-200 hover:scale-110 hover:border-indigo-600 transition-all cursor-pointer shadow-2xs"
+                          style={{ backgroundColor: swatch.value }}
+                          title={`Apply ${swatch.name} to all texts`}
+                        />
+                      ))}
                     </div>
                   </div>
 
@@ -1312,6 +1380,21 @@ const UploadTemplatePage = () => {
                     </div>
                   </div>
 
+                  {/* Upload Custom Background File */}
+                  <div className="pt-3 border-t border-gray-100">
+                    <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-2">
+                      Upload Custom Background
+                    </p>
+                    <div
+                      onClick={() => fileInputRef.current?.click()}
+                      className="p-3 border border-dashed border-gray-300 hover:border-indigo-500 rounded-lg text-center cursor-pointer hover:bg-indigo-50/20 transition-all group bg-gray-50/50"
+                    >
+                      <UploadCloud size={18} className="text-gray-400 group-hover:text-indigo-600 mx-auto mb-1" />
+                      <span className="text-[11px] font-bold text-gray-700 block">Upload Background Image</span>
+                      <span className="text-[8px] text-gray-400">PNG, JPG, or WEBP (auto-clears placeholders)</span>
+                    </div>
+                  </div>
+
                   {/* Solid Canvas Colors */}
                   <div className="pt-3 border-t border-gray-100">
                     <div className="flex justify-between items-center mb-2">
@@ -1475,11 +1558,27 @@ const UploadTemplatePage = () => {
               ) : (
                 /* TAB 5: LAYERS */
                 <div className="space-y-2">
-                  <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-2">
-                    Layers Stack ({elements.length})
-                  </p>
+                  <div className="flex items-center justify-between mb-2">
+                    <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-0">
+                      Layers Stack ({elements.length})
+                    </p>
+                    {elements.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={handleClearAllLayers}
+                        className="text-[10px] font-semibold text-red-600 hover:text-red-700 hover:bg-red-50 px-2 py-0.5 rounded border border-red-200 transition-colors flex items-center gap-1 cursor-pointer"
+                        title="Clear all layers from canvas"
+                      >
+                        <Trash2 size={11} /> Clear All
+                      </button>
+                    )}
+                  </div>
                   {elements.length === 0 ? (
-                    <p className="text-[10px] text-gray-400 italic">No elements on canvas.</p>
+                    <div className="text-center py-8 border border-dashed border-gray-200 rounded-lg p-3">
+                      <Layers size={22} className="text-gray-300 mx-auto mb-1.5" />
+                      <p className="text-[11px] font-medium text-gray-500 mb-0.5">No layers on canvas</p>
+                      <p className="text-[9px] text-gray-400 mb-0">Add text or shapes from the left tools</p>
+                    </div>
                   ) : (
                     <div className="space-y-1">
                       {[...elements].reverse().map((el) => {

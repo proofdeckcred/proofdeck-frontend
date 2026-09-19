@@ -159,7 +159,7 @@ function App() {
               <Route path="edit/:certId" element={<CreateCertificatePage />} />
               <Route path="view/:certId" element={<ViewCertificatePage />} />
               <Route path="bulk-create" element={<CreateCertificatePage />} />
-              <Route path="send-invitation" element={<SendInvitationPage />} />
+              {/* <Route path="send-invitation" element={<SendInvitationPage />} /> */}
               <Route path="settings" element={<SettingsPage />} />
 
               <Route path="support">

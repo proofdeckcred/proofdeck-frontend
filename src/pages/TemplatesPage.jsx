@@ -342,16 +342,16 @@ function TemplatesPage() {
           {/* Left: Page Title */}
           <div>
             <h1 className="text-sm font-bold text-slate-800 uppercase tracking-wider mb-0">Templates</h1>
-            <p className="text-[11px] text-slate-500 mb-0">Create from presets or design from scratch with shapes, badges, and fonts in the Canva Studio.</p>
+            <p className="text-[11px] text-slate-500 mb-0">Create from presets or design from scratch in ProofDeck Studio.</p>
           </div>
 
           {/* Right Action */}
           <Link
             to="/dashboard/upload-template"
-            className="inline-flex items-center justify-center bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white rounded-lg py-2 px-3.5 transition-all font-semibold text-xs shadow-sm hover:shadow decoration-none w-full sm:w-auto text-center gap-1.5"
+            className="inline-flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white rounded-lg py-2 px-3.5 transition-all font-semibold text-xs shadow-sm hover:shadow decoration-none w-full sm:w-auto text-center gap-1.5"
           >
-            <Sparkles size={14} className="text-amber-300" />
-            Design from Scratch (Canva Studio)
+            <Sparkles size={14} className="text-blue-200" />
+            ProofDeck Studio
           </Link>
         </div>
       </div>

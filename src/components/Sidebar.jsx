@@ -149,7 +149,9 @@ function Sidebar({ isCollapsed: propIsCollapsed, toggleSidebar: propToggleSideba
         )}
 
         {renderNavLink("/dashboard/create", <PlusCircle />, "Issue Credentials")}
+        {/* Commented out for now - will be updated later:
         {renderNavLink("/dashboard/send-invitation", <Mail />, "Send Invitations")}
+        */}
 
         {user &&
           (user.role?.toLowerCase() === "free" ? (
