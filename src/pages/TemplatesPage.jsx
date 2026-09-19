@@ -22,7 +22,8 @@ import {
   Award,
   BookOpen,
   Eye,
-  Brush
+  Brush,
+  Sparkles
 } from "lucide-react";
 import { SERVER_BASE_URL } from "../config";
 import {
@@ -339,15 +340,18 @@ function TemplatesPage() {
       <div className="border-b border-slate-200/80 bg-white mb-4 sm:mb-6 -mt-6 px-4 py-3 rounded-b-lg">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 max-w-[1600px] mx-auto">
           {/* Left: Page Title */}
-          <h1 className="text-sm font-bold text-slate-800 uppercase tracking-wider mb-0">Templates</h1>
+          <div>
+            <h1 className="text-sm font-bold text-slate-800 uppercase tracking-wider mb-0">Templates</h1>
+            <p className="text-[11px] text-slate-500 mb-0">Create from presets or design from scratch with shapes, badges, and fonts in the Canva Studio.</p>
+          </div>
 
           {/* Right Action */}
           <Link
             to="/dashboard/upload-template"
-            className="inline-flex items-center justify-center bg-slate-900 border border-slate-900 text-white rounded-lg py-1.5 px-3 hover:bg-black transition-all font-semibold text-xs shadow-sm decoration-none w-full sm:w-auto text-center"
+            className="inline-flex items-center justify-center bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white rounded-lg py-2 px-3.5 transition-all font-semibold text-xs shadow-sm hover:shadow decoration-none w-full sm:w-auto text-center gap-1.5"
           >
-            <Brush size={14} className="mr-1.5 text-slate-250" />
-            Open Visual Editor
+            <Sparkles size={14} className="text-amber-300" />
+            Design from Scratch (Canva Studio)
           </Link>
         </div>
       </div>

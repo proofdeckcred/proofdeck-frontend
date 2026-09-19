@@ -12,7 +12,6 @@ import {
   Receipt,
   Mail,
   Maximize2,
-  Minimize2,
   Sparkles,
   Settings,
   Type,
@@ -23,6 +22,19 @@ import {
   ZoomIn,
   ZoomOut,
   Check,
+  Square,
+  Circle as CircleIcon,
+  Minus,
+  Star as StarIcon,
+  Award,
+  Layers,
+  Palette,
+  Image as ImageIcon,
+  Copy,
+  FolderOpen,
+  Layout,
+  RefreshCw,
+  Shapes,
 } from "lucide-react";
 import { Spinner } from "react-bootstrap";
 import {
@@ -66,7 +78,29 @@ const INVITATION_PLACEHOLDERS = [
   { name: "Check-in QR Code", value: "{{qr_code}}", isQr: true },
 ];
 
-// --- BACKGROUND PRESETS ---
+// --- CANVAS SIZE PRESETS ---
+const CANVAS_SIZE_PRESETS = [
+  { name: "A4 Landscape", width: 842, height: 595, icon: "▭" },
+  { name: "A4 Portrait", width: 595, height: 842, icon: "▯" },
+  { name: "US Letter", width: 792, height: 612, icon: "▭" },
+  { name: "Square", width: 600, height: 600, icon: "□" },
+];
+
+// --- BACKGROUND PALETTES ---
+const LUXURY_COLORS = [
+  { name: "Pure White", value: "#ffffff" },
+  { name: "Warm Ivory", value: "#fdfbf7" },
+  { name: "Cream Parchment", value: "#fef9ee" },
+  { name: "Soft Linen", value: "#f8fafc" },
+  { name: "Ice Blue", value: "#f0f9ff" },
+  { name: "Emerald Mist", value: "#f0fdf4" },
+  { name: "Royal Navy", value: "#0f172a" },
+  { name: "Midnight Indigo", value: "#1e1b4b" },
+  { name: "Slate Charcoal", value: "#1e293b" },
+  { name: "Deep Forest", value: "#064e3b" },
+];
+
+// --- PRESET TEMPLATES ---
 const PRESET_TEMPLATES = [
   {
     name: "Classic Navy & Gold",
@@ -79,44 +113,20 @@ const PRESET_TEMPLATES = [
       </svg>
     `),
     canvasSize: { width: 842, height: 595 },
-    elements: [
-      { type: "placeholder", text: "Certificate of Completion", x: 221, y: 110, width: 400, height: 40, fontSize: 26, fontFamily: "Times New Roman", fill: "#1e3a8a", align: "center", fontStyle: "bold", rotation: 0, verticalAlign: "middle", isQr: false },
-      { type: "placeholder", text: "This is to certify that", x: 221, y: 165, width: 400, height: 25, fontSize: 13, fontFamily: "Times New Roman", fill: "#4B5EAA", align: "center", fontStyle: "italic", rotation: 0, verticalAlign: "middle", isQr: false },
-      { type: "placeholder", text: "{{recipient_name}}", x: 121, y: 200, width: 600, height: 50, fontSize: 36, fontFamily: "Georgia", fill: "#111827", align: "center", fontStyle: "bold", rotation: 0, verticalAlign: "middle", isQr: false },
-      { type: "placeholder", text: "has successfully completed the course requirements for", x: 221, y: 265, width: 400, height: 25, fontSize: 13, fontFamily: "Times New Roman", fill: "#4b5eaa", align: "center", fontStyle: "italic", rotation: 0, verticalAlign: "middle", isQr: false },
-      { type: "placeholder", text: "{{course_title}}", x: 121, y: 300, width: 600, height: 35, fontSize: 22, fontFamily: "Times New Roman", fill: "#d97706", align: "center", fontStyle: "bold", rotation: 0, verticalAlign: "middle", isQr: false },
-      { type: "placeholder", text: "{{issue_date}}", x: 100, y: 410, width: 180, height: 25, fontSize: 13, fontFamily: "Times New Roman", fill: "#1e293b", align: "center", fontStyle: "bold", rotation: 0, verticalAlign: "middle", isQr: false },
-      { type: "placeholder", text: "Date of Issue", x: 100, y: 440, width: 180, height: 20, fontSize: 9, fontFamily: "Times New Roman", fill: "#94a3b8", align: "center", fontStyle: "normal", rotation: 0, verticalAlign: "middle", isQr: false },
-      { type: "placeholder", text: "{{signature}}", x: 562, y: 410, width: 180, height: 25, fontSize: 15, fontFamily: "Georgia", fill: "#1e293b", align: "center", fontStyle: "italic", rotation: 0, verticalAlign: "middle", isQr: false },
-      { type: "placeholder", text: "Authorized Signature", x: 562, y: 440, width: 180, height: 20, fontSize: 9, fontFamily: "Times New Roman", fill: "#94a3b8", align: "center", fontStyle: "normal", rotation: 0, verticalAlign: "middle", isQr: false },
-      { type: "placeholder", text: "{{qr_code}}", x: 396, y: 400, width: 50, height: 50, align: "center", fontStyle: "normal", rotation: 0, verticalAlign: "middle", isQr: true }
-    ]
   },
   {
-    name: "Modern Emerald Forest",
+    name: "Modern Emerald",
     url: "data:image/svg+xml;utf8," + encodeURIComponent(`
       <svg xmlns="http://www.w3.org/2000/svg" width="842" height="595" viewBox="0 0 842 595">
         <rect width="842" height="595" fill="#f8fafc" />
-        <rect x="0" y="0" width="30" height="595" fill="#2563eb" />
+        <rect x="0" y="0" width="30" height="595" fill="#059669" />
         <circle cx="100" cy="80" r="22" fill="#facc15" opacity="0.8" />
       </svg>
     `),
     canvasSize: { width: 842, height: 595 },
-    elements: [
-      { type: "placeholder", text: "Certificate of Completion", x: 160, y: 65, width: 500, height: 35, fontSize: 26, fontFamily: "Arial", fill: "#2563eb", align: "left", fontStyle: "bold", rotation: 0, verticalAlign: "middle", isQr: false },
-      { type: "placeholder", text: "This document is proudly presented to:", x: 160, y: 115, width: 500, height: 20, fontSize: 13, fontFamily: "Arial", fill: "#64748b", align: "left", fontStyle: "normal", rotation: 0, verticalAlign: "middle", isQr: false },
-      { type: "placeholder", text: "{{recipient_name}}", x: 160, y: 150, width: 550, height: 45, fontSize: 36, fontFamily: "Arial", fill: "#1e293b", align: "left", fontStyle: "bold", rotation: 0, verticalAlign: "middle", isQr: false },
-      { type: "placeholder", text: "For successfully mastering the course curriculum and demonstrating competency in", x: 160, y: 215, width: 550, height: 40, fontSize: 13, fontFamily: "Arial", fill: "#64748b", align: "left", fontStyle: "normal", rotation: 0, verticalAlign: "middle", isQr: false },
-      { type: "placeholder", text: "{{course_title}}", x: 160, y: 265, width: 550, height: 30, fontSize: 20, fontFamily: "Arial", fill: "#2563eb", align: "left", fontStyle: "bold", rotation: 0, verticalAlign: "middle", isQr: false },
-      { type: "placeholder", text: "{{issue_date}}", x: 160, y: 380, width: 180, height: 25, fontSize: 12, fontFamily: "Arial", fill: "#1e293b", align: "left", fontStyle: "bold", rotation: 0, verticalAlign: "middle", isQr: false },
-      { type: "placeholder", text: "DATE OF ISSUANCE", x: 160, y: 410, width: 180, height: 20, fontSize: 9, fontFamily: "Arial", fill: "#94a3b8", align: "left", fontStyle: "normal", rotation: 0, verticalAlign: "middle", isQr: false },
-      { type: "placeholder", text: "{{signature}}", x: 520, y: 380, width: 200, height: 25, fontSize: 15, fontFamily: "Arial", fill: "#1e293b", align: "center", fontStyle: "italic", rotation: 0, verticalAlign: "middle", isQr: false },
-      { type: "placeholder", text: "AUTHORIZED SIGNATURE", x: 520, y: 410, width: 200, height: 20, fontSize: 9, fontFamily: "Arial", fill: "#94a3b8", align: "center", fontStyle: "normal", rotation: 0, verticalAlign: "middle", isQr: false },
-      { type: "placeholder", text: "{{qr_code}}", x: 396, y: 375, width: 50, height: 50, align: "center", fontStyle: "normal", rotation: 0, verticalAlign: "middle", isQr: true }
-    ]
   },
   {
-    name: "Corporate Receipt",
+    name: "Corporate Minimal",
     url: "data:image/svg+xml;utf8," + encodeURIComponent(`
       <svg xmlns="http://www.w3.org/2000/svg" width="842" height="595" viewBox="0 0 842 595">
         <rect width="842" height="595" fill="#ffffff" />
@@ -124,250 +134,261 @@ const PRESET_TEMPLATES = [
       </svg>
     `),
     canvasSize: { width: 842, height: 595 },
-    elements: [
-      { type: "placeholder", text: "PAYMENT RECEIPT", x: 50, y: 55, width: 300, height: 30, fontSize: 20, fontFamily: "Arial", fill: "#1e293b", align: "left", fontStyle: "bold", rotation: 0, verticalAlign: "middle", isQr: false },
-      { type: "placeholder", text: "{{issuer_name}}", x: 492, y: 55, width: 300, height: 20, fontSize: 13, fontFamily: "Arial", fill: "#64748b", align: "right", fontStyle: "bold", rotation: 0, verticalAlign: "middle", isQr: false },
-      { type: "placeholder", text: "Receipt #: {{verification_id}}", x: 492, y: 80, width: 300, height: 20, fontSize: 10, fontFamily: "Arial", fill: "#94a3b8", align: "right", fontStyle: "normal", rotation: 0, verticalAlign: "middle", isQr: false },
-      { type: "placeholder", text: "DESCRIPTION", x: 50, y: 130, width: 500, height: 20, fontSize: 10, fontFamily: "Arial", fill: "#64748b", align: "left", fontStyle: "bold", rotation: 0, verticalAlign: "middle", isQr: false },
-      { type: "placeholder", text: "AMOUNT", x: 592, y: 130, width: 200, height: 20, fontSize: 10, fontFamily: "Arial", fill: "#64748b", align: "right", fontStyle: "bold", rotation: 0, verticalAlign: "middle", isQr: false },
-      { type: "placeholder", text: "{{course_title}}", x: 50, y: 165, width: 500, height: 35, fontSize: 13, fontFamily: "Arial", fill: "#1e293b", align: "left", fontStyle: "normal", rotation: 0, verticalAlign: "middle", isQr: false },
-      { type: "placeholder", text: "{{amount}}", x: 592, y: 165, width: 200, height: 35, fontSize: 15, fontFamily: "Arial", fill: "#1e293b", align: "right", fontStyle: "bold", rotation: 0, verticalAlign: "middle", isQr: false },
-      { type: "placeholder", text: "TOTAL PAID:", x: 450, y: 235, width: 140, height: 25, fontSize: 13, fontFamily: "Arial", fill: "#64748b", align: "right", fontStyle: "bold", rotation: 0, verticalAlign: "middle", isQr: false },
-      { type: "placeholder", text: "{{amount}}", x: 592, y: 235, width: 200, height: 25, fontSize: 16, fontFamily: "Arial", fill: "#2563eb", align: "right", fontStyle: "bold", rotation: 0, verticalAlign: "middle", isQr: false },
-      { type: "placeholder", text: "RECEIVED FROM:", x: 50, y: 310, width: 200, height: 20, fontSize: 9, fontFamily: "Arial", fill: "#94a3b8", align: "left", fontStyle: "normal", rotation: 0, verticalAlign: "middle", isQr: false },
-      { type: "placeholder", text: "{{recipient_name}}", x: 50, y: 335, width: 350, height: 25, fontSize: 13, fontFamily: "Arial", fill: "#1e293b", align: "left", fontStyle: "bold", rotation: 0, verticalAlign: "middle", isQr: false },
-      { type: "placeholder", text: "TRANSACTION DATE:", x: 50, y: 380, width: 200, height: 20, fontSize: 9, fontFamily: "Arial", fill: "#94a3b8", align: "left", fontStyle: "normal", rotation: 0, verticalAlign: "middle", isQr: false },
-      { type: "placeholder", text: "{{issue_date}}", x: 50, y: 405, width: 200, height: 25, fontSize: 13, fontFamily: "Arial", fill: "#1e293b", align: "left", fontStyle: "bold", rotation: 0, verticalAlign: "middle", isQr: false },
-      { type: "placeholder", text: "{{signature}}", x: 592, y: 360, width: 200, height: 30, fontSize: 16, fontFamily: "Arial", fill: "#1e293b", align: "center", fontStyle: "italic", rotation: 0, verticalAlign: "middle", isQr: false },
-      { type: "placeholder", text: "AUTHORIZED SIGNATURE", x: 592, y: 395, width: 200, height: 20, fontSize: 9, fontFamily: "Arial", fill: "#94a3b8", align: "center", fontStyle: "normal", rotation: 0, verticalAlign: "middle", isQr: false },
-      { type: "placeholder", text: "{{qr_code}}", x: 396, y: 420, width: 50, height: 50, align: "center", fontStyle: "normal", rotation: 0, verticalAlign: "middle", isQr: true }
-    ]
   },
   {
-    name: "Elegant Crimson",
-    url: "data:image/svg+xml;utf8," + encodeURIComponent(`
-      <svg xmlns="http://www.w3.org/2000/svg" width="842" height="595" viewBox="0 0 842 595">
-        <rect width="842" height="595" fill="#fafaf9" />
-        <rect x="25" y="25" width="792" height="545" fill="none" stroke="#27272a" stroke-width="1.5" />
-        <rect x="30" y="30" width="782" height="535" fill="none" stroke="#991b1b" stroke-width="0.5" stroke-dasharray="8,4" />
-      </svg>
-    `),
-    canvasSize: { width: 842, height: 595 },
-    elements: [
-      { type: "placeholder", text: "Certificate of Completion", x: 171, y: 95, width: 500, height: 40, fontSize: 32, fontFamily: "Playfair Display", fill: "#1f2937", align: "center", fontStyle: "bold", rotation: 0, verticalAlign: "middle", isQr: false },
-      { type: "placeholder", text: "This certifies that", x: 221, y: 150, width: 400, height: 25, fontSize: 14, fontFamily: "Georgia", fill: "#991b1b", align: "center", fontStyle: "italic", rotation: 0, verticalAlign: "middle", isQr: false },
-      { type: "placeholder", text: "{{recipient_name}}", x: 121, y: 185, width: 600, height: 45, fontSize: 36, fontFamily: "Playfair Display", fill: "#111827", align: "center", fontStyle: "bold", rotation: 0, verticalAlign: "middle", isQr: false },
-      { type: "placeholder", text: "has completed the required course of study and passed the final exam in", x: 171, y: 245, width: 500, height: 40, fontSize: 14, fontFamily: "Georgia", fill: "#374151", align: "center", fontStyle: "normal", rotation: 0, verticalAlign: "middle", isQr: false },
-      { type: "placeholder", text: "{{course_title}}", x: 121, y: 295, width: 600, height: 35, fontSize: 22, fontFamily: "Playfair Display", fill: "#991b1b", align: "center", fontStyle: "bold", rotation: 0, verticalAlign: "middle", isQr: false },
-      { type: "placeholder", text: "{{signature}}", x: 150, y: 400, width: 180, height: 25, fontSize: 15, fontFamily: "Playfair Display", fill: "#1f2937", align: "center", fontStyle: "italic", rotation: 0, verticalAlign: "middle", isQr: false },
-      { type: "placeholder", text: "OFFICIAL SIGNATURE", x: 150, y: 430, width: 180, height: 20, fontSize: 8, fontFamily: "Georgia", fill: "#94a3b8", align: "center", fontStyle: "normal", rotation: 0, verticalAlign: "middle", isQr: false },
-      { type: "placeholder", text: "{{issue_date}}", x: 512, y: 400, width: 180, height: 25, fontSize: 13, fontFamily: "Playfair Display", fill: "#1f2937", align: "center", fontStyle: "normal", rotation: 0, verticalAlign: "middle", isQr: false },
-      { type: "placeholder", text: "DATE OF AWARD", x: 512, y: 430, width: 180, height: 20, fontSize: 8, fontFamily: "Georgia", fill: "#94a3b8", align: "center", fontStyle: "normal", rotation: 0, verticalAlign: "middle", isQr: false },
-      { type: "placeholder", text: "{{qr_code}}", x: 396, y: 395, width: 50, height: 50, align: "center", fontStyle: "normal", rotation: 0, verticalAlign: "middle", isQr: true }
-    ]
-  },
-  {
-    name: "Modern Landscape",
-    url: "data:image/svg+xml;utf8," + encodeURIComponent(`
-      <svg xmlns="http://www.w3.org/2000/svg" width="842" height="595" viewBox="0 0 842 595">
-        <defs>
-          <linearGradient id="modernGrad" x1="1" y1="0" x2="0" y2="1">
-            <stop offset="0%" stop-color="#4f46e5" stop-opacity="0.12" />
-            <stop offset="100%" stop-color="#4f46e5" stop-opacity="0" />
-          </linearGradient>
-        </defs>
-        <rect width="842" height="595" fill="#ffffff" />
-        <path d="M 450 0 L 842 0 L 842 350 Z" fill="url(#modernGrad)" />
-      </svg>
-    `),
-    canvasSize: { width: 842, height: 595 },
-    elements: [
-      { type: "placeholder", text: "PRO CERTIFIED", x: 50, y: 55, width: 300, height: 30, fontSize: 22, fontFamily: "Montserrat", fill: "#4f46e5", align: "left", fontStyle: "bold", rotation: 0, verticalAlign: "middle", isQr: false },
-      { type: "placeholder", text: "Date: {{issue_date}}", x: 492, y: 55, width: 300, height: 25, fontSize: 12, fontFamily: "Montserrat", fill: "#4f46e5", align: "right", fontStyle: "bold", rotation: 0, verticalAlign: "middle", isQr: false },
-      { type: "placeholder", text: "This document verifies that", x: 50, y: 115, width: 500, height: 20, fontSize: 13, fontFamily: "Montserrat", fill: "#64748b", align: "left", fontStyle: "normal", rotation: 0, verticalAlign: "middle", isQr: false },
-      { type: "placeholder", text: "{{recipient_name}}", x: 50, y: 145, width: 600, height: 45, fontSize: 36, fontFamily: "Montserrat", fill: "#111827", align: "left", fontStyle: "bold", rotation: 0, verticalAlign: "middle", isQr: false },
-      { type: "placeholder", text: "has successfully completed and demonstrated proficiency in", x: 50, y: 210, width: 600, height: 35, fontSize: 13, fontFamily: "Montserrat", fill: "#64748b", align: "left", fontStyle: "normal", rotation: 0, verticalAlign: "middle", isQr: false },
-      { type: "placeholder", text: "{{course_title}}", x: 50, y: 255, width: 600, height: 30, fontSize: 20, fontFamily: "Montserrat", fill: "#4f46e5", align: "left", fontStyle: "bold", rotation: 0, verticalAlign: "middle", isQr: false },
-      { type: "placeholder", text: "{{signature}}", x: 492, y: 380, width: 300, height: 25, fontSize: 15, fontFamily: "Montserrat", fill: "#111827", align: "right", fontStyle: "italic", rotation: 0, verticalAlign: "middle", isQr: false },
-      { type: "placeholder", text: "AUTHORIZED SIGNATURE", x: 492, y: 410, width: 300, height: 20, fontSize: 9, fontFamily: "Montserrat", fill: "#94a3b8", align: "right", fontStyle: "normal", rotation: 0, verticalAlign: "middle", isQr: false },
-      { type: "placeholder", text: "ID: {{verification_id}} | Verified Secure", x: 50, y: 395, width: 300, height: 20, fontSize: 9, fontFamily: "Montserrat", fill: "#94a3b8", align: "left", fontStyle: "normal", rotation: 0, verticalAlign: "middle", isQr: false },
-      { type: "placeholder", text: "{{qr_code}}", x: 396, y: 380, width: 50, height: 50, align: "center", fontStyle: "normal", rotation: 0, verticalAlign: "middle", isQr: true }
-    ]
-  },
-  {
-    name: "Minimalist Bold",
-    url: "data:image/svg+xml;utf8," + encodeURIComponent(`
-      <svg xmlns="http://www.w3.org/2000/svg" width="842" height="595" viewBox="0 0 842 595">
-        <rect width="842" height="595" fill="#ffffff" />
-        <rect x="0" y="0" width="70" height="595" fill="#111827" />
-      </svg>
-    `),
-    canvasSize: { width: 842, height: 595 },
-    elements: [
-      { type: "placeholder", text: "VERIFICATION ID: {{verification_id}}", x: 10, y: 410, width: 300, height: 30, fontSize: 9, fontFamily: "Montserrat", fill: "#94a3b8", align: "left", fontStyle: "bold", rotation: -90, verticalAlign: "middle", isQr: false },
-      { type: "placeholder", text: "CERTIFICATE", x: 130, y: 70, width: 500, height: 45, fontSize: 40, fontFamily: "Montserrat", fill: "#111827", align: "left", fontStyle: "bold", rotation: 0, verticalAlign: "middle", isQr: false },
-      { type: "placeholder", text: "OF COMPLETION", x: 130, y: 120, width: 500, height: 25, fontSize: 16, fontFamily: "Montserrat", fill: "#94a3b8", align: "left", fontStyle: "bold", rotation: 0, verticalAlign: "middle", isQr: false },
-      { type: "placeholder", text: "PROUDLY PRESENTED TO", x: 130, y: 185, width: 500, height: 20, fontSize: 10, fontFamily: "Montserrat", fill: "#94a3b8", align: "left", fontStyle: "bold", rotation: 0, verticalAlign: "middle", isQr: false },
-      { type: "placeholder", text: "{{recipient_name}}", x: 130, y: 210, width: 550, height: 40, fontSize: 30, fontFamily: "Montserrat", fill: "#111827", align: "left", fontStyle: "bold", rotation: 0, verticalAlign: "middle", isQr: false },
-      { type: "placeholder", text: "For completing the academic program and achieving proficiency in {{course_title}}.", x: 130, y: 270, width: 550, height: 35, fontSize: 12, fontFamily: "Montserrat", fill: "#64748b", align: "left", fontStyle: "normal", rotation: 0, verticalAlign: "middle", isQr: false },
-      { type: "placeholder", text: "{{signature}}", x: 130, y: 360, width: 150, height: 25, fontSize: 14, fontFamily: "Montserrat", fill: "#111827", align: "center", fontStyle: "italic", rotation: 0, verticalAlign: "middle", isQr: false },
-      { type: "placeholder", text: "SIGNATURE", x: 130, y: 390, width: 150, height: 20, fontSize: 8, fontFamily: "Montserrat", fill: "#94a3b8", align: "center", fontStyle: "bold", rotation: 0, verticalAlign: "middle", isQr: false },
-      { type: "placeholder", text: "{{issue_date}}", x: 300, y: 360, width: 150, height: 25, fontSize: 12, fontFamily: "Montserrat", fill: "#111827", align: "center", fontStyle: "bold", rotation: 0, verticalAlign: "middle", isQr: false },
-      { type: "placeholder", text: "DATE OF AWARD", x: 300, y: 390, width: 150, height: 20, fontSize: 8, fontFamily: "Montserrat", fill: "#94a3b8", align: "center", fontStyle: "bold", rotation: 0, verticalAlign: "middle", isQr: false },
-      { type: "placeholder", text: "{{qr_code}}", x: 480, y: 350, width: 55, height: 55, align: "center", fontStyle: "normal", rotation: 0, verticalAlign: "middle", isQr: true }
-    ]
-  },
-  {
-    name: "Corporate Blue",
-    url: "data:image/svg+xml;utf8," + encodeURIComponent(`
-      <svg xmlns="http://www.w3.org/2000/svg" width="842" height="595" viewBox="0 0 842 595">
-        <rect width="842" height="595" fill="#f8fafc" />
-        <rect x="0" y="0" width="842" height="15" fill="#1e3a8a" />
-        <rect x="0" y="580" width="842" height="15" fill="#1e3a8a" />
-        <path d="M 0 0 L 150 0 L 0 150 Z" fill="#3b82f6" opacity="0.3" />
-      </svg>
-    `),
-    canvasSize: { width: 842, height: 595 },
-    elements: [
-      { type: "placeholder", text: "CERTIFICATE OF ACHIEVEMENT", x: 171, y: 70, width: 500, height: 35, fontSize: 26, fontFamily: "Montserrat", fill: "#1e3a8a", align: "center", fontStyle: "bold", rotation: 0, verticalAlign: "middle", isQr: false },
-      { type: "placeholder", text: "This certificate is awarded to", x: 171, y: 110, width: 500, height: 20, fontSize: 12, fontFamily: "Montserrat", fill: "#64748b", align: "center", fontStyle: "bold", rotation: 0, verticalAlign: "middle", isQr: false },
-      { type: "placeholder", text: "{{recipient_name}}", x: 121, y: 145, width: 600, height: 40, fontSize: 32, fontFamily: "Montserrat", fill: "#111827", align: "center", fontStyle: "bold", rotation: 0, verticalAlign: "middle", isQr: false },
-      { type: "placeholder", text: "in recognition of successful completion and fulfillment of the requirements for", x: 171, y: 205, width: 500, height: 40, fontSize: 13, fontFamily: "Montserrat", fill: "#64748b", align: "center", fontStyle: "normal", rotation: 0, verticalAlign: "middle", isQr: false },
-      { type: "placeholder", text: "{{course_title}}", x: 121, y: 260, width: 600, height: 30, fontSize: 20, fontFamily: "Montserrat", fill: "#1e3a8a", align: "center", fontStyle: "bold", rotation: 0, verticalAlign: "middle", isQr: false },
-      { type: "placeholder", text: "{{issue_date}}", x: 150, y: 380, width: 180, height: 25, fontSize: 12, fontFamily: "Montserrat", fill: "#111827", align: "center", fontStyle: "bold", rotation: 0, verticalAlign: "middle", isQr: false },
-      { type: "placeholder", text: "Date of Issue", x: 150, y: 410, width: 180, height: 20, fontSize: 9, fontFamily: "Montserrat", fill: "#94a3b8", align: "center", fontStyle: "normal", rotation: 0, verticalAlign: "middle", isQr: false },
-      { type: "placeholder", text: "{{signature}}", x: 512, y: 380, width: 180, height: 25, fontSize: 14, fontFamily: "Montserrat", fill: "#111827", align: "center", fontStyle: "italic", rotation: 0, verticalAlign: "middle", isQr: false },
-      { type: "placeholder", text: "Authorized Signatory", x: 512, y: 410, width: 180, height: 20, fontSize: 9, fontFamily: "Montserrat", fill: "#94a3b8", align: "center", fontStyle: "normal", rotation: 0, verticalAlign: "middle", isQr: false },
-      { type: "placeholder", text: "{{qr_code}}", x: 396, y: 380, width: 50, height: 50, align: "center", fontStyle: "normal", rotation: 0, verticalAlign: "middle", isQr: true }
-    ]
-  },
-  {
-    name: "Tech Dark",
+    name: "Tech Dark Neon",
     url: "data:image/svg+xml;utf8," + encodeURIComponent(`
       <svg xmlns="http://www.w3.org/2000/svg" width="842" height="595" viewBox="0 0 842 595">
         <rect width="842" height="595" fill="#0f172a" />
         <rect x="0" y="0" width="10" height="595" fill="#06b6d4" />
-        <pattern id="dotPattern" x="0" y="0" width="20" height="20" patternUnits="userSpaceOnUse">
-          <circle cx="2" cy="2" r="1" fill="#06b6d4" opacity="0.15" />
-        </pattern>
-        <rect width="842" height="595" fill="url(#dotPattern)" />
       </svg>
     `),
     canvasSize: { width: 842, height: 595 },
-    elements: [
-      { type: "placeholder", text: ">> SYSTEM VALIDATION SECURE", x: 50, y: 50, width: 300, height: 20, fontSize: 10, fontFamily: "Courier New", fill: "#06b6d4", align: "left", fontStyle: "bold", rotation: 0, verticalAlign: "middle", isQr: false },
-      { type: "placeholder", text: "CERTIFICATE OF COMPLETION", x: 50, y: 80, width: 600, height: 40, fontSize: 30, fontFamily: "Courier New", fill: "#06b6d4", align: "left", fontStyle: "bold", rotation: 0, verticalAlign: "middle", isQr: false },
-      { type: "placeholder", text: "HASH: 8f2a9c...1b4 | BLOCK: #9921 | VERIFIED", x: 50, y: 130, width: 600, height: 20, fontSize: 9, fontFamily: "Courier New", fill: "#475569", align: "left", fontStyle: "normal", rotation: 0, verticalAlign: "middle", isQr: false },
-      { type: "placeholder", text: "Is hereby granted to:", x: 50, y: 185, width: 500, height: 20, fontSize: 12, fontFamily: "Courier New", fill: "#94a3b8", align: "left", fontStyle: "normal", rotation: 0, verticalAlign: "middle", isQr: false },
-      { type: "placeholder", text: "{{recipient_name}}", x: 50, y: 215, width: 500, height: 40, fontSize: 26, fontFamily: "Courier New", fill: "#ffffff", align: "left", fontStyle: "bold", rotation: 0, verticalAlign: "middle", isQr: false },
-      { type: "placeholder", text: "For successful execution and passing validation parameters in the course: {{course_title}}", x: 50, y: 275, width: 550, height: 45, fontSize: 12, fontFamily: "Courier New", fill: "#94a3b8", align: "left", fontStyle: "normal", rotation: 0, verticalAlign: "middle", isQr: false },
-      { type: "placeholder", text: "DATE: {{issue_date}}", x: 50, y: 390, width: 200, height: 25, fontSize: 11, fontFamily: "Courier New", fill: "#06b6d4", align: "left", fontStyle: "normal", rotation: 0, verticalAlign: "middle", isQr: false },
-      { type: "placeholder", text: "{{signature}}", x: 430, y: 390, width: 200, height: 25, fontSize: 13, fontFamily: "Courier New", fill: "#ffffff", align: "center", fontStyle: "italic", rotation: 0, verticalAlign: "middle", isQr: false },
-      { type: "placeholder", text: "AUTOMATED SIGNATURE", x: 430, y: 420, width: 200, height: 20, fontSize: 9, fontFamily: "Courier New", fill: "#475569", align: "center", fontStyle: "normal", rotation: 0, verticalAlign: "middle", isQr: false },
-      { type: "placeholder", text: "{{qr_code}}", x: 680, y: 380, width: 60, height: 60, align: "center", fontStyle: "normal", rotation: 0, verticalAlign: "middle", isQr: true }
-    ]
   },
-  {
-    name: "Gala Invitation",
-    url: "data:image/svg+xml;utf8," + encodeURIComponent(`
-      <svg xmlns="http://www.w3.org/2000/svg" width="842" height="595" viewBox="0 0 842 595">
-        <rect width="842" height="595" fill="#1e1b4b" />
-        <rect x="25" y="25" width="792" height="545" fill="none" stroke="#f59e0b" stroke-width="2" />
-        <rect x="35" y="35" width="772" height="525" fill="none" stroke="#f59e0b" stroke-width="0.75" />
-        <path d="M 25 55 L 55 25 M 787 25 L 817 55 M 817 540 L 787 570 M 55 570 L 25 540" stroke="#f59e0b" stroke-width="2" />
-      </svg>
-    `),
-    canvasSize: { width: 842, height: 595 },
-    elements: [
-      { type: "placeholder", text: "YOU ARE CORDIALLY INVITED TO", x: 171, y: 80, width: 500, height: 25, fontSize: 13, fontFamily: "Montserrat", fill: "#f59e0b", align: "center", fontStyle: "normal", rotation: 0, verticalAlign: "middle", isQr: false },
-      { type: "placeholder", text: "{{course_title}}", x: 121, y: 125, width: 600, height: 45, fontSize: 32, fontFamily: "Playfair Display", fill: "#ffffff", align: "center", fontStyle: "bold", rotation: 0, verticalAlign: "middle", isQr: false },
-      { type: "placeholder", text: "Special Guest Invitation for:", x: 171, y: 195, width: 500, height: 20, fontSize: 11, fontFamily: "Montserrat", fill: "#94a3b8", align: "center", fontStyle: "italic", rotation: 0, verticalAlign: "middle", isQr: false },
-      { type: "placeholder", text: "{{recipient_name}}", x: 121, y: 235, width: 600, height: 38, fontSize: 26, fontFamily: "Playfair Display", fill: "#f59e0b", align: "center", fontStyle: "bold", rotation: 0, verticalAlign: "middle", isQr: false },
-      { type: "placeholder", text: "VENUE: {{issuer_name}}", x: 121, y: 310, width: 600, height: 25, fontSize: 13, fontFamily: "Montserrat", fill: "#ffffff", align: "center", fontStyle: "bold", rotation: 0, verticalAlign: "middle", isQr: false },
-      { type: "placeholder", text: "DATE: {{issue_date}} | TIME: {{signature}}", x: 121, y: 350, width: 600, height: 25, fontSize: 11, fontFamily: "Montserrat", fill: "#94a3b8", align: "center", fontStyle: "normal", rotation: 0, verticalAlign: "middle", isQr: false },
-      { type: "placeholder", text: "Ticket #: {{verification_id}}", x: 121, y: 395, width: 600, height: 20, fontSize: 9, fontFamily: "Montserrat", fill: "#4b5563", align: "center", fontStyle: "normal", rotation: 0, verticalAlign: "middle", isQr: false },
-      { type: "placeholder", text: "{{qr_code}}", x: 396, y: 440, width: 50, height: 50, align: "center", fontStyle: "normal", rotation: 0, verticalAlign: "middle", isQr: true }
-    ]
-  }
 ];
 
-const DraggablePlaceholder = ({ placeholder, onAdd }) => (
-  <div
-    draggable
-    onClick={onAdd}
-    title="Drag onto canvas or click to add"
-    className="text-[11px] bg-white border border-gray-200 hover:border-indigo-500 hover:shadow-sm text-gray-700 p-2.5 rounded-lg cursor-grab active:cursor-grabbing mb-2 transition-all flex items-center justify-between group select-none cursor-pointer"
-    onDragStart={(e) => {
-      e.dataTransfer.setData("text/plain", JSON.stringify(placeholder));
-    }}
-  >
-    <span className="font-semibold group-hover:text-indigo-600">
-      {placeholder.name}
-    </span>
-    <span className="text-[9px] text-gray-400 bg-gray-50 px-1 py-0.5 rounded border border-gray-100 font-mono">
-      {placeholder.value.replace(/[{}]/g, "")}
-    </span>
-  </div>
-);
+// --- DEFAULT BLANK CERTIFICATE STARTER ELEMENTS ---
+const DEFAULT_CERTIFICATE_ELEMENTS = [
+  {
+    id: "el_title",
+    type: "text",
+    text: "Certificate of Completion",
+    x: 171,
+    y: 75,
+    width: 500,
+    height: 45,
+    fontSize: 32,
+    fontFamily: "Playfair Display",
+    fill: "#1e3a8a",
+    align: "center",
+    fontStyle: "bold",
+    rotation: 0,
+    verticalAlign: "middle",
+    isQr: false,
+  },
+  {
+    id: "el_subtitle",
+    type: "text",
+    text: "This is proudly presented to",
+    x: 221,
+    y: 130,
+    width: 400,
+    height: 25,
+    fontSize: 14,
+    fontFamily: "Georgia",
+    fill: "#4b5eaa",
+    align: "center",
+    fontStyle: "italic",
+    rotation: 0,
+    verticalAlign: "middle",
+    isQr: false,
+  },
+  {
+    id: "el_recipient",
+    type: "placeholder",
+    text: "{{recipient_name}}",
+    x: 121,
+    y: 170,
+    width: 600,
+    height: 50,
+    fontSize: 36,
+    fontFamily: "Georgia",
+    fill: "#111827",
+    align: "center",
+    fontStyle: "bold",
+    rotation: 0,
+    verticalAlign: "middle",
+    isQr: false,
+  },
+  {
+    id: "el_rule",
+    type: "line",
+    x: 271,
+    y: 235,
+    width: 300,
+    height: 10,
+    stroke: "#d97706",
+    strokeWidth: 2,
+    rotation: 0,
+  },
+  {
+    id: "el_body",
+    type: "text",
+    text: "for successfully completing the course curriculum and demonstrating exceptional achievement in",
+    x: 171,
+    y: 255,
+    width: 500,
+    height: 35,
+    fontSize: 13,
+    fontFamily: "Arial",
+    fill: "#475569",
+    align: "center",
+    fontStyle: "normal",
+    rotation: 0,
+    verticalAlign: "middle",
+    isQr: false,
+  },
+  {
+    id: "el_course",
+    type: "placeholder",
+    text: "{{course_title}}",
+    x: 121,
+    y: 295,
+    width: 600,
+    height: 35,
+    fontSize: 22,
+    fontFamily: "Playfair Display",
+    fill: "#1e3a8a",
+    align: "center",
+    fontStyle: "bold",
+    rotation: 0,
+    verticalAlign: "middle",
+    isQr: false,
+  },
+  {
+    id: "el_date",
+    type: "placeholder",
+    text: "{{issue_date}}",
+    x: 90,
+    y: 410,
+    width: 180,
+    height: 25,
+    fontSize: 13,
+    fontFamily: "Georgia",
+    fill: "#1e293b",
+    align: "center",
+    fontStyle: "bold",
+    rotation: 0,
+    verticalAlign: "middle",
+    isQr: false,
+  },
+  {
+    id: "el_date_label",
+    type: "text",
+    text: "Date of Issue",
+    x: 90,
+    y: 440,
+    width: 180,
+    height: 20,
+    fontSize: 9,
+    fontFamily: "Arial",
+    fill: "#94a3b8",
+    align: "center",
+    fontStyle: "normal",
+    rotation: 0,
+    verticalAlign: "middle",
+    isQr: false,
+  },
+  {
+    id: "el_signature",
+    type: "placeholder",
+    text: "{{signature}}",
+    x: 572,
+    y: 410,
+    width: 180,
+    height: 25,
+    fontSize: 16,
+    fontFamily: "Georgia",
+    fill: "#1e293b",
+    align: "center",
+    fontStyle: "italic",
+    rotation: 0,
+    verticalAlign: "middle",
+    isQr: false,
+  },
+  {
+    id: "el_signature_label",
+    type: "text",
+    text: "Authorized Signature",
+    x: 572,
+    y: 440,
+    width: 180,
+    height: 20,
+    fontSize: 9,
+    fontFamily: "Arial",
+    fill: "#94a3b8",
+    align: "center",
+    fontStyle: "normal",
+    rotation: 0,
+    verticalAlign: "middle",
+    isQr: false,
+  },
+  {
+    id: "el_qr",
+    type: "qr",
+    text: "{{qr_code}}",
+    x: 396,
+    y: 400,
+    width: 50,
+    height: 50,
+    align: "center",
+    fontStyle: "normal",
+    rotation: 0,
+    verticalAlign: "middle",
+    isQr: true,
+  },
+];
 
 const UploadTemplatePage = () => {
   const { templateId } = useParams();
   const navigate = useNavigate();
-  const [templateTitle, setTemplateTitle] = useState("");
-  const [templateType, setTemplateType] = useState("certificate"); // 'certificate', 'receipt', or 'invitation'
+  const [templateTitle, setTemplateTitle] = useState(templateId ? "" : "Untitled Certificate");
+  const [templateType, setTemplateType] = useState("certificate");
   const [templateImageFile, setTemplateImageFile] = useState(null);
   const [templateImageUrl, setTemplateImageUrl] = useState(null);
-  const [elements, setElements] = useState([]);
-  const [history, setHistory] = useState([[]]);
+  const [backgroundConfig, setBackgroundConfig] = useState({
+    fill: "#ffffff",
+    border: true,
+    borderColor: "#1e3a8a",
+    borderAccent: "#d97706",
+    borderWidth: 4,
+  });
+
+  const [elements, setElements] = useState(templateId ? [] : DEFAULT_CERTIFICATE_ELEMENTS);
+  const [history, setHistory] = useState([templateId ? [] : DEFAULT_CERTIFICATE_ELEMENTS]);
   const [currentStep, setCurrentStep] = useState(0);
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
   const [selectedId, setSelectedId] = useState(null);
   const [canvasSize, setCanvasSize] = useState({ width: 842, height: 595 });
   const [customVariables, setCustomVariables] = useState([]);
   const [newVarName, setNewVarName] = useState("");
+  const [uploadedAssets, setUploadedAssets] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoading, setIsLoading] = useState(!!templateId);
   const [showGrid, setShowGrid] = useState(true);
-  const [zoomScale, setZoomScale] = useState(0.75); // Compact visual scaling
-  const [leftTab, setLeftTab] = useState("variables"); // "variables" or "presets"
+  const [zoomScale, setZoomScale] = useState(0.75);
+  const [leftTab, setLeftTab] = useState("text"); // 'text', 'elements', 'background', 'uploads', 'layers'
   const [isLeftSidebarOpen, setIsLeftSidebarOpen] = useState(true);
   const [isRightSidebarOpen, setIsRightSidebarOpen] = useState(true);
-  
+
   const fileInputRef = useRef(null);
+  const assetInputRef = useRef(null);
   const stageRef = useRef(null);
   const workspaceRef = useRef(null);
-  const [zoomMode, setZoomMode] = useState("fit"); // 'fit' or 'manual'
+  const [zoomMode, setZoomMode] = useState("fit");
 
   const handleFitScreen = useCallback(() => {
     if (!workspaceRef.current) return;
     const rect = workspaceRef.current.getBoundingClientRect();
-    const padding = 64; // horizontal & vertical padding (p-8 = 32px on each side = 64px total)
+    const padding = 64;
     const availableWidth = rect.width - padding;
     const availableHeight = rect.height - padding;
-
     if (availableWidth <= 0 || availableHeight <= 0) return;
 
     const scaleX = availableWidth / canvasSize.width;
     const scaleY = availableHeight / canvasSize.height;
-
     let fitScale = Math.min(scaleX, scaleY);
-    // Round to 2 decimal places and clamp between 0.25 and 2.0
     fitScale = Math.max(0.25, Math.min(2.0, Math.round(fitScale * 100) / 100));
-
     setZoomScale(fitScale);
   }, [canvasSize]);
 
-  // Auto-fit on background load or initial template fetch
   useEffect(() => {
-    if (templateImageUrl) {
-      const timer = setTimeout(() => {
-        handleFitScreen();
-      }, 250);
-      return () => clearTimeout(timer);
-    }
-  }, [templateImageUrl, handleFitScreen]);
+    const timer = setTimeout(() => {
+      handleFitScreen();
+    }, 200);
+    return () => clearTimeout(timer);
+  }, [canvasSize, handleFitScreen]);
 
-  // Recalculate zoom when sidebars toggle, if in 'fit' mode
   useEffect(() => {
     if (zoomMode === "fit") {
       const timer = setTimeout(() => {
@@ -377,114 +398,49 @@ const UploadTemplatePage = () => {
     }
   }, [isLeftSidebarOpen, isRightSidebarOpen, zoomMode, handleFitScreen]);
 
-  // Handle window resizing, if in 'fit' mode
-  useEffect(() => {
-    const handleResize = () => {
-      if (zoomMode === "fit") {
-        handleFitScreen();
-      }
-    };
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, [zoomMode, handleFitScreen]);
-
-  // --- Keyboard Shortcuts for Toggling Sidebars ---
-  useEffect(() => {
-    const handleShortcutKeyDown = (e) => {
-      // Don't trigger if typing in an input, textarea, or select
-      const activeTag = document.activeElement?.tagName?.toLowerCase();
-      if (activeTag === "input" || activeTag === "textarea" || activeTag === "select") {
-        return;
-      }
-
-      if (e.key === "[") {
-        e.preventDefault();
-        setIsLeftSidebarOpen((prev) => !prev);
-      } else if (e.key === "]") {
-        e.preventDefault();
-        setIsRightSidebarOpen((prev) => !prev);
-      } else if (e.key === "\\") {
-        e.preventDefault();
-        // Toggle both sidebars
-        if (isLeftSidebarOpen || isRightSidebarOpen) {
-          setIsLeftSidebarOpen(false);
-          setIsRightSidebarOpen(false);
-        } else {
-          setIsLeftSidebarOpen(true);
-          setIsRightSidebarOpen(true);
-        }
-      }
-    };
-
-    window.addEventListener("keydown", handleShortcutKeyDown);
-    return () => window.removeEventListener("keydown", handleShortcutKeyDown);
-  }, [isLeftSidebarOpen, isRightSidebarOpen]);
-
+  // Load template if editing existing
   useEffect(() => {
     if (templateId) {
       const fetchTemplateData = async () => {
         try {
           const response = await getTemplate(templateId);
           const { title } = response.data;
-          setTemplateTitle(title || "");
+          setTemplateTitle(title || "Custom Template");
 
           let layoutData = response.data.layout_data;
           if (typeof layoutData === "string") {
             try {
               layoutData = JSON.parse(layoutData);
             } catch (e) {
-              console.error("Failed to parse layout_data:", e);
               layoutData = {};
             }
           }
           layoutData = layoutData || {};
 
           if (layoutData.type) setTemplateType(layoutData.type);
+          if (layoutData.canvas) setCanvasSize(layoutData.canvas);
 
-          const loadedElements = (layoutData.elements || []).map(
-            (el, index) => ({
-              ...el,
-              id:
-                el.id ||
-                `el_${Math.random().toString(36).substring(2, 11)}_${index}`,
-              verticalAlign: el.verticalAlign || "middle",
-              align: el.align || (el.isQr ? "center" : "left"),
-            })
-          );
+          if (layoutData.background) {
+            setBackgroundConfig({
+              fill: layoutData.background.fill || "#ffffff",
+              border: !!layoutData.background.border,
+              borderColor: layoutData.background.borderColor || "#1e3a8a",
+              borderAccent: layoutData.background.borderAccent || "#d97706",
+              borderWidth: layoutData.background.borderWidth || 4,
+            });
+          }
+
+          const loadedElements = (layoutData.elements || []).map((el, index) => ({
+            ...el,
+            id: el.id || `el_${Math.random().toString(36).substring(2, 11)}_${index}`,
+            verticalAlign: el.verticalAlign || "middle",
+            align: el.align || (el.isQr ? "center" : "left"),
+          }));
           setElements(loadedElements);
-          setCanvasSize(layoutData.canvas || { width: 842, height: 595 });
 
-          // Extract existing custom variables from layout_data and from elements
+          // Custom variables
           const customVars = layoutData.custom_fields || [];
-          const customFromElements = [];
-          const standardTags = new Set([
-            "recipient_name", "course_title", "issue_date", "issuer_name",
-            "verification_id", "signature", "qr_code", "amount"
-          ]);
-          loadedElements.forEach((el) => {
-            if (el.text) {
-              const matches = el.text.match(/{{([^}]+)}}/g);
-              if (matches) {
-                matches.forEach((m) => {
-                  const tag = m.replace(/[{}]/g, "").trim().toLowerCase();
-                  if (!standardTags.has(tag)) {
-                    const formattedName = tag
-                      .split("_")
-                      .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-                      .join(" ");
-                    if (!customVars.some((v) => v.value === `{{${tag}}}`) && !customFromElements.some((v) => v.value === `{{${tag}}}`)) {
-                      customFromElements.push({
-                        name: formattedName,
-                        value: `{{${tag}}}`,
-                        defaultWidth: 250,
-                      });
-                    }
-                  }
-                });
-              }
-            }
-          });
-          setCustomVariables([...customVars, ...customFromElements]);
+          setCustomVariables(customVars);
 
           const rawBg = layoutData.background?.image || response.data.background_url;
           if (rawBg) {
@@ -496,6 +452,7 @@ const UploadTemplatePage = () => {
             }
             setTemplateImageUrl(fullBgUrl);
           }
+
           setHistory([loadedElements]);
           setCurrentStep(0);
         } catch (error) {
@@ -510,6 +467,7 @@ const UploadTemplatePage = () => {
     }
   }, [templateId, navigate]);
 
+  // Undo / Redo history tracking
   useEffect(() => {
     if (!isLoadingHistory) {
       const newHistory = history.slice(0, currentStep + 1);
@@ -539,7 +497,222 @@ const UploadTemplatePage = () => {
     }
   };
 
-  const handleFileChange = (e) => {
+  // --- Add Text Elements (Heading, Subheading, Body, Variable) ---
+  const handleAddText = (kind) => {
+    const cx = Math.round(canvasSize.width / 2);
+    const cy = Math.round(canvasSize.height / 2);
+
+    let newEl = {
+      id: `el_text_${Math.random().toString(36).substring(2, 9)}`,
+      type: "text",
+      rotation: 0,
+      opacity: 1,
+    };
+
+    if (kind === "heading") {
+      newEl = {
+        ...newEl,
+        text: "CERTIFICATE OF RECOGNITION",
+        x: Math.max(20, cx - 250),
+        y: Math.max(20, cy - 25),
+        width: 500,
+        height: 50,
+        fontSize: 32,
+        fontFamily: "Playfair Display",
+        fill: "#1e3a8a",
+        align: "center",
+        fontStyle: "bold",
+      };
+    } else if (kind === "subheading") {
+      newEl = {
+        ...newEl,
+        text: "In Recognition of Outstanding Excellence",
+        x: Math.max(20, cx - 200),
+        y: Math.max(20, cy - 15),
+        width: 400,
+        height: 30,
+        fontSize: 18,
+        fontFamily: "Georgia",
+        fill: "#4b5eaa",
+        align: "center",
+        fontStyle: "italic",
+      };
+    } else {
+      newEl = {
+        ...newEl,
+        text: "This document is awarded in appreciation of active participation and demonstrated commitment.",
+        x: Math.max(20, cx - 250),
+        y: Math.max(20, cy - 20),
+        width: 500,
+        height: 40,
+        fontSize: 13,
+        fontFamily: "Arial",
+        fill: "#475569",
+        align: "center",
+        fontStyle: "normal",
+      };
+    }
+
+    setElements((prev) => [...prev, newEl]);
+    setSelectedId(newEl.id);
+    setIsRightSidebarOpen(true);
+  };
+
+  // --- Add Shape Elements ---
+  const handleAddShape = (shapeType) => {
+    const cx = Math.round(canvasSize.width / 2);
+    const cy = Math.round(canvasSize.height / 2);
+    const id = `el_${shapeType}_${Math.random().toString(36).substring(2, 9)}`;
+
+    let newEl = {
+      id,
+      type: shapeType,
+      x: cx - 60,
+      y: cy - 60,
+      width: 120,
+      height: 120,
+      rotation: 0,
+      opacity: 1,
+    };
+
+    if (shapeType === "rect") {
+      newEl = {
+        ...newEl,
+        x: cx - 100,
+        y: cy - 60,
+        width: 200,
+        height: 120,
+        fill: "#3b82f6",
+        stroke: "#1d4ed8",
+        strokeWidth: 2,
+        cornerRadius: 8,
+      };
+    } else if (shapeType === "circle") {
+      newEl = {
+        ...newEl,
+        width: 120,
+        height: 120,
+        fill: "#f59e0b",
+        stroke: "#d97706",
+        strokeWidth: 2,
+      };
+    } else if (shapeType === "line") {
+      newEl = {
+        ...newEl,
+        x: cx - 150,
+        y: cy,
+        width: 300,
+        height: 10,
+        stroke: "#1e293b",
+        strokeWidth: 2,
+      };
+    } else if (shapeType === "star") {
+      newEl = {
+        ...newEl,
+        width: 70,
+        height: 70,
+        fill: "#f59e0b",
+        stroke: "#d97706",
+        strokeWidth: 1,
+        numPoints: 5,
+      };
+    } else if (shapeType === "badge") {
+      newEl = {
+        ...newEl,
+        width: 90,
+        height: 110,
+        fill: "#d97706",
+        stroke: "#b45309",
+        strokeWidth: 2,
+      };
+    } else if (shapeType === "border") {
+      newEl = {
+        ...newEl,
+        x: 25,
+        y: 25,
+        width: canvasSize.width - 50,
+        height: canvasSize.height - 50,
+        fill: "transparent",
+        stroke: "#1e3a8a",
+        strokeWidth: 4,
+        cornerRadius: 4,
+      };
+    }
+
+    setElements((prev) => [...prev, newEl]);
+    setSelectedId(newEl.id);
+    setIsRightSidebarOpen(true);
+  };
+
+  // --- Add Dynamic Variable Placeholder ---
+  const handleAddPlaceholder = (placeholder) => {
+    const defaultWidth = placeholder.defaultWidth || 250;
+    const isQr = placeholder.isQr || false;
+    const cx = Math.round(canvasSize.width / 2);
+    const cy = Math.round(canvasSize.height / 2);
+
+    const newElement = {
+      id: `el_var_${Math.random().toString(36).substring(2, 9)}`,
+      type: isQr ? "qr" : "placeholder",
+      text: placeholder.value,
+      x: isQr ? cx - 35 : Math.max(20, cx - defaultWidth / 2),
+      y: isQr ? cy - 35 : Math.max(20, cy - 15),
+      width: isQr ? 70 : defaultWidth,
+      height: isQr ? 70 : 32,
+      fontSize: 20,
+      fontFamily: "Georgia",
+      fill: "#111827",
+      align: isQr ? "center" : "left",
+      fontStyle: isQr ? "normal" : "bold",
+      rotation: 0,
+      verticalAlign: "middle",
+      isQr,
+    };
+
+    setElements((prev) => [...prev, newElement]);
+    setSelectedId(newElement.id);
+    setIsRightSidebarOpen(true);
+  };
+
+  // --- Add Custom Uploaded Image to Canvas ---
+  const handleAddImageToCanvas = (imgSrc) => {
+    const cx = Math.round(canvasSize.width / 2);
+    const cy = Math.round(canvasSize.height / 2);
+    const newEl = {
+      id: `el_img_${Math.random().toString(36).substring(2, 9)}`,
+      type: "image",
+      src: imgSrc,
+      x: cx - 60,
+      y: cy - 60,
+      width: 120,
+      height: 120,
+      rotation: 0,
+      opacity: 1,
+    };
+    setElements((prev) => [...prev, newEl]);
+    setSelectedId(newEl.id);
+    setIsRightSidebarOpen(true);
+  };
+
+  // Handle uploading logo / graphic / seal
+  const handleAssetUpload = (e) => {
+    const file = e.target.files[0];
+    if (file && (file.type === "image/png" || file.type === "image/jpeg" || file.type === "image/webp")) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const src = event.target.result;
+        setUploadedAssets((prev) => [...prev, { name: file.name, src }]);
+        handleAddImageToCanvas(src);
+        toast.success(`Added "${file.name}" to canvas!`);
+      };
+      reader.readAsDataURL(file);
+    } else {
+      toast.error("Please upload a PNG, JPG, or WEBP image.");
+    }
+  };
+
+  // Handle uploading full background
+  const handleBackgroundUpload = (e) => {
     const file = e.target.files[0];
     if (file && (file.type === "image/png" || file.type === "image/jpeg")) {
       const reader = new FileReader();
@@ -548,115 +721,44 @@ const UploadTemplatePage = () => {
         img.onload = () => {
           const aspectRatio = img.width / img.height;
           const canvasWidth = 842;
-          const canvasHeight = canvasWidth / aspectRatio;
+          const canvasHeight = Math.round(canvasWidth / aspectRatio);
           setCanvasSize({ width: canvasWidth, height: canvasHeight });
           setTemplateImageUrl(event.target.result);
           setTemplateImageFile(file);
+          toast.success("Background uploaded!");
         };
         img.src = event.target.result;
       };
       reader.readAsDataURL(file);
     } else {
-      toast.error("Please upload a valid PNG or JPG image.");
+      toast.error("Please upload a PNG or JPG image.");
     }
   };
 
   const handleSelectPreset = (preset) => {
     setTemplateImageUrl(preset.url);
     setTemplateImageFile(null);
-    setCanvasSize(preset.canvasSize || { width: 842, height: 595 });
-    if (preset.elements) {
-      const elementsWithIds = preset.elements.map((el, index) => ({
-        ...el,
-        id: `el_preset_${preset.name.replace(/\s+/g, "").toLowerCase()}_${index}_${Math.random().toString(36).substring(2, 6)}`
-      }));
-      setElements(elementsWithIds);
+    if (preset.canvasSize) {
+      setCanvasSize(preset.canvasSize);
     }
+    toast.success(`Applied ${preset.name}`);
   };
 
-  const handleAddPlaceholder = (placeholder) => {
-    const defaultWidth = placeholder.defaultWidth || 250;
-    const isQr = placeholder.isQr || false;
-
-    const centerX = canvasSize.width / 2;
-    const centerY = canvasSize.height / 2;
-
-    const newElement = {
-      id: `el_${Math.random().toString(36).substring(2, 11)}`,
-      type: "placeholder",
-      text: placeholder.value,
-      x: isQr ? centerX - 50 : Math.max(20, centerX - defaultWidth / 2),
-      y: isQr ? centerY - 50 : Math.max(20, centerY - 15),
-      width: isQr ? 100 : defaultWidth,
-      height: isQr ? 100 : 30,
-      fontSize: 20,
-      fontFamily: "Times New Roman",
-      fill: "#000000",
-      align: isQr ? "center" : "left",
-      fontStyle: "normal",
-      rotation: 0,
-      verticalAlign: "middle",
-      isQr,
-    };
-
-    setElements((prev) => [...prev, newElement]);
-    setSelectedId(newElement.id);
-    setIsRightSidebarOpen(true);
-  };
-
-  const handleDrop = (e) => {
-    e.preventDefault();
-    if (!stageRef.current) return;
-
-    stageRef.current.setPointersPositions(e);
-    const pos = stageRef.current.getPointerPosition();
-    if (!pos) return;
-
-    let placeholder;
-    try {
-      placeholder = JSON.parse(e.dataTransfer.getData("text/plain"));
-    } catch {
-      return;
+  const handleClearCanvas = () => {
+    if (window.confirm("Are you sure you want to clear the canvas and start completely blank?")) {
+      setElements([]);
+      setSelectedId(null);
+      setTemplateImageUrl(null);
+      setTemplateImageFile(null);
+      setBackgroundConfig({
+        fill: "#ffffff",
+        border: false,
+        borderColor: "#1e3a8a",
+        borderAccent: "#d97706",
+        borderWidth: 4,
+      });
+      toast.success("Canvas cleared. Start designing from scratch!");
     }
-
-    const defaultWidth = placeholder.defaultWidth || 250;
-    const isQr = placeholder.isQr || false;
-
-    // Adjust coordinates by dividing with zoomScale
-    const dropX = pos.x / zoomScale;
-    const dropY = pos.y / zoomScale;
-
-    const elemW = isQr ? 100 : defaultWidth;
-    const elemH = isQr ? 100 : 30;
-
-    const elemX = Math.round(
-      Math.max(0, Math.min(canvasSize.width - elemW, dropX - elemW / 2))
-    );
-    const elemY = Math.round(
-      Math.max(0, Math.min(canvasSize.height - elemH, dropY - elemH / 2))
-    );
-
-    const newElement = {
-      id: `el_${Math.random().toString(36).substring(2, 11)}`,
-      type: "placeholder",
-      text: placeholder.value,
-      x: elemX,
-      y: elemY,
-      width: elemW,
-      height: elemH,
-      fontSize: 20,
-      fontFamily: "Times New Roman",
-      fill: "#000000",
-      align: isQr ? "center" : "left",
-      fontStyle: "normal",
-      rotation: 0,
-      verticalAlign: "middle",
-      isQr,
-    };
-
-    setElements((prev) => [...prev, newElement]);
-    setSelectedId(newElement.id);
-    setIsRightSidebarOpen(true);
   };
 
   const handleAddCustomVariable = () => {
@@ -666,14 +768,10 @@ const UploadTemplatePage = () => {
       .toLowerCase()
       .replace(/[^a-z0-9_]/g, "_")
       .replace(/^_+|_+$/g, "");
-    
     if (!cleanTag) return;
     const value = `{{${cleanTag}}}`;
 
-    if (
-      activePlaceholders.some((p) => p.value === value) ||
-      customVariables.some((cv) => cv.value === value)
-    ) {
+    if (customVariables.some((cv) => cv.value === value)) {
       toast.error("A variable with this name already exists.");
       return;
     }
@@ -688,40 +786,55 @@ const UploadTemplatePage = () => {
 
     setCustomVariables((prev) => [...prev, newVar]);
     setNewVarName("");
-    toast.success(`Added "${formattedName}" variable!`);
+    toast.success(`Created variable "${formattedName}"`);
   };
 
-  const handleDeleteCustomVariable = (varValue) => {
-    setCustomVariables((prev) => prev.filter((v) => v.value !== varValue));
-  };
-
+  // --- Save Template ---
   const handleSaveTemplate = async () => {
-    if (!templateTitle.trim())
-      return toast.error("Please provide a title for your template.");
-    if (!templateImageUrl)
-      return toast.error("Please select a background design or upload one.");
-    if (elements.length === 0)
-      return toast.error("Please add at least one placeholder element.");
+    if (!templateTitle.trim()) {
+      return toast.error("Please provide a name for your certificate.");
+    }
+    if (elements.length === 0) {
+      return toast.error("Please add at least one element to your design.");
+    }
 
     setIsSubmitting(true);
     const layoutData = {
       type: templateType,
       canvas: canvasSize,
       custom_fields: customVariables,
+      background: {
+        fill: backgroundConfig.fill || "#ffffff",
+        border: !!backgroundConfig.border,
+        borderColor: backgroundConfig.borderColor || "#1e3a8a",
+        borderAccent: backgroundConfig.borderAccent || "#d97706",
+        borderWidth: backgroundConfig.borderWidth || 4,
+        image: templateImageUrl || null,
+      },
       elements: elements.map((el) => ({
         id: el.id,
-        type: "placeholder",
+        type: el.type || (el.isQr ? "qr" : "text"),
         text: el.text,
-        x: el.x,
-        y: el.y,
-        width: el.width,
-        height: el.height,
+        src: el.src,
+        x: Math.round(el.x || 0),
+        y: Math.round(el.y || 0),
+        width: Math.round(el.width || 100),
+        height: Math.round(el.height || 30),
         fontSize: el.fontSize,
         fontFamily: el.fontFamily,
         fill: el.fill,
+        stroke: el.stroke,
+        strokeWidth: el.strokeWidth,
+        dash: el.dash,
+        cornerRadius: el.cornerRadius,
+        numPoints: el.numPoints,
         align: el.align || "left",
         fontStyle: el.fontStyle || "normal",
-        rotation: el.rotation || 0,
+        textDecoration: el.textDecoration || "",
+        letterSpacing: el.letterSpacing || 0,
+        lineHeight: el.lineHeight || 1,
+        opacity: el.opacity != null ? el.opacity : 1,
+        rotation: Math.round(el.rotation || 0),
         verticalAlign: el.verticalAlign || "middle",
         isQr: !!el.isQr,
       })),
@@ -738,7 +851,7 @@ const UploadTemplatePage = () => {
           relativePath = relativePath.replace(cleanServer, "");
         }
       }
-      layoutData.background = { image: relativePath };
+      layoutData.background.image = relativePath;
     }
 
     const formData = new FormData();
@@ -753,10 +866,10 @@ const UploadTemplatePage = () => {
       : createCustomTemplate(formData);
 
     toast.promise(promise, {
-      loading: templateId ? "Updating template..." : "Saving template...",
+      loading: templateId ? "Updating design..." : "Saving certificate template...",
       success: () => {
-        setTimeout(() => navigate("/dashboard/templates"), 1500);
-        return `Template ${templateId ? "updated" : "saved"} successfully!`;
+        setTimeout(() => navigate("/dashboard/templates"), 1200);
+        return `Certificate template saved successfully!`;
       },
       error: (err) => err.response?.data?.msg || `Failed to save template.`,
     });
@@ -772,414 +885,719 @@ const UploadTemplatePage = () => {
       : CERTIFICATE_PLACEHOLDERS;
 
   return (
-    <div className="h-full flex flex-col font-sans bg-gray-50 text-gray-800">
+    <div className="h-full flex flex-col font-sans bg-slate-100 text-gray-800 select-none">
       <Toaster position="top-center" />
-      
-      {/* --- TOP HEADER --- */}
-      <header className="bg-white border-b border-gray-200 px-4 py-2 flex items-center justify-between sticky top-0 z-50 h-12">
+
+      {/* --- STUDIO TOP HEADER --- */}
+      <header className="bg-white border-b border-gray-200 px-4 py-2 flex items-center justify-between sticky top-0 z-50 h-12 shadow-xs">
         <div className="flex items-center gap-3">
           <button
             onClick={() => navigate("/dashboard/templates")}
-            className="text-gray-500 hover:text-gray-900 transition-colors p-1.5 rounded-full hover:bg-gray-100"
+            className="text-gray-500 hover:text-gray-900 transition-colors p-1.5 rounded-full hover:bg-gray-100 cursor-pointer"
+            title="Back to Templates"
           >
             <ArrowLeft size={16} />
           </button>
-          <div className="h-5 w-px bg-gray-200"></div>
-          <input
-            type="text"
-            value={templateTitle}
-            onChange={(e) => setTemplateTitle(e.target.value)}
-            placeholder="Untitled Custom Template"
-            className="text-sm font-bold text-gray-800 border-none focus:ring-0 placeholder-gray-400 bg-transparent w-56"
-          />
+          <div className="h-5 w-px bg-gray-200" />
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] font-bold bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded uppercase tracking-wider">
+              Studio
+            </span>
+            <input
+              type="text"
+              value={templateTitle}
+              onChange={(e) => setTemplateTitle(e.target.value)}
+              placeholder="Untitled Certificate"
+              className="text-sm font-bold text-gray-800 border-none focus:ring-0 placeholder-gray-400 bg-transparent w-64 hover:bg-gray-50 px-1.5 py-0.5 rounded transition-colors"
+            />
+          </div>
         </div>
 
-        {/* Header Toolbar */}
+        {/* Studio Toolbar */}
         <div className="flex items-center gap-2">
-          {/* Template Type Selector */}
-          <div className="bg-gray-100 p-0.5 rounded-lg flex text-xs font-semibold mr-2 border border-gray-200/50">
+          {/* Document Type Selector */}
+          <div className="bg-gray-100 p-0.5 rounded-lg flex text-xs font-semibold mr-1 border border-gray-200/60">
             <button
               onClick={() => setTemplateType("certificate")}
               className={`px-2.5 py-1 rounded-md flex items-center gap-1.5 transition-all cursor-pointer ${
                 templateType === "certificate"
-                  ? "bg-white text-indigo-600 shadow-sm"
+                  ? "bg-white text-indigo-600 shadow-xs"
                   : "text-gray-500 hover:text-gray-700"
               }`}
             >
-              <FileBadge size={14} /> Certificate
+              <FileBadge size={13} /> Certificate
             </button>
             <button
               onClick={() => setTemplateType("receipt")}
               className={`px-2.5 py-1 rounded-md flex items-center gap-1.5 transition-all cursor-pointer ${
                 templateType === "receipt"
-                  ? "bg-white text-indigo-600 shadow-sm"
+                  ? "bg-white text-indigo-600 shadow-xs"
                   : "text-gray-500 hover:text-gray-700"
               }`}
             >
-              <Receipt size={14} /> Receipt
+              <Receipt size={13} /> Receipt
             </button>
             <button
               onClick={() => setTemplateType("invitation")}
               className={`px-2.5 py-1 rounded-md flex items-center gap-1.5 transition-all cursor-pointer ${
                 templateType === "invitation"
-                  ? "bg-white text-indigo-600 shadow-sm"
+                  ? "bg-white text-indigo-600 shadow-xs"
                   : "text-gray-500 hover:text-gray-700"
               }`}
             >
-              <Mail size={14} /> Invitation
+              <Mail size={13} /> Invitation
             </button>
           </div>
 
           {/* Grid Toggle */}
           <button
             onClick={() => setShowGrid(!showGrid)}
-            className={`p-1.5 rounded-md transition-colors border ${
+            className={`p-1.5 rounded-md transition-colors border cursor-pointer ${
               showGrid
                 ? "bg-indigo-50 border-indigo-200 text-indigo-600"
                 : "bg-white border-gray-200 text-gray-500 hover:bg-gray-50"
             }`}
-            title="Toggle Grid"
+            title="Toggle Alignment Grid"
           >
             <Grid size={14} />
           </button>
 
-          <div className="h-5 w-px bg-gray-200 mx-1"></div>
+          <div className="h-5 w-px bg-gray-200 mx-0.5" />
 
-          {/* Undo/Redo */}
+          {/* Undo / Redo */}
           <button
             onClick={handleUndo}
             disabled={currentStep <= 0}
-            className="text-gray-600 hover:text-gray-900 disabled:opacity-30 p-1.5 rounded-md hover:bg-gray-100 border border-transparent"
-            title="Undo"
+            className="text-gray-600 hover:text-gray-900 disabled:opacity-30 p-1.5 rounded-md hover:bg-gray-100 border border-transparent cursor-pointer"
+            title="Undo (Ctrl+Z)"
           >
             <RotateCcw size={14} />
           </button>
           <button
             onClick={handleRedo}
             disabled={currentStep >= history.length - 1}
-            className="text-gray-600 hover:text-gray-900 disabled:opacity-30 p-1.5 rounded-md hover:bg-gray-100 border border-transparent"
-            title="Redo"
+            className="text-gray-600 hover:text-gray-900 disabled:opacity-30 p-1.5 rounded-md hover:bg-gray-100 border border-transparent cursor-pointer"
+            title="Redo (Ctrl+Y)"
           >
             <RotateCw size={14} />
           </button>
 
-          <div className="h-5 w-px bg-gray-200 mx-1"></div>
+          <div className="h-5 w-px bg-gray-200 mx-0.5" />
+
+          {/* Clear / Blank Button */}
+          <button
+            onClick={handleClearCanvas}
+            className="text-gray-500 hover:text-red-600 p-1.5 rounded-md hover:bg-red-50 text-xs font-semibold flex items-center gap-1 cursor-pointer transition-colors"
+            title="Clear all elements and start blank"
+          >
+            <RefreshCw size={13} />
+            <span className="hidden sm:inline">Reset Blank</span>
+          </button>
 
           {/* Save Button */}
           <button
             onClick={handleSaveTemplate}
             disabled={isSubmitting}
-            className="bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-1.5 px-4 rounded-lg flex items-center gap-1.5 disabled:opacity-70 shadow-sm transition-all ml-1 text-xs cursor-pointer"
+            className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-1.5 px-4 rounded-lg flex items-center gap-1.5 disabled:opacity-70 shadow-sm transition-all ml-1 text-xs cursor-pointer"
           >
             {isSubmitting ? (
               <Spinner animation="border" size="sm" style={{ width: 12, height: 12 }} />
             ) : (
               <Save size={14} />
             )}
-            <span>Save Design</span>
+            <span>Save Certificate</span>
           </button>
         </div>
       </header>
 
-      {/* --- THREE-COLUMN EDITOR GRID --- */}
+      {/* --- STUDIO BODY: 3 COLUMNS --- */}
       <div className="flex-grow flex overflow-hidden">
         
-        {/* 1. LEFT SIDEBAR: Variables & Background Presets */}
+        {/* 1. LEFT SIDEBAR: Canva-Style Tools */}
         {isLeftSidebarOpen && (
-          <aside className="w-60 bg-white border-r border-gray-200 flex flex-col shrink-0 animate-in slide-in-from-left duration-200">
-          {/* Tab Headers */}
-          <div className="grid grid-cols-3 border-b border-gray-100 p-1.5 gap-1 bg-gray-50/50">
-            <button
-              onClick={() => setLeftTab("variables")}
-              className={`py-1 px-1 text-[9px] font-bold rounded transition-all cursor-pointer text-center ${
-                leftTab === "variables"
-                  ? "bg-white text-gray-900 shadow-sm border border-gray-200/50"
-                  : "text-gray-500 hover:text-gray-800"
-              }`}
-            >
-              Fields
-            </button>
-            <button
-              onClick={() => setLeftTab("presets")}
-              className={`py-1 px-1 text-[9px] font-bold rounded transition-all cursor-pointer text-center ${
-                leftTab === "presets"
-                  ? "bg-white text-gray-900 shadow-sm border border-gray-200/50"
-                  : "text-gray-500 hover:text-gray-800"
-              }`}
-            >
-              Presets
-            </button>
-            <button
-              onClick={() => setLeftTab("layers")}
-              className={`py-1 px-1 text-[9px] font-bold rounded transition-all cursor-pointer text-center ${
-                leftTab === "layers"
-                  ? "bg-white text-gray-900 shadow-sm border border-gray-200/50"
-                  : "text-gray-500 hover:text-gray-800"
-              }`}
-            >
-              Layers
-            </button>
-          </div>
+          <aside className="w-64 bg-white border-r border-gray-200 flex flex-col shrink-0 animate-in slide-in-from-left duration-200 shadow-sm">
+            {/* Canva Tab Strip */}
+            <div className="grid grid-cols-5 border-b border-gray-100 p-1 bg-gray-50/70 text-center">
+              <button
+                onClick={() => setLeftTab("text")}
+                className={`py-1.5 flex flex-col items-center justify-center rounded transition-all cursor-pointer ${
+                  leftTab === "text"
+                    ? "bg-white text-indigo-600 shadow-xs font-bold"
+                    : "text-gray-500 hover:text-gray-800"
+                }`}
+                title="Add Text"
+              >
+                <Type size={14} />
+                <span className="text-[9px] mt-0.5">Text</span>
+              </button>
 
-          {/* Left Panel Scrollable Area */}
-          <div className="flex-grow overflow-y-auto p-3">
-            {isLoading ? (
-              <div className="text-center py-10">
-                <Spinner variant="primary" size="sm" />
-              </div>
-            ) : leftTab === "variables" ? (
-              <div>
-                <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-2">
-                  Drag elements onto canvas
-                </p>
-                <div className="space-y-1">
-                  {activePlaceholders.map((p) => (
-                    <DraggablePlaceholder
-                      key={p.value}
-                      placeholder={p}
-                      onAdd={() => handleAddPlaceholder(p)}
-                    />
-                  ))}
+              <button
+                onClick={() => setLeftTab("elements")}
+                className={`py-1.5 flex flex-col items-center justify-center rounded transition-all cursor-pointer ${
+                  leftTab === "elements"
+                    ? "bg-white text-indigo-600 shadow-xs font-bold"
+                    : "text-gray-500 hover:text-gray-800"
+                }`}
+                title="Add Shapes & Elements"
+              >
+                <Shapes size={14} />
+                <span className="text-[9px] mt-0.5">Shapes</span>
+              </button>
+
+              <button
+                onClick={() => setLeftTab("background")}
+                className={`py-1.5 flex flex-col items-center justify-center rounded transition-all cursor-pointer ${
+                  leftTab === "background"
+                    ? "bg-white text-indigo-600 shadow-xs font-bold"
+                    : "text-gray-500 hover:text-gray-800"
+                }`}
+                title="Canvas & Background"
+              >
+                <Palette size={14} />
+                <span className="text-[9px] mt-0.5">Canvas</span>
+              </button>
+
+              <button
+                onClick={() => setLeftTab("uploads")}
+                className={`py-1.5 flex flex-col items-center justify-center rounded transition-all cursor-pointer ${
+                  leftTab === "uploads"
+                    ? "bg-white text-indigo-600 shadow-xs font-bold"
+                    : "text-gray-500 hover:text-gray-800"
+                }`}
+                title="Upload Logo & Graphics"
+              >
+                <UploadCloud size={14} />
+                <span className="text-[9px] mt-0.5">Uploads</span>
+              </button>
+
+              <button
+                onClick={() => setLeftTab("layers")}
+                className={`py-1.5 flex flex-col items-center justify-center rounded transition-all cursor-pointer ${
+                  leftTab === "layers"
+                    ? "bg-white text-indigo-600 shadow-xs font-bold"
+                    : "text-gray-500 hover:text-gray-800"
+                }`}
+                title="Layers Stack"
+              >
+                <Layers size={14} />
+                <span className="text-[9px] mt-0.5">Layers</span>
+              </button>
+            </div>
+
+            {/* Left Tab Content */}
+            <div className="flex-grow overflow-y-auto p-3">
+              {isLoading ? (
+                <div className="text-center py-10">
+                  <Spinner variant="primary" size="sm" />
                 </div>
+              ) : leftTab === "text" ? (
+                /* TAB 1: TEXT */
+                <div className="space-y-4">
+                  <div>
+                    <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-2">
+                      Add New Text
+                    </p>
+                    <div className="space-y-1.5">
+                      <button
+                        onClick={() => handleAddText("heading")}
+                        className="w-full text-left p-2.5 rounded-lg border border-gray-200 hover:border-indigo-500 hover:bg-indigo-50/20 transition-all group cursor-pointer flex items-center justify-between"
+                      >
+                        <span className="font-serif font-bold text-base text-gray-800 group-hover:text-indigo-600">
+                          Add a Heading
+                        </span>
+                        <Plus size={14} className="text-gray-400 group-hover:text-indigo-600" />
+                      </button>
 
-                {/* Custom Variables Section */}
-                <div className="mt-4 pt-3 border-t border-gray-100">
-                  <div className="flex items-center justify-between mb-1.5">
-                    <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">
-                      Custom Fields
-                    </span>
-                    <span className="text-[8px] text-indigo-500 font-medium">
-                      + Add extra
-                    </span>
+                      <button
+                        onClick={() => handleAddText("subheading")}
+                        className="w-full text-left p-2 rounded-lg border border-gray-200 hover:border-indigo-500 hover:bg-indigo-50/20 transition-all group cursor-pointer flex items-center justify-between"
+                      >
+                        <span className="font-sans font-semibold text-xs text-gray-700 group-hover:text-indigo-600">
+                          Add a Subheading
+                        </span>
+                        <Plus size={14} className="text-gray-400 group-hover:text-indigo-600" />
+                      </button>
+
+                      <button
+                        onClick={() => handleAddText("body")}
+                        className="w-full text-left p-2 rounded-lg border border-gray-200 hover:border-indigo-500 hover:bg-indigo-50/20 transition-all group cursor-pointer flex items-center justify-between"
+                      >
+                        <span className="font-sans text-[11px] text-gray-500 group-hover:text-indigo-600">
+                          Add body descriptive text
+                        </span>
+                        <Plus size={14} className="text-gray-400 group-hover:text-indigo-600" />
+                      </button>
+                    </div>
                   </div>
 
-                  <div className="flex gap-1 mb-2">
-                    <input
-                      type="text"
-                      placeholder="e.g. Assistant Sig"
-                      value={newVarName}
-                      onChange={(e) => setNewVarName(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") {
-                          e.preventDefault();
-                          handleAddCustomVariable();
-                        }
-                      }}
-                      className="flex-1 px-2 py-1 text-[11px] border border-gray-200 rounded focus:outline-none focus:border-indigo-500 bg-white"
-                    />
-                    <button
-                      type="button"
-                      onClick={handleAddCustomVariable}
-                      className="bg-indigo-600 hover:bg-indigo-700 text-white px-2 py-1 rounded text-xs font-bold transition-all shadow-xs shrink-0 flex items-center justify-center"
-                      title="Add Custom Variable"
-                    >
-                      <Plus size={12} />
-                    </button>
-                  </div>
-
-                  {customVariables.length > 0 ? (
+                  {/* Dynamic Certificate Variables */}
+                  <div className="pt-3 border-t border-gray-100">
+                    <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-2">
+                      Certificate Variables
+                    </p>
                     <div className="space-y-1">
-                      {customVariables.map((cv) => (
-                        <div key={cv.value} className="relative group/cv">
-                          <DraggablePlaceholder
-                            placeholder={cv}
-                            onAdd={() => handleAddPlaceholder(cv)}
-                          />
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleDeleteCustomVariable(cv.value);
-                            }}
-                            className="absolute right-1.5 top-2 text-gray-300 hover:text-red-500 opacity-0 group-hover/cv:opacity-100 transition-opacity p-0.5 bg-white/90 rounded"
-                            title="Remove variable"
-                          >
-                            <Trash2 size={11} />
-                          </button>
+                      {activePlaceholders.map((p) => (
+                        <div
+                          key={p.value}
+                          onClick={() => handleAddPlaceholder(p)}
+                          className="text-[11px] bg-white border border-gray-200 hover:border-indigo-500 hover:shadow-xs text-gray-700 p-2 rounded-lg cursor-pointer transition-all flex items-center justify-between group select-none"
+                          title="Click to add to canvas"
+                        >
+                          <span className="font-semibold group-hover:text-indigo-600">
+                            {p.name}
+                          </span>
+                          <span className="text-[9px] text-gray-400 bg-gray-50 px-1 py-0.5 rounded border border-gray-100 font-mono">
+                            {p.value.replace(/[{}]/g, "")}
+                          </span>
                         </div>
                       ))}
                     </div>
-                  ) : (
-                    <p className="text-[9px] text-gray-400 italic">
-                      Add variables like Assistant Signature, Instructor, etc.
+                  </div>
+
+                  {/* Custom Fields */}
+                  <div className="pt-3 border-t border-gray-100">
+                    <div className="flex items-center justify-between mb-1.5">
+                      <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">
+                        Custom Fields
+                      </span>
+                      <span className="text-[8px] text-indigo-600 font-bold">
+                        + Dynamic
+                      </span>
+                    </div>
+                    <div className="flex gap-1 mb-2">
+                      <input
+                        type="text"
+                        placeholder="e.g. Dean Signature"
+                        value={newVarName}
+                        onChange={(e) => setNewVarName(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            e.preventDefault();
+                            handleAddCustomVariable();
+                          }
+                        }}
+                        className="flex-1 px-2 py-1 text-[11px] border border-gray-200 rounded focus:outline-none focus:border-indigo-500 bg-white"
+                      />
+                      <button
+                        type="button"
+                        onClick={handleAddCustomVariable}
+                        className="bg-indigo-600 hover:bg-indigo-700 text-white px-2 py-1 rounded text-xs font-bold transition-all shrink-0 cursor-pointer"
+                        title="Add Custom Variable"
+                      >
+                        <Plus size={12} />
+                      </button>
+                    </div>
+
+                    {customVariables.length > 0 && (
+                      <div className="space-y-1">
+                        {customVariables.map((cv) => (
+                          <div
+                            key={cv.value}
+                            onClick={() => handleAddPlaceholder(cv)}
+                            className="text-[11px] bg-white border border-gray-200 hover:border-indigo-500 text-gray-700 p-2 rounded-lg cursor-pointer transition-all flex items-center justify-between group"
+                          >
+                            <span className="font-semibold group-hover:text-indigo-600">
+                              {cv.name}
+                            </span>
+                            <span className="text-[9px] text-gray-400 font-mono">
+                              {cv.value}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ) : leftTab === "elements" ? (
+                /* TAB 2: SHAPES & ELEMENTS */
+                <div className="space-y-4">
+                  <div>
+                    <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-2">
+                      Basic Shapes
                     </p>
+                    <div className="grid grid-cols-2 gap-2">
+                      <button
+                        onClick={() => handleAddShape("rect")}
+                        className="p-3 rounded-xl border border-gray-200 hover:border-indigo-500 hover:bg-indigo-50/20 transition-all flex flex-col items-center justify-center gap-1.5 cursor-pointer group"
+                      >
+                        <Square size={24} className="text-indigo-600 group-hover:scale-110 transition-transform" />
+                        <span className="text-[10px] font-bold text-gray-700">Rectangle</span>
+                      </button>
+
+                      <button
+                        onClick={() => handleAddShape("circle")}
+                        className="p-3 rounded-xl border border-gray-200 hover:border-indigo-500 hover:bg-indigo-50/20 transition-all flex flex-col items-center justify-center gap-1.5 cursor-pointer group"
+                      >
+                        <CircleIcon size={24} className="text-amber-500 group-hover:scale-110 transition-transform" />
+                        <span className="text-[10px] font-bold text-gray-700">Circle / Seal</span>
+                      </button>
+
+                      <button
+                        onClick={() => handleAddShape("line")}
+                        className="p-3 rounded-xl border border-gray-200 hover:border-indigo-500 hover:bg-indigo-50/20 transition-all flex flex-col items-center justify-center gap-1.5 cursor-pointer group"
+                      >
+                        <Minus size={24} className="text-gray-700 group-hover:scale-110 transition-transform" />
+                        <span className="text-[10px] font-bold text-gray-700">Divider Line</span>
+                      </button>
+
+                      <button
+                        onClick={() => handleAddShape("star")}
+                        className="p-3 rounded-xl border border-gray-200 hover:border-indigo-500 hover:bg-indigo-50/20 transition-all flex flex-col items-center justify-center gap-1.5 cursor-pointer group"
+                      >
+                        <StarIcon size={24} className="text-amber-500 fill-amber-400 group-hover:scale-110 transition-transform" />
+                        <span className="text-[10px] font-bold text-gray-700">Award Star</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Certificate Badges & Accents */}
+                  <div className="pt-3 border-t border-gray-100">
+                    <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-2">
+                      Accents & Badges
+                    </p>
+                    <div className="grid grid-cols-2 gap-2">
+                      <button
+                        onClick={() => handleAddShape("badge")}
+                        className="p-3 rounded-xl border border-gray-200 hover:border-indigo-500 hover:bg-indigo-50/20 transition-all flex flex-col items-center justify-center gap-1.5 cursor-pointer group"
+                      >
+                        <Award size={26} className="text-amber-600 group-hover:scale-110 transition-transform" />
+                        <span className="text-[10px] font-bold text-gray-700">Rosette Badge</span>
+                      </button>
+
+                      <button
+                        onClick={() => handleAddShape("border")}
+                        className="p-3 rounded-xl border border-gray-200 hover:border-indigo-500 hover:bg-indigo-50/20 transition-all flex flex-col items-center justify-center gap-1.5 cursor-pointer group"
+                      >
+                        <Layout size={24} className="text-indigo-700 group-hover:scale-110 transition-transform" />
+                        <span className="text-[10px] font-bold text-gray-700">Border Frame</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  <p className="text-[9px] text-gray-400 leading-normal bg-gray-50 p-2.5 rounded-lg border border-gray-100">
+                    Click any element to customize fill colors, border outlines, corner curves, and layer ordering.
+                  </p>
+                </div>
+              ) : leftTab === "background" ? (
+                /* TAB 3: CANVAS & BACKGROUND */
+                <div className="space-y-4">
+                  {/* Canvas Format Presets */}
+                  <div>
+                    <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-2">
+                      Canvas Format & Size
+                    </p>
+                    <div className="grid grid-cols-2 gap-1.5">
+                      {CANVAS_SIZE_PRESETS.map((p) => {
+                        const isCurrent = canvasSize.width === p.width && canvasSize.height === p.height;
+                        return (
+                          <button
+                            key={p.name}
+                            onClick={() => {
+                              setCanvasSize({ width: p.width, height: p.height });
+                              handleFitScreen();
+                            }}
+                            className={`p-2 rounded-lg border text-left cursor-pointer transition-all ${
+                              isCurrent
+                                ? "bg-indigo-50 border-indigo-600 text-indigo-700 font-bold shadow-xs"
+                                : "bg-white border-gray-200 hover:bg-gray-50 text-gray-700"
+                            }`}
+                          >
+                            <span className="text-[10px] block">{p.name}</span>
+                            <span className="text-[8px] text-gray-400 block font-mono">
+                              {p.width} × {p.height}px
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Solid Canvas Colors */}
+                  <div className="pt-3 border-t border-gray-100">
+                    <div className="flex justify-between items-center mb-2">
+                      <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-0">
+                        Canvas Color
+                      </p>
+                      <input
+                        type="color"
+                        value={backgroundConfig.fill || "#ffffff"}
+                        onChange={(e) => setBackgroundConfig((prev) => ({ ...prev, fill: e.target.value }))}
+                        className="w-5 h-5 rounded cursor-pointer border border-gray-200 p-0"
+                        title="Custom Color"
+                      />
+                    </div>
+                    <div className="grid grid-cols-5 gap-1.5">
+                      {LUXURY_COLORS.map((c) => (
+                        <button
+                          key={c.value}
+                          onClick={() => setBackgroundConfig((prev) => ({ ...prev, fill: c.value }))}
+                          className={`h-7 rounded-lg border transition-all hover:scale-105 cursor-pointer relative ${
+                            backgroundConfig.fill === c.value
+                              ? "border-indigo-600 ring-2 ring-indigo-200"
+                              : "border-gray-200"
+                          }`}
+                          style={{ backgroundColor: c.value }}
+                          title={c.name}
+                        />
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Built-in Decorative Border Frame */}
+                  <div className="pt-3 border-t border-gray-100">
+                    <div className="flex items-center justify-between mb-2">
+                      <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-0">
+                        Ornate Border Frame
+                      </p>
+                      <input
+                        type="checkbox"
+                        checked={backgroundConfig.border}
+                        onChange={(e) => setBackgroundConfig((prev) => ({ ...prev, border: e.target.checked }))}
+                        className="w-4 h-4 accent-indigo-600 rounded cursor-pointer"
+                      />
+                    </div>
+                    {backgroundConfig.border && (
+                      <div className="space-y-2 p-2 bg-gray-50 rounded-lg border border-gray-100">
+                        <div className="flex items-center justify-between">
+                          <span className="text-[9px] text-gray-600 font-semibold">Border Color</span>
+                          <input
+                            type="color"
+                            value={backgroundConfig.borderColor || "#1e3a8a"}
+                            onChange={(e) => setBackgroundConfig((prev) => ({ ...prev, borderColor: e.target.value }))}
+                            className="w-5 h-5 rounded border border-gray-200 cursor-pointer p-0"
+                          />
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-[9px] text-gray-600 font-semibold">Gold Accent</span>
+                          <input
+                            type="color"
+                            value={backgroundConfig.borderAccent || "#d97706"}
+                            onChange={(e) => setBackgroundConfig((prev) => ({ ...prev, borderAccent: e.target.value }))}
+                            className="w-5 h-5 rounded border border-gray-200 cursor-pointer p-0"
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Preset Background Library */}
+                  <div className="pt-3 border-t border-gray-100">
+                    <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-2">
+                      Graphic Presets
+                    </p>
+                    <div className="grid grid-cols-2 gap-2">
+                      {PRESET_TEMPLATES.map((preset) => (
+                        <div
+                          key={preset.name}
+                          onClick={() => handleSelectPreset(preset)}
+                          className="border border-gray-200 hover:border-indigo-500 rounded-lg overflow-hidden cursor-pointer group transition-all"
+                        >
+                          <div
+                            className="aspect-[1.414/1] bg-cover bg-center"
+                            style={{ backgroundImage: `url("${preset.url}")` }}
+                          />
+                          <p className="text-[9px] font-bold p-1 text-center text-gray-600 group-hover:text-indigo-600 truncate">
+                            {preset.name}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              ) : leftTab === "uploads" ? (
+                /* TAB 4: UPLOADS */
+                <div className="space-y-4">
+                  <div>
+                    <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-2">
+                      Upload Logos & Graphics
+                    </p>
+                    <div
+                      onClick={() => assetInputRef.current?.click()}
+                      className="p-4 border-2 border-dashed border-gray-200 hover:border-indigo-500 rounded-xl text-center cursor-pointer hover:bg-indigo-50/20 transition-all group"
+                    >
+                      <ImageIcon size={22} className="text-gray-400 group-hover:text-indigo-600 mx-auto mb-1.5" />
+                      <span className="text-[11px] font-bold text-gray-700 block">Upload Logo / Stamp</span>
+                      <span className="text-[8px] text-gray-400">PNG, JPG, or WEBP (Transparent PNG recommended)</span>
+                      <input
+                        type="file"
+                        ref={assetInputRef}
+                        className="hidden"
+                        accept="image/png, image/jpeg, image/webp"
+                        onChange={handleAssetUpload}
+                      />
+                    </div>
+                  </div>
+
+                  {uploadedAssets.length > 0 && (
+                    <div>
+                      <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-2">
+                        Uploaded Assets
+                      </p>
+                      <div className="grid grid-cols-2 gap-2">
+                        {uploadedAssets.map((asset, idx) => (
+                          <div
+                            key={idx}
+                            onClick={() => handleAddImageToCanvas(asset.src)}
+                            className="p-2 border border-gray-200 hover:border-indigo-500 rounded-lg bg-gray-50 hover:bg-white cursor-pointer transition-all text-center group"
+                            title="Click to insert on canvas"
+                          >
+                            <img src={asset.src} alt={asset.name} className="h-12 max-w-full mx-auto object-contain mb-1" />
+                            <span className="text-[8px] font-semibold text-gray-600 truncate block">
+                              + Add to Canvas
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Upload Full Background */}
+                  <div className="pt-3 border-t border-gray-100">
+                    <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-2">
+                      Full Background Graphic
+                    </p>
+                    <div
+                      onClick={() => fileInputRef.current?.click()}
+                      className="p-3 border border-gray-200 hover:border-indigo-500 rounded-lg text-center cursor-pointer hover:bg-indigo-50/20 transition-all group"
+                    >
+                      <UploadCloud size={16} className="text-gray-400 group-hover:text-indigo-600 mx-auto mb-1" />
+                      <span className="text-[10px] font-bold text-gray-600 block">Replace Background</span>
+                      <input
+                        type="file"
+                        ref={fileInputRef}
+                        className="hidden"
+                        accept="image/png, image/jpeg"
+                        onChange={handleBackgroundUpload}
+                      />
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                /* TAB 5: LAYERS */
+                <div className="space-y-2">
+                  <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-2">
+                    Layers Stack ({elements.length})
+                  </p>
+                  {elements.length === 0 ? (
+                    <p className="text-[10px] text-gray-400 italic">No elements on canvas.</p>
+                  ) : (
+                    <div className="space-y-1">
+                      {[...elements].reverse().map((el) => {
+                        const isSelected = selectedId === el.id;
+                        const label = el.isQr
+                          ? "QR Code"
+                          : el.text
+                          ? el.text.replace(/[{}]/g, "")
+                          : el.type
+                          ? el.type.toUpperCase()
+                          : "Element";
+
+                        return (
+                          <div
+                            key={el.id}
+                            onClick={() => {
+                              setSelectedId(el.id);
+                              setIsRightSidebarOpen(true);
+                            }}
+                            className={`flex items-center justify-between p-2 rounded-lg border text-[11px] cursor-pointer transition-all ${
+                              isSelected
+                                ? "bg-indigo-50 border-indigo-300 text-indigo-700 font-semibold shadow-xs"
+                                : "bg-white border-gray-200 hover:bg-gray-50 text-gray-700"
+                            }`}
+                          >
+                            <span className="truncate flex-1 pr-2 select-none">
+                              {label}
+                            </span>
+                            <div className="flex items-center gap-1">
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setElements(elements.filter((item) => item.id !== el.id));
+                                  if (selectedId === el.id) setSelectedId(null);
+                                }}
+                                className="text-gray-400 hover:text-red-600 transition-colors p-0.5"
+                                title="Delete"
+                              >
+                                <Trash2 size={12} />
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
                   )}
                 </div>
-              </div>
-            ) : leftTab === "presets" ? (
-              <div className="space-y-3">
-                <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-1">
-                  Select background preset
-                </p>
-                <div className="grid grid-cols-2 gap-3">
-                  {PRESET_TEMPLATES.map((preset) => {
-                    const isSelected = templateImageUrl === preset.url;
-                    return (
-                      <div
-                        key={preset.name}
-                        onClick={() => handleSelectPreset(preset)}
-                        className={`
-                          group relative cursor-pointer rounded-xl border-2 transition-all duration-300 overflow-hidden shadow-xs hover:shadow-md flex flex-col
-                          ${isSelected 
-                            ? "border-indigo-600 scale-[1.01]" 
-                            : "border-slate-100 hover:border-indigo-300"
-                          }
-                        `}
-                      >
-                        {/* Selection Indicator */}
-                        {isSelected && (
-                          <div className="absolute top-1.5 right-1.5 z-10 bg-indigo-600 text-white p-0.5 rounded-full shadow-xs animate-in fade-in zoom-in duration-200">
-                            <Check size={8} strokeWidth={3} />
-                          </div>
-                        )}
-
-                        {/* Preview Area */}
-                        <div className="w-full relative pointer-events-none select-none overflow-hidden border-b border-slate-100 bg-white aspect-[1.414/1] shrink-0">
-                          <div
-                            className="w-[200%] h-[200%] origin-top-left transform scale-50 pointer-events-none select-none"
-                            style={{
-                              backgroundImage: `url("${preset.url}")`,
-                              backgroundSize: "cover",
-                            }}
-                          />
-                          {/* Hover overlay */}
-                          <div className={`absolute inset-0 bg-indigo-900/0 transition-colors duration-300 ${isSelected ? "bg-indigo-900/5" : "group-hover:bg-indigo-900/5"}`} />
-                        </div>
-
-                        {/* Label */}
-                        <div className={`
-                          py-1.5 px-1 text-center text-[10px] font-bold tracking-wide transition-colors duration-300 flex-grow flex items-center justify-center
-                          ${isSelected 
-                            ? "bg-indigo-50 text-indigo-700" 
-                            : "bg-white text-slate-600 group-hover:text-indigo-600"
-                          }
-                        `}>
-                          {preset.name.replace("Modern ", "").replace("Classic ", "").toLowerCase()}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-
-                <div className="border-t border-gray-100 my-3 pt-3">
-                  <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-2">
-                    Custom Upload
-                  </p>
-                  <div
-                    onClick={() => fileInputRef.current?.click()}
-                    className="text-center p-3 border-2 border-dashed border-gray-200 hover:border-indigo-500 rounded-lg cursor-pointer hover:bg-indigo-50/20 transition-all group"
-                  >
-                    <UploadCloud size={16} className="text-gray-400 group-hover:text-indigo-600 mx-auto mb-1" />
-                    <span className="text-[10px] font-bold text-gray-600 block">Upload Design</span>
-                    <span className="text-[8px] text-gray-400">PNG/JPG (A4 horizontal)</span>
-                    <input
-                      type="file"
-                      ref={fileInputRef}
-                      className="hidden"
-                      accept="image/png, image/jpeg"
-                      onChange={handleFileChange}
-                    />
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <div className="space-y-2">
-                <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-2">
-                  Canvas Layers
-                </p>
-                {elements.length === 0 ? (
-                  <p className="text-[10px] text-gray-400 italic">No elements added yet.</p>
-                ) : (
-                  <div className="space-y-1">
-                    {elements.map((el) => (
-                      <div
-                        key={el.id}
-                        onClick={() => {
-                          setSelectedId(el.id);
-                          setIsRightSidebarOpen(true);
-                        }}
-                        className={`flex items-center justify-between p-2 rounded-lg border text-[11px] cursor-pointer transition-all ${
-                          selectedId === el.id
-                            ? "bg-indigo-50 border-indigo-200 text-indigo-700 font-semibold shadow-sm"
-                            : "bg-white border-gray-200 hover:bg-gray-50 text-gray-700"
-                        }`}
-                      >
-                        <span className="truncate flex-1 pr-2 select-none">
-                          {el.isQr ? "QR Code" : el.text.replace(/[{}]/g, "")}
-                        </span>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setElements(elements.filter((item) => item.id !== el.id));
-                            if (selectedId === el.id) setSelectedId(null);
-                          }}
-                          className="text-gray-400 hover:text-red-600 transition-colors p-1"
-                          title="Delete Layer"
-                        >
-                          <Trash2 size={12} />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-
-          {/* Quick upload bottom bar if background is loaded */}
-          {templateImageUrl && (
-            <div className="p-3 border-t border-gray-100 bg-gray-50/50 flex justify-between items-center">
-              <span className="text-[10px] text-gray-500 font-medium truncate max-w-[120px]">
-                {templateImageFile ? templateImageFile.name : "Custom Background"}
-              </span>
-              <button
-                onClick={() => fileInputRef.current?.click()}
-                className="text-[9px] text-indigo-600 font-bold hover:underline"
-              >
-                Change
-              </button>
+              )}
             </div>
-          )}
           </aside>
         )}
 
-        {/* 2. CENTER AREA: Canvas Viewport & Zoom Controller */}
-        <main
-          className="flex-1 bg-slate-100 flex flex-col overflow-hidden relative"
-          onDrop={handleDrop}
-          onDragOver={(e) => e.preventDefault()}
-        >
-          {/* Zoom controls / canvas sub-header */}
-          <div className="bg-white border-b border-gray-200 px-4 py-1.5 flex items-center justify-between z-10">
+        {/* 2. CENTER AREA: Canvas Viewport */}
+        <main className="flex-1 bg-slate-200/70 flex flex-col overflow-hidden relative">
+          {/* Canvas Sub-Header & Zoom Bar */}
+          <div className="bg-white border-b border-gray-200 px-4 py-1.5 flex items-center justify-between z-10 shadow-xs">
             <div className="flex items-center gap-2">
               <button
                 type="button"
                 onClick={() => setIsLeftSidebarOpen(!isLeftSidebarOpen)}
-                className={`p-1 rounded hover:bg-gray-100 text-gray-500 transition-colors border ${
+                className={`p-1 rounded hover:bg-gray-100 text-gray-500 transition-colors border cursor-pointer ${
                   isLeftSidebarOpen ? "border-transparent" : "border-gray-200 bg-gray-50"
                 }`}
-                title={isLeftSidebarOpen ? "Collapse Left Panel (Press '[')" : "Expand Left Panel (Press '[')"}
+                title={isLeftSidebarOpen ? "Collapse Left Panel" : "Expand Left Panel"}
               >
                 {isLeftSidebarOpen ? <ChevronLeft size={14} /> : <ChevronRight size={14} />}
               </button>
               <span className="text-[10px] font-semibold text-gray-500">
-                Canvas: {canvasSize.width} x {canvasSize.height} px
+                Canvas: {canvasSize.width} × {canvasSize.height} px
               </span>
             </div>
 
-            {/* Zoom Slider / Controls */}
-            <div className="flex items-center gap-2">
+            {/* Quick Actions if element selected */}
+            {selectedElement && (
+              <div className="flex items-center gap-1.5 bg-indigo-50/70 px-2.5 py-0.5 rounded-full border border-indigo-100 text-[10px] text-indigo-700 font-semibold animate-in fade-in duration-150">
+                <span>Selected: {selectedElement.type || "Element"}</span>
+                <button
+                  onClick={() => {
+                    const clone = {
+                      ...selectedElement,
+                      id: `el_${Math.random().toString(36).substring(2, 9)}`,
+                      x: selectedElement.x + 20,
+                      y: selectedElement.y + 20,
+                    };
+                    setElements((prev) => [...prev, clone]);
+                    setSelectedId(clone.id);
+                  }}
+                  className="hover:text-indigo-900 p-0.5 ml-1 cursor-pointer"
+                  title="Duplicate (Ctrl+D)"
+                >
+                  <Copy size={11} />
+                </button>
+                <button
+                  onClick={() => {
+                    setElements((prev) => prev.filter((el) => el.id !== selectedId));
+                    setSelectedId(null);
+                  }}
+                  className="hover:text-red-600 p-0.5 cursor-pointer"
+                  title="Delete (Del)"
+                >
+                  <Trash2 size={11} />
+                </button>
+              </div>
+            )}
+
+            {/* Zoom Controls */}
+            <div className="flex items-center gap-1.5">
               <button
                 onClick={() => {
                   setZoomScale(Math.max(0.25, zoomScale - 0.1));
                   setZoomMode("manual");
                 }}
-                className="p-1 hover:bg-gray-100 rounded text-gray-500 transition-colors"
+                className="p-1 hover:bg-gray-100 rounded text-gray-500 transition-colors cursor-pointer"
                 title="Zoom Out"
               >
                 <ZoomOut size={13} />
               </button>
-              
+
               <div className="relative flex items-center">
                 <select
                   value={zoomMode === "fit" ? "fit" : Math.round(zoomScale * 100)}
@@ -1212,7 +1630,7 @@ const UploadTemplatePage = () => {
                   setZoomScale(Math.min(2.0, zoomScale + 0.1));
                   setZoomMode("manual");
                 }}
-                className="p-1 hover:bg-gray-100 rounded text-gray-500 transition-colors"
+                className="p-1 hover:bg-gray-100 rounded text-gray-500 transition-colors cursor-pointer"
                 title="Zoom In"
               >
                 <ZoomIn size={13} />
@@ -1225,137 +1643,192 @@ const UploadTemplatePage = () => {
                 }}
                 className={`p-1 hover:bg-gray-100 rounded transition-colors border flex items-center gap-1 px-1.5 h-6 cursor-pointer ${
                   zoomMode === "fit"
-                    ? "bg-indigo-50 border-indigo-200 text-indigo-600"
-                    : "bg-white border-gray-200 text-gray-500 hover:text-gray-700"
+                    ? "bg-indigo-50 border-indigo-200 text-indigo-600 font-bold"
+                    : "bg-white border-gray-200 text-gray-500"
                 }`}
-                title="Fit Canvas to Workspace (Press '\' to collapse sidebars)"
+                title="Fit Canvas to Workspace"
               >
                 <Maximize2 size={11} />
-                <span className="text-[9px] font-bold">Fit</span>
+                <span className="text-[9px]">Fit</span>
               </button>
 
-              <div className="h-4 w-px bg-gray-200 mx-0.5"></div>
+              <div className="h-4 w-px bg-gray-200 mx-0.5" />
 
               <button
                 type="button"
                 onClick={() => setIsRightSidebarOpen(!isRightSidebarOpen)}
-                className={`p-1 rounded hover:bg-gray-100 text-gray-500 transition-colors border ${
+                className={`p-1 rounded hover:bg-gray-100 text-gray-500 transition-colors border cursor-pointer ${
                   isRightSidebarOpen ? "border-transparent" : "border-gray-200 bg-gray-50"
                 }`}
-                title={isRightSidebarOpen ? "Collapse Right Panel (Press ']')" : "Expand Right Panel (Press ']')"}
+                title={isRightSidebarOpen ? "Collapse Right Panel" : "Expand Right Panel"}
               >
                 {isRightSidebarOpen ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
               </button>
             </div>
           </div>
 
-          {/* Interactive Workspace */}
-          <div 
+          {/* Interactive Workspace Area */}
+          <div
             ref={workspaceRef}
-            className="flex-grow overflow-auto p-8 flex items-center justify-center bg-slate-200/60 pattern-grid relative"
+            className="flex-grow overflow-auto p-8 flex items-center justify-center relative"
           >
-            {/* Floating border handles */}
-            <button
-              type="button"
-              onClick={() => setIsLeftSidebarOpen(!isLeftSidebarOpen)}
-              className="absolute left-0 top-1/2 -translate-y-1/2 z-30 bg-white hover:bg-slate-50 border border-l-0 border-slate-200 shadow-md rounded-r-md py-4 px-1 text-slate-400 hover:text-indigo-600 transition-all cursor-pointer flex items-center justify-center h-12 w-4"
-            >
-              {isLeftSidebarOpen ? <ChevronLeft size={12} /> : <ChevronRight size={12} />}
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setIsRightSidebarOpen(!isRightSidebarOpen)}
-              className="absolute right-0 top-1/2 -translate-y-1/2 z-30 bg-white hover:bg-slate-50 border border-r-0 border-slate-200 shadow-md rounded-l-md py-4 px-1 text-slate-400 hover:text-indigo-600 transition-all cursor-pointer flex items-center justify-center h-12 w-4"
-            >
-              {isRightSidebarOpen ? <ChevronRight size={12} /> : <ChevronLeft size={12} />}
-            </button>
-
-            {templateImageUrl ? (
-              <div className="relative">
-                <CustomTemplateEditor
-                  stageRef={stageRef}
-                  backgroundImageUrl={templateImageUrl}
-                  elements={elements}
-                  setElements={setElements}
-                  selectedId={selectedId}
-                  setSelectedId={(id) => {
-                    setSelectedId(id);
-                    if (id) setIsRightSidebarOpen(true);
-                  }}
-                  canvasSize={canvasSize}
-                  showGrid={showGrid}
-                  zoomScale={zoomScale}
-                />
-              </div>
-            ) : (
-              <div className="text-center text-gray-400 select-none pointer-events-none p-6 border border-dashed border-gray-300 rounded-2xl bg-white max-w-sm">
-                <UploadCloud size={40} className="mx-auto text-indigo-500 opacity-60 mb-2.5" />
-                <h5 className="text-xs font-bold text-gray-700">Canvas is Empty</h5>
-                <p className="text-[10px] text-gray-400 mt-1">
-                  Select a blank preset from the Left Panel or upload a custom design to begin designing your template.
-                </p>
-              </div>
-            )}
+            <CustomTemplateEditor
+              stageRef={stageRef}
+              backgroundImageUrl={templateImageUrl}
+              backgroundConfig={backgroundConfig}
+              elements={elements}
+              setElements={setElements}
+              selectedId={selectedId}
+              setSelectedId={(id) => {
+                setSelectedId(id);
+                if (id) setIsRightSidebarOpen(true);
+              }}
+              canvasSize={canvasSize}
+              showGrid={showGrid}
+              zoomScale={zoomScale}
+            />
           </div>
         </main>
 
-        {/* 3. RIGHT SIDEBAR: Contextual Properties Panel */}
+        {/* 3. RIGHT SIDEBAR: Properties Inspector */}
         {isRightSidebarOpen && (
-          <aside className="w-72 bg-white border-l border-gray-200 flex flex-col shrink-0 overflow-y-auto animate-in slide-in-from-right duration-200">
-          <div className="p-3 border-b border-gray-100 flex items-center gap-1.5 bg-gray-50/50">
-            <Settings size={14} className="text-gray-500" />
-            <h4 className="text-xs font-bold text-gray-800 uppercase tracking-wider">Properties Panel</h4>
-          </div>
+          <aside className="w-72 bg-white border-l border-gray-200 flex flex-col shrink-0 overflow-y-auto animate-in slide-in-from-right duration-200 shadow-sm">
+            <div className="p-3 border-b border-gray-100 flex items-center gap-1.5 bg-gray-50/70">
+              <Settings size={14} className="text-gray-500" />
+              <h4 className="text-xs font-bold text-gray-800 uppercase tracking-wider">
+                {selectedElement ? "Element Inspector" : "Canvas Properties"}
+              </h4>
+            </div>
 
-          <div className="flex-grow p-3">
-            {selectedElement ? (
-              <TextElementControls
-                element={selectedElement}
-                onUpdate={(updatedAttrs) => {
-                  if (updatedAttrs.arrange) {
-                    const action = updatedAttrs.arrange;
-                    let newElements = [...elements];
-                    const index = newElements.findIndex((el) => el.id === selectedId);
-                    if (index !== -1) {
-                      const item = newElements[index];
-                      newElements.splice(index, 1);
-                      if (action === "front") {
-                        newElements.push(item);
-                      } else if (action === "back") {
-                        newElements.unshift(item);
-                      } else if (action === "forward") {
-                        const targetIndex = Math.min(newElements.length, index + 1);
-                        newElements.splice(targetIndex, 0, item);
-                      } else if (action === "backward") {
-                        const targetIndex = Math.max(0, index - 1);
-                        newElements.splice(targetIndex, 0, item);
+            <div className="flex-grow p-3">
+              {selectedElement ? (
+                <TextElementControls
+                  element={selectedElement}
+                  onUpdate={(updatedAttrs) => {
+                    if (updatedAttrs.arrange) {
+                      const action = updatedAttrs.arrange;
+                      let newElements = [...elements];
+                      const index = newElements.findIndex((el) => el.id === selectedId);
+                      if (index !== -1) {
+                        const item = newElements[index];
+                        newElements.splice(index, 1);
+                        if (action === "front") {
+                          newElements.push(item);
+                        } else if (action === "back") {
+                          newElements.unshift(item);
+                        } else if (action === "forward") {
+                          const targetIndex = Math.min(newElements.length, index + 1);
+                          newElements.splice(targetIndex, 0, item);
+                        } else if (action === "backward") {
+                          const targetIndex = Math.max(0, index - 1);
+                          newElements.splice(targetIndex, 0, item);
+                        }
+                        setElements(newElements);
                       }
-                      setElements(newElements);
+                      return;
                     }
-                    return;
-                  }
-                  const updatedElements = elements.map((el) =>
-                    el.id === selectedId ? { ...el, ...updatedAttrs } : el
-                  );
-                  setElements(updatedElements);
-                }}
-                onDelete={() => {
-                  setElements(elements.filter((el) => el.id !== selectedId));
-                  setSelectedId(null);
-                }}
-                onDone={() => setSelectedId(null)}
-              />
-            ) : (
-              <div className="text-center py-16 text-gray-400 p-4 border border-dashed border-gray-100 rounded-xl">
-                <Settings size={28} className="mx-auto opacity-20 mb-2 rotate-45" />
-                <p className="text-[10px] font-bold text-gray-600">No Element Selected</p>
-                <p className="text-[9px] text-gray-400 mt-1 leading-normal">
-                  Click on any text variable or QR code on the canvas to configure fonts, colors, manual coordinates, alignments, and depths.
-                </p>
-              </div>
-            )}
-          </div>
+                    const updatedElements = elements.map((el) =>
+                      el.id === selectedId ? { ...el, ...updatedAttrs } : el
+                    );
+                    setElements(updatedElements);
+                  }}
+                  onDelete={() => {
+                    setElements(elements.filter((el) => el.id !== selectedId));
+                    setSelectedId(null);
+                  }}
+                  onDone={() => setSelectedId(null)}
+                />
+              ) : (
+                <div className="space-y-4">
+                  <div className="p-3 bg-gray-50 rounded-xl border border-gray-100 text-center">
+                    <Shapes size={24} className="mx-auto text-indigo-500 mb-1.5 opacity-80" />
+                    <p className="text-xs font-bold text-gray-700">Canvas Selected</p>
+                    <p className="text-[10px] text-gray-400 mt-0.5">
+                      Click any element to inspect its properties, or use the controls below to style the canvas background.
+                    </p>
+                  </div>
+
+                  {/* Canvas Quick Palette */}
+                  <div>
+                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mb-1.5">
+                      Canvas Color
+                    </span>
+                    <div className="grid grid-cols-5 gap-1.5">
+                      {LUXURY_COLORS.map((c) => (
+                        <button
+                          key={c.value}
+                          onClick={() => setBackgroundConfig((prev) => ({ ...prev, fill: c.value }))}
+                          className={`h-7 rounded border transition-all cursor-pointer ${
+                            backgroundConfig.fill === c.value
+                              ? "border-indigo-600 ring-2 ring-indigo-200"
+                              : "border-gray-200"
+                          }`}
+                          style={{ backgroundColor: c.value }}
+                          title={c.name}
+                        />
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Border Frame Toggle */}
+                  <div className="p-2.5 bg-gray-50 rounded-lg border border-gray-100 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-bold text-gray-700">Certificate Border Frame</span>
+                      <input
+                        type="checkbox"
+                        checked={backgroundConfig.border}
+                        onChange={(e) => setBackgroundConfig((prev) => ({ ...prev, border: e.target.checked }))}
+                        className="w-4 h-4 accent-indigo-600 rounded cursor-pointer"
+                      />
+                    </div>
+                    {backgroundConfig.border && (
+                      <div className="flex items-center justify-between pt-1">
+                        <span className="text-[9px] text-gray-500">Border Accent</span>
+                        <input
+                          type="color"
+                          value={backgroundConfig.borderColor || "#1e3a8a"}
+                          onChange={(e) => setBackgroundConfig((prev) => ({ ...prev, borderColor: e.target.value }))}
+                          className="w-5 h-5 rounded cursor-pointer p-0"
+                        />
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Add Elements Shortcut */}
+                  <div>
+                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mb-1.5">
+                      Quick Add
+                    </span>
+                    <div className="grid grid-cols-2 gap-1.5">
+                      <button
+                        onClick={() => handleAddText("heading")}
+                        className="p-2 bg-white border border-gray-200 hover:border-indigo-500 rounded-lg text-xs font-semibold text-gray-700 hover:text-indigo-600 transition-all text-left cursor-pointer"
+                      >
+                        + Heading
+                      </button>
+                      <button
+                        onClick={() => handleAddShape("rect")}
+                        className="p-2 bg-white border border-gray-200 hover:border-indigo-500 rounded-lg text-xs font-semibold text-gray-700 hover:text-indigo-600 transition-all text-left cursor-pointer"
+                      >
+                        + Rectangle
+                      </button>
+                      <button
+                        onClick={() => handleAddShape("line")}
+                        className="p-2 bg-white border border-gray-200 hover:border-indigo-500 rounded-lg text-xs font-semibold text-gray-700 hover:text-indigo-600 transition-all text-left cursor-pointer"
+                      >
+                        + Line
+                      </button>
+                      <button
+                        onClick={() => handleAddShape("badge")}
+                        className="p-2 bg-white border border-gray-200 hover:border-indigo-500 rounded-lg text-xs font-semibold text-gray-700 hover:text-indigo-600 transition-all text-left cursor-pointer"
+                      >
+                        + Rosette
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
           </aside>
         )}
       </div>
@@ -1364,4 +1837,5 @@ const UploadTemplatePage = () => {
 };
 
 export default UploadTemplatePage;
+
 
