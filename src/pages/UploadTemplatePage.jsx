@@ -360,6 +360,13 @@ const UploadTemplatePage = () => {
   const [leftTab, setLeftTab] = useState("text"); // 'text', 'elements', 'background', 'uploads', 'layers'
   const [isLeftSidebarOpen, setIsLeftSidebarOpen] = useState(true);
   const [isRightSidebarOpen, setIsRightSidebarOpen] = useState(true);
+  const [confirmModal, setConfirmModal] = useState({
+    isOpen: false,
+    title: "",
+    message: "",
+    confirmButtonText: "Confirm",
+    onConfirm: null,
+  });
 
   const fileInputRef = useRef(null);
   const assetInputRef = useRef(null);
@@ -700,15 +707,39 @@ const UploadTemplatePage = () => {
     if (file && (file.type === "image/png" || file.type === "image/jpeg" || file.type === "image/webp")) {
       const reader = new FileReader();
       reader.onload = (event) => {
-        const src = event.target.result;
-        setUploadedAssets((prev) => [...prev, { name: file.name, src }]);
-        handleAddImageToCanvas(src);
-        toast.success(`Added "${file.name}" to canvas!`);
+        const img = new Image();
+        img.onload = () => {
+          // Optimize/downscale large logos (max 1200px) so canvas rendering and API saving are lightning fast
+          const MAX_DIM = 1200;
+          let w = img.width;
+          let h = img.height;
+          if (w > MAX_DIM || h > MAX_DIM) {
+            if (w > h) {
+              h = Math.round((h * MAX_DIM) / w);
+              w = MAX_DIM;
+            } else {
+              w = Math.round((w * MAX_DIM) / h);
+              h = MAX_DIM;
+            }
+          }
+          const canvas = document.createElement("canvas");
+          canvas.width = w;
+          canvas.height = h;
+          const ctx = canvas.getContext("2d");
+          ctx.drawImage(img, 0, 0, w, h);
+          const mimeType = file.type === "image/png" ? "image/png" : "image/jpeg";
+          const optimizedDataUrl = canvas.toDataURL(mimeType, 0.92);
+          setUploadedAssets((prev) => [...prev, { name: file.name, src: optimizedDataUrl }]);
+          handleAddImageToCanvas(optimizedDataUrl);
+          toast.success(`Added "${file.name}" to canvas!`);
+        };
+        img.src = event.target.result;
       };
       reader.readAsDataURL(file);
     } else {
       toast.error("Please upload a PNG, JPG, or WEBP image.");
     }
+    e.target.value = "";
   };
 
   // Handle uploading full background
@@ -742,11 +773,17 @@ const UploadTemplatePage = () => {
 
   const handleClearAllLayers = () => {
     if (elements.length === 0) return;
-    if (window.confirm("Are you sure you want to clear all layers from the canvas?")) {
-      setElements([]);
-      setSelectedId(null);
-      toast.success("All layers cleared!");
-    }
+    setConfirmModal({
+      isOpen: true,
+      title: "Clear All Layers?",
+      message: "Are you sure you want to clear all layers from the canvas? This action cannot be undone.",
+      confirmButtonText: "Clear All",
+      onConfirm: () => {
+        setElements([]);
+        setSelectedId(null);
+        toast.success("All layers cleared!");
+      },
+    });
   };
 
   const handleApplyColorToAllText = (color) => {
@@ -771,20 +808,26 @@ const UploadTemplatePage = () => {
   };
 
   const handleClearCanvas = () => {
-    if (window.confirm("Are you sure you want to clear the canvas and start completely blank?")) {
-      setElements([]);
-      setSelectedId(null);
-      setTemplateImageUrl(null);
-      setTemplateImageFile(null);
-      setBackgroundConfig({
-        fill: "#ffffff",
-        border: false,
-        borderColor: "#1e3a8a",
-        borderAccent: "#d97706",
-        borderWidth: 4,
-      });
-      toast.success("Canvas cleared. Start designing from scratch!");
-    }
+    setConfirmModal({
+      isOpen: true,
+      title: "Reset Canvas Blank?",
+      message: "Are you sure you want to clear all elements and background to start completely blank?",
+      confirmButtonText: "Reset Blank",
+      onConfirm: () => {
+        setElements([]);
+        setSelectedId(null);
+        setTemplateImageUrl(null);
+        setTemplateImageFile(null);
+        setBackgroundConfig({
+          fill: "#ffffff",
+          border: false,
+          borderColor: "#1e3a8a",
+          borderAccent: "#d97706",
+          borderWidth: 4,
+        });
+        toast.success("Canvas cleared. Start designing from scratch!");
+      },
+    });
   };
 
   const handleAddCustomVariable = () => {
@@ -1931,6 +1974,42 @@ const UploadTemplatePage = () => {
           </aside>
         )}
       </div>
+
+      {/* In-App Confirmation Modal */}
+      {confirmModal.isOpen && (
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs z-[9999] flex items-center justify-center p-4 animate-in fade-in duration-150">
+          <div className="bg-white rounded-xl max-w-sm w-full p-5 shadow-2xl border border-gray-100 animate-in zoom-in-95 duration-200">
+            <div className="flex items-start gap-3.5 mb-4">
+              <div className="p-2.5 rounded-full bg-red-50 text-red-600 shrink-0">
+                <Trash2 size={20} />
+              </div>
+              <div>
+                <h3 className="text-sm font-bold text-gray-900 mb-1">{confirmModal.title}</h3>
+                <p className="text-xs text-gray-500 mb-0 leading-relaxed">{confirmModal.message}</p>
+              </div>
+            </div>
+            <div className="flex justify-end gap-2 pt-3 border-t border-gray-100">
+              <button
+                type="button"
+                onClick={() => setConfirmModal({ isOpen: false, title: "", message: "", confirmButtonText: "Confirm", onConfirm: null })}
+                className="px-3 py-1.5 text-xs font-semibold text-gray-600 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  if (confirmModal.onConfirm) confirmModal.onConfirm();
+                  setConfirmModal({ isOpen: false, title: "", message: "", confirmButtonText: "Confirm", onConfirm: null });
+                }}
+                className="px-3.5 py-1.5 text-xs font-semibold text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors shadow-xs cursor-pointer"
+              >
+                {confirmModal.confirmButtonText || "Confirm"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

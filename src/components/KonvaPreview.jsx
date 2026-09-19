@@ -13,10 +13,25 @@ import {
 import useImage from "use-image";
 import { SERVER_BASE_URL } from "../config";
 
+const resolveImageUrl = (src) => {
+  if (!src) return "";
+  if (src.startsWith("data:") || src.startsWith("blob:") || src.startsWith("http://") || src.startsWith("https://")) {
+    return src;
+  }
+  const cleanBase = (SERVER_BASE_URL || "").replace(/\/+$/, "");
+  const cleanPath = src.startsWith("/") ? src : `/${src}`;
+  return `${cleanBase}${cleanPath}`;
+};
+
 const KonvaLoadedImage = ({ src, width, height }) => {
-  const [image] = useImage(src, "anonymous");
-  return image ? (
-    <KonvaImage image={image} width={width} height={height} />
+  const resolvedSrc = resolveImageUrl(src);
+  const isDataOrBlob = resolvedSrc.startsWith("data:") || resolvedSrc.startsWith("blob:");
+  const [image, status] = useImage(resolvedSrc, isDataOrBlob ? undefined : "anonymous");
+  const [fallbackImage] = useImage(status === "failed" && !isDataOrBlob ? resolvedSrc : null);
+  const finalImage = image || fallbackImage;
+
+  return finalImage ? (
+    <KonvaImage image={finalImage} width={width} height={height} />
   ) : null;
 };
 

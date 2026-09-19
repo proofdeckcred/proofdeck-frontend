@@ -23,7 +23,7 @@ import {
   BookOpen,
   Eye,
   Brush,
-  Sparkles
+  Paintbrush
 } from "lucide-react";
 import { SERVER_BASE_URL } from "../config";
 import {
@@ -350,7 +350,7 @@ function TemplatesPage() {
             to="/dashboard/upload-template"
             className="inline-flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white rounded-lg py-2 px-3.5 transition-all font-semibold text-xs shadow-sm hover:shadow decoration-none w-full sm:w-auto text-center gap-1.5"
           >
-            <Sparkles size={14} className="text-blue-200" />
+            <Paintbrush size={14} className="text-white" />
             ProofDeck Studio
           </Link>
         </div>

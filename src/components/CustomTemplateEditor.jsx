@@ -13,6 +13,17 @@ import {
   Star,
 } from "react-konva";
 import useImage from "use-image";
+import { SERVER_BASE_URL } from "../config";
+
+const resolveImageUrl = (src) => {
+  if (!src) return "";
+  if (src.startsWith("data:") || src.startsWith("blob:") || src.startsWith("http://") || src.startsWith("https://")) {
+    return src;
+  }
+  const cleanBase = (SERVER_BASE_URL || "").replace(/\/+$/, "");
+  const cleanPath = src.startsWith("/") ? src : `/${src}`;
+  return `${cleanBase}${cleanPath}`;
+};
 
 // ─── Constants ──────────────────────────────────────────────
 const SNAP_THRESHOLD = 6;
@@ -105,9 +116,14 @@ const getSnappedPosition = (nodeX, nodeY, nodeW, nodeH, snapLines) => {
 
 // ─── Image Element Helper ────────────────────────────────────
 const KonvaLoadedImage = ({ src, width, height }) => {
-  const [image] = useImage(src, "anonymous");
-  return image ? (
-    <KonvaImage image={image} width={width} height={height} listening={false} />
+  const resolvedSrc = resolveImageUrl(src);
+  const isDataOrBlob = resolvedSrc.startsWith("data:") || resolvedSrc.startsWith("blob:");
+  const [image, status] = useImage(resolvedSrc, isDataOrBlob ? undefined : "anonymous");
+  const [fallbackImage] = useImage(status === "failed" && !isDataOrBlob ? resolvedSrc : null);
+  const finalImage = image || fallbackImage;
+
+  return finalImage ? (
+    <KonvaImage image={finalImage} width={width} height={height} listening={false} />
   ) : null;
 };
 
@@ -582,7 +598,11 @@ const CustomTemplateEditor = ({
   showGrid = true,
   zoomScale = 1,
 }) => {
-  const [image] = useImage(backgroundImageUrl, "anonymous");
+  const resolvedBg = resolveImageUrl(backgroundImageUrl);
+  const isBgData = resolvedBg.startsWith("data:") || resolvedBg.startsWith("blob:");
+  const [bgImage, bgStatus] = useImage(resolvedBg, isBgData ? undefined : "anonymous");
+  const [bgFallback] = useImage(bgStatus === "failed" && !isBgData ? resolvedBg : null);
+  const image = bgImage || bgFallback;
   const guidesLayerRef = useRef(null);
   const trRef = useRef();
 
