@@ -1,6 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { Linkedin, Github, ArrowUpRight, Instagram } from "lucide-react";
+import { Linkedin, Youtube, ArrowUpRight, Instagram } from "lucide-react";
 
 const PublicFooter = () => {
   return (
@@ -33,7 +33,7 @@ const PublicFooter = () => {
                 )}
               />
               <SocialLink href="https://www.linkedin.com/company/proofdeckhq/" icon={Linkedin} />
-              <SocialLink href="https://github.com/OmobolajiDurojaiye/CertifyMe" icon={Github} />
+              <SocialLink href="https://www.youtube.com/@proofdeck" icon={Youtube} />
               <SocialLink href="#" icon={Instagram} />
             </div>
           </div>
