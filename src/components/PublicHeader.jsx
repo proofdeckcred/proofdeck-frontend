@@ -54,12 +54,14 @@ const PublicHeader = () => {
               >
                 Pricing
               </Link>
-              <Link
-                to="/blog"
+              <a
+                href="https://blog.proofdeck.app"
+                target="_blank"
+                rel="noopener noreferrer"
                 className="text-[13px] font-medium text-[var(--pd-mute)] hover:text-[var(--pd-ink)] transition-colors no-underline"
               >
                 Blog
-              </Link>
+              </a>
               <Link
                 to="/docs"
                 className="text-[13px] font-medium text-[var(--pd-mute)] hover:text-[var(--pd-ink)] transition-colors no-underline"
@@ -111,7 +113,7 @@ const PublicHeader = () => {
             {[
               { label: "Features", path: "/features" },
               { label: "Pricing", path: "/pricing" },
-              { label: "Blog", path: "/blog" },
+              { label: "Blog", path: "https://blog.proofdeck.app", isExternal: true },
               { label: "Developers", path: "/docs" },
             ].map((item) =>
               item.isExternal ? (

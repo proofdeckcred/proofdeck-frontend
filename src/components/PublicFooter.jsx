@@ -64,7 +64,9 @@ const PublicFooter = () => {
               <FooterLink to="/docs">Documentation</FooterLink>
               <FooterLink to="/search">Public Ledger</FooterLink>
               <FooterLink to="/verify">Verification Portal</FooterLink>
-              <FooterLink to="/blog">Blog</FooterLink>
+              <FooterLink href="https://blog.proofdeck.app" isExternal>
+                Blog
+              </FooterLink>
             </ul>
           </div>
 
