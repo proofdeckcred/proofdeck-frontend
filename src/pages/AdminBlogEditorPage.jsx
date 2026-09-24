@@ -42,19 +42,30 @@ function AdminBlogEditorPage() {
   const thumbnailInputRef = useRef(null);
   const inlineImageInputRef = useRef(null);
 
-  const [formData, setFormData] = useState({
-    title: "",
-    slug: "",
-    category: "General",
-    excerpt: "",
-    content: "",
-    featured_image: "",
-    author_name: "Omobolaji Durojaiye",
-    author_role: "Founder & Lead Architect",
-    meta_title: "",
-    meta_description: "",
-    canonical_url: "",
-    is_published: false
+  const [formData, setFormData] = useState(() => {
+    let savedName = "Bolaji";
+    let savedRole = "Founder";
+    try {
+      const n = localStorage.getItem("proofdeck_blog_author_name");
+      if (n) savedName = n;
+      const r = localStorage.getItem("proofdeck_blog_author_role");
+      if (r) savedRole = r;
+    } catch (err) {}
+
+    return {
+      title: "",
+      slug: "",
+      category: "General",
+      excerpt: "",
+      content: "",
+      featured_image: "",
+      author_name: savedName,
+      author_role: savedRole,
+      meta_title: "",
+      meta_description: "",
+      canonical_url: "",
+      is_published: false
+    };
   });
 
   const [isCustomCategory, setIsCustomCategory] = useState(false);
@@ -790,9 +801,13 @@ function AdminBlogEditorPage() {
               <input
                 type="text"
                 value={formData.author_name}
-                onChange={(e) =>
-                  setFormData({ ...formData, author_name: e.target.value })
-                }
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setFormData((prev) => ({ ...prev, author_name: val }));
+                  try {
+                    localStorage.setItem("proofdeck_blog_author_name", val);
+                  } catch (err) {}
+                }}
                 className="w-full px-3 py-2 text-xs bg-white border border-slate-200 rounded-lg text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#4A3AA8]/20"
               />
             </div>
@@ -803,9 +818,13 @@ function AdminBlogEditorPage() {
               <input
                 type="text"
                 value={formData.author_role}
-                onChange={(e) =>
-                  setFormData({ ...formData, author_role: e.target.value })
-                }
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setFormData((prev) => ({ ...prev, author_role: val }));
+                  try {
+                    localStorage.setItem("proofdeck_blog_author_role", val);
+                  } catch (err) {}
+                }}
                 className="w-full px-3 py-2 text-xs bg-white border border-slate-200 rounded-lg text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#4A3AA8]/20"
               />
             </div>
