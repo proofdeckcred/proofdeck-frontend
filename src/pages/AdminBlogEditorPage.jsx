@@ -426,32 +426,47 @@ function AdminBlogEditorPage() {
     insertTextAtCursor(`\n\n\`\`\`javascript\n// write code snippet here\n\`\`\`\n\n`);
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const handleSubmit = async (publishOverride) => {
     if (!formData.title.trim() || !formData.content.trim()) {
       alert("Title and content are required.");
       return;
     }
 
+    const targetPublished =
+      typeof publishOverride === "boolean" ? publishOverride : Boolean(formData.is_published);
+
+    const payload = {
+      ...formData,
+      is_published: targetPublished,
+    };
+
+    setFormData((prev) => ({ ...prev, is_published: targetPublished }));
     setLoading(true);
     setStatusMessage(null);
 
     try {
       if (isEditing) {
-        await updateAdminBlogPost(id, formData);
+        await updateAdminBlogPost(id, payload);
         setStatusMessage({
           type: "success",
-          text: "Article updated successfully! Next.js ISR on-demand webhook triggered."
-        });
-      } else {
-        const res = await createAdminBlogPost(formData);
-        setStatusMessage({
-          type: "success",
-          text: "Article published/saved! Next.js ISR on-demand webhook triggered."
+          text: targetPublished
+            ? "Article published live! Live blog updated via Next.js ISR."
+            : "Draft updated successfully."
         });
         setTimeout(() => {
           navigate("/admin/blog");
-        }, 1200);
+        }, 1000);
+      } else {
+        await createAdminBlogPost(payload);
+        setStatusMessage({
+          type: "success",
+          text: targetPublished
+            ? "Article published live! Live blog updated via Next.js ISR."
+            : "Draft saved successfully."
+        });
+        setTimeout(() => {
+          navigate("/admin/blog");
+        }, 1000);
       }
     } catch (err) {
       setStatusMessage({
@@ -532,12 +547,22 @@ function AdminBlogEditorPage() {
 
           <button
             type="button"
-            onClick={handleSubmit}
+            onClick={() => handleSubmit(false)}
             disabled={loading}
-            className="inline-flex items-center gap-2 px-5 py-2 rounded-xl bg-[#5B4CF5] hover:bg-[#4433E0] text-white text-xs font-semibold shadow-xs cursor-pointer transition-colors disabled:opacity-50"
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl border border-slate-300 hover:bg-slate-50 text-slate-700 text-xs font-semibold shadow-2xs transition-colors cursor-pointer disabled:opacity-50"
           >
-            {loading ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
-            {loading ? "Saving..." : "Save Article"}
+            {loading ? <Loader2 size={13} className="animate-spin" /> : <Save size={13} />}
+            Save Draft
+          </button>
+
+          <button
+            type="button"
+            onClick={() => handleSubmit(true)}
+            disabled={loading}
+            className="inline-flex items-center gap-1.5 px-5 py-2 rounded-xl bg-[#5B4CF5] hover:bg-[#4433E0] text-white text-xs font-semibold shadow-xs cursor-pointer transition-all hover:scale-105 disabled:opacity-50"
+          >
+            {loading ? <Loader2 size={13} className="animate-spin" /> : <Globe size={13} />}
+            Publish Live
           </button>
         </div>
       </div>
@@ -1089,6 +1114,27 @@ function AdminBlogEditorPage() {
               />
             </div>
           </div>
+        </div>
+
+        <div className="flex items-center justify-end gap-3 pt-2 pb-8">
+          <button
+            type="button"
+            onClick={() => handleSubmit(false)}
+            disabled={loading}
+            className="px-5 py-2.5 rounded-xl border border-slate-300 hover:bg-slate-50 text-slate-700 text-xs font-semibold shadow-2xs transition-colors cursor-pointer disabled:opacity-50"
+          >
+            {loading ? <Loader2 size={13} className="animate-spin" /> : <Save size={13} />}
+            Save Draft
+          </button>
+          <button
+            type="button"
+            onClick={() => handleSubmit(true)}
+            disabled={loading}
+            className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-[#5B4CF5] hover:bg-[#4433E0] text-white text-xs font-semibold shadow-xs cursor-pointer transition-all hover:scale-105 disabled:opacity-50"
+          >
+            {loading ? <Loader2 size={13} className="animate-spin" /> : <Globe size={13} />}
+            Publish Live
+          </button>
         </div>
       </form>
     </div>

@@ -12,9 +12,11 @@ import {
   Clock,
   CheckCircle,
   FileText,
-  AlertCircle
+  AlertCircle,
+  Loader2,
+  ExternalLink
 } from "lucide-react";
-import { getAdminBlogPosts, deleteAdminBlogPost } from "../api";
+import { getAdminBlogPosts, deleteAdminBlogPost, updateAdminBlogPost } from "../api";
 
 function AdminBlogPage() {
   const [posts, setPosts] = useState([]);
@@ -26,6 +28,7 @@ function AdminBlogPage() {
   const [totalPages, setTotalPages] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
   const [deletingId, setDeletingId] = useState(null);
+  const [togglingId, setTogglingId] = useState(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -64,6 +67,23 @@ function AdminBlogPage() {
       alert("Error deleting article.");
     } finally {
       setDeletingId(null);
+    }
+  };
+
+  const handleTogglePublish = async (post) => {
+    setTogglingId(post.id);
+    try {
+      const nextStatus = !post.is_published;
+      await updateAdminBlogPost(post.id, { is_published: nextStatus });
+      setPosts((prev) =>
+        prev.map((p) =>
+          p.id === post.id ? { ...p, is_published: nextStatus } : p
+        )
+      );
+    } catch (err) {
+      alert("Failed to update status: " + (err.response?.data?.msg || err.message));
+    } finally {
+      setTogglingId(null);
     }
   };
 
@@ -199,17 +219,28 @@ function AdminBlogPage() {
                       </span>
                     </td>
                     <td className="px-6 py-4">
-                      {post.is_published ? (
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200/60">
-                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-                          Published
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200/60">
-                          <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
-                          Draft
-                        </span>
-                      )}
+                      <button
+                        type="button"
+                        onClick={() => handleTogglePublish(post)}
+                        disabled={togglingId === post.id}
+                        className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold cursor-pointer transition-all hover:scale-105 ${
+                          post.is_published
+                            ? "bg-emerald-50 text-emerald-700 border border-emerald-200/70 hover:bg-emerald-100"
+                            : "bg-amber-50 text-amber-700 border border-amber-200/70 hover:bg-amber-100"
+                        }`}
+                        title={post.is_published ? "Click to Unpublish (switch to Draft)" : "Click to Publish Live"}
+                      >
+                        {togglingId === post.id ? (
+                          <Loader2 size={12} className="animate-spin text-current" />
+                        ) : (
+                          <span
+                            className={`w-1.5 h-1.5 rounded-full ${
+                              post.is_published ? "bg-emerald-500" : "bg-amber-500"
+                            }`}
+                          />
+                        )}
+                        {post.is_published ? "Published" : "Draft"}
+                      </button>
                     </td>
                     <td className="px-6 py-4 text-gray-500 font-mono text-xs">
                       {post.view_count || 0}
@@ -221,9 +252,20 @@ function AdminBlogPage() {
                     </td>
                     <td className="px-6 py-4 text-right">
                       <div className="flex items-center justify-end gap-2">
+                        {post.is_published && (
+                          <a
+                            href={`https://blog.proofdeck.app/${post.slug}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="p-1.5 text-gray-400 hover:text-[#5B4CF5] hover:bg-indigo-50 rounded-lg transition-colors"
+                            title="View on Live Blog"
+                          >
+                            <ExternalLink size={16} />
+                          </a>
+                        )}
                         <Link
                           to={`/admin/blog/editor/${post.id}`}
-                          className="p-1.5 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
+                          className="p-1.5 text-gray-400 hover:text-[#5B4CF5] hover:bg-indigo-50 rounded-lg transition-colors"
                           title="Edit"
                         >
                           <Edit2 size={16} />
