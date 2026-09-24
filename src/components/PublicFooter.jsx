@@ -4,26 +4,26 @@ import { Linkedin, Youtube, ArrowUpRight, Instagram } from "lucide-react";
 
 const PublicFooter = () => {
   return (
-    <footer className="pd-dot-grid border-t border-[var(--pd-line)]">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-16 pb-8">
-        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-y-10 gap-x-8 mb-14">
+    <footer className="pd-dot-grid border-t border-[var(--pd-line)] bg-white">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-16 pb-10">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-y-10 gap-x-8 lg:gap-x-12 mb-16">
           {/* Brand Column */}
-          <div className="col-span-2 lg:col-span-2 pr-8">
-            <Link to="/" className="flex items-center gap-2.5 mb-5 no-underline">
+          <div>
+            <Link to="/" className="flex items-center gap-2.5 h-9 mb-5 no-underline">
               <img
                 src="/logo.png"
                 alt="ProofDeck"
-                className="w-9 h-9 rounded-lg"
+                className="w-9 h-9 rounded-lg shadow-2xs"
               />
               <span className="text-lg font-bold text-slate-900 tracking-tight">
                 ProofDeck
               </span>
             </Link>
-            <p className="text-sm text-slate-500 mb-6 max-w-xs leading-relaxed">
+            <p className="text-sm text-slate-500 mb-6 max-w-sm leading-relaxed">
               The modern standard for issuing verifiable digital credentials.
               Built for speed, security, and scale.
             </p>
-            <div className="flex space-x-3">
+            <div className="flex items-center space-x-3">
               <SocialLink
                 href="https://x.com/proofdeck"
                 icon={() => (
@@ -34,16 +34,18 @@ const PublicFooter = () => {
               />
               <SocialLink href="https://www.linkedin.com/company/proofdeckhq/" icon={Linkedin} />
               <SocialLink href="https://www.youtube.com/@proofdeck" icon={Youtube} />
-              <SocialLink href="#" icon={Instagram} />
+              <SocialLink href="https://instagram.com/proofdeck" icon={Instagram} />
             </div>
           </div>
 
           {/* Product */}
           <div>
-            <h4 className="font-bold text-[var(--pd-ink)] text-sm mb-5">
-              Product
-            </h4>
-            <ul className="space-y-3">
+            <div className="h-9 flex items-center mb-5">
+              <h4 className="font-bold text-slate-900 text-sm m-0">
+                Product
+              </h4>
+            </div>
+            <ul className="space-y-3.5 list-none !p-0 !m-0 !pl-0">
               <FooterLink to="/dashboard">Dashboard</FooterLink>
               <FooterLink to="/features">Features</FooterLink>
               <FooterLink to="/pricing">Pricing</FooterLink>
@@ -53,25 +55,27 @@ const PublicFooter = () => {
 
           {/* Resources */}
           <div>
-            <h4 className="font-bold text-[var(--pd-ink)] text-sm mb-5">
-              Resources
-            </h4>
-            <ul className="space-y-3">
+            <div className="h-9 flex items-center mb-5">
+              <h4 className="font-bold text-slate-900 text-sm m-0">
+                Resources
+              </h4>
+            </div>
+            <ul className="space-y-3.5 list-none !p-0 !m-0 !pl-0">
               <FooterLink to="/docs">Documentation</FooterLink>
               <FooterLink to="/search">Public Ledger</FooterLink>
               <FooterLink to="/verify">Verification Portal</FooterLink>
-              <FooterLink href="https://www.bolaji.tech/blog" isExternal>
-                Blog
-              </FooterLink>
+              <FooterLink to="/blog">Blog</FooterLink>
             </ul>
           </div>
 
-          {/* Company & Legal */}
+          {/* Company */}
           <div>
-            <h4 className="font-bold text-[var(--pd-ink)] text-sm mb-5">
-              Company
-            </h4>
-            <ul className="space-y-3">
+            <div className="h-9 flex items-center mb-5">
+              <h4 className="font-bold text-slate-900 text-sm m-0">
+                Company
+              </h4>
+            </div>
+            <ul className="space-y-3.5 list-none !p-0 !m-0 !pl-0">
               <FooterLink href="https://www.bolaji.tech/" isExternal>
                 About / Founder
               </FooterLink>
@@ -82,29 +86,27 @@ const PublicFooter = () => {
           </div>
         </div>
 
-        {/* Footer CTA */}
-        <div className="text-center mb-14">
-          <p className="text-lg font-bold text-[var(--pd-ink)] mb-2">Stay credible.</p>
-          <p className="text-sm text-[var(--pd-mute)] mb-6">Issue your first certificate today.</p>
+        {/* Footer CTA - Exactly matching Image 1 */}
+        <div className="text-center my-14">
+          <p className="text-xl font-bold text-slate-900 mb-1.5">Stay credible.</p>
+          <p className="text-sm text-slate-500 mb-6">Issue your first certificate today.</p>
           <Link
             to="/signup"
-            className="inline-flex items-center justify-center px-6 py-3 rounded-full text-sm font-medium text-white bg-[var(--pd-indigo)] hover:bg-[var(--pd-indigo-dark)] transition-colors no-underline"
+            className="inline-flex items-center justify-center px-7 py-2.5 rounded-full text-sm font-semibold text-white bg-[var(--pd-indigo)] hover:bg-[var(--pd-indigo-dark)] transition-colors no-underline shadow-xs cursor-pointer"
           >
             Get started
           </Link>
         </div>
 
-        {/* Bottom Bar */}
+        {/* Bottom Bar - Exactly matching Image 1 */}
         <div className="pt-8 border-t border-slate-200 flex flex-col md:flex-row justify-between items-center gap-4 text-center md:text-left">
-          <p className="text-xs text-slate-400 font-medium">
-            &copy; {new Date().getFullYear()} ProofDeck &middot; A BMDL Technologies Ltd. product &middot; RC 9840518
+          <p className="text-xs text-slate-400 font-medium m-0">
+            &copy; 2026 ProofDeck &middot; A BMDL Technologies Ltd. product &middot; RC 9840518
           </p>
-          <div className="flex items-center gap-4 text-xs font-medium text-slate-400">
-            <Link to="/legal?tab=privacy" className="hover:text-slate-600 transition-colors no-underline">Privacy</Link>
-            <span>&middot;</span>
-            <Link to="/legal?tab=terms" className="hover:text-slate-600 transition-colors no-underline">Terms</Link>
-            <span>&middot;</span>
-            <Link to="/legal?tab=security" className="hover:text-slate-600 transition-colors no-underline">Security</Link>
+          <div className="flex items-center gap-8 text-xs font-medium !text-slate-400">
+            <Link to="/legal?tab=privacy" className="!text-slate-400 hover:!text-slate-600 transition-colors no-underline">Privacy</Link>
+            <Link to="/legal?tab=terms" className="!text-slate-400 hover:!text-slate-600 transition-colors no-underline">Terms</Link>
+            <Link to="/legal?tab=security" className="!text-slate-400 hover:!text-slate-600 transition-colors no-underline">Security</Link>
           </div>
         </div>
       </div>
@@ -114,7 +116,7 @@ const PublicFooter = () => {
 
 const FooterLink = ({ to, href, children, isExternal }) => {
   const className =
-    "text-slate-500 hover:text-slate-900 transition-colors text-sm font-medium flex items-center gap-1 group no-underline";
+    "!text-slate-500 hover:!text-slate-900 transition-colors text-sm font-medium flex items-center gap-1 group no-underline";
 
   if (isExternal) {
     return (

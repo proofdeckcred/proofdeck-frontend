@@ -341,3 +341,23 @@ export const markAllNotificationsRead = () => API.patch("/notifications/read-all
 // BACKGROUND JOBS API
 export const getBackgroundJobs = () => API.get("/jobs/");
 export const getJobStatus = (jobId) => API.get(`/jobs/${jobId}`);
+
+// BLOG ADMIN & PUBLIC API
+export const getAdminBlogPosts = (params = {}) =>
+  API.get(`/admin/blog/posts?${new URLSearchParams(params).toString()}`);
+export const getAdminBlogPost = (id) =>
+  API.get(`/admin/blog/posts/${id}`);
+export const createAdminBlogPost = (data) =>
+  API.post(`/admin/blog/posts`, data);
+export const updateAdminBlogPost = (id, data) =>
+  API.put(`/admin/blog/posts/${id}`, data);
+export const deleteAdminBlogPost = (id) =>
+  API.delete(`/admin/blog/posts/${id}`);
+export const getPublishedBlogPosts = (params = {}) =>
+  API.get(`/blog/posts?${new URLSearchParams(params).toString()}`);
+export const getBlogPostBySlug = (slug) =>
+  API.get(`/blog/posts/${slug}`);
+export const uploadBlogImage = (formData) =>
+  API.post("/admin/blog/upload-image", formData, {
+    headers: { "Content-Type": "multipart/form-data" }
+  });

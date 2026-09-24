@@ -1,7 +1,8 @@
 {
+  "cleanUrls": true,
   "rewrites": [
     {
-      "source": "/((?!api/|uploads/|images/|sw.js|robots.txt|manifest.json).*)",
+      "source": "/((?!api/|uploads/|images/|sw.js|robots.txt|sitemap.xml|manifest.json).*)",
       "destination": "/index.html"
     }
   ]

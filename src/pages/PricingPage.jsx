@@ -1,8 +1,9 @@
-import React from "react";
+import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import PublicHeader from "../components/PublicHeader";
 import PublicFooter from "../components/PublicFooter";
-import { Check } from "lucide-react";
+import { Check, ChevronDown, ChevronUp } from "lucide-react";
+import SEO from "../components/SEO";
 
 const PricingCard = ({ plan, isPopular }) => {
   return (
@@ -143,21 +144,122 @@ const PricingPage = () => {
     },
   ];
 
+  const [openFaq, setOpenFaq] = useState(null);
+
+  const toggleFaq = (index) => {
+    setOpenFaq(openFaq === index ? null : index);
+  };
+
+  const pricingFaqs = [
+    {
+      question: "Can I pay in Nigerian Naira (NGN) with a local debit card?",
+      answer:
+        "Yes! ProofDeck natively supports Nigerian debit cards (Mastercard, Visa, Verve), direct bank transfers, and USSD via our secure Paystack integration. No foreign currency conversion fees or virtual dollar card hassles.",
+    },
+    {
+      question: "Do credential credits ever expire?",
+      answer:
+        "Never. Credits purchased on ProofDeck come with lifetime validity. You can purchase a pack today and use them gradually across future workshops, bootcamps, or events whenever you need.",
+    },
+    {
+      question: "Are there any monthly subscriptions or recurring fees?",
+      answer:
+        "None. ProofDeck operates strictly on a transparent pay-as-you-go credit model. You never have to worry about unwanted monthly credit card charges.",
+    },
+    {
+      question: "Can I issue certificates in bulk using CSV or Excel files?",
+      answer:
+        "Yes, our Growth, Pro, and Enterprise tiers include one-click bulk CSV/Excel upload with dynamic variable mapping (Recipient Name, Issue Date, Course Title, Custom IDs) and automated email delivery.",
+    },
+    {
+      question: "What is included in the Developer REST API?",
+      answer:
+        "Pro and Enterprise plans include full API access, allowing automated credential creation, batch issuance, webhook notifications, and custom integrations with your LMS, HR system, or event software.",
+    },
+    {
+      question: "How does QR code verification protect certificates?",
+      answer:
+        "Every certificate issued through ProofDeck includes a cryptographically unique verification code and QR code. Employers and verifiers can scan the QR code to confirm authenticity instantly without exposing your database.",
+    },
+  ];
+
+  const productSchema = {
+    "@type": "Product",
+    "name": "ProofDeck Credential Credits",
+    "description": "Pay-as-you-go digital certificate issuing credits for Nigerian and African organizations.",
+    "brand": {
+      "@type": "Brand",
+      "name": "ProofDeck"
+    },
+    "offers": {
+      "@type": "AggregateOffer",
+      "priceCurrency": "NGN",
+      "lowPrice": "15000",
+      "highPrice": "250000",
+      "offerCount": "4",
+      "offers": plans.map(p => ({
+        "@type": "Offer",
+        "name": `${p.name} Plan (${p.certs} Credits)`,
+        "price": p.priceNGN.replace(/[^0-9]/g, ""),
+        "priceCurrency": "NGN",
+        "availability": "https://schema.org/InStock",
+        "url": "https://www.proofdeck.app/pricing"
+      }))
+    }
+  };
+
+  const faqSchema = {
+    "@type": "FAQPage",
+    "mainEntity": pricingFaqs.map(faq => ({
+      "@type": "Question",
+      "name": faq.question,
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": faq.answer
+      }
+    }))
+  };
+
+  const breadcrumbSchema = {
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "position": 1,
+        "name": "Home",
+        "item": "https://www.proofdeck.app/"
+      },
+      {
+        "@type": "ListItem",
+        "position": 2,
+        "name": "Pricing",
+        "item": "https://www.proofdeck.app/pricing"
+      }
+    ]
+  };
+
   return (
     <div className="bg-white font-sans text-[var(--pd-ink)]">
+      <SEO
+        title="Pay-As-You-Go Certificate Generator Pricing in Naira (NGN) | ProofDeck"
+        description="Affordable, pay-as-you-go digital certificate pricing in Nigerian Naira (NGN) and USD. Starting at ₦15,000 for 100 certificates. No monthly subscriptions, credits never expire. Pay via Paystack or card."
+        keywords="certificate maker Nigeria price, cheap certificate generator pay in naira, certifier alternative with paystack, digital credential platform pricing in ngn, certificate generator in naira, buy digital certificate platform paystack"
+        canonicalUrl="https://www.proofdeck.app/pricing"
+        schemas={[productSchema, faqSchema, breadcrumbSchema]}
+      />
       <PublicHeader />
       <main>
         {/* Hero Section */}
         <section className="relative py-24 text-center bg-[var(--pd-paper)]">
           <div className="max-w-4xl mx-auto px-6">
             <span className="pd-pill-label mb-4 inline-flex">Pricing</span>
-            <h1 className="text-5xl md:text-6xl font-bold text-[var(--pd-ink)] tracking-tight mb-6 leading-tight pt-4">
-              Simple pricing.<br />
+            <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold text-[var(--pd-ink)] tracking-tight mb-6 leading-tight pt-4">
+              Transparent Naira pricing.<br />
               Pay only for what you issue.
             </h1>
-            <p className="text-lg text-[var(--pd-mute)] mb-8 max-w-2xl mx-auto leading-relaxed">
-              ProofDeck uses a credit-based system. One certificate equals one
-              credit. No hidden fees. No surprises.
+            <p className="text-base sm:text-lg text-[var(--pd-mute)] mb-8 max-w-2xl mx-auto leading-relaxed font-normal">
+              ProofDeck uses a pay-as-you-go credit system. One certificate equals one
+              credit. No recurring monthly fees. Credits never expire.
             </p>
           </div>
         </section>
@@ -226,8 +328,52 @@ const PricingPage = () => {
           </div>
         </section>
 
+        {/* FAQ Section */}
+        <section className="py-20 md:py-24 bg-white border-b border-[var(--pd-line)]">
+          <div className="max-w-3xl mx-auto px-4 sm:px-6">
+            <div className="text-center mb-12">
+              <span className="pd-pill-label mb-4 inline-flex">Pricing FAQ</span>
+              <h2 className="text-3xl font-bold text-[var(--pd-ink)] tracking-tight">
+                Frequently Asked Pricing Questions
+              </h2>
+              <p className="mt-3 text-sm text-[var(--pd-mute)]">
+                Everything you need to know about payments, credits, and billing in Nigeria and Africa.
+              </p>
+            </div>
+
+            <div className="space-y-3">
+              {pricingFaqs.map((faq, idx) => {
+                const isOpen = openFaq === idx;
+                return (
+                  <div
+                    key={idx}
+                    className="border border-[var(--pd-line)] rounded-2xl p-5 bg-white transition-all shadow-2xs hover:border-slate-300"
+                  >
+                    <button
+                      onClick={() => toggleFaq(idx)}
+                      className="w-full flex items-center justify-between text-left font-bold text-[var(--pd-ink)] text-sm sm:text-base focus:outline-none"
+                    >
+                      <span>{faq.question}</span>
+                      {isOpen ? (
+                        <ChevronUp size={18} className="text-[var(--pd-indigo)] shrink-0 ml-4" />
+                      ) : (
+                        <ChevronDown size={18} className="text-slate-400 shrink-0 ml-4" />
+                      )}
+                    </button>
+                    {isOpen && (
+                      <p className="mt-3 text-xs sm:text-sm text-[var(--pd-mute)] leading-relaxed font-normal">
+                        {faq.answer}
+                      </p>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </section>
+
         {/* Final CTA */}
-        <section className="py-24 bg-[var(--pd-paper)] border-t border-[var(--pd-line)]">
+        <section className="py-24 bg-[var(--pd-paper)]">
           <div className="max-w-3xl mx-auto px-4 text-center">
             <h2 className="text-4xl font-bold text-[var(--pd-ink)] mb-6">
               Start issuing certificates within minutes

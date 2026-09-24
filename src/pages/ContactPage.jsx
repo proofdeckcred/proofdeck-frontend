@@ -15,6 +15,7 @@ import {
   MapPin,
   Phone,
 } from "lucide-react";
+import SEO from "../components/SEO";
 
 const ContactPage = () => {
   const [formData, setFormData] = useState({
@@ -44,6 +45,11 @@ const ContactPage = () => {
 
   return (
     <div className="bg-white min-h-screen flex flex-col font-sans overflow-x-hidden">
+      <SEO
+        title="Contact ProofDeck Support & Sales | ProofDeck"
+        description="Get in touch with ProofDeck for sales, customer support, custom enterprise API onboarding, or partnership inquiries in Nigeria."
+        canonicalUrl="https://www.proofdeck.app/contact"
+      />
       <Toaster position="top-right" />
       <PublicHeader />
 

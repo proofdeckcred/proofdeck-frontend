@@ -114,99 +114,6 @@ export function LandingHero() {
         </motion.div>
 
         {/* ========================================================
-            STICKER 3: Bottom-Left (Live Batches Card)
-            Matches ChronoTask Image 1 bottom-left tasks card
-           ======================================================== */}
-        <motion.div
-          className="hidden xl:block absolute bottom-28 left-2 xl:left-4 z-20 pointer-events-none select-none"
-          initial={{ opacity: 0, y: 20, rotate: 1 }}
-          animate={{ opacity: 1, y: 0, rotate: 3 }}
-          transition={{ duration: 0.6, delay: 0.3 }}
-        >
-          <div 
-            className="bg-white rounded-2xl p-5 w-[230px] xl:w-[250px] border border-[var(--pd-line)] text-left"
-            style={{ boxShadow: "0 14px 30px -8px rgba(11,11,18,0.14)" }}
-          >
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-[11px] font-bold text-[var(--pd-ink)]">Recent Batches</span>
-              <span className="text-[10px] font-bold text-[var(--pd-indigo)] bg-indigo-50 px-2 py-0.5 rounded-full">
-                Active
-              </span>
-            </div>
-
-            <div className="space-y-3">
-              <div>
-                <div className="flex justify-between text-[11px] mb-1 font-medium">
-                  <span className="text-[var(--pd-ink)] font-semibold truncate">AI Cohort 2026</span>
-                  <span className="text-emerald-600 font-bold">100%</span>
-                </div>
-                <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                  <div className="h-full bg-[var(--pd-indigo)] rounded-full w-full"></div>
-                </div>
-                <span className="text-[9px] text-[var(--pd-mute)]">140 / 140 issued</span>
-              </div>
-
-              <div>
-                <div className="flex justify-between text-[11px] mb-1 font-medium">
-                  <span className="text-[var(--pd-ink)] font-semibold truncate">Design Masterclass</span>
-                  <span className="text-emerald-600 font-bold">100%</span>
-                </div>
-                <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                  <div className="h-full bg-[var(--pd-indigo)] rounded-full w-full"></div>
-                </div>
-                <span className="text-[9px] text-[var(--pd-mute)]">45 / 45 issued</span>
-              </div>
-            </div>
-          </div>
-        </motion.div>
-
-        {/* ========================================================
-            STICKER 4: Bottom-Right (1-Click Integrations Card)
-            Matches ChronoTask Image 1 bottom-right 100+ Integrations card
-           ======================================================== */}
-        <motion.div
-          className="hidden xl:block absolute bottom-28 right-2 xl:right-4 z-20 pointer-events-none select-none"
-          initial={{ opacity: 0, y: 20, rotate: -2 }}
-          animate={{ opacity: 1, y: 0, rotate: -4 }}
-          transition={{ duration: 0.6, delay: 0.4 }}
-        >
-          <div 
-            className="bg-white rounded-2xl p-5 w-[240px] xl:w-[260px] border border-[var(--pd-line)] text-left"
-            style={{ boxShadow: "0 14px 30px -8px rgba(11,11,18,0.14)" }}
-          >
-            <div className="mb-3">
-              <span className="text-[11px] font-bold text-[var(--pd-ink)]">1-Click Sharing & APIs</span>
-            </div>
-
-            <div className="flex items-center justify-between gap-2 pt-1">
-              {/* LinkedIn Tile */}
-              <div className="flex-1 flex flex-col items-center p-2.5 rounded-xl bg-white border border-[var(--pd-line)] shadow-2xs">
-                <div className="w-8 h-8 rounded-lg bg-[#0A66C2] flex items-center justify-center text-white mb-1">
-                  <Linkedin size={16} />
-                </div>
-                <span className="text-[9px] font-bold text-[var(--pd-ink)]">LinkedIn</span>
-              </div>
-
-              {/* Email Delivery Tile */}
-              <div className="flex-1 flex flex-col items-center p-2.5 rounded-xl bg-white border border-[var(--pd-line)] shadow-2xs">
-                <div className="w-8 h-8 rounded-lg bg-red-50 text-red-600 flex items-center justify-center mb-1 border border-red-100">
-                  <Mail size={16} />
-                </div>
-                <span className="text-[9px] font-bold text-[var(--pd-ink)]">Email</span>
-              </div>
-
-              {/* REST API Tile */}
-              <div className="flex-1 flex flex-col items-center p-2.5 rounded-xl bg-white border border-[var(--pd-line)] shadow-2xs">
-                <div className="w-8 h-8 rounded-lg bg-[var(--pd-ink)] text-emerald-400 flex items-center justify-center mb-1">
-                  <Code size={16} />
-                </div>
-                <span className="text-[9px] font-bold text-[var(--pd-ink)]">REST API</span>
-              </div>
-            </div>
-          </div>
-        </motion.div>
-
-        {/* ========================================================
             CENTER CONTENT: Headline, Subtitle, CTA & Stats
            ======================================================== */}
         <div className="flex flex-col items-center text-center max-w-3xl mx-auto pt-4 sm:pt-8 pb-4">
@@ -275,8 +182,8 @@ export function LandingHero() {
         </div>
 
         {/* ========================================================
-            CENTERPIECE: Dashboard Mockup
-            Vibrant blue showcase container matching FeaturesPage & Image 1
+            CENTERPIECE: Dashboard Mockup + 2 Floating Cards
+            Vibrant blue showcase container matching Image 3
            ======================================================== */}
         <motion.div
           className="relative mt-12 sm:mt-16 w-full max-w-5xl mx-auto"
@@ -284,6 +191,111 @@ export function LandingHero() {
           animate={{ opacity: 1, y: 0, scale: 1 }}
           transition={{ duration: 0.7, delay: 0.3 }}
         >
+          {/* Floating Card 1: Recent Batches (Left) */}
+          <motion.div
+            className="hidden sm:block absolute -left-4 md:-left-8 lg:-left-12 bottom-12 md:bottom-20 z-20 pointer-events-none select-none"
+            initial={{ opacity: 0, x: -30, rotate: -4 }}
+            animate={{ opacity: 1, x: 0, rotate: -2 }}
+            transition={{ duration: 0.6, delay: 0.5 }}
+          >
+            <div 
+              className="bg-white rounded-2xl md:rounded-3xl p-4 sm:p-5 w-[230px] sm:w-[260px] md:w-[280px] border border-slate-100/90 shadow-2xl shadow-slate-900/10"
+            >
+              <div className="flex items-center justify-between mb-4">
+                <span className="text-xs sm:text-sm font-bold text-slate-900">
+                  Recent Batches
+                </span>
+                <span className="text-[10px] sm:text-xs font-semibold px-2 sm:px-2.5 py-0.5 rounded-full bg-indigo-50 text-indigo-600 border border-indigo-100">
+                  Active
+                </span>
+              </div>
+
+              <div className="space-y-4">
+                {/* Batch 1 */}
+                <div>
+                  <div className="flex items-center justify-between text-xs sm:text-sm font-bold text-slate-800 mb-1.5">
+                    <span>AI Cohort 2026</span>
+                    <span className="text-indigo-600 font-extrabold text-xs">100%</span>
+                  </div>
+                  <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden mb-1">
+                    <div className="h-full bg-indigo-600 rounded-full w-full"></div>
+                  </div>
+                  <div className="text-[10px] sm:text-[11px] font-medium text-slate-400">
+                    140 / 140 Issued
+                  </div>
+                </div>
+
+                {/* Batch 2 */}
+                <div>
+                  <div className="flex items-center justify-between text-xs sm:text-sm font-bold text-slate-800 mb-1.5">
+                    <span>Design Masterclass</span>
+                    <span className="text-indigo-600 font-extrabold text-xs">100%</span>
+                  </div>
+                  <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden mb-1">
+                    <div className="h-full bg-indigo-600 rounded-full w-full"></div>
+                  </div>
+                  <div className="text-[10px] sm:text-[11px] font-medium text-slate-400">
+                    45 / 45 Issued
+                  </div>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+
+          {/* Floating Card 2: 1-Click Sharing & APIs (Right) */}
+          <motion.div
+            className="hidden sm:block absolute -right-4 md:-right-8 lg:-right-12 bottom-6 md:bottom-12 z-20 pointer-events-none select-none"
+            initial={{ opacity: 0, x: 30, rotate: 4 }}
+            animate={{ opacity: 1, x: 0, rotate: 2 }}
+            transition={{ duration: 0.6, delay: 0.6 }}
+          >
+            <div 
+              className="bg-white rounded-2xl md:rounded-3xl p-4 sm:p-6 w-[230px] sm:w-[260px] md:w-[280px] border border-slate-100/90 shadow-2xl shadow-slate-900/10 text-center"
+            >
+              <div className="text-xs sm:text-sm font-bold text-slate-900 mb-4">
+                1-Click Sharing & APIs
+              </div>
+
+              <div className="grid grid-cols-3 gap-2 sm:gap-3">
+                {/* LinkedIn */}
+                <div className="flex flex-col items-center">
+                  <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl border border-slate-100 bg-slate-50/50 flex items-center justify-center shadow-xs hover:border-slate-200 transition-colors">
+                    <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-[#0077b5] flex items-center justify-center text-white shadow-xs">
+                      <Linkedin size={16} className="fill-current" />
+                    </div>
+                  </div>
+                  <span className="text-[10px] sm:text-[11px] font-medium text-slate-600 mt-1.5">
+                    Linkedin
+                  </span>
+                </div>
+
+                {/* Email */}
+                <div className="flex flex-col items-center">
+                  <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl border border-slate-100 bg-slate-50/50 flex items-center justify-center shadow-xs hover:border-slate-200 transition-colors">
+                    <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-red-50 border border-red-100 flex items-center justify-center text-red-500 shadow-xs">
+                      <Mail size={16} className="stroke-[2.2]" />
+                    </div>
+                  </div>
+                  <span className="text-[10px] sm:text-[11px] font-medium text-slate-600 mt-1.5">
+                    Email
+                  </span>
+                </div>
+
+                {/* REST API */}
+                <div className="flex flex-col items-center">
+                  <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl border border-slate-100 bg-slate-50/50 flex items-center justify-center shadow-xs hover:border-slate-200 transition-colors">
+                    <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-slate-900 flex items-center justify-center text-white shadow-xs">
+                      <Code size={16} className="stroke-[2.5]" />
+                    </div>
+                  </div>
+                  <span className="text-[10px] sm:text-[11px] font-medium text-slate-600 mt-1.5">
+                    REST API
+                  </span>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+
           <div 
             className="rounded-3xl sm:rounded-[32px] p-4 sm:p-8 md:p-12 relative overflow-hidden shadow-2xl"
             style={{

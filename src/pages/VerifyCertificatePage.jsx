@@ -21,6 +21,7 @@ import {
 import TemplateRenderer from "../components/templates/TemplateRenderer";
 import PublicHeader from "../components/PublicHeader";
 import PublicFooter from "../components/PublicFooter";
+import SEO from "../components/SEO";
 
 // --- SHARE SECTION COMPONENT ---
 const ShareCredentialSection = ({ currentUrl, companyName, certificate }) => {
@@ -253,6 +254,12 @@ const VerifyCertificatePage = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col font-sans">
+      <SEO
+        title="Credential Verification | ProofDeck"
+        description="Verify official ProofDeck digital credential authenticity."
+        canonicalUrl="https://www.proofdeck.app/verify"
+        noIndex={true}
+      />
       <PublicHeader />
 
       <main className="flex-grow py-12 px-4 sm:px-6 lg:px-8">

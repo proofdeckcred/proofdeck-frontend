@@ -10,6 +10,7 @@ import { FeaturesSection } from "../components/FeaturesSection";
 import { BenefitsSection } from "../components/BenefitsSection";
 import { TestimonialSection } from "../components/TestimonialSection";
 import { ApiSection } from "../components/ApiSection";
+import SEO from "../components/SEO";
 
 // --- REVERTED PRICING CARD GRID ---
 
@@ -214,8 +215,76 @@ const FAQ = () => (
 // --- MAIN PAGE ---
 
 function LandingPage() {
+  const faqSchema = {
+    "@type": "FAQPage",
+    "mainEntity": [
+      {
+        "@type": "Question",
+        "name": "How do credential credits work?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Credits are pay-as-you-go. 1 credit = 1 issued certificate, invitation card, or payment receipt. Credits never expire, meaning you can use them whenever you need."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Can I customize the templates?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Yes, you can use our drag-and-drop template editor to customize layouts, text fonts, signatures, and backgrounds to perfectly match your brand identity."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "How do third parties verify credentials?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Every certificate has a unique secure URL and QR code. Anyone can scan or click the verification link to check its authenticity instantly without exposing private database records."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Is there a subscription fee?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "No, ProofDeck is strictly pay-as-you-go. You only pay for credits in Naira (or USD), with no recurring monthly subscriptions or setup fees."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Do you offer developer API access?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Yes, developer API access is available on Pro and Enterprise tiers, allowing programmatic issuance from your LMS, Event App, or billing portal."
+        }
+      }
+    ]
+  };
+
+  const softwareSchema = {
+    "@type": "SoftwareApplication",
+    "@id": "https://www.proofdeck.app/#software",
+    "name": "ProofDeck",
+    "url": "https://www.proofdeck.app/",
+    "applicationCategory": "BusinessApplication",
+    "operatingSystem": "Web",
+    "description": "ProofDeck is Nigeria and Africa's #1 digital credential platform. Bulk issue and verify tamper-proof certificates with QR codes, 1-click LinkedIn sharing, and Naira pricing.",
+    "offers": {
+      "@type": "Offer",
+      "price": "15000",
+      "priceCurrency": "NGN"
+    }
+  };
+
   return (
     <div className="font-sans text-slate-900 bg-white">
+      <SEO
+        title="ProofDeck — Issue, Verify, and Track Verifiable Credentials Online"
+        description="Effortlessly issue tamper-proof digital credentials, prevent fraud, and boost organization credibility with instant QR code verification and 1-click LinkedIn sharing."
+        keywords="certificate maker, verifiable credentials, digital certificate platform, online certificate verifier, bulk certificate generator, tamper-proof certificates, issue certificates online, digital badges"
+        canonicalUrl="https://www.proofdeck.app/"
+        schemas={[softwareSchema, faqSchema]}
+      />
       <PublicHeader />
       <main>
         {/* 1. Hero with integrated stats */}

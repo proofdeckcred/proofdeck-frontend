@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Shield, Lock, FileText, Server, Globe, Key, ArrowLeft } from "lucide-react";
 import { useLocation, Link } from "react-router-dom";
+import SEO from "../components/SEO";
 
 const LegalPage = () => {
   const location = useLocation();
@@ -22,6 +23,11 @@ const LegalPage = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col font-sans">
+      <SEO
+        title="Privacy Policy & Terms of Service | ProofDeck"
+        description="Review ProofDeck's Privacy Policy, Terms of Service, and NDPR/GDPR security compliance standards."
+        canonicalUrl="https://www.proofdeck.app/legal"
+      />
       <div className="bg-white border-b sticky top-0 z-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">

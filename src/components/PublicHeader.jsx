@@ -41,7 +41,7 @@ const PublicHeader = () => {
               </Link>
             </div>
 
-            <nav className="hidden md:flex items-center gap-7">
+            <nav className="hidden md:flex items-center gap-6">
               <Link
                 to="/features"
                 className="text-[13px] font-medium text-[var(--pd-mute)] hover:text-[var(--pd-ink)] transition-colors no-underline"
@@ -55,10 +55,10 @@ const PublicHeader = () => {
                 Pricing
               </Link>
               <Link
-                to="/search"
+                to="/blog"
                 className="text-[13px] font-medium text-[var(--pd-mute)] hover:text-[var(--pd-ink)] transition-colors no-underline"
               >
-                Public Ledger
+                Blog
               </Link>
               <Link
                 to="/docs"
@@ -106,14 +106,13 @@ const PublicHeader = () => {
             : "opacity-0 -translate-y-full pointer-events-none"
         }`}
       >
-        <div className="flex flex-col h-full pt-28 px-6 pb-8">
-          <nav className="flex-1 flex flex-col space-y-2">
+        <div className="flex flex-col h-full pt-28 px-6 pb-8 overflow-y-auto">
+          <nav className="flex-1 flex flex-col space-y-1">
             {[
               { label: "Features", path: "/features" },
               { label: "Pricing", path: "/pricing" },
-              { label: "Public Ledger", path: "/search" },
-              { label: "Verification", path: "/verify" },
-              { label: "API Documentation", path: "/docs" },
+              { label: "Blog", path: "/blog" },
+              { label: "Developers", path: "/docs" },
             ].map((item) =>
               item.isExternal ? (
                 <a
@@ -121,7 +120,7 @@ const PublicHeader = () => {
                   href={item.path}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center justify-between py-4 text-2xl font-bold text-gray-900 border-b border-gray-100 no-underline group"
+                  className="flex items-center justify-between py-3 text-lg font-bold text-gray-900 border-b border-gray-100 no-underline group"
                 >
                   {item.label}
                   <ChevronRight className="text-gray-300 group-hover:text-indigo-600 transition-colors" />
@@ -130,7 +129,7 @@ const PublicHeader = () => {
                 <Link
                   key={item.path}
                   to={item.path}
-                  className="flex items-center justify-between py-4 text-2xl font-bold text-gray-900 border-b border-gray-100 no-underline group"
+                  className="flex items-center justify-between py-3 text-lg font-bold text-gray-900 border-b border-gray-100 no-underline group"
                 >
                   {item.label}
                   <ChevronRight className="text-gray-300 group-hover:text-indigo-600 transition-colors" />

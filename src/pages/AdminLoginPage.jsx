@@ -75,7 +75,7 @@ function AdminLoginPage() {
                 name="email"
                 value={formData.email}
                 onChange={handleChange}
-                placeholder="admin@proofdeck.com"
+                placeholder="admin@proofdeck.app"
                 required
               />
             </Form.Group>

@@ -4,10 +4,36 @@ import PublicHeader from "../components/PublicHeader";
 import PublicFooter from "../components/PublicFooter";
 import { ShieldCheck, Layers, Award, Check } from "lucide-react";
 import { motion } from "motion/react";
+import SEO from "../components/SEO";
 
 export default function FeaturesPage() {
+  const breadcrumbSchema = {
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "position": 1,
+        "name": "Home",
+        "item": "https://www.proofdeck.app/"
+      },
+      {
+        "@type": "ListItem",
+        "position": 2,
+        "name": "Features",
+        "item": "https://www.proofdeck.app/features"
+      }
+    ]
+  };
+
   return (
     <div className="bg-white font-sans text-[var(--pd-ink)] min-h-screen flex flex-col selection:bg-[var(--pd-indigo)] selection:text-white">
+      <SEO
+        title="Bulk Certificate Generator & QR Code Verification Software | ProofDeck Features"
+        description="Explore ProofDeck features: Bulk certificate generator from Excel/CSV, instant QR code verification, 1-click LinkedIn sharing, visual template designer, and robust developer API."
+        keywords="bulk certificate generator Nigeria, qr code certificate verification, certificate generator from excel, tamper-proof certificate online, 1-click linkedin certificate sharing, bulk certificate maker, automated certificate generator"
+        canonicalUrl="https://www.proofdeck.app/features"
+        schemas={[breadcrumbSchema]}
+      />
       <PublicHeader />
 
       <main className="flex-grow">
@@ -17,13 +43,16 @@ export default function FeaturesPage() {
             
             {/* Pill label */}
             <div className="mb-4">
-              <span className="pd-pill-label">Solutions</span>
+              <span className="pd-pill-label">Platform Features</span>
             </div>
 
             {/* Section Headline */}
-            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-[var(--pd-ink)] tracking-tight max-w-3xl mx-auto mb-12 sm:mb-16 leading-[1.15]">
-              Solve your team's biggest challenges
+            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-[var(--pd-ink)] tracking-tight max-w-4xl mx-auto mb-6 leading-[1.15]">
+              Bulk Certificate Generator & QR Code Verification Software
             </h1>
+            <p className="text-base sm:text-lg text-[var(--pd-mute)] max-w-2xl mx-auto mb-12 sm:mb-16 font-normal">
+              Everything your institution needs to design custom templates, bulk issue from spreadsheets, and deliver tamper-proof verifiable certificates in seconds.
+            </p>
 
             {/* 3-Up Value Props */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-4xl mx-auto mb-14 text-center md:text-left">

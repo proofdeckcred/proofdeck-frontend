@@ -11,6 +11,7 @@ import {
   Shield,
   X,
   Radio,
+  BookOpen,
   LogOut,
 } from "lucide-react";
 import { useAdminAuth } from "../context/AdminAuthContext";
@@ -136,6 +137,17 @@ function AdminSidebar({ onClose }) {
             <span>Support Tickets</span>
           </NavLink>
         )}
+
+        {/* Content & Editorial */}
+        <div className="pt-3 pb-1">
+          <p className="px-3 text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-0">
+            Content & Editorial
+          </p>
+        </div>
+        <NavLink to="/admin/blog" className={navItemClass} onClick={onClose}>
+          <BookOpen size={18} />
+          <span>Blog & Articles</span>
+        </NavLink>
 
         {/* Governance Section */}
         {isSuperAdmin && (

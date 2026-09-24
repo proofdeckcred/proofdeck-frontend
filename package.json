@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "vite build && node scripts/prerender.js",
+    "verify:seo": "node scripts/verify-seo.mjs",
     "lint": "eslint .",
     "preview": "vite preview"
   },
@@ -36,6 +37,7 @@
     "react-color": "^2.19.3",
     "react-datepicker": "^8.7.0",
     "react-dom": "^18.2.0",
+    "react-helmet-async": "^3.0.0",
     "react-hot-toast": "^2.6.0",
     "react-konva": "^18.2.14",
     "react-paystack": "^6.0.0",

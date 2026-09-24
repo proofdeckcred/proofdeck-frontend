@@ -1,9 +1,28 @@
 # https://www.robotstxt.org/robotstxt.html
 
 User-agent: *
+Allow: /
+Allow: /features
+Allow: /pricing
+Allow: /solutions/
+Allow: /compare/
+Allow: /blog/
+Allow: /docs
+Allow: /legal
+Allow: /contact
+
+# Protect user privacy and credential database
+Disallow: /verify
+Disallow: /verify/
 Disallow: /dashboard
 Disallow: /dashboard/
+Disallow: /admin
+Disallow: /admin/
 Disallow: /forgot-password
+Disallow: /reset-password/
+Disallow: /join/
+Disallow: /email/
+Disallow: /api/
 
-# Point search engines to the sitemap for better crawling
+# Point search engines to the sitemap for marketing and informative content
 Sitemap: https://www.proofdeck.app/sitemap.xml
