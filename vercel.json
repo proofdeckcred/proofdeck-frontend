@@ -1,5 +1,4 @@
 {
-  "cleanUrls": true,
   "rewrites": [
     {
       "source": "/((?!api/|uploads/|images/|sw.js|robots.txt|sitemap.xml|manifest.json).*)",
