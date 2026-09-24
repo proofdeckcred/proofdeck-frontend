@@ -34,6 +34,175 @@ import {
 
 const PRESET_CATEGORIES = ["General", "How to", "For devs"];
 
+function formatInlineMarkdown(text) {
+  if (!text) return "";
+  let formatted = text
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+
+  // Bold: **text**
+  formatted = formatted.replace(/\*\*(.*?)\*\*/g, '<strong class="font-bold text-slate-900">$1</strong>');
+
+  // Italic: *text*
+  formatted = formatted.replace(/\*(.*?)\*/g, '<em class="italic">$1</em>');
+
+  // Inline Code: `code`
+  formatted = formatted.replace(
+    /`([^`]+)`/g,
+    '<code class="px-1.5 py-0.5 rounded bg-slate-100 text-[#5B4CF5] font-mono text-[12px] border border-slate-200/70">$1</code>'
+  );
+
+  // Links: [text](url)
+  formatted = formatted.replace(
+    /\[(.*?)\]\((.*?)\)/g,
+    '<a href="$2" target="_blank" rel="noopener noreferrer" class="text-[#5B4CF5] hover:text-[#4433E0] font-semibold underline underline-offset-4 transition-colors">$1</a>'
+  );
+
+  return formatted;
+}
+
+function parseMarkdownBlocks(content) {
+  if (!content) return [];
+  const lines = content.replace(/\r\n/g, "\n").split("\n");
+  const blocks = [];
+  let i = 0;
+
+  while (i < lines.length) {
+    const rawLine = lines[i];
+    const line = rawLine.trim();
+
+    // 1. Empty lines
+    if (!line) {
+      i++;
+      continue;
+    }
+
+    // 2. Code Block: ```[lang] ... ```
+    if (line.startsWith("```")) {
+      const lang = line.replace(/^```/, "").trim() || "text";
+      const codeLines = [];
+      i++;
+      while (i < lines.length && !lines[i].trim().startsWith("```")) {
+        codeLines.push(lines[i]);
+        i++;
+      }
+      if (i < lines.length && lines[i].trim().startsWith("```")) {
+        i++;
+      }
+      blocks.push({ type: "code", lang, code: codeLines.join("\n") });
+      continue;
+    }
+
+    // 3. Blockquote: lines starting with >
+    if (line.startsWith(">")) {
+      const quoteLines = [];
+      while (i < lines.length && lines[i].trim().startsWith(">")) {
+        quoteLines.push(lines[i].trim().replace(/^>\s?/, ""));
+        i++;
+      }
+      const fullQuote = quoteLines.join("\n");
+      const hasAuthor = fullQuote.includes("—") || fullQuote.includes("--");
+      let text = fullQuote;
+      let author = "";
+      if (hasAuthor) {
+        const parts = fullQuote.split(/(?:—|--)/);
+        text = parts[0].trim();
+        author = parts.slice(1).join("—").trim();
+      }
+      blocks.push({ type: "blockquote", text: text.replace(/^["']|["']$/g, ""), author });
+      continue;
+    }
+
+    // 4. Horizontal Rule: --- or ***
+    if (/^(\s*[-*_]\s*){3,}$/.test(line)) {
+      blocks.push({ type: "hr" });
+      i++;
+      continue;
+    }
+
+    // 5. Headings: #, ##, ###, ####
+    const headingMatch = line.match(/^(#{1,6})\s+(.*)$/);
+    if (headingMatch) {
+      blocks.push({
+        type: "heading",
+        level: headingMatch[1].length,
+        text: headingMatch[2],
+      });
+      i++;
+      continue;
+    }
+
+    // 6. Standalone Image: ![alt](url)
+    const imgMatch = line.match(/^!\[(.*?)\]\((.*?)\)$/);
+    if (imgMatch) {
+      blocks.push({ type: "image", alt: imgMatch[1], url: imgMatch[2] });
+      i++;
+      continue;
+    }
+
+    // 7. Standalone YouTube Link
+    const ytMatch = line.match(/(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/(?:watch\?(?:.*&)?v=|embed\/|v\/|shorts\/)|youtu\.be\/)([\w-]{11})/);
+    if (ytMatch && (line.startsWith("http") || line.startsWith("<iframe") || line.startsWith("[youtube]"))) {
+      blocks.push({ type: "youtube", id: ytMatch[1] });
+      i++;
+      continue;
+    }
+
+    // 8. Bullet or Numbered Lists
+    const isBullet = /^\s*[-*+]\s+/.test(rawLine);
+    const isNum = /^\s*\d+\.\s+/.test(rawLine);
+    if (isBullet || isNum) {
+      const listType = isNum ? "ol" : "ul";
+      const items = [];
+      while (i < lines.length) {
+        const curRaw = lines[i];
+        const matchBullet = isNum ? /^\s*\d+\.\s+(.*)$/ : /^\s*[-*+]\s+(.*)$/;
+        const m = curRaw.match(matchBullet);
+        if (m) {
+          items.push(m[1]);
+          i++;
+        } else if (
+          curRaw.trim() &&
+          !curRaw.trim().startsWith("#") &&
+          !curRaw.trim().startsWith("```") &&
+          !curRaw.trim().startsWith(">") &&
+          !/^(\s*[-*_]\s*){3,}$/.test(curRaw.trim())
+        ) {
+          if (items.length > 0) items[items.length - 1] += " " + curRaw.trim();
+          i++;
+        } else {
+          break;
+        }
+      }
+      blocks.push({ type: "list", listType, items });
+      continue;
+    }
+
+    // 9. Regular Paragraph
+    const paraLines = [rawLine];
+    i++;
+    while (
+      i < lines.length &&
+      lines[i].trim() &&
+      !lines[i].trim().startsWith("```") &&
+      !lines[i].trim().startsWith(">") &&
+      !lines[i].trim().startsWith("#") &&
+      !/^(\s*[-*_]\s*){3,}$/.test(lines[i].trim()) &&
+      !/^\s*[-*+]\s+/.test(lines[i]) &&
+      !/^\s*\d+\.\s+/.test(lines[i]) &&
+      !lines[i].trim().match(/^!\[(.*?)\]\((.*?)\)$/) &&
+      !lines[i].trim().match(/(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/(?:watch\?(?:.*&)?v=|embed\/|v\/|shorts\/)|youtu\.be\/)([\w-]{11})/)
+    ) {
+      paraLines.push(lines[i]);
+      i++;
+    }
+    blocks.push({ type: "paragraph", text: paraLines.join(" ") });
+  }
+
+  return blocks;
+}
+
 function AdminBlogEditorPage() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -304,7 +473,7 @@ function AdminBlogEditorPage() {
   if (fetching) {
     return (
       <div className="p-12 text-center text-slate-500 text-sm font-sans flex items-center justify-center gap-2">
-        <Loader2 size={16} className="animate-spin text-[#4A3AA8]" />
+        <Loader2 size={16} className="animate-spin text-[#5B4CF5]" />
         Loading article data...
       </div>
     );
@@ -353,7 +522,7 @@ function AdminBlogEditorPage() {
             onClick={() => setPreviewMode(!previewMode)}
             className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border text-xs font-semibold cursor-pointer transition-colors ${
               previewMode
-                ? "bg-indigo-50 border-indigo-200 text-[#4A3AA8]"
+                ? "bg-indigo-50 border-indigo-200 text-[#5B4CF5]"
                 : "border-slate-200 text-slate-700 bg-white hover:bg-slate-50"
             }`}
           >
@@ -365,7 +534,7 @@ function AdminBlogEditorPage() {
             type="button"
             onClick={handleSubmit}
             disabled={loading}
-            className="inline-flex items-center gap-2 px-5 py-2 rounded-xl bg-[#4A3AA8] hover:bg-[#3b2e88] text-white text-xs font-semibold shadow-xs cursor-pointer transition-colors disabled:opacity-50"
+            className="inline-flex items-center gap-2 px-5 py-2 rounded-xl bg-[#5B4CF5] hover:bg-[#4433E0] text-white text-xs font-semibold shadow-xs cursor-pointer transition-colors disabled:opacity-50"
           >
             {loading ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
             {loading ? "Saving..." : "Save Article"}
@@ -405,7 +574,7 @@ function AdminBlogEditorPage() {
               placeholder="e.g. How to Verify a Certificate Online & Spot Fake Credentials"
               value={formData.title}
               onChange={handleTitleChange}
-              className="w-full px-4 py-2.5 text-base sm:text-lg font-bold text-slate-900 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#4A3AA8]/20 focus:border-[#4A3AA8]"
+              className="w-full px-4 py-2.5 text-base sm:text-lg font-bold text-slate-900 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#5B4CF5]/20 focus:border-[#5B4CF5]"
             />
           </div>
 
@@ -427,7 +596,7 @@ function AdminBlogEditorPage() {
                   onChange={(e) =>
                     setFormData({ ...formData, slug: generateSlug(e.target.value) })
                   }
-                  className="w-full px-3 py-2 text-xs font-mono bg-white border border-slate-200 rounded-r-xl focus:outline-none focus:ring-2 focus:ring-[#4A3AA8]/20 focus:border-[#4A3AA8]"
+                  className="w-full px-3 py-2 text-xs font-mono bg-white border border-slate-200 rounded-r-xl focus:outline-none focus:ring-2 focus:ring-[#5B4CF5]/20 focus:border-[#5B4CF5]"
                 />
               </div>
             </div>
@@ -440,7 +609,7 @@ function AdminBlogEditorPage() {
                 <select
                   value={isCustomCategory ? "__custom__" : formData.category}
                   onChange={handleCategorySelect}
-                  className="w-full px-3 py-2 text-xs bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#4A3AA8]/20 focus:border-[#4A3AA8] font-medium"
+                  className="w-full px-3 py-2 text-xs bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#5B4CF5]/20 focus:border-[#5B4CF5] font-medium"
                 >
                   <option value="General">General</option>
                   <option value="How to">How to</option>
@@ -455,7 +624,7 @@ function AdminBlogEditorPage() {
                       placeholder="Type custom category (e.g. Case Studies, AI, Security)"
                       value={customCatInput}
                       onChange={handleCustomCategoryChange}
-                      className="w-full px-3 py-1.5 text-xs bg-indigo-50/50 border border-indigo-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#4A3AA8]/20 font-medium"
+                      className="w-full px-3 py-1.5 text-xs bg-indigo-50/50 border border-indigo-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#5B4CF5]/20 font-medium"
                     />
                     <button
                       type="button"
@@ -490,7 +659,7 @@ function AdminBlogEditorPage() {
                   meta_description: !formData.meta_description ? e.target.value : formData.meta_description
                 })
               }
-              className="w-full px-3 py-2 text-xs text-slate-800 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#4A3AA8]/20 focus:border-[#4A3AA8]"
+              className="w-full px-3 py-2 text-xs text-slate-800 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#5B4CF5]/20 focus:border-[#5B4CF5]"
             />
           </div>
 
@@ -504,7 +673,7 @@ function AdminBlogEditorPage() {
                 type="button"
                 onClick={() => thumbnailInputRef.current?.click()}
                 disabled={uploadingThumb}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#4A3AA8] hover:bg-[#3b2e88] text-white text-xs font-semibold transition-colors disabled:opacity-50 cursor-pointer shadow-2xs"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#5B4CF5] hover:bg-[#4433E0] text-white text-xs font-semibold transition-colors disabled:opacity-50 cursor-pointer shadow-2xs"
               >
                 {uploadingThumb ? <Loader2 size={13} className="animate-spin" /> : <Upload size={13} />}
                 {uploadingThumb ? "Uploading..." : "Upload Thumbnail"}
@@ -537,7 +706,7 @@ function AdminBlogEditorPage() {
                 placeholder="Or paste image URL (e.g. /images/blog/cover.png or https://...)"
                 value={formData.featured_image}
                 onChange={(e) => setFormData({ ...formData, featured_image: e.target.value })}
-                className="w-full px-3 py-2 text-xs bg-white border border-slate-200 rounded-lg text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#4A3AA8]/20"
+                className="w-full px-3 py-2 text-xs bg-white border border-slate-200 rounded-lg text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#5B4CF5]/20"
               />
             )}
           </div>
@@ -623,7 +792,7 @@ function AdminBlogEditorPage() {
                   type="button"
                   onClick={() => inlineImageInputRef.current?.click()}
                   disabled={uploadingInline}
-                  className="px-2.5 py-1 rounded bg-indigo-50 hover:bg-indigo-100 text-[#4A3AA8] text-xs font-bold flex items-center gap-1 transition-colors"
+                  className="px-2.5 py-1 rounded bg-indigo-50 hover:bg-indigo-100 text-[#5B4CF5] text-xs font-bold flex items-center gap-1 transition-colors"
                   title="Upload & Insert Inline Image"
                 >
                   {uploadingInline ? <Loader2 size={13} className="animate-spin" /> : <ImageIcon size={13} />}
@@ -681,7 +850,7 @@ function AdminBlogEditorPage() {
             {previewMode ? (
               <div className="p-6 sm:p-8 bg-slate-50/70 border border-slate-200 rounded-2xl min-h-[450px] space-y-6">
                 <div className="flex items-center justify-between pb-4 border-b border-slate-200">
-                  <span className="text-xs font-bold uppercase tracking-wider text-[#4A3AA8]">
+                  <span className="text-xs font-bold uppercase tracking-wider text-[#5B4CF5]">
                     Live Article Preview ({formData.category})
                   </span>
                   <span className="text-xs text-slate-400">
@@ -699,76 +868,111 @@ function AdminBlogEditorPage() {
                   </div>
                 )}
 
-                <div className="space-y-5 text-sm sm:text-base text-slate-800 leading-relaxed font-sans">
-                  {formData.content.split(/\n\n+/).map((block, idx) => {
-                    const trimmed = block.trim();
-                    if (!trimmed) return null;
-
-                    // YouTube embed check
-                    const ytId = getYouTubeId(trimmed);
-                    if (ytId && (trimmed.startsWith("http") || trimmed.startsWith("[youtube]"))) {
+                <div className="space-y-6 text-sm sm:text-base text-slate-800 leading-relaxed font-sans">
+                  {parseMarkdownBlocks(formData.content).map((block, idx) => {
+                    // YouTube
+                    if (block.type === "youtube") {
                       return (
                         <div key={idx} className="my-6">
                           <div className="relative w-full aspect-video rounded-2xl overflow-hidden shadow-lg border border-slate-200 bg-slate-950">
                             <iframe
-                              src={`https://www.youtube-nocookie.com/embed/${ytId}`}
+                              src={`https://www.youtube-nocookie.com/embed/${block.id}`}
                               title="Video preview"
                               allowFullScreen
                               className="absolute inset-0 w-full h-full border-0"
                             />
                           </div>
-                          <p className="text-center text-xs text-slate-400 mt-1">YouTube Video Preview</p>
+                          <p className="text-center text-xs text-slate-400 mt-1 font-medium">YouTube Video Preview</p>
                         </div>
                       );
                     }
 
-                    // Image check
-                    const imgMatch = trimmed.match(/^!\[(.*?)\]\((.*?)\)$/);
-                    if (imgMatch) {
+                    // Image
+                    if (block.type === "image") {
                       return (
                         <figure key={idx} className="my-6">
                           <div className="rounded-2xl overflow-hidden border border-slate-200 shadow-sm">
-                            <img src={imgMatch[2]} alt={imgMatch[1]} className="w-full h-auto max-h-[450px] object-cover" />
+                            <img src={block.url} alt={block.alt || "Preview"} className="w-full h-auto max-h-[450px] object-cover" />
                           </div>
-                          {imgMatch[1] && (
-                            <figcaption className="text-center text-xs text-slate-500 mt-1.5 italic">{imgMatch[1]}</figcaption>
+                          {block.alt && (
+                            <figcaption className="text-center text-xs text-slate-500 mt-1.5 italic">{block.alt}</figcaption>
                           )}
                         </figure>
                       );
                     }
 
                     // Blockquote
-                    if (trimmed.startsWith(">")) {
+                    if (block.type === "blockquote") {
                       return (
-                        <blockquote key={idx} className="p-4 sm:p-5 rounded-2xl border-l-4 border-[#4A3AA8] bg-indigo-50/50 italic text-slate-800 my-4">
-                          {trimmed.replace(/^>\s?/, "")}
+                        <blockquote key={idx} className="p-4 sm:p-5 rounded-2xl border-l-[5px] border-[#5B4CF5] bg-[#F7F7FA] border-t border-r border-b border-slate-200/60 my-4 text-slate-800">
+                          <p className="italic font-serif text-base leading-relaxed">"{block.text}"</p>
+                          {block.author && (
+                            <footer className="text-xs font-bold text-[#5B4CF5] mt-1.5 uppercase tracking-wide">
+                              — {block.author}
+                            </footer>
+                          )}
                         </blockquote>
                       );
                     }
 
                     // Headings
-                    if (trimmed.startsWith("## ")) {
-                      return <h2 key={idx} className="text-xl sm:text-2xl font-bold text-slate-900 pt-4 border-b pb-1">{trimmed.replace(/^##\s+/, "")}</h2>;
-                    }
-                    if (trimmed.startsWith("### ")) {
-                      return <h3 key={idx} className="text-lg sm:text-xl font-bold text-slate-900 pt-3">{trimmed.replace(/^###\s+/, "")}</h3>;
+                    if (block.type === "heading") {
+                      if (block.level === 1) {
+                        return <h1 key={idx} className="text-2xl sm:text-3xl font-extrabold text-slate-900 pt-4 leading-tight">{block.text}</h1>;
+                      }
+                      if (block.level === 2) {
+                        return <h2 key={idx} className="text-xl sm:text-2xl font-bold text-slate-900 pt-4 border-b border-slate-100 pb-1">{block.text}</h2>;
+                      }
+                      return <h3 key={idx} className="text-lg sm:text-xl font-bold text-slate-900 pt-3">{block.text}</h3>;
                     }
 
                     // Code block
-                    if (trimmed.startsWith("```")) {
+                    if (block.type === "code") {
                       return (
-                        <pre key={idx} className="p-4 rounded-xl bg-slate-900 text-slate-100 font-mono text-xs overflow-x-auto my-4">
-                          <code>{trimmed.replace(/```[a-z]*\n?/, "").replace(/```$/, "")}</code>
-                        </pre>
+                        <div key={idx} className="my-5 rounded-2xl overflow-hidden border border-slate-800 bg-[#0B0B12] shadow-md">
+                          <div className="flex items-center justify-between px-4 py-2 bg-slate-900 border-b border-slate-800 text-xs text-slate-400">
+                            <span className="font-mono uppercase text-[11px] font-semibold text-slate-300">{block.lang || "code"}</span>
+                          </div>
+                          <pre className="p-4 text-xs font-mono text-slate-100 overflow-x-auto leading-relaxed">
+                            <code>{block.code}</code>
+                          </pre>
+                        </div>
                       );
                     }
 
                     // Divider
-                    if (trimmed === "---") {
+                    if (block.type === "hr") {
                       return <hr key={idx} className="my-6 border-slate-200" />;
                     }
 
-                    return <p key={idx} className="leading-relaxed">{trimmed}</p>;
+                    // Lists
+                    if (block.type === "list") {
+                      if (block.listType === "ol") {
+                        return (
+                          <ol key={idx} className="my-4 space-y-2 pl-6 list-decimal marker:font-bold marker:text-[#5B4CF5]">
+                            {block.items.map((item, lIdx) => (
+                              <li key={lIdx} className="leading-relaxed" dangerouslySetInnerHTML={{ __html: formatInlineMarkdown(item) }} />
+                            ))}
+                          </ol>
+                        );
+                      }
+                      return (
+                        <ul key={idx} className="my-4 space-y-2 pl-6 list-disc marker:text-[#5B4CF5]">
+                          {block.items.map((item, lIdx) => (
+                            <li key={lIdx} className="leading-relaxed" dangerouslySetInnerHTML={{ __html: formatInlineMarkdown(item) }} />
+                          ))}
+                        </ul>
+                      );
+                    }
+
+                    // Paragraph
+                    return (
+                      <p
+                        key={idx}
+                        className="leading-relaxed text-slate-800"
+                        dangerouslySetInnerHTML={{ __html: formatInlineMarkdown(block.text) }}
+                      />
+                    );
                   })}
                 </div>
               </div>
@@ -782,7 +986,7 @@ function AdminBlogEditorPage() {
                 onChange={(e) =>
                   setFormData({ ...formData, content: e.target.value })
                 }
-                className="w-full px-4 py-3 text-xs sm:text-sm font-mono text-slate-800 bg-white border border-slate-200 rounded-b-xl focus:outline-none focus:ring-2 focus:ring-[#4A3AA8]/20 focus:border-[#4A3AA8] leading-relaxed shadow-inner"
+                className="w-full px-4 py-3 text-xs sm:text-sm font-mono text-slate-800 bg-white border border-slate-200 rounded-b-xl focus:outline-none focus:ring-2 focus:ring-[#5B4CF5]/20 focus:border-[#5B4CF5] leading-relaxed shadow-inner"
               />
             )}
           </div>
@@ -808,7 +1012,7 @@ function AdminBlogEditorPage() {
                     localStorage.setItem("proofdeck_blog_author_name", val);
                   } catch (err) {}
                 }}
-                className="w-full px-3 py-2 text-xs bg-white border border-slate-200 rounded-lg text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#4A3AA8]/20"
+                className="w-full px-3 py-2 text-xs bg-white border border-slate-200 rounded-lg text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#5B4CF5]/20"
               />
             </div>
             <div>
@@ -825,7 +1029,7 @@ function AdminBlogEditorPage() {
                     localStorage.setItem("proofdeck_blog_author_role", val);
                   } catch (err) {}
                 }}
-                className="w-full px-3 py-2 text-xs bg-white border border-slate-200 rounded-lg text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#4A3AA8]/20"
+                className="w-full px-3 py-2 text-xs bg-white border border-slate-200 rounded-lg text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#5B4CF5]/20"
               />
             </div>
           </div>
@@ -838,7 +1042,7 @@ function AdminBlogEditorPage() {
                 onChange={(e) =>
                   setFormData({ ...formData, is_published: e.target.checked })
                 }
-                className="w-4 h-4 text-[#4A3AA8] rounded border-slate-300 focus:ring-[#4A3AA8]"
+                className="w-4 h-4 text-[#5B4CF5] rounded border-slate-300 focus:ring-[#5B4CF5]"
               />
               <span className="text-xs font-bold text-slate-900">
                 Publish live immediately (triggers on-demand Next.js ISR revalidation)
@@ -850,7 +1054,7 @@ function AdminBlogEditorPage() {
         {/* SEO & Social Metadata Box */}
         <div className="bg-white p-5 sm:p-7 rounded-3xl border border-slate-200/90 shadow-2xs space-y-4">
           <div className="flex items-center gap-2">
-            <Globe size={16} className="text-[#4A3AA8]" />
+            <Globe size={16} className="text-[#5B4CF5]" />
             <h2 className="text-xs font-bold text-slate-900 uppercase tracking-wider">
               SEO & Social Metadata
             </h2>
@@ -867,7 +1071,7 @@ function AdminBlogEditorPage() {
                 onChange={(e) =>
                   setFormData({ ...formData, meta_title: e.target.value })
                 }
-                className="w-full px-3 py-2 text-xs bg-white border border-slate-200 rounded-lg text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#4A3AA8]/20"
+                className="w-full px-3 py-2 text-xs bg-white border border-slate-200 rounded-lg text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#5B4CF5]/20"
               />
             </div>
             <div>
@@ -881,7 +1085,7 @@ function AdminBlogEditorPage() {
                 onChange={(e) =>
                   setFormData({ ...formData, meta_description: e.target.value })
                 }
-                className="w-full px-3 py-2 text-xs bg-white border border-slate-200 rounded-lg text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#4A3AA8]/20"
+                className="w-full px-3 py-2 text-xs bg-white border border-slate-200 rounded-lg text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#5B4CF5]/20"
               />
             </div>
           </div>
