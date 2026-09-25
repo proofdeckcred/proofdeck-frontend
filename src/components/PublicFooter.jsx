@@ -34,7 +34,7 @@ const PublicFooter = () => {
               />
               <SocialLink href="https://www.linkedin.com/company/proofdeckhq/" icon={Linkedin} />
               <SocialLink href="https://www.youtube.com/@proofdeck" icon={Youtube} />
-              <SocialLink href="https://instagram.com/proofdeck" icon={Instagram} />
+              <SocialLink href="https://www.proofdeck.app" icon={Instagram} />
             </div>
           </div>
 
