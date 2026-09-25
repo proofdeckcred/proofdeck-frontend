@@ -23,7 +23,9 @@ import {
   Minus,
   X,
   Loader2,
-  ExternalLink
+  ExternalLink,
+  Camera,
+  Trash2
 } from "lucide-react";
 import {
   getAdminBlogPost,
@@ -210,15 +212,19 @@ function AdminBlogEditorPage() {
   const textareaRef = useRef(null);
   const thumbnailInputRef = useRef(null);
   const inlineImageInputRef = useRef(null);
+  const authorAvatarInputRef = useRef(null);
 
   const [formData, setFormData] = useState(() => {
     let savedName = "Bolaji";
     let savedRole = "Founder";
+    let savedAvatar = "";
     try {
       const n = localStorage.getItem("proofdeck_blog_author_name");
       if (n) savedName = n;
       const r = localStorage.getItem("proofdeck_blog_author_role");
       if (r) savedRole = r;
+      const a = localStorage.getItem("proofdeck_blog_author_avatar");
+      if (a) savedAvatar = a;
     } catch (err) {}
 
     return {
@@ -230,6 +236,7 @@ function AdminBlogEditorPage() {
       featured_image: "",
       author_name: savedName,
       author_role: savedRole,
+      author_avatar: savedAvatar,
       meta_title: "",
       meta_description: "",
       canonical_url: "",
@@ -245,6 +252,7 @@ function AdminBlogEditorPage() {
   const [statusMessage, setStatusMessage] = useState(null);
   const [uploadingThumb, setUploadingThumb] = useState(false);
   const [uploadingInline, setUploadingInline] = useState(false);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
 
   useEffect(() => {
     if (isEditing) {
@@ -267,8 +275,9 @@ function AdminBlogEditorPage() {
         excerpt: post.excerpt || "",
         content: post.content || "",
         featured_image: post.featured_image || "",
-        author_name: post.author_name || "Omobolaji Durojaiye",
-        author_role: post.author_role || "Founder & Lead Architect",
+        author_name: post.author_name || localStorage.getItem("proofdeck_blog_author_name") || "Bolaji",
+        author_role: post.author_role || localStorage.getItem("proofdeck_blog_author_role") || "Founder",
+        author_avatar: post.author_avatar || localStorage.getItem("proofdeck_blog_author_avatar") || "",
         meta_title: post.meta_title || "",
         meta_description: post.meta_description || "",
         canonical_url: post.canonical_url || "",
@@ -362,6 +371,36 @@ function AdminBlogEditorPage() {
     } finally {
       setUploadingInline(false);
     }
+  };
+
+  // Author Profile Avatar Upload
+  const handleAuthorAvatarUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const data = new FormData();
+    data.append("image", file);
+
+    setUploadingAvatar(true);
+    try {
+      const res = await uploadBlogImage(data);
+      const url = res.data.imageUrl || res.data.url;
+      setFormData((prev) => ({ ...prev, author_avatar: url }));
+      try {
+        localStorage.setItem("proofdeck_blog_author_avatar", url);
+      } catch (err) {}
+    } catch (err) {
+      alert("Failed to upload author avatar: " + (err.response?.data?.msg || err.message));
+    } finally {
+      setUploadingAvatar(false);
+    }
+  };
+
+  const handleRemoveAuthorAvatar = () => {
+    setFormData((prev) => ({ ...prev, author_avatar: "" }));
+    try {
+      localStorage.removeItem("proofdeck_blog_author_avatar");
+    } catch (err) {}
   };
 
   // Markdown Toolbar Insertion Helper
@@ -878,9 +917,22 @@ function AdminBlogEditorPage() {
                   <span className="text-xs font-bold uppercase tracking-wider text-[#5B4CF5]">
                     Live Article Preview ({formData.category})
                   </span>
-                  <span className="text-xs text-slate-400">
-                    {formData.author_name} · {new Date().toLocaleDateString()}
-                  </span>
+                  <div className="flex items-center gap-2">
+                    {formData.author_avatar ? (
+                      <img
+                        src={formData.author_avatar}
+                        alt="Author"
+                        className="w-6 h-6 rounded-full object-cover border border-slate-200"
+                      />
+                    ) : (
+                      <div className="w-6 h-6 rounded-full bg-[#5B4CF5] text-white flex items-center justify-center text-[10px] font-bold">
+                        {formData.author_name?.charAt(0) || "B"}
+                      </div>
+                    )}
+                    <span className="text-xs text-slate-500 font-medium">
+                      {formData.author_name} · {new Date().toLocaleDateString()}
+                    </span>
+                  </div>
                 </div>
 
                 <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 leading-tight">
@@ -1018,10 +1070,72 @@ function AdminBlogEditorPage() {
         </div>
 
         {/* Author & Publishing Settings */}
-        <div className="bg-white p-5 sm:p-7 rounded-3xl border border-slate-200/90 shadow-2xs space-y-4">
-          <h2 className="text-xs font-bold text-slate-900 uppercase tracking-wider">
-            Author & Status
-          </h2>
+        <div className="bg-white p-5 sm:p-7 rounded-3xl border border-slate-200/90 shadow-2xs space-y-5">
+          <div className="flex items-center justify-between">
+            <h2 className="text-xs font-bold text-slate-900 uppercase tracking-wider">
+              Author & Status
+            </h2>
+            <span className="text-[11px] text-slate-400">
+              Profile details are automatically saved for your next articles
+            </span>
+          </div>
+
+          {/* Author Profile Picture / Avatar */}
+          <div className="flex flex-col sm:flex-row sm:items-center gap-4 p-4 rounded-2xl bg-slate-50/80 border border-slate-200/70">
+            <div className="relative group shrink-0">
+              {formData.author_avatar ? (
+                <img
+                  src={formData.author_avatar}
+                  alt={formData.author_name}
+                  className="w-16 h-16 rounded-full object-cover border-2 border-indigo-200 shadow-xs"
+                />
+              ) : (
+                <div className="w-16 h-16 rounded-full bg-[#5B4CF5] text-white flex items-center justify-center font-bold text-xl shadow-xs">
+                  {formData.author_name?.charAt(0) || "B"}
+                </div>
+              )}
+              {uploadingAvatar && (
+                <div className="absolute inset-0 rounded-full bg-black/40 flex items-center justify-center text-white">
+                  <Loader2 size={18} className="animate-spin" />
+                </div>
+              )}
+            </div>
+
+            <div className="space-y-1.5 flex-1">
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => authorAvatarInputRef.current?.click()}
+                  disabled={uploadingAvatar}
+                  className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 text-xs font-semibold shadow-2xs cursor-pointer transition-colors"
+                >
+                  <Camera size={13} className="text-slate-500" />
+                  {formData.author_avatar ? "Change Photo" : "Upload Profile Photo"}
+                </button>
+                {formData.author_avatar && (
+                  <button
+                    type="button"
+                    onClick={handleRemoveAuthorAvatar}
+                    className="p-1.5 text-slate-400 hover:text-red-600 rounded-lg transition-colors cursor-pointer"
+                    title="Remove Photo"
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                )}
+              </div>
+              <p className="text-[11px] text-slate-400">
+                Upload your headshot or profile photo (JPG, PNG). It will appear next to your name across the blog.
+              </p>
+              <input
+                ref={authorAvatarInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleAuthorAvatarUpload}
+                className="hidden"
+              />
+            </div>
+          </div>
+
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-[11px] font-bold text-slate-600 mb-1">
