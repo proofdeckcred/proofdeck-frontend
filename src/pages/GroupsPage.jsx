@@ -3,6 +3,7 @@ import { Link, useNavigate, useLocation } from "react-router-dom";
 import {
   getGroups,
   createGroup,
+  updateGroup,
   getGroupDetails,
   deleteGroup,
   sendGroupBulkEmail,
@@ -13,6 +14,8 @@ import {
   getCertificatePDF,
   getCertificatePNG,
   deleteCertificate,
+  getGroupAnalytics,
+  addCertificatesToGroup,
 } from "../api";
 import toast, { Toaster } from "react-hot-toast";
 import { Modal, Form, OverlayTrigger, Tooltip } from "react-bootstrap";
@@ -40,7 +43,13 @@ import {
   Upload,
   LayoutTemplate,
   Bell,
-  X
+  X,
+  BarChart2,
+  Sparkles,
+  Check,
+  CheckSquare,
+  Square,
+  RefreshCw,
 } from "lucide-react";
 import { useUser } from "../context/UserContext";
 import { SERVER_BASE_URL } from "../config";
@@ -68,6 +77,109 @@ const CardSkeleton = () => (
   </div>
 );
 
+const MiniGroupSparkline = ({ data = [], color = "#5B4CF5" }) => {
+  if (!data || data.length === 0) return null;
+  const max = Math.max(...data, 1);
+  const min = Math.min(...data, 0);
+  const range = max - min || 1;
+  const width = 100;
+  const height = 26;
+  const padding = 2;
+
+  const points = data.map((val, idx) => {
+    const x = padding + (idx / Math.max(data.length - 1, 1)) * (width - 2 * padding);
+    const y = height - padding - ((val - min) / range) * (height - 2 * padding);
+    return `${x.toFixed(1)},${y.toFixed(1)}`;
+  });
+
+  const polylinePoints = points.join(" ");
+  const areaPoints = `${padding},${height} ${polylinePoints} ${width - padding},${height}`;
+
+  return (
+    <svg className="w-24 h-7 shrink-0 overflow-visible" viewBox={`0 0 ${width} ${height}`}>
+      <defs>
+        <linearGradient id="groupMiniGrad" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor={color} stopOpacity="0.3" />
+          <stop offset="100%" stopColor={color} stopOpacity="0.0" />
+        </linearGradient>
+      </defs>
+      <polygon points={areaPoints} fill="url(#groupMiniGrad)" />
+      <polyline
+        fill="none"
+        stroke={color}
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        points={polylinePoints}
+      />
+    </svg>
+  );
+};
+
+const GroupAnalyticsWidget = ({ isFreeUser, analytics, loading, onUpgradeClick }) => {
+  if (isFreeUser) {
+    return (
+      <div
+        onClick={onUpgradeClick}
+        className="group/lock cursor-pointer relative overflow-hidden rounded-xl border border-slate-200/90 bg-slate-50/90 hover:bg-slate-100/90 p-2 sm:px-3 sm:py-2 flex items-center gap-2.5 transition-all shadow-2xs"
+        title="Group performance analytics (Pro)"
+      >
+        <div className="w-7 h-7 rounded-lg bg-amber-500/10 text-amber-600 flex items-center justify-center shrink-0">
+          <Lock size={13} />
+        </div>
+        <div className="pr-1">
+          <div className="flex items-center gap-1.5">
+            <span className="text-[11px] font-bold text-slate-800">Group Analytics</span>
+            <span className="text-[8px] font-extrabold uppercase px-1.5 py-0.2 rounded-full bg-[#5B4CF5] text-white">PRO</span>
+          </div>
+          <span className="text-[9px] text-slate-400 font-medium">Click to unlock live scans</span>
+        </div>
+        <div className="opacity-30 blur-[1px] hidden sm:block">
+          <MiniGroupSparkline data={[2, 5, 8, 4, 9, 12, 14]} color="#5B4CF5" />
+        </div>
+      </div>
+    );
+  }
+
+  if (loading) {
+    return (
+      <div className="rounded-xl border border-slate-200 bg-white p-2.5 px-3 flex items-center gap-3 animate-pulse h-12 shadow-2xs">
+        <div className="w-16 h-3 bg-slate-200 rounded" />
+        <div className="w-20 h-6 bg-slate-100 rounded" />
+      </div>
+    );
+  }
+
+  const stats = analytics?.stats || { total_views: 0, send_rate: 0, total_certs: 0 };
+  const viewsTrend = analytics?.chart?.views || [0, 0, 0, 0, 0, 0, 0];
+
+  return (
+    <div className="rounded-xl border border-slate-200/90 bg-white p-2 sm:px-3 sm:py-2 flex items-center gap-3 shadow-2xs">
+      <div>
+        <div className="flex items-center gap-1.5">
+          <span className="relative flex h-2 w-2">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+            <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+          </span>
+          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">External Scans</span>
+        </div>
+        <div className="flex items-baseline gap-2 mt-0.5">
+          <span className="text-base sm:text-lg font-black text-slate-900 leading-none">
+            {stats.total_views}
+          </span>
+          <span className="text-[9px] font-bold text-emerald-600 bg-emerald-50 border border-emerald-100 px-1.5 py-0.2 rounded-full">
+            {stats.send_rate}% sent
+          </span>
+        </div>
+      </div>
+      <div className="pl-2 border-l border-slate-100 hidden sm:block">
+        <div className="text-[9px] text-slate-400 font-semibold mb-0.5">7-Day Activity</div>
+        <MiniGroupSparkline data={viewsTrend} color="#5B4CF5" />
+      </div>
+    </div>
+  );
+};
+
 function GroupsPage() {
   const { user } = useUser();
   const navigate = useNavigate();
@@ -79,12 +191,33 @@ function GroupsPage() {
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [newGroupName, setNewGroupName] = useState("");
+  const [newGroupDesc, setNewGroupDesc] = useState("");
   const [viewingGroup, setViewingGroup] = useState(null);
   const [groupDetails, setGroupDetails] = useState(null);
   const [loadingDetails, setLoadingDetails] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [isBulkDownloading, setIsBulkDownloading] = useState(false);
+
+  // Group Editing State
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editGroupName, setEditGroupName] = useState("");
+  const [editGroupDesc, setEditGroupDesc] = useState("");
+  const [updatingGroup, setUpdatingGroup] = useState(false);
+
+  // Group Analytics State
+  const [groupAnalytics, setGroupAnalytics] = useState(null);
+  const [loadingAnalytics, setLoadingAnalytics] = useState(false);
+
+  // Add Certificates to Group State
+  const [showAddCertsModal, setShowAddCertsModal] = useState(false);
+  const [selectedCertIds, setSelectedCertIds] = useState(new Set());
+  const [addCertsSearch, setAddCertsSearch] = useState("");
+  const [addingCertsLoading, setAddingCertsLoading] = useState(false);
+
+  // Pro Upgrade Prompt Modal State
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [upgradeFeatureText, setUpgradeFeatureText] = useState("");
 
   // Search & Filtering States
   const [searchTerm, setSearchTerm] = useState("");
@@ -136,16 +269,32 @@ function GroupsPage() {
     }
   }, [currentPage, viewingGroup]);
 
+  const fetchGroupAnalytics = async (groupId) => {
+    if (isFreeUser) return;
+    setLoadingAnalytics(true);
+    try {
+      const res = await getGroupAnalytics(groupId);
+      if (!res.data.upgrade_required) {
+        setGroupAnalytics(res.data);
+      }
+    } catch (err) {
+      console.warn("Could not load group analytics:", err);
+    } finally {
+      setLoadingAnalytics(false);
+    }
+  };
+
   const handleCreateGroup = async () => {
     if (!newGroupName.trim()) {
       return toast.error("Group name cannot be empty.");
     }
-    const promise = createGroup(newGroupName);
+    const promise = createGroup(newGroupName.trim(), newGroupDesc.trim());
     toast.promise(promise, {
       loading: "Creating group...",
       success: (res) => {
         setShowCreateModal(false);
         setNewGroupName("");
+        setNewGroupDesc("");
         fetchData(1);
         return res.data.msg;
       },
@@ -156,13 +305,149 @@ function GroupsPage() {
   const handleViewGroup = async (group) => {
     setViewingGroup(group);
     setLoadingDetails(true);
+    setGroupAnalytics(null);
     try {
       const res = await getGroupDetails(group.id);
       setGroupDetails(res.data);
+      if (!isFreeUser) {
+        fetchGroupAnalytics(group.id);
+      }
     } catch (error) {
       toast.error("Could not fetch group details.");
     } finally {
       setLoadingDetails(false);
+    }
+  };
+
+  const handleOpenEditGroup = (group) => {
+    setEditGroupName(group.name || "");
+    setEditGroupDesc(group.description || groupDetails?.description || "");
+    setShowEditModal(true);
+  };
+
+  const handleUpdateGroupSubmit = async () => {
+    if (!editGroupName.trim()) {
+      return toast.error("Group name cannot be empty.");
+    }
+    setUpdatingGroup(true);
+    try {
+      const res = await updateGroup(viewingGroup.id, {
+        name: editGroupName.trim(),
+        description: editGroupDesc.trim()
+      });
+      toast.success(res.data.msg || "Group updated successfully.");
+      setShowEditModal(false);
+      setViewingGroup(prev => ({
+        ...prev,
+        name: editGroupName.trim(),
+        description: editGroupDesc.trim()
+      }));
+      setGroupDetails(prev => prev ? ({
+        ...prev,
+        name: editGroupName.trim(),
+        description: editGroupDesc.trim()
+      }) : null);
+      setGroups(prev => prev.map(g => g.id === viewingGroup.id ? {
+        ...g,
+        name: editGroupName.trim(),
+        description: editGroupDesc.trim()
+      } : g));
+    } catch (err) {
+      toast.error(err.response?.data?.msg || "Failed to update group.");
+    } finally {
+      setUpdatingGroup(false);
+    }
+  };
+
+  const handleOpenAddCertsModal = () => {
+    if (isFreeUser) {
+      setUpgradeFeatureText("Adding existing certificates to groups is an exclusive Pro feature. Upgrade your plan to organize certificates into batches at any time.");
+      setShowUpgradeModal(true);
+      return;
+    }
+    setSelectedCertIds(new Set());
+    setAddCertsSearch("");
+    setShowAddCertsModal(true);
+  };
+
+  const availableCertsForAdding = useMemo(() => {
+    if (!certificates || !viewingGroup) return [];
+    return certificates.filter((c) => {
+      const alreadyInGroup = groupDetails?.certificates?.some((gc) => gc.id === c.id) || c.group_id === viewingGroup.id;
+      if (alreadyInGroup) return false;
+      if (!addCertsSearch.trim()) return true;
+      const s = addCertsSearch.toLowerCase();
+      return (
+        (c.recipient_name && c.recipient_name.toLowerCase().includes(s)) ||
+        (c.recipient_email && c.recipient_email.toLowerCase().includes(s)) ||
+        (c.course_title && c.course_title.toLowerCase().includes(s)) ||
+        (c.id && c.id.toString().includes(s))
+      );
+    });
+  }, [certificates, viewingGroup, groupDetails, addCertsSearch]);
+
+  const handleToggleCertSelection = (certId) => {
+    setSelectedCertIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(certId)) {
+        next.delete(certId);
+      } else {
+        next.add(certId);
+      }
+      return next;
+    });
+  };
+
+  const handleSelectAllCerts = () => {
+    if (selectedCertIds.size === availableCertsForAdding.length) {
+      setSelectedCertIds(new Set());
+    } else {
+      setSelectedCertIds(new Set(availableCertsForAdding.map((c) => c.id)));
+    }
+  };
+
+  const handleAddCertificatesSubmit = async () => {
+    if (selectedCertIds.size === 0) {
+      return toast.error("Please select at least one certificate.");
+    }
+    setAddingCertsLoading(true);
+    try {
+      const ids = Array.from(selectedCertIds);
+      const res = await addCertificatesToGroup(viewingGroup.id, ids);
+      toast.success(res.data.msg || "Certificates added successfully!");
+      setShowAddCertsModal(false);
+      setSelectedCertIds(new Set());
+
+      // Refresh group details
+      const detailsRes = await getGroupDetails(viewingGroup.id);
+      setGroupDetails(detailsRes.data);
+      setViewingGroup((prev) => ({
+        ...prev,
+        certificate_count: detailsRes.data.certificates?.length || 0,
+      }));
+
+      // Update local certificates state
+      setCertificates((prev) =>
+        prev.map((c) => (ids.includes(c.id) ? { ...c, group_id: viewingGroup.id } : c))
+      );
+
+      // Refresh group analytics
+      if (!isFreeUser) {
+        fetchGroupAnalytics(viewingGroup.id);
+      }
+
+      // Update groups list
+      setGroups((prev) =>
+        prev.map((g) =>
+          g.id === viewingGroup.id
+            ? { ...g, certificate_count: detailsRes.data.certificates?.length || 0 }
+            : g
+        )
+      );
+    } catch (err) {
+      toast.error(err.response?.data?.msg || "Failed to add certificates to group.");
+    } finally {
+      setAddingCertsLoading(false);
     }
   };
 
@@ -641,6 +926,11 @@ function GroupsPage() {
                       <span className="text-xs font-bold text-slate-800 text-center mt-2.5 truncate w-full px-1 group-hover/folder:text-indigo-650 transition-colors">
                         {group.name}
                       </span>
+                      {group.description && (
+                        <span className="text-[10px] text-slate-400 text-center truncate w-full px-1 mt-0.5" title={group.description}>
+                          {group.description}
+                        </span>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -755,44 +1045,78 @@ function GroupsPage() {
                 <ArrowLeft size={13} /> Back to Batches
               </button>
 
-              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                <div>
+              <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
+                <div className="max-w-xl">
                   <h1 className="text-lg font-bold text-slate-850 mb-1 flex items-center gap-2">
-                    <Folder size={18} className="text-indigo-500 fill-indigo-100/20" />
+                    <Folder size={18} className="text-[#5B4CF5] fill-indigo-100/20" />
                     <span>{viewingGroup.name}</span>
+                    <button
+                      onClick={() => handleOpenEditGroup(viewingGroup)}
+                      className="p-1 text-slate-400 hover:text-slate-600 rounded-md hover:bg-slate-100 transition-colors"
+                      title="Edit Batch Details"
+                    >
+                      <Pencil size={13} />
+                    </button>
                   </h1>
                   
                   <div className="flex items-center text-slate-400 text-[10px] gap-2 font-medium">
                     <span>Folder</span>
                     <span className="text-slate-300">•</span>
                     <span>
-                      {viewingGroup.certificate_count} certificate{viewingGroup.certificate_count !== 1 ? "s" : ""}
+                      {groupDetails?.certificates?.length ?? viewingGroup.certificate_count} certificate{((groupDetails?.certificates?.length ?? viewingGroup.certificate_count) !== 1) ? "s" : ""}
                     </span>
                     <span className="text-slate-350">•</span>
                     <span>Created {new Date(viewingGroup.created_at).toLocaleDateString()}</span>
                   </div>
+
+                  {(groupDetails?.description || viewingGroup.description) && (
+                    <p className="text-xs text-slate-600 mt-2 leading-relaxed bg-slate-50/80 px-2.5 py-1.5 rounded-lg border border-slate-200/60 mb-0">
+                      {groupDetails?.description || viewingGroup.description}
+                    </p>
+                  )}
                 </div>
 
-                {/* Bulk Actions */}
-                <div className="flex items-center gap-2.5">
-                  <DownloadButton />
-                  <button
-                    onClick={() => handleSendBulkEmail(viewingGroup.id)}
-                    className="inline-flex items-center justify-center bg-indigo-650 border border-indigo-650 hover:bg-indigo-750 text-white rounded-lg py-1.5 px-3.5 transition-colors font-semibold text-xs shadow-sm bg-indigo-650 bg-indigo-600 border-indigo-600 hover:bg-indigo-700"
-                  >
-                    <Send size={13} className="mr-1.5 text-white" />
-                    Send to Unsent
-                  </button>
-                  <button
-                    onClick={() => {
-                      setDeleteTarget({ type: 'group', id: viewingGroup.id, name: viewingGroup.name, certCount: viewingGroup.certificate_count });
-                      setShowDeleteConfirm(true);
+                {/* Top Right: Graphical Chart & Actions */}
+                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+                  <GroupAnalyticsWidget
+                    isFreeUser={isFreeUser}
+                    analytics={groupAnalytics}
+                    loading={loadingAnalytics}
+                    onUpgradeClick={() => {
+                      setUpgradeFeatureText("Live external scans and recipient analytics are exclusive to Pro and Enterprise plans.");
+                      setShowUpgradeModal(true);
                     }}
-                    className="inline-flex items-center justify-center bg-white border border-red-200 text-red-650 hover:bg-red-50 text-red-600 border-red-100 hover:border-red-200 rounded-lg py-1.5 px-3 transition-colors font-semibold text-xs shadow-sm"
-                  >
-                    <Trash2 size={13} className="mr-1.5" />
-                    Delete Group
-                  </button>
+                  />
+
+                  {/* Actions */}
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={handleOpenAddCertsModal}
+                      className="inline-flex items-center justify-center bg-[#5B4CF5] hover:bg-[#4433E0] text-white rounded-lg py-1.5 px-3 transition-all font-semibold text-xs shadow-xs cursor-pointer"
+                      title="Add certificates to this group"
+                    >
+                      <Plus size={13} className="mr-1 text-white" />
+                      Add Certs
+                    </button>
+                    <DownloadButton />
+                    <button
+                      onClick={() => handleSendBulkEmail(viewingGroup.id)}
+                      className="inline-flex items-center justify-center bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg py-1.5 px-3 transition-colors font-semibold text-xs shadow-xs"
+                    >
+                      <Send size={13} className="mr-1 text-white" />
+                      Send to Unsent
+                    </button>
+                    <button
+                      onClick={() => {
+                        setDeleteTarget({ type: 'group', id: viewingGroup.id, name: viewingGroup.name, certCount: viewingGroup.certificate_count });
+                        setShowDeleteConfirm(true);
+                      }}
+                      className="inline-flex items-center justify-center bg-white border border-red-200 text-red-600 hover:bg-red-50 rounded-lg py-1.5 px-2.5 transition-colors font-semibold text-xs shadow-2xs"
+                    >
+                      <Trash2 size={13} className="mr-1" />
+                      Delete
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -892,12 +1216,21 @@ function GroupsPage() {
                         Reset filters
                       </button>
                     ) : (
-                      <Link
-                        to="/dashboard/bulk-create"
-                        className="mt-3 inline-flex items-center justify-center bg-white border border-slate-250 text-slate-700 rounded-lg py-1.5 px-3.5 hover:bg-slate-50 transition-all font-semibold text-xs shadow-sm decoration-none"
-                      >
-                        Bulk issue to this group
-                      </Link>
+                      <div className="flex flex-wrap items-center justify-center gap-2.5 mt-4">
+                        <button
+                          onClick={handleOpenAddCertsModal}
+                          className="inline-flex items-center justify-center bg-[#5B4CF5] hover:bg-[#4433E0] text-white rounded-lg py-1.5 px-3.5 transition-all font-semibold text-xs shadow-xs cursor-pointer"
+                        >
+                          <Plus size={13} className="mr-1.5" />
+                          Add certificates to this group
+                        </button>
+                        <Link
+                          to="/dashboard/bulk-create"
+                          className="inline-flex items-center justify-center bg-white border border-slate-250 text-slate-700 rounded-lg py-1.5 px-3.5 hover:bg-slate-50 transition-all font-semibold text-xs shadow-sm decoration-none"
+                        >
+                          Bulk issue to this group
+                        </Link>
+                      </div>
                     )}
                   </div>
                 )}
@@ -970,6 +1303,21 @@ function GroupsPage() {
             </Form.Text>
           </Form.Group>
 
+          <Form.Group className="mb-4">
+            <Form.Label className="font-semibold text-xs text-slate-700 mb-1.5 flex items-center justify-between">
+              <span>Batch Description</span>
+              <span className="text-[10px] text-slate-400 font-normal">Optional</span>
+            </Form.Label>
+            <Form.Control
+              as="textarea"
+              rows={2}
+              placeholder="e.g., Certificates for Cohort 12 Full-Stack Engineering graduates"
+              value={newGroupDesc}
+              onChange={(e) => setNewGroupDesc(e.target.value)}
+              className="py-2 text-xs border-slate-250 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 shadow-sm resize-none"
+            />
+          </Form.Group>
+
           <div className="flex justify-end gap-2">
             <button
               type="button"
@@ -985,6 +1333,282 @@ function GroupsPage() {
             >
               Create Folder
             </button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* EDIT GROUP MODAL */}
+      <Modal
+        show={showEditModal}
+        onHide={() => setShowEditModal(false)}
+        centered
+        backdrop="static"
+        contentClassName="rounded-b-2xl rounded-tr-2xl border-2 border-[#5B4CF5] bg-white p-6 shadow-xl relative overflow-visible mt-8"
+      >
+        <div className="absolute -top-[30px] left-[-2px] bg-[#5B4CF5] text-white text-[10px] font-extrabold uppercase tracking-widest px-5 py-1.5 rounded-t-xl flex items-center gap-1.5 border-t border-x border-[#5B4CF5]">
+          <Pencil size={11} className="fill-white/20" />
+          <span>Edit Batch</span>
+        </div>
+
+        <button
+          onClick={() => setShowEditModal(false)}
+          className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 transition-colors p-1 rounded-full hover:bg-slate-100"
+        >
+          <X size={15} />
+        </button>
+
+        <div className="pt-2">
+          <h2 className="font-bold text-sm text-slate-800 mb-4">Edit Batch Details</h2>
+          
+          <Form.Group className="mb-3">
+            <Form.Label className="font-semibold text-xs text-slate-700 mb-1.5">
+              Folder Name
+            </Form.Label>
+            <Form.Control
+              type="text"
+              value={editGroupName}
+              onChange={(e) => setEditGroupName(e.target.value)}
+              className="py-2 text-xs border-slate-250 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 shadow-sm"
+              autoFocus
+            />
+          </Form.Group>
+
+          <Form.Group className="mb-4">
+            <Form.Label className="font-semibold text-xs text-slate-700 mb-1.5 flex items-center justify-between">
+              <span>Batch Description</span>
+              <span className="text-[10px] text-slate-400 font-normal">Optional</span>
+            </Form.Label>
+            <Form.Control
+              as="textarea"
+              rows={2}
+              placeholder="e.g., Cohort 12 Full-Stack Engineering graduation"
+              value={editGroupDesc}
+              onChange={(e) => setEditGroupDesc(e.target.value)}
+              className="py-2 text-xs border-slate-250 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 shadow-sm resize-none"
+            />
+          </Form.Group>
+
+          <div className="flex justify-end gap-2">
+            <button
+              type="button"
+              onClick={() => setShowEditModal(false)}
+              className="px-3.5 py-1.5 text-xs font-bold text-slate-600 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-lg transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={handleUpdateGroupSubmit}
+              disabled={updatingGroup}
+              className="px-4 py-1.5 text-xs font-bold text-white bg-[#5B4CF5] hover:bg-[#4433E0] rounded-lg shadow-sm transition-colors disabled:opacity-50 flex items-center gap-1.5 cursor-pointer"
+            >
+              {updatingGroup ? <div className="animate-spin h-3 w-3 border-2 border-white border-t-transparent rounded-full" /> : <Check size={13} />}
+              Save Changes
+            </button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* ADD CERTIFICATES TO GROUP MODAL */}
+      <Modal
+        show={showAddCertsModal}
+        onHide={() => setShowAddCertsModal(false)}
+        centered
+        size="lg"
+        contentClassName="rounded-2xl border border-slate-200 bg-white shadow-2xl overflow-hidden"
+      >
+        <div className="p-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/60">
+          <div>
+            <h3 className="font-bold text-sm sm:text-base text-slate-900 m-0 flex items-center gap-2">
+              <Plus size={16} className="text-[#5B4CF5]" />
+              <span>Add Certificates to "{viewingGroup?.name}"</span>
+            </h3>
+            <p className="text-xs text-slate-500 m-0 mt-0.5">
+              Select existing certificates from your workspace to organize into this batch.
+            </p>
+          </div>
+          <button
+            onClick={() => setShowAddCertsModal(false)}
+            className="text-slate-400 hover:text-slate-600 p-1.5 rounded-full hover:bg-slate-100 transition-colors"
+          >
+            <X size={16} />
+          </button>
+        </div>
+
+        <div className="p-5">
+          {/* Search bar & Select All */}
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 mb-4">
+            <div className="relative flex-1">
+              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+              <input
+                type="text"
+                value={addCertsSearch}
+                onChange={(e) => setAddCertsSearch(e.target.value)}
+                placeholder="Search by recipient name, email, or course..."
+                className="w-full pl-9 pr-3 py-2 text-xs border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#5B4CF5]/20 focus:border-[#5B4CF5] bg-white"
+              />
+            </div>
+            {availableCertsForAdding.length > 0 && (
+              <button
+                type="button"
+                onClick={handleSelectAllCerts}
+                className="px-3 py-2 text-xs font-semibold text-slate-700 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl transition-colors shrink-0 flex items-center gap-1.5 cursor-pointer"
+              >
+                {selectedCertIds.size === availableCertsForAdding.length ? (
+                  <>
+                    <CheckSquare size={13} className="text-[#5B4CF5]" />
+                    Deselect All
+                  </>
+                ) : (
+                  <>
+                    <Square size={13} className="text-slate-400" />
+                    Select All ({availableCertsForAdding.length})
+                  </>
+                )}
+              </button>
+            )}
+          </div>
+
+          {/* Certificate Selection Table/List */}
+          <div className="max-h-[360px] overflow-y-auto rounded-xl border border-slate-200 divide-y divide-slate-100">
+            {availableCertsForAdding.length > 0 ? (
+              availableCertsForAdding.map((cert) => {
+                const isSelected = selectedCertIds.has(cert.id);
+                return (
+                  <div
+                    key={cert.id}
+                    onClick={() => handleToggleCertSelection(cert.id)}
+                    className={`flex items-center justify-between p-3 cursor-pointer transition-colors ${
+                      isSelected ? "bg-indigo-50/50 hover:bg-indigo-50/70" : "bg-white hover:bg-slate-50/70"
+                    }`}
+                  >
+                    <div className="flex items-center gap-3 min-w-0 pr-3">
+                      <div
+                        className={`w-4 h-4 rounded border flex items-center justify-center shrink-0 transition-colors ${
+                          isSelected
+                            ? "bg-[#5B4CF5] border-[#5B4CF5] text-white"
+                            : "border-slate-300 bg-white"
+                        }`}
+                      >
+                        {isSelected && <Check size={11} strokeWidth={3} />}
+                      </div>
+                      <div className="min-w-0">
+                        <div className="text-xs font-bold text-slate-900 truncate flex items-center gap-1.5">
+                          <span>{cert.recipient_name || "Unnamed"}</span>
+                          {cert.group_id ? (
+                            <span className="text-[9px] font-semibold text-amber-700 bg-amber-50 border border-amber-200/50 px-1.5 py-0.2 rounded-full">
+                              In another batch
+                            </span>
+                          ) : (
+                            <span className="text-[9px] font-semibold text-slate-500 bg-slate-100 px-1.5 py-0.2 rounded-full">
+                              Ungrouped
+                            </span>
+                          )}
+                        </div>
+                        <div className="text-[11px] text-slate-500 truncate mt-0.5">
+                          {cert.course_title || "Certificate"} • {cert.recipient_email || "No email"}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <span className="text-[10px] text-slate-400 font-medium">
+                        {cert.issue_date ? new Date(cert.issue_date).toLocaleDateString() : ""}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })
+            ) : (
+              <div className="py-12 text-center text-slate-400">
+                <Award size={32} className="mx-auto mb-2 text-slate-300" />
+                <p className="text-xs font-bold text-slate-700 m-0">No certificates available to add</p>
+                <p className="text-[11px] text-slate-400 mt-1 m-0">
+                  {certificates.length === 0
+                    ? "You haven't issued any certificates yet."
+                    : "All existing certificates are already in this batch, or no search results match."}
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div className="p-4 bg-slate-50/70 border-t border-slate-100 flex items-center justify-between">
+          <span className="text-xs font-bold text-slate-700">
+            {selectedCertIds.size} certificate{selectedCertIds.size !== 1 ? "s" : ""} selected
+          </span>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setShowAddCertsModal(false)}
+              className="px-3.5 py-2 text-xs font-bold text-slate-600 bg-white hover:bg-slate-50 border border-slate-200 rounded-xl transition-colors shadow-2xs"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              disabled={selectedCertIds.size === 0 || addingCertsLoading}
+              onClick={handleAddCertificatesSubmit}
+              className="px-4 py-2 text-xs font-bold text-white bg-[#5B4CF5] hover:bg-[#4433E0] rounded-xl shadow-xs transition-all disabled:opacity-50 flex items-center gap-1.5 cursor-pointer"
+            >
+              {addingCertsLoading ? (
+                <div className="animate-spin h-3.5 w-3.5 border-2 border-white border-t-transparent rounded-full" />
+              ) : (
+                <Plus size={14} />
+              )}
+              Add to Batch
+            </button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* PRO UPGRADE PROMPT MODAL */}
+      <Modal
+        show={showUpgradeModal}
+        onHide={() => setShowUpgradeModal(false)}
+        centered
+        contentClassName="rounded-2xl border border-indigo-100 bg-white p-6 shadow-2xl overflow-hidden"
+      >
+        <div className="text-center">
+          <div className="w-12 h-12 rounded-2xl bg-indigo-50 border border-indigo-100 text-[#5B4CF5] flex items-center justify-center mx-auto mb-3 shadow-xs">
+            <Sparkles size={24} />
+          </div>
+          <h3 className="font-extrabold text-base text-slate-900 mb-1">
+            Upgrade to Pro for Advanced Batches
+          </h3>
+          <p className="text-xs text-slate-500 max-w-sm mx-auto mb-5 leading-relaxed">
+            {upgradeFeatureText || "Organizing existing certificates into batches and monitoring live verification performance is available on Pro and Enterprise accounts."}
+          </p>
+
+          <div className="space-y-2 text-left bg-slate-50/80 p-3.5 rounded-xl border border-slate-100 mb-5">
+            <div className="flex items-center gap-2 text-xs text-slate-700 font-medium">
+              <Check size={14} className="text-emerald-600 shrink-0" />
+              <span>Add & re-organize certificates into custom groups at any time</span>
+            </div>
+            <div className="flex items-center gap-2 text-xs text-slate-700 font-medium">
+              <Check size={14} className="text-emerald-600 shrink-0" />
+              <span>Real-time external verification scans and employer analytics</span>
+            </div>
+            <div className="flex items-center gap-2 text-xs text-slate-700 font-medium">
+              <Check size={14} className="text-emerald-600 shrink-0" />
+              <span>Bulk email re-dispatch with custom branded email domains</span>
+            </div>
+          </div>
+
+          <div className="flex items-center justify-center gap-2.5">
+            <button
+              onClick={() => setShowUpgradeModal(false)}
+              className="px-4 py-2 text-xs font-bold text-slate-600 bg-white hover:bg-slate-50 border border-slate-200 rounded-xl transition-colors cursor-pointer"
+            >
+              Maybe Later
+            </button>
+            <Link
+              to="/dashboard/settings"
+              onClick={() => setShowUpgradeModal(false)}
+              className="px-5 py-2 text-xs font-bold text-white bg-[#5B4CF5] hover:bg-[#4433E0] rounded-xl shadow-xs transition-all hover:scale-105 no-underline flex items-center gap-1.5 cursor-pointer"
+            >
+              <Sparkles size={13} />
+              Upgrade to Pro
+            </Link>
           </div>
         </div>
       </Modal>

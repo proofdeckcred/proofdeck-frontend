@@ -188,13 +188,19 @@ export const getReferralStats = () => API.get("/referrals/stats");
 
 // GROUPS
 export const getGroups = (page = 1) => API.get(`/groups/?page=${page}`);
-export const createGroup = (name) => API.post("/groups/", { name });
+export const createGroup = (name, description = "") => API.post("/groups/", { name, description });
+export const updateGroup = (groupId, data) => API.put(`/groups/${groupId}`, data);
 export const getGroupDetails = (groupId) => API.get(`/groups/${groupId}`);
 export const deleteGroup = (groupId) => API.delete(`/groups/${groupId}`);
 export const sendGroupBulkEmail = (groupId) =>
   API.post(`/groups/${groupId}/send-bulk-email`);
 export const downloadGroupBulkPDF = (groupId) =>
   API.get(`/groups/${groupId}/download-bulk-pdf`, { responseType: "blob" });
+export const getGroupAnalytics = (groupId) => API.get(`/groups/${groupId}/analytics`);
+export const addCertificatesToGroup = (groupId, certificateIds) =>
+  API.post(`/groups/${groupId}/add-certificates`, { certificate_ids: certificateIds });
+export const removeCertificateFromGroup = (groupId, certId) =>
+  API.post(`/groups/${groupId}/remove-certificate/${certId}`);
 
 // SUPPORT TICKETS
 export const createUserTicket = (formData) =>
