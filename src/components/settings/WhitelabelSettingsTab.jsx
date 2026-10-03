@@ -192,7 +192,7 @@ const WhitelabelSettingsTab = ({ isEnterprise = false, onUpgrade }) => {
           </div>
           <div className="flex items-center gap-2.5 text-xs font-semibold text-slate-700">
             <Check size={15} className="text-emerald-600 stroke-[3]" />
-            <span>10,000 Credential Credits Included</span>
+            <span>10,000 Credentials / Year (With up to 25% Rollover on Renewal)</span>
           </div>
         </div>
         {onUpgrade && (
@@ -200,7 +200,7 @@ const WhitelabelSettingsTab = ({ isEnterprise = false, onUpgrade }) => {
             onClick={onUpgrade}
             className="inline-flex items-center justify-center px-6 py-3 rounded-xl text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-700 transition-colors shadow-sm cursor-pointer"
           >
-            Upgrade to Enterprise (₦650,000)
+            Upgrade to Enterprise (₦1,500,000 / year)
           </button>
         )}
       </div>

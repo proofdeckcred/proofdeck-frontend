@@ -1,8 +1,6 @@
-// frontend/src/pages/LandingPage.jsx
-
-import React from "react";
+import React, { useState } from "react";
 import { Link } from "react-router-dom";
-import { Check } from "lucide-react";
+import { Check, Sparkles } from "lucide-react";
 import PublicHeader from "../components/PublicHeader";
 import PublicFooter from "../components/PublicFooter";
 import { LandingHero } from "../components/ui/landing-hero";
@@ -11,6 +9,7 @@ import { BenefitsSection } from "../components/BenefitsSection";
 import { TestimonialSection } from "../components/TestimonialSection";
 import { ApiSection } from "../components/ApiSection";
 import SEO from "../components/SEO";
+import CustomPricingModal from "../components/CustomPricingModal";
 
 // --- REVERTED PRICING CARD GRID ---
 
@@ -80,7 +79,7 @@ const PricingCard = ({
   </div>
 );
 
-const Pricing = () => (
+const Pricing = ({ onOpenCustomModal }) => (
   <section id="pricing" className="py-20 md:py-28 bg-[#FAFAF9] border-t border-[#E6E4ED]">
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div className="text-center max-w-3xl mx-auto mb-14">
@@ -138,20 +137,49 @@ const Pricing = () => (
         />
         <PricingCard
           title="Enterprise"
-          price="₦650,000"
-          suffix="10,000 credential credits"
+          price="₦1,500,000"
+          suffix="10,000 credentials / year"
           features={[
-            "10,000 Credits Included",
-            "Custom Domain & White-Label (SSL included)",
-            "100% White-Label Portal (Zero ProofDeck Branding)",
-            "Everything in Pro",
-            "Exclusive High-Res PNG Image Downloads",
-            "Unlimited Bulk Processing",
-            "Multi-Seat Organization Access",
-            "Dedicated VIP Account Manager",
+            "10,000 credentials per year",
+            "Custom domain & 100% white-label (SSL included)",
+            "Zero ProofDeck branding on certificates, emails and verification pages",
+            "Everything in Pro (API, bulk processing, team workspace)",
+            "Multi-seat organization access",
+            "Onboarding assistance & priority support",
+            "Previously issued credentials stay verifiable",
+            "Partial rollover: up to 25% on renewal",
           ]}
           link="/signup?plan=enterprise"
         />
+      </div>
+
+      {/* Landscape Want Custom Banner */}
+      <div className="mt-12 bg-slate-900 text-white rounded-2xl sm:rounded-3xl p-6 sm:p-8 flex flex-col sm:flex-row items-center justify-between gap-6 border border-slate-800 shadow-sm">
+        <div className="flex items-center gap-4 text-center sm:text-left">
+          <div className="w-12 h-12 rounded-2xl bg-indigo-500/20 text-indigo-400 flex items-center justify-center shrink-0 hidden sm:flex">
+            <Sparkles size={24} />
+          </div>
+          <div>
+            <div className="inline-flex items-center gap-2 mb-1">
+              <span className="text-xs font-bold uppercase tracking-wider text-indigo-400 bg-indigo-500/10 px-2.5 py-0.5 rounded-full border border-indigo-500/20">
+                Custom Enterprise
+              </span>
+            </div>
+            <h3 className="text-lg sm:text-xl font-bold text-white mb-1">
+              Need more than 10,000 credentials or bespoke integrations?
+            </h3>
+            <p className="text-xs sm:text-sm text-slate-300 mb-0">
+              Tailored volume discounts, custom SLAs, and specialized LMS/ERP integrations available.
+            </p>
+          </div>
+        </div>
+        <button
+          type="button"
+          onClick={onOpenCustomModal}
+          className="w-full sm:w-auto px-6 py-3 bg-white text-slate-900 hover:bg-slate-100 rounded-xl text-xs sm:text-sm font-bold transition-all shadow-sm shrink-0 flex items-center justify-center gap-2 cursor-pointer whitespace-nowrap"
+        >
+          Want custom? <span className="text-indigo-600 font-extrabold underline">Talk to Us</span>
+        </button>
       </div>
     </div>
   </section>
@@ -203,7 +231,11 @@ const FAQ = () => (
         />
         <FAQItem
           question="Is there a subscription fee?"
-          answer="No, ProofDeck is strictly pay-as-you-go. You only pay for credits, with no recurring monthly subscriptions or setup fees."
+          answer="Starter, Growth, and Pro are strictly pay-as-you-go with lifetime validity and no monthly subscriptions. Enterprise is an annual plan with 12-month validity, custom domain white-labeling, and up to 25% rollover on renewal."
+        />
+        <FAQItem
+          question="How does the Enterprise annual plan and credit rollover work?"
+          answer="The Enterprise plan is billed annually at ₦1,500,000 / year and includes 10,000 credential credits valid for 12 months. Unused credits roll over once when you renew, up to 25% (up to 2,500 credits). If you choose not to renew, all previously issued credentials stay verifiable forever, and any unused credits expire after a 60-day renewal grace period."
         />
         <FAQItem
           question="Do you offer developer API access?"
@@ -217,6 +249,8 @@ const FAQ = () => (
 // --- MAIN PAGE ---
 
 function LandingPage() {
+  const [openCustomModal, setOpenCustomModal] = useState(false);
+
   const faqSchema = {
     "@type": "FAQPage",
     "mainEntity": [
@@ -249,7 +283,15 @@ function LandingPage() {
         "name": "Is there a subscription fee?",
         "acceptedAnswer": {
           "@type": "Answer",
-          "text": "No, ProofDeck is strictly pay-as-you-go. You only pay for credits in Naira (or USD), with no recurring monthly subscriptions or setup fees."
+          "text": "Starter, Growth, and Pro are strictly pay-as-you-go with lifetime validity and no monthly subscriptions. Enterprise is an annual plan with 12-month validity and custom domain white-labeling."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "How does the Enterprise annual plan and credit rollover work?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "The Enterprise plan is billed annually at ₦1,500,000 / year and includes 10,000 credential credits valid for 12 months. Unused credits roll over once when you renew, up to 25% (up to 2,500 credits). If you choose not to renew, all previously issued credentials stay verifiable forever, and any unused credits expire after a 60-day renewal grace period."
         }
       },
       {
@@ -341,13 +383,18 @@ function LandingPage() {
         <TestimonialSection />
 
         {/* 6. Pricing (Naira Grid) */}
-        <Pricing />
+        <Pricing onOpenCustomModal={() => setOpenCustomModal(true)} />
 
         {/* 7. FAQ Section */}
         <FAQ />
 
         {/* 8. API / Developer Section */}
         <ApiSection />
+
+        <CustomPricingModal
+          isOpen={openCustomModal}
+          onClose={() => setOpenCustomModal(false)}
+        />
       </main>
       <PublicFooter />
     </div>

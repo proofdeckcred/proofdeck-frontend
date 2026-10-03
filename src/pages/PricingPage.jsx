@@ -2,8 +2,9 @@ import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import PublicHeader from "../components/PublicHeader";
 import PublicFooter from "../components/PublicFooter";
-import { Check, ChevronDown, ChevronUp } from "lucide-react";
+import { Check, ChevronDown, ChevronUp, Sparkles, MessageSquare } from "lucide-react";
 import SEO from "../components/SEO";
+import CustomPricingModal from "../components/CustomPricingModal";
 
 const PricingCard = ({ plan, isPopular }) => {
   return (
@@ -37,10 +38,18 @@ const PricingCard = ({ plan, isPopular }) => {
           {plan.priceUSD}
         </span>
       </div>
-      <span className="text-[var(--pd-mute)] text-xs font-medium block mb-3">One-time payment</span>
-      <p className="text-xs font-medium text-[var(--pd-indigo)] bg-[var(--pd-paper)] inline-block py-1 px-2.5 rounded-full mb-8 w-max border border-[var(--pd-line)]">
+      <span className="text-[var(--pd-mute)] text-xs font-medium block mb-3">
+        {plan.interval === "yearly" ? "Billed annually" : "One-time payment"}
+      </span>
+      <p className="text-xs font-medium text-[var(--pd-indigo)] bg-[var(--pd-paper)] inline-block py-1 px-2.5 rounded-full mb-4 w-max border border-[var(--pd-line)]">
         {plan.certs} Credits Included
       </p>
+
+      {plan.rolloverNotice && (
+        <div className="mb-6 p-2.5 bg-amber-50 border border-amber-200/80 rounded-xl text-[11px] text-amber-900 leading-snug">
+          <span className="font-bold">Partial Rollover:</span> {plan.rolloverNotice}
+        </div>
+      )}
 
       <div className="bg-[var(--pd-paper)] rounded-xl py-3 px-4 mb-8 border border-[var(--pd-line)] flex items-center justify-between">
         <div>
@@ -50,7 +59,7 @@ const PricingCard = ({ plan, isPopular }) => {
         <div className="h-8 w-px bg-[var(--pd-line)]"></div>
         <div className="text-right">
           <p className="text-xs text-[var(--pd-mute)] font-medium">Validity</p>
-          <p className="font-bold text-[var(--pd-ink)] text-sm">Lifetime</p>
+          <p className="font-bold text-[var(--pd-ink)] text-sm">{plan.validity || "Lifetime"}</p>
         </div>
       </div>
 
@@ -128,32 +137,39 @@ const PricingPage = () => {
     },
     {
       name: "Enterprise",
-      priceNGN: "₦650,000",
-      priceUSD: "$490.00",
+      priceNGN: "₦1,500,000",
+      priceUSD: "$1,135.00",
       certs: "10,000",
-      costPerCert: "₦65 (~$0.04)",
+      costPerCert: "₦150 (~$0.11)",
       for: "Universities, institutions, enterprise corporations",
+      interval: "yearly",
+      validity: "12 Months (Renewable)",
+      rolloverNotice: "Unused credits roll over once when you renew, up to 25%. 60-day renewal grace period.",
       features: [
-        "10,000 Credits Included",
-        "Custom Domain & SSL (credentials.yourcompany.com)",
-        "100% White-Label Portal (Zero ProofDeck Branding)",
-        "Everything in Pro",
-        "Developer REST API & Webhooks Access",
-        "Exclusive High-Res PNG Image Downloads",
-        "Unlimited Bulk Processing",
-        "Multi-Seat Organization Access",
-        "Dedicated VIP Account Manager & Support",
+        "10,000 credentials per year",
+        "Custom domain & 100% white-label (SSL included)",
+        "Zero ProofDeck branding on certificates, emails and verification pages",
+        "Everything in Pro (API, bulk processing, team workspace)",
+        "Multi-seat organization access",
+        "Onboarding assistance & priority support",
+        "Previously issued credentials stay verifiable",
       ],
     },
   ];
 
   const [openFaq, setOpenFaq] = useState(null);
+  const [openCustomModal, setOpenCustomModal] = useState(false);
 
   const toggleFaq = (index) => {
     setOpenFaq(openFaq === index ? null : index);
   };
 
   const pricingFaqs = [
+    {
+      question: "How does the Enterprise annual plan and credit rollover work?",
+      answer:
+        "The Enterprise plan is billed annually at ₦1,500,000 / year and includes 10,000 credential credits valid for 12 months. Unused credits roll over once when you renew, up to 25% (up to 2,500 credits). If you choose not to renew, all previously issued credentials stay verifiable forever, and any remaining unused credits expire after a 60-day grace period.",
+    },
     {
       question: "Can I use my own custom domain and branding for verification?",
       answer:
@@ -167,12 +183,12 @@ const PricingPage = () => {
     {
       question: "Do credential credits ever expire?",
       answer:
-        "Never. Credits purchased on ProofDeck come with lifetime validity. You can purchase a pack today and use them gradually across future workshops, bootcamps, or events whenever you need.",
+        "On Starter, Growth, and Pro tiers, credits never expire and have lifetime validity. On the Enterprise annual plan, credits are valid for 12 months, with up to 25% of unused credits rolling over into your new term when you renew.",
     },
     {
       question: "Are there any monthly subscriptions or recurring fees?",
       answer:
-        "None. ProofDeck operates strictly on a transparent pay-as-you-go credit model. You never have to worry about unwanted monthly credit card charges.",
+        "Starter, Growth, and Pro are strictly pay-as-you-go with no recurring subscriptions. Enterprise is an annual plan with 12-month validity that can be renewed or cancelled anytime.",
     },
     {
       question: "Can I issue certificates in bulk using CSV or Excel files?",
@@ -194,7 +210,7 @@ const PricingPage = () => {
   const productSchema = {
     "@type": "Product",
     "name": "ProofDeck Credential Credits",
-    "description": "Pay-as-you-go digital certificate issuing credits for Nigerian and African organizations.",
+    "description": "Digital certificate issuing plans and credits for Nigerian and African organizations.",
     "brand": {
       "@type": "Brand",
       "name": "ProofDeck"
@@ -203,7 +219,7 @@ const PricingPage = () => {
       "@type": "AggregateOffer",
       "priceCurrency": "NGN",
       "lowPrice": "15000",
-      "highPrice": "650000",
+      "highPrice": "1500000",
       "offerCount": "4",
       "offers": plans.map(p => ({
         "@type": "Offer",
@@ -284,6 +300,35 @@ const PricingPage = () => {
                 />
               ))}
             </div>
+
+            {/* Want Custom? Landscape Banner */}
+            <div className="mt-12 bg-slate-900 text-white rounded-2xl sm:rounded-3xl p-6 sm:p-8 flex flex-col sm:flex-row items-center justify-between gap-6 border border-slate-800 shadow-sm">
+              <div className="flex items-center gap-4 text-center sm:text-left">
+                <div className="w-12 h-12 rounded-2xl bg-indigo-500/20 text-indigo-400 flex items-center justify-center shrink-0 hidden sm:flex">
+                  <Sparkles size={24} />
+                </div>
+                <div>
+                  <div className="inline-flex items-center gap-2 mb-1">
+                    <span className="text-xs font-bold uppercase tracking-wider text-indigo-400 bg-indigo-500/10 px-2.5 py-0.5 rounded-full border border-indigo-500/20">
+                      Tailored High-Volume
+                    </span>
+                  </div>
+                  <h3 className="text-lg sm:text-xl font-bold text-white mb-1">
+                    Need more than 10,000 credentials or custom integrations?
+                  </h3>
+                  <p className="text-xs sm:text-sm text-slate-300 mb-0">
+                    Bespoke high-volume packs, custom SLAs, and specialized LMS/ERP integrations available.
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setOpenCustomModal(true)}
+                className="w-full sm:w-auto px-6 py-3 bg-white text-slate-900 hover:bg-slate-100 rounded-xl text-xs sm:text-sm font-bold transition-all shadow-sm shrink-0 flex items-center justify-center gap-2 cursor-pointer whitespace-nowrap"
+              >
+                Want custom? <span className="text-indigo-600 font-extrabold underline">Talk to Us</span>
+              </button>
+            </div>
           </div>
         </section>
 
@@ -323,7 +368,7 @@ const PricingPage = () => {
                     "Full API Access", 
                     "SLA-backed support guarantees",
                     "Custom onboarding & staff training",
-                    "Dedicated Account Manager",
+                    "Onboarding Assistance & Priority Support",
                     "Advanced Analytics Dashboard"
                   ].map((item, i) => (
                     <li key={i} className="flex items-center gap-3 text-white/70 text-sm">
@@ -406,6 +451,11 @@ const PricingPage = () => {
             </div>
           </div>
         </section>
+
+        <CustomPricingModal
+          isOpen={openCustomModal}
+          onClose={() => setOpenCustomModal(false)}
+        />
       </main>
       <PublicFooter />
     </div>

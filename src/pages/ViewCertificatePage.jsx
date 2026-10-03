@@ -597,11 +597,12 @@ function ViewCertificatePage() {
             <div className="bg-indigo-50/70 border border-indigo-100 rounded-xl p-3.5 space-y-1.5">
               <p className="font-bold text-indigo-950 text-xs mb-1">What you get on Enterprise:</p>
               <ul className="list-disc pl-4 space-y-1 text-indigo-900 text-[11px]">
-                <li>10,000 Credential Credits Included (₦65 / cert)</li>
-                <li>Custom Domain & White-Label Portal (Zero ProofDeck Branding)</li>
+                <li>10,000 Credential Credits / Year</li>
+                <li>Custom Domain & 100% White-Label Portal (Zero ProofDeck Branding)</li>
                 <li>Exclusive High-Res PNG & PDF Downloads</li>
                 <li>Unlimited Bulk Issuance & Multi-Seat Access</li>
-                <li>Priority Dedicated Support & VIP Assistance</li>
+                <li>Onboarding Assistance & Priority Support</li>
+                <li>Unused Credits Partial Rollover (Up to 25% on Renewal)</li>
               </ul>
             </div>
           </Modal.Body>
