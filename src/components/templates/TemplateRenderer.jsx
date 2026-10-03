@@ -52,6 +52,7 @@ const TemplateRenderer = ({ template, formData = {}, isFullscreen = false }) => 
     combinedData.signature = combinedData.signature || "Signature";
     combinedData.issuer_name = combinedData.issuer_name || "Issuer Name";
     combinedData.verification_id = combinedData.verification_id || "pending-id";
+    combinedData.verification_url = combinedData.verification_url || (typeof window !== "undefined" ? `${window.location.origin}/verify/${combinedData.verification_id}` : `https://www.proofdeck.app/verify/${combinedData.verification_id}`);
     combinedData.extra_fields = combinedData.extra_fields || {};
     
     // Convert key-value pairs to array for iteration if needed

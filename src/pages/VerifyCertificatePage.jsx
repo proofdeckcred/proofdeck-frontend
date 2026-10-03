@@ -17,6 +17,7 @@ import {
   Copy,
   Check,
   Twitter,
+  LogIn,
 } from "lucide-react";
 import TemplateRenderer from "../components/templates/TemplateRenderer";
 import PublicHeader from "../components/PublicHeader";
@@ -278,20 +279,28 @@ const VerifyCertificatePage = () => {
                   {brand.company_name}
                 </span>
               </div>
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2.5 sm:gap-3">
                 {brand.website_url && (
                   <a
                     href={brand.website_url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-xs font-semibold text-slate-600 hover:text-slate-900 transition-colors hidden sm:inline-block no-underline"
+                    className="text-xs font-semibold text-slate-600 hover:text-slate-900 transition-colors hidden md:inline-block no-underline"
                   >
                     Visit Website →
                   </a>
                 )}
-                <span className="text-xs font-bold px-3 py-1 bg-emerald-50 text-emerald-700 rounded-full border border-emerald-200 flex items-center gap-1.5">
-                  <CheckCircle size={14} className="text-emerald-600" /> Official Portal
+                <span className="text-xs font-bold px-2.5 sm:px-3 py-1 bg-emerald-50 text-emerald-700 rounded-full border border-emerald-200 flex items-center gap-1.5 shrink-0">
+                  <CheckCircle size={13} className="text-emerald-600" /> <span className="hidden xs:inline">Official</span> Portal
                 </span>
+                <Link
+                  to="/login"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-250 transition-colors no-underline shadow-2xs shrink-0 cursor-pointer"
+                  title="Sign in to your issuer workspace"
+                >
+                  <LogIn size={13} className="text-slate-500" />
+                  <span>Issuer Sign In</span>
+                </Link>
               </div>
             </div>
           </div>
@@ -422,7 +431,7 @@ const VerifyCertificatePage = () => {
               {/* Share Section (Only if Valid) */}
               {certificate.status === "valid" && (
                 <ShareCredentialSection
-                  currentUrl={window.location.href}
+                  currentUrl={certificate.verification_url || window.location.href}
                   companyName={company?.name || "ProofDeck"}
                   certificate={certificate}
                 />
@@ -449,8 +458,17 @@ const VerifyCertificatePage = () => {
                 </a>
               </p>
             )}
+            <div className="pt-1">
+              <Link
+                to="/login"
+                className="text-xs text-slate-400 hover:text-slate-600 font-medium transition-colors no-underline inline-flex items-center gap-1"
+              >
+                <LogIn size={12} />
+                <span>Issuer & Staff Sign In</span>
+              </Link>
+            </div>
             {!brand.hide_badge && (
-              <p className="text-[11px] text-slate-400 pt-2 mb-0">
+              <p className="text-[11px] text-slate-400 pt-1 mb-0">
                 Secured and verified by{" "}
                 <a
                   href="https://www.proofdeck.app"

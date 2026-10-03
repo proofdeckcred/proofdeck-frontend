@@ -31,6 +31,8 @@ import {
   DollarSign,
   QrCode,
   Lock,
+  Copy,
+  Check,
 } from "lucide-react";
 import toast, { Toaster } from "react-hot-toast";
 import TemplateRenderer from "../components/templates/TemplateRenderer";
@@ -69,6 +71,7 @@ function ViewCertificatePage() {
   const [error, setError] = useState("");
   const [downloading, setDownloading] = useState(false);
   const [showFullscreen, setShowFullscreen] = useState(false);
+  const [copiedLink, setCopiedLink] = useState(false);
 
   // Status Change Confirmation States
   const [showStatusModal, setShowStatusModal] = useState(false);
@@ -260,6 +263,15 @@ function ViewCertificatePage() {
   }
 
   const isValid = certificate.status === "valid";
+  const verificationUrl = certificate?.verification_url || (certificate?.verification_id ? `${window.location.origin}/verify/${certificate.verification_id}` : "");
+
+  const handleCopyLink = () => {
+    if (!verificationUrl) return;
+    navigator.clipboard.writeText(verificationUrl);
+    setCopiedLink(true);
+    toast.success("Verification link copied to clipboard!");
+    setTimeout(() => setCopiedLink(false), 2000);
+  };
 
   return (
     <ErrorBoundary>
@@ -459,7 +471,7 @@ function ViewCertificatePage() {
               
               <div className="bg-slate-50 p-4 rounded-xl border border-slate-200/60 inline-block mb-4 shadow-inner">
                 <QRCode
-                  value={`${window.location.origin}/verify/${certificate.verification_id}`}
+                  value={verificationUrl}
                   size={120}
                   className="mix-blend-multiply"
                 />
@@ -475,21 +487,41 @@ function ViewCertificatePage() {
                 </code>
               </div>
 
-              <a
-                href={`${window.location.origin}/verify/${certificate.verification_id}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className={`flex items-center justify-center gap-2 w-full py-2 border rounded-xl font-bold transition-all text-xs cursor-pointer ${
-                  isInvitation 
-                    ? "bg-rose-50 text-rose-700 border-rose-200 hover:bg-rose-100/50" 
-                    : isReceipt 
-                    ? "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100/50" 
-                    : "bg-indigo-50 text-indigo-700 border-indigo-200 hover:bg-indigo-100/50"
-                }`}
-              >
-                <Globe size={13} />
-                <span>Open Public Verification Page</span>
-              </a>
+              <div className="space-y-2">
+                <a
+                  href={verificationUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={`flex items-center justify-center gap-2 w-full py-2 border rounded-xl font-bold transition-all text-xs cursor-pointer no-underline ${
+                    isInvitation 
+                      ? "bg-rose-50 text-rose-700 border-rose-200 hover:bg-rose-100/50" 
+                      : isReceipt 
+                      ? "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100/50" 
+                      : "bg-indigo-50 text-indigo-700 border-indigo-200 hover:bg-indigo-100/50"
+                  }`}
+                >
+                  <Globe size={13} />
+                  <span>Open Public Verification Page</span>
+                </a>
+
+                <button
+                  type="button"
+                  onClick={handleCopyLink}
+                  className="flex items-center justify-center gap-2 w-full py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-250 rounded-xl font-bold transition-all text-xs cursor-pointer shadow-2xs"
+                >
+                  {copiedLink ? (
+                    <>
+                      <Check size={13} className="text-emerald-600" />
+                      <span className="text-emerald-700">Copied Link!</span>
+                    </>
+                  ) : (
+                    <>
+                      <Copy size={13} className="text-slate-500" />
+                      <span>Copy Verification Link</span>
+                    </>
+                  )}
+                </button>
+              </div>
             </div>
 
           </div>

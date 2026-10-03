@@ -4,6 +4,7 @@ import { loginUser, resendVerificationEmail } from "../api";
 import { useUser } from "../context/UserContext";
 import { Mail, Lock, Loader2, AlertCircle, Eye, EyeOff, ArrowRight, CheckCircle } from "lucide-react";
 import AuthLayout from "../layouts/AuthLayout";
+import { useWhiteLabel } from "../context/WhiteLabelContext";
 
 function LoginPage() {
   const [formData, setFormData] = useState({ email: "", password: "" });
@@ -15,6 +16,7 @@ function LoginPage() {
   const [resending, setResending] = useState(false);
   const [resendMessage, setResendMessage] = useState("");
   const { refreshUser } = useUser();
+  const { isWhiteLabel, brand } = useWhiteLabel();
   const navigate = useNavigate();
 
   // Handle input change
@@ -86,10 +88,18 @@ function LoginPage() {
     }
   };
 
+  const pageTitle = isWhiteLabel && brand?.company_name
+    ? `Welcome to ${brand.company_name}`
+    : "Welcome back";
+
+  const pageSubtitle = isWhiteLabel && brand?.company_name
+    ? `Sign in to access your ${brand.company_name} issuer workspace.`
+    : "Sign in to your account to continue managing your credentials.";
+
   return (
     <AuthLayout
-      title="Welcome back"
-      subtitle="Sign in to your account to continue managing your credentials."
+      title={pageTitle}
+      subtitle={pageSubtitle}
       linkText="Create an account"
       linkTo="/signup"
       linkLabel="Don't have an account?"
