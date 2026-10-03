@@ -46,6 +46,7 @@ import {
   Zap,
 } from "lucide-react";
 import { Modal, Spinner, Button } from "react-bootstrap";
+import WhitelabelSettingsTab from "../components/settings/WhitelabelSettingsTab";
 
 const Section = ({ title, icon: Icon, children, className = "" }) => (
   <div
@@ -626,6 +627,7 @@ function SettingsPage() {
     { id: "profile", label: "Profile", icon: User },
     { id: "referrals", label: "Referrals", icon: Gift },
     ...(isCompanyOwnerOrAdmin ? [{ id: "team", label: "Team", icon: Building }] : []),
+    ...(isCompanyOwnerOrAdmin ? [{ id: "whitelabel", label: "Branding & Domain", icon: Globe }] : []),
     { id: "billing", label: "Billing", icon: CreditCard },
     {
       id: "developer",
@@ -956,6 +958,10 @@ function SettingsPage() {
             )}
           </Section>
         </div>
+      )}
+
+      {activeTab === "whitelabel" && isCompanyOwnerOrAdmin && (
+        <WhitelabelSettingsTab isEnterprise={currentUser?.role === "enterprise"} />
       )}
 
       {activeTab === "billing" && (

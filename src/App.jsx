@@ -6,6 +6,7 @@ import "lenis/dist/lenis.css";
 // Context providers
 import { UserProvider } from "./context/UserContext";
 import { AdminAuthProvider } from "./context/AdminAuthContext";
+import { WhiteLabelProvider, useWhiteLabel } from "./context/WhiteLabelContext";
 
 // Core Public pages (Direct imports for fastest SSR/SSG & initial render)
 import LandingPage from "./pages/LandingPage";
@@ -94,6 +95,13 @@ const PageLoader = () => (
   </div>
 );
 
+const RootRoute = () => {
+  const { isWhiteLabel, loading } = useWhiteLabel();
+  if (loading) return <PageLoader />;
+  if (isWhiteLabel) return <VerifyCertificatePage />;
+  return <LandingPage />;
+};
+
 function ScrollToTop() {
   const { pathname } = useLocation();
 
@@ -124,13 +132,14 @@ function ScrollToTop() {
 
 function App() {
   return (
-    <UserProvider>
-      <AdminAuthProvider>
-        <ScrollToTop />
-        <Suspense fallback={<PageLoader />}>
-          <Routes>
-            {/* Core Public Marketing routes */}
-            <Route path="/" element={<LandingPage />} />
+    <WhiteLabelProvider>
+      <UserProvider>
+        <AdminAuthProvider>
+          <ScrollToTop />
+          <Suspense fallback={<PageLoader />}>
+            <Routes>
+              {/* Core Public Marketing routes */}
+              <Route path="/" element={<RootRoute />} />
             <Route path="/features" element={<FeaturesPage />} />
             <Route path="/pricing" element={<PricingPage />} />
             <Route path="/legal" element={<LegalPage />} />
@@ -217,6 +226,7 @@ function App() {
         </Suspense>
       </AdminAuthProvider>
     </UserProvider>
+    </WhiteLabelProvider>
   );
 }
 

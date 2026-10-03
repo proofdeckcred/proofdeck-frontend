@@ -367,3 +367,11 @@ export const uploadBlogImage = (formData) =>
   API.post("/admin/blog/upload-image", formData, {
     headers: { "Content-Type": "multipart/form-data" }
   });
+
+// WHITE LABEL & CUSTOM DOMAINS API
+export const getWhitelabelSettings = () => API.get("/whitelabel/settings");
+export const setupCustomDomain = (data) => API.post("/whitelabel/domain", data);
+export const verifyCustomDomain = () => API.post("/whitelabel/verify-domain");
+export const updateBranding = (data) => API.put("/whitelabel/branding", data);
+export const removeCustomDomain = () => API.delete("/whitelabel/domain");
+

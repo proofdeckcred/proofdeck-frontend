@@ -22,6 +22,7 @@ import TemplateRenderer from "../components/templates/TemplateRenderer";
 import PublicHeader from "../components/PublicHeader";
 import PublicFooter from "../components/PublicFooter";
 import SEO from "../components/SEO";
+import { useWhiteLabel } from "../context/WhiteLabelContext";
 
 // --- SHARE SECTION COMPONENT ---
 const ShareCredentialSection = ({ currentUrl, companyName, certificate }) => {
@@ -204,6 +205,7 @@ const ShareCredentialSection = ({ currentUrl, companyName, certificate }) => {
 
 // --- MAIN PAGE COMPONENT ---
 const VerifyCertificatePage = () => {
+  const { brand, isWhiteLabel } = useWhiteLabel();
   const { verificationId: paramId } = useParams();
   const [verificationId, setVerificationId] = useState(paramId || "");
   const [certificate, setCertificate] = useState(null);
@@ -255,12 +257,48 @@ const VerifyCertificatePage = () => {
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col font-sans">
       <SEO
-        title="Credential Verification | ProofDeck"
-        description="Verify official ProofDeck digital credential authenticity."
-        canonicalUrl="https://www.proofdeck.app/verify"
+        title={isWhiteLabel ? `${brand.company_name} — Credential Verification` : "Credential Verification | ProofDeck"}
+        description={isWhiteLabel ? `Verify official digital credentials issued by ${brand.company_name}.` : "Verify official ProofDeck digital credential authenticity."}
+        canonicalUrl={typeof window !== "undefined" ? window.location.href : "https://www.proofdeck.app/verify"}
         noIndex={true}
       />
-      <PublicHeader />
+      {isWhiteLabel ? (
+        <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-sm border-b border-gray-100 shadow-2xs">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex justify-between items-center h-16">
+              <div className="flex items-center gap-3">
+                {brand.logo_url && (
+                  <img
+                    src={brand.logo_url}
+                    alt={brand.company_name}
+                    className="h-8 max-w-[180px] object-contain rounded"
+                  />
+                )}
+                <span className="font-bold text-lg text-slate-900 tracking-tight">
+                  {brand.company_name}
+                </span>
+              </div>
+              <div className="flex items-center gap-3">
+                {brand.website_url && (
+                  <a
+                    href={brand.website_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-xs font-semibold text-slate-600 hover:text-slate-900 transition-colors hidden sm:inline-block no-underline"
+                  >
+                    Visit Website →
+                  </a>
+                )}
+                <span className="text-xs font-bold px-3 py-1 bg-emerald-50 text-emerald-700 rounded-full border border-emerald-200 flex items-center gap-1.5">
+                  <CheckCircle size={14} className="text-emerald-600" /> Official Portal
+                </span>
+              </div>
+            </div>
+          </div>
+        </header>
+      ) : (
+        <PublicHeader />
+      )}
 
       <main className="flex-grow py-12 px-4 sm:px-6 lg:px-8">
         <div className="max-w-3xl mx-auto">
@@ -393,7 +431,42 @@ const VerifyCertificatePage = () => {
           )}
         </div>
       </main>
-      <PublicFooter />
+
+      {isWhiteLabel ? (
+        <footer className="bg-white border-t border-gray-100 py-8 px-4 text-center mt-auto">
+          <div className="max-w-7xl mx-auto space-y-2">
+            <p className="text-xs text-slate-500 mb-0">
+              © {new Date().getFullYear()} <strong>{brand.company_name}</strong>. All rights reserved.
+            </p>
+            {brand.support_email && (
+              <p className="text-xs text-slate-400 mb-0">
+                Inquiries & Verification Support:{" "}
+                <a
+                  href={`mailto:${brand.support_email}`}
+                  className="underline hover:text-slate-600 font-medium"
+                >
+                  {brand.support_email}
+                </a>
+              </p>
+            )}
+            {!brand.hide_badge && (
+              <p className="text-[11px] text-slate-400 pt-2 mb-0">
+                Secured and verified by{" "}
+                <a
+                  href="https://www.proofdeck.app"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-medium text-slate-500 hover:text-slate-700 underline"
+                >
+                  ProofDeck
+                </a>
+              </p>
+            )}
+          </div>
+        </footer>
+      ) : (
+        <PublicFooter />
+      )}
     </div>
   );
 };
