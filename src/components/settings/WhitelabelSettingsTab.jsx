@@ -25,8 +25,8 @@ import {
   removeCustomDomain
 } from "../../api";
 
-const WhitelabelSettingsTab = ({ isEnterprise = false }) => {
-  const [loading, setLoading] = useState(true);
+const WhitelabelSettingsTab = ({ isEnterprise = false, onUpgrade }) => {
+  const [loading, setLoading] = useState(isEnterprise);
   const [savingBranding, setSavingBranding] = useState(false);
   const [connectingDomain, setConnectingDomain] = useState(false);
   const [checkingDns, setCheckingDns] = useState(false);
@@ -73,8 +73,12 @@ const WhitelabelSettingsTab = ({ isEnterprise = false }) => {
   };
 
   useEffect(() => {
-    loadSettings();
-  }, []);
+    if (isEnterprise) {
+      loadSettings();
+    } else {
+      setLoading(false);
+    }
+  }, [isEnterprise]);
 
   const handleConnectDomain = async (e) => {
     e.preventDefault();
@@ -154,6 +158,51 @@ const WhitelabelSettingsTab = ({ isEnterprise = false }) => {
       <div className="bg-white rounded-2xl border border-slate-200 p-12 text-center">
         <Loader2 className="animate-spin text-indigo-600 mx-auto mb-3" size={32} />
         <p className="text-sm font-semibold text-slate-600">Loading white-label configuration...</p>
+      </div>
+    );
+  }
+
+  if (!isEnterprise) {
+    return (
+      <div className="bg-white rounded-2xl border border-slate-200 p-8 sm:p-12 text-center max-w-2xl mx-auto shadow-xs">
+        <div className="w-16 h-16 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center mx-auto mb-5 shadow-xs">
+          <Globe size={32} />
+        </div>
+        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-amber-50 text-amber-800 border border-amber-200 mb-4">
+          <Shield size={13} className="text-amber-600" /> Enterprise Plan Exclusivity
+        </span>
+        <h2 className="text-2xl font-black text-slate-900 tracking-tight mb-3">
+          Custom Domain & White-Labeling
+        </h2>
+        <p className="text-sm text-slate-600 leading-relaxed mb-6 max-w-lg mx-auto">
+          Host public credential verification on your own branded domain (e.g. <code className="font-mono text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded">credentials.yourcompany.com</code>), replace ProofDeck branding with your company logo & colors, and deliver emails under your custom sender name.
+        </p>
+        <div className="bg-slate-50 border border-slate-200/80 rounded-xl p-4 mb-8 text-left space-y-2.5 max-w-md mx-auto">
+          <div className="flex items-center gap-2.5 text-xs font-semibold text-slate-700">
+            <Check size={15} className="text-emerald-600 stroke-[3]" />
+            <span>Dedicated Custom Domain & Automated Cloudflare SSL</span>
+          </div>
+          <div className="flex items-center gap-2.5 text-xs font-semibold text-slate-700">
+            <Check size={15} className="text-emerald-600 stroke-[3]" />
+            <span>100% White-Label (Zero ProofDeck badges)</span>
+          </div>
+          <div className="flex items-center gap-2.5 text-xs font-semibold text-slate-700">
+            <Check size={15} className="text-emerald-600 stroke-[3]" />
+            <span>Custom Email Sender Name & Primary Brand Color</span>
+          </div>
+          <div className="flex items-center gap-2.5 text-xs font-semibold text-slate-700">
+            <Check size={15} className="text-emerald-600 stroke-[3]" />
+            <span>10,000 Credential Credits Included</span>
+          </div>
+        </div>
+        {onUpgrade && (
+          <button
+            onClick={onUpgrade}
+            className="inline-flex items-center justify-center px-6 py-3 rounded-xl text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-700 transition-colors shadow-sm cursor-pointer"
+          >
+            Upgrade to Enterprise (₦650,000)
+          </button>
+        )}
       </div>
     );
   }

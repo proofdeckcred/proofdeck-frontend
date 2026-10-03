@@ -310,6 +310,11 @@ function SettingsPage() {
   const isFreeUser = user && user.role?.toLowerCase() === "free";
   const hasApiAccess =
     user && ["pro", "enterprise"].includes(user.role?.toLowerCase());
+  const isEnterprise =
+    Boolean(
+      (user && user.role?.toLowerCase() === "enterprise") ||
+      (localUser && localUser.role?.toLowerCase() === "enterprise")
+    );
   const isCompanyUser = user && user.company;
   const isCanvaConnected = user && user.canva_access_token;
   const isCompanyOwner = user && user.company && user.company.active_role === "owner" && workspace !== "personal";
@@ -630,7 +635,16 @@ function SettingsPage() {
     { id: "profile", label: "Profile", icon: User },
     { id: "referrals", label: "Referrals", icon: Gift },
     ...(isCompanyOwnerOrAdmin ? [{ id: "team", label: "Team", icon: Building }] : []),
-    ...(isCompanyOwnerOrAdmin ? [{ id: "whitelabel", label: "Branding & Domain", icon: Globe }] : []),
+    ...(isCompanyOwnerOrAdmin
+      ? [
+          {
+            id: "whitelabel",
+            label: "Branding & Domain",
+            icon: Globe,
+            locked: !isEnterprise,
+          },
+        ]
+      : []),
     { id: "billing", label: "Billing", icon: CreditCard },
     {
       id: "developer",
@@ -964,7 +978,10 @@ function SettingsPage() {
       )}
 
       {activeTab === "whitelabel" && isCompanyOwnerOrAdmin && (
-        <WhitelabelSettingsTab isEnterprise={user?.role === "enterprise" || localUser?.role === "enterprise"} />
+        <WhitelabelSettingsTab
+          isEnterprise={isEnterprise}
+          onUpgrade={() => setActiveTab("billing")}
+        />
       )}
 
       {activeTab === "billing" && (
