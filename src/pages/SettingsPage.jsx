@@ -961,7 +961,7 @@ function SettingsPage() {
       )}
 
       {activeTab === "whitelabel" && isCompanyOwnerOrAdmin && (
-        <WhitelabelSettingsTab isEnterprise={currentUser?.role === "enterprise"} />
+        <WhitelabelSettingsTab isEnterprise={user?.role === "enterprise" || localUser?.role === "enterprise"} />
       )}
 
       {activeTab === "billing" && (
