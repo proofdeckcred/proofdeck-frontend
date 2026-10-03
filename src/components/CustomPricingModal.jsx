@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { X, Sparkles, Send, CheckCircle2, Loader2, Building2 } from "lucide-react";
+import { X, MessageSquare, Send, CheckCircle2, Loader2, Building2 } from "lucide-react";
 import toast from "react-hot-toast";
 import { sendContactMessage } from "../api";
 
@@ -55,16 +55,16 @@ export default function CustomPricingModal({ isOpen, onClose }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs animate-in fade-in duration-200">
       <div 
-        className="relative w-full max-w-lg bg-white rounded-2xl sm:rounded-3xl shadow-2xl border border-slate-100 overflow-hidden"
+        className="relative w-full max-w-lg bg-white rounded-2xl sm:rounded-3xl shadow-xl border border-blue-100 overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between p-5 sm:p-6 border-b border-slate-100 bg-slate-50/50">
+        <div className="flex items-center justify-between p-5 sm:p-6 border-b border-blue-100/80 bg-gradient-to-r from-blue-50/70 to-sky-50/50">
           <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
-              <Sparkles size={18} />
+            <div className="w-9 h-9 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center shadow-xs">
+              <MessageSquare size={18} />
             </div>
             <div>
               <h3 className="text-base sm:text-lg font-bold text-slate-900 mb-0">
@@ -85,7 +85,7 @@ export default function CustomPricingModal({ isOpen, onClose }) {
 
         {submitted ? (
           <div className="p-8 sm:p-10 text-center space-y-4">
-            <div className="w-14 h-14 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center mx-auto">
+            <div className="w-14 h-14 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center mx-auto shadow-xs">
               <CheckCircle2 size={32} />
             </div>
             <h4 className="text-xl font-bold text-slate-900">Inquiry Received</h4>
@@ -95,7 +95,7 @@ export default function CustomPricingModal({ isOpen, onClose }) {
             <div className="pt-3">
               <button
                 onClick={handleClose}
-                className="px-6 py-2.5 bg-slate-900 text-white rounded-xl text-xs font-semibold hover:bg-slate-800 transition-colors"
+                className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-semibold transition-colors shadow-xs"
               >
                 Close Window
               </button>
@@ -114,7 +114,7 @@ export default function CustomPricingModal({ isOpen, onClose }) {
                   placeholder="Dr. Jane Smith"
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600"
+                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600"
                 />
               </div>
 
@@ -128,7 +128,7 @@ export default function CustomPricingModal({ isOpen, onClose }) {
                   placeholder="jane@university.edu.ng"
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600"
+                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600"
                 />
               </div>
             </div>
@@ -143,7 +143,7 @@ export default function CustomPricingModal({ isOpen, onClose }) {
                   placeholder="Apex University / Corp"
                   value={formData.company}
                   onChange={(e) => setFormData({ ...formData, company: e.target.value })}
-                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600"
+                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600"
                 />
               </div>
 
@@ -154,7 +154,7 @@ export default function CustomPricingModal({ isOpen, onClose }) {
                 <select
                   value={formData.volume}
                   onChange={(e) => setFormData({ ...formData, volume: e.target.value })}
-                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 bg-white"
+                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 bg-white"
                 >
                   <option value="20,000 – 50,000">20,000 – 50,000 / year</option>
                   <option value="50,000 – 100,000">50,000 – 100,000 / year</option>
@@ -174,7 +174,7 @@ export default function CustomPricingModal({ isOpen, onClose }) {
                 placeholder="E.g., We need custom LMS integration, custom certificate fields, or higher bulk batch sizes..."
                 value={formData.message}
                 onChange={(e) => setFormData({ ...formData, message: e.target.value })}
-                className="w-full px-3 py-2 text-xs border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600"
+                className="w-full px-3 py-2 text-xs border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600"
               />
             </div>
 
@@ -189,7 +189,7 @@ export default function CustomPricingModal({ isOpen, onClose }) {
               <button
                 type="submit"
                 disabled={loading}
-                className="inline-flex items-center gap-2 px-5 py-2.5 bg-indigo-600 text-white rounded-xl text-xs font-bold hover:bg-indigo-700 transition-colors disabled:opacity-50 cursor-pointer shadow-xs"
+                className="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white rounded-xl text-xs font-bold hover:bg-blue-700 transition-colors disabled:opacity-50 cursor-pointer shadow-xs"
               >
                 {loading ? (
                   <>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { MessageSquare, X, Send, Loader, ChevronLeft, Sparkles, Clock, ShieldCheck } from 'lucide-react';
+import { MessageSquare, X, Send, Loader, ChevronLeft, HelpCircle, Clock, ShieldCheck } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { sendSupportMessage, getChatHistory } from '../api';
 import toast from 'react-hot-toast';
@@ -231,8 +231,8 @@ const SupportWidget = () => {
               /* ==================== WELCOME SCREEN ==================== */
               <div className="flex-1 overflow-y-auto bg-white p-6 space-y-5">
                 <div>
-                  <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-50 border border-indigo-100 text-indigo-700 text-xs font-semibold mb-3">
-                    <Sparkles size={13} /> Live Support
+                  <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 border border-blue-100 text-blue-700 text-xs font-semibold mb-3">
+                    <HelpCircle size={13} /> Live Support
                   </div>
                   <h2
                     className="text-xl font-bold text-slate-900 tracking-tight"

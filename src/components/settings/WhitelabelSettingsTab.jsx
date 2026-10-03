@@ -7,14 +7,16 @@ import {
   Copy,
   ExternalLink,
   Palette,
-  Sparkles,
   RefreshCw,
   Trash2,
   Check,
   Building,
   Mail,
   Shield,
-  Layers
+  Layers,
+  Save,
+  Info,
+  ArrowRight
 } from "lucide-react";
 import toast from "react-hot-toast";
 import {
@@ -31,6 +33,8 @@ const WhitelabelSettingsTab = ({ isEnterprise = false, onUpgrade }) => {
   const [connectingDomain, setConnectingDomain] = useState(false);
   const [checkingDns, setCheckingDns] = useState(false);
   const [copiedTarget, setCopiedTarget] = useState(false);
+  const [sslValidationErrors, setSslValidationErrors] = useState([]);
+  const [diagnosticInfo, setDiagnosticInfo] = useState(null);
 
   const [settings, setSettings] = useState(null);
   const [domainInput, setDomainInput] = useState("");
@@ -63,6 +67,19 @@ const WhitelabelSettingsTab = ({ isEnterprise = false, onUpgrade }) => {
           custom_website_url: res.data.branding.custom_website_url || "",
           custom_sender_name: res.data.branding.custom_sender_name || "",
         });
+      }
+
+      // If pending DNS, automatically fetch live Cloudflare diagnostic status
+      if (res.data.domain_status === "pending_dns") {
+        try {
+          const diagRes = await verifyCustomDomain();
+          setDiagnosticInfo(diagRes.data);
+          if (diagRes.data?.ssl_validation_errors) {
+            setSslValidationErrors(diagRes.data.ssl_validation_errors);
+          }
+        } catch (diagErr) {
+          console.debug("Silent diagnostic fetch:", diagErr);
+        }
       }
     } catch (err) {
       console.error("Failed to load whitelabel settings:", err);
@@ -104,10 +121,16 @@ const WhitelabelSettingsTab = ({ isEnterprise = false, onUpgrade }) => {
     try {
       setCheckingDns(true);
       const res = await verifyCustomDomain();
+      setDiagnosticInfo(res.data);
+      const errors = res.data?.ssl_validation_errors || [];
+      setSslValidationErrors(errors);
+
       if (res.data?.is_active) {
         toast.success("Domain verified and SSL is active!");
+      } else if (errors.length > 0) {
+        toast.error(errors[0]?.message || "SSL validation issue detected.");
       } else {
-        toast("DNS verification pending. Please allow up to a few minutes for propagation.", {
+        toast("DNS check completed. Propagating...", {
           icon: "⏳",
         });
       }
@@ -295,116 +318,267 @@ const WhitelabelSettingsTab = ({ isEnterprise = false, onUpgrade }) => {
         )}
 
         {/* --- CASE B: DOMAIN IS PENDING DNS --- */}
-        {status === "pending_dns" && (
-          <div className="space-y-6">
-            <div className="bg-amber-50/70 border border-amber-200 rounded-xl p-5">
-              <div className="flex items-start gap-3">
-                <AlertCircle size={20} className="text-amber-600 shrink-0 mt-0.5" />
-                <div className="flex-1">
-                  <h4 className="text-sm font-bold text-amber-900 mb-1">
-                    DNS Configuration Required for <span className="font-mono">{domain}</span>
-                  </h4>
-                  <p className="text-xs text-amber-800 leading-relaxed mb-4">
-                    Add the following CNAME record in your domain registrar (GoDaddy, Namecheap, Cloudflare, Route53, etc.).
-                  </p>
+        {status === "pending_dns" && (() => {
+          const hasCaaError = sslValidationErrors.some(e => e.message?.toLowerCase().includes("caa")) ||
+            diagnosticInfo?.ssl_validation_errors?.some(e => e.message?.toLowerCase().includes("caa"));
 
-                  {/* DNS Record Box */}
-                  <div className="bg-white border border-amber-300/80 rounded-lg p-3 sm:p-4 font-mono text-xs overflow-x-auto shadow-2xs">
-                    <div className="grid grid-cols-12 gap-2 text-slate-500 font-sans font-bold text-[11px] uppercase pb-2 border-b border-slate-100">
-                      <div className="col-span-3">Type</div>
-                      <div className="col-span-4">Name / Host</div>
-                      <div className="col-span-5">Target / Value</div>
-                    </div>
-                    <div className="grid grid-cols-12 gap-2 text-slate-900 pt-2.5 items-center">
-                      <div className="col-span-3 font-bold text-indigo-600">CNAME</div>
-                      <div className="col-span-4 select-all font-semibold">
-                        {domain.split(".")[0]} <span className="text-slate-400 font-sans text-[11px]">(or {domain})</span>
-                      </div>
-                      <div className="col-span-5 flex items-center justify-between gap-2">
-                        <span className="text-emerald-700 font-bold select-all">{fallbackOrigin}</span>
-                        <button
-                          type="button"
-                          onClick={copyDnsTarget}
-                          className="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded text-[11px] font-sans font-semibold transition-colors flex items-center gap-1 shrink-0"
-                        >
-                          {copiedTarget ? <Check size={12} className="text-emerald-600" /> : <Copy size={12} />}
-                          {copiedTarget ? "Copied" : "Copy"}
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="mt-4 flex flex-wrap items-center gap-3">
-                    <button
-                      type="button"
-                      onClick={handleVerifyDns}
-                      disabled={checkingDns}
-                      className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-xs font-bold hover:bg-indigo-700 transition-colors flex items-center gap-2 shadow-sm"
-                    >
-                      {checkingDns ? (
-                        <>
-                          <Loader2 size={14} className="animate-spin" /> Verifying DNS...
-                        </>
-                      ) : (
-                        <>
-                          <CheckCircle2 size={14} /> Verify DNS & Activate
-                        </>
+          return (
+            <div className="space-y-6">
+              <div className="bg-amber-50/70 border border-amber-200 rounded-xl p-5 sm:p-6 space-y-4">
+                <div className="flex items-start gap-3">
+                  <AlertCircle size={22} className="text-amber-600 shrink-0 mt-0.5" />
+                  <div className="flex-1">
+                    <div className="flex flex-wrap items-center justify-between gap-2 mb-1">
+                      <h4 className="text-sm font-bold text-amber-900 mb-0">
+                        DNS Configuration & Verification for <span className="font-mono text-indigo-700">{domain}</span>
+                      </h4>
+                      {diagnosticInfo && (
+                        <div className="flex items-center gap-2 text-[11px] font-semibold">
+                          <span className={`px-2 py-0.5 rounded-full border ${diagnosticInfo.hostname_status === "active" ? "bg-emerald-100 text-emerald-800 border-emerald-300" : "bg-amber-100 text-amber-800 border-amber-300"}`}>
+                            Routing: {diagnosticInfo.hostname_status || "checking..."}
+                          </span>
+                          <span className={`px-2 py-0.5 rounded-full border ${diagnosticInfo.ssl_status === "active" ? "bg-emerald-100 text-emerald-800 border-emerald-300" : "bg-amber-100 text-amber-800 border-amber-300"}`}>
+                            SSL: {diagnosticInfo.ssl_status || "pending"}
+                          </span>
+                        </div>
                       )}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={handleDisconnectDomain}
-                      className="px-3.5 py-2 bg-white text-slate-600 border border-slate-200 rounded-lg text-xs font-medium hover:bg-slate-50 transition-colors"
-                    >
-                      Cancel / Change Domain
-                    </button>
+                    </div>
+                    <p className="text-xs text-amber-800 leading-relaxed mb-3">
+                      Add the following CNAME record in your domain registrar (GoDaddy, Namecheap, Vercel, Cloudflare, Route53, etc.).
+                    </p>
+
+                    {/* DNS Record Box */}
+                    <div className="bg-white border border-amber-300/80 rounded-xl p-3 sm:p-4 font-mono text-xs overflow-x-auto shadow-2xs">
+                      <div className="grid grid-cols-12 gap-2 text-slate-500 font-sans font-bold text-[11px] uppercase pb-2 border-b border-slate-100">
+                        <div className="col-span-3">Type</div>
+                        <div className="col-span-4">Name / Host</div>
+                        <div className="col-span-5">Target / Value</div>
+                      </div>
+                      <div className="grid grid-cols-12 gap-2 text-slate-900 pt-2.5 items-center">
+                        <div className="col-span-3 font-bold text-indigo-600">CNAME</div>
+                        <div className="col-span-4 select-all font-semibold">
+                          {domain.split(".")[0]} <span className="text-slate-400 font-sans text-[11px]">(or {domain})</span>
+                        </div>
+                        <div className="col-span-5 flex items-center justify-between gap-2">
+                          <span className="text-emerald-700 font-bold select-all">{fallbackOrigin}</span>
+                          <button
+                            type="button"
+                            onClick={copyDnsTarget}
+                            className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-[11px] font-sans font-semibold transition-colors flex items-center gap-1 shrink-0 cursor-pointer"
+                          >
+                            {copiedTarget ? <Check size={12} className="text-emerald-600" /> : <Copy size={12} />}
+                            {copiedTarget ? "Copied" : "Copy"}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Prominent CAA Resolution Alert */}
+                    {hasCaaError && (
+                      <div className="mt-4 p-4 bg-white border-2 border-amber-400 rounded-xl space-y-2.5 shadow-2xs">
+                        <div className="flex items-center gap-2">
+                          <span className="px-2 py-0.5 bg-amber-500 text-white text-[11px] font-bold rounded uppercase tracking-wider">
+                            Action Required
+                          </span>
+                          <h5 className="text-xs sm:text-sm font-bold text-amber-950 mb-0">
+                            Vercel / DNS CAA Records Blocking SSL Issuance
+                          </h5>
+                        </div>
+                        <p className="text-xs text-amber-900 leading-relaxed mb-0">
+                          Your CNAME is detected, but SSL certificate issuance is currently blocked by your domain's <strong>CAA records</strong>. Vercel automatically creates CAA records restricting certificates to Google and Sectigo.
+                        </p>
+                        <div className="bg-amber-50/80 border border-amber-200 rounded-lg p-3 text-xs space-y-2 text-slate-800">
+                          <div className="font-bold text-slate-900">
+                            Fix this in your DNS dashboard (Vercel / Registrar) in 30 seconds:
+                          </div>
+                          <div className="space-y-1 text-xs">
+                            <div className="flex items-start gap-2">
+                              <span className="font-bold text-indigo-700 shrink-0">Step 1:</span>
+                              <span>In your Vercel DNS settings, click <strong>Add Record</strong> and create a CAA record:</span>
+                            </div>
+                            <div className="ml-6 p-2 bg-white rounded border border-amber-200 font-mono text-[11px] grid grid-cols-3 gap-2">
+                              <div><strong>Type:</strong> CAA</div>
+                              <div><strong>Name:</strong> @ (or verify)</div>
+                              <div><strong>Value:</strong> 0 issue "ssl.com"</div>
+                            </div>
+                            <div className="flex items-start gap-2 pt-1">
+                              <span className="font-bold text-slate-600 shrink-0">Or Alternative:</span>
+                              <span className="text-slate-600">Delete the existing restrictive <code className="bg-white px-1 py-0.5 rounded border border-amber-200">pki.goog</code> and <code className="bg-white px-1 py-0.5 rounded border border-amber-200">sectigo.com</code> CAA records in Vercel.</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Other SSL Errors */}
+                    {sslValidationErrors.length > 0 && !hasCaaError && (
+                      <div className="mt-4 p-3 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-800">
+                        <strong>SSL Validation Status:</strong>
+                        <ul className="list-disc pl-4 mt-1 space-y-0.5">
+                          {sslValidationErrors.map((err, idx) => (
+                            <li key={idx}>{err.message || JSON.stringify(err)}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+
+                    <div className="mt-4 flex flex-wrap items-center gap-3">
+                      <button
+                        type="button"
+                        onClick={handleVerifyDns}
+                        disabled={checkingDns}
+                        className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-xs font-bold hover:bg-indigo-700 transition-colors flex items-center gap-2 shadow-sm cursor-pointer disabled:opacity-50"
+                      >
+                        {checkingDns ? (
+                          <>
+                            <Loader2 size={14} className="animate-spin" /> Verifying DNS & SSL...
+                          </>
+                        ) : (
+                          <>
+                            <CheckCircle2 size={14} /> Re-Check DNS & Activate
+                          </>
+                        )}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleDisconnectDomain}
+                        className="px-3.5 py-2 bg-white text-slate-600 border border-slate-200 rounded-lg text-xs font-medium hover:bg-slate-50 transition-colors cursor-pointer"
+                      >
+                        Cancel / Change Domain
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
-          </div>
-        )}
+          );
+        })()}
 
         {/* --- CASE C: UNCONFIGURED --- */}
         {status === "unconfigured" && (
-          <form onSubmit={handleConnectDomain} className="space-y-4">
-            <div className="max-w-xl">
-              <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">
-                Domain or Subdomain
-              </label>
-              <div className="flex gap-2">
-                <div className="relative flex-1">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
-                    <Globe size={16} />
-                  </div>
-                  <input
-                    type="text"
-                    placeholder="credentials.yourcompany.com"
-                    value={domainInput}
-                    onChange={(e) => setDomainInput(e.target.value)}
-                    className="w-full pl-9 pr-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
-                  />
+          <div className="space-y-6">
+            {/* Step-by-Step Pre-Connection Setup Guide */}
+            <div className="p-5 sm:p-6 bg-gradient-to-r from-blue-50/70 via-sky-50/40 to-indigo-50/50 border border-blue-200/80 rounded-2xl space-y-4">
+              <div className="flex items-center gap-2">
+                <div className="w-7 h-7 rounded-lg bg-blue-600 text-white text-xs font-bold flex items-center justify-center shadow-2xs">
+                  <Info size={16} />
                 </div>
-                <button
-                  type="submit"
-                  disabled={connectingDomain || !domainInput.trim()}
-                  className="px-5 py-2.5 bg-indigo-600 text-white rounded-xl text-xs font-bold hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2 shrink-0 shadow-sm"
-                >
-                  {connectingDomain ? (
-                    <>
-                      <Loader2 size={14} className="animate-spin" /> Connecting...
-                    </>
-                  ) : (
-                    "Connect Domain"
-                  )}
-                </button>
+                <div>
+                  <h3 className="text-sm font-bold text-slate-900 mb-0">
+                    How to Connect Your Custom Domain (3 Easy Steps)
+                  </h3>
+                  <p className="text-[12px] text-slate-500 mb-0">
+                    Follow these steps to host credential verification on your own brand's URL with automatic SSL.
+                  </p>
+                </div>
               </div>
-              <p className="text-xs text-slate-400 mt-2">
-                Example: <span className="font-mono text-slate-600">credentials.acme.edu</span> or{" "}
-                <span className="font-mono text-slate-600">verify.acme.com</span>
-              </p>
+
+              {/* 3 Step Cards */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5 pt-1">
+                <div className="bg-white border border-blue-100 rounded-xl p-4 shadow-2xs space-y-2">
+                  <div className="flex items-center gap-2">
+                    <span className="w-5 h-5 rounded-full bg-blue-100 text-blue-700 text-[11px] font-bold flex items-center justify-center">1</span>
+                    <span className="text-xs font-bold text-slate-900">Choose Subdomain</span>
+                  </div>
+                  <p className="text-[12px] text-slate-600 leading-relaxed mb-0">
+                    Decide on your verification URL, e.g. <code className="text-blue-700 font-mono text-[11px] bg-blue-50 px-1 py-0.5 rounded">verify.yourdomain.com</code> or <code className="text-blue-700 font-mono text-[11px] bg-blue-50 px-1 py-0.5 rounded">credentials.yourdomain.com</code>.
+                  </p>
+                </div>
+
+                <div className="bg-white border border-blue-100 rounded-xl p-4 shadow-2xs space-y-2">
+                  <div className="flex items-center gap-2">
+                    <span className="w-5 h-5 rounded-full bg-blue-100 text-blue-700 text-[11px] font-bold flex items-center justify-center">2</span>
+                    <span className="text-xs font-bold text-slate-900">Add CNAME Record</span>
+                  </div>
+                  <p className="text-[12px] text-slate-600 leading-relaxed mb-0">
+                    In your DNS provider (Vercel, GoDaddy, Cloudflare, Route53), add a <strong>CNAME</strong> pointing to <span className="font-mono text-emerald-700 font-semibold">{fallbackOrigin}</span>.
+                  </p>
+                </div>
+
+                <div className="bg-white border border-blue-100 rounded-xl p-4 shadow-2xs space-y-2">
+                  <div className="flex items-center gap-2">
+                    <span className="w-5 h-5 rounded-full bg-blue-100 text-blue-700 text-[11px] font-bold flex items-center justify-center">3</span>
+                    <span className="text-xs font-bold text-slate-900">Check CAA Records</span>
+                  </div>
+                  <p className="text-[12px] text-slate-600 leading-relaxed mb-0">
+                    If using Vercel or custom CAA records, allow <strong>ssl.com</strong> (<code className="font-mono text-[11px] bg-blue-50 px-1 py-0.5 text-blue-700 rounded">0 issue "ssl.com"</code>) so SSL can issue immediately.
+                  </p>
+                </div>
+              </div>
+
+              {/* Copyable DNS Record Table */}
+              <div className="bg-white border border-blue-200/90 rounded-xl p-4 shadow-2xs space-y-2">
+                <div className="flex items-center justify-between text-xs font-bold text-slate-800">
+                  <span>Record to add in your DNS manager:</span>
+                  <span className="text-[11px] font-normal text-slate-500">TTL: Automatic / 300s</span>
+                </div>
+                <div className="bg-slate-50 border border-slate-200/80 rounded-lg p-3 font-mono text-xs overflow-x-auto">
+                  <div className="grid grid-cols-12 gap-2 text-slate-500 font-sans font-bold text-[11px] uppercase pb-2 border-b border-slate-200">
+                    <div className="col-span-3">Type</div>
+                    <div className="col-span-4">Name / Host</div>
+                    <div className="col-span-5">Target / Points To</div>
+                  </div>
+                  <div className="grid grid-cols-12 gap-2 text-slate-900 pt-2.5 items-center">
+                    <div className="col-span-3 font-bold text-blue-600">CNAME</div>
+                    <div className="col-span-4 font-semibold text-slate-800">
+                      verify <span className="text-slate-400 font-sans text-[11px]">(or chosen subdomain)</span>
+                    </div>
+                    <div className="col-span-5 flex items-center justify-between gap-2">
+                      <span className="text-emerald-700 font-bold select-all">{fallbackOrigin}</span>
+                      <button
+                        type="button"
+                        onClick={copyDnsTarget}
+                        className="px-2 py-1 bg-white hover:bg-slate-100 border border-slate-200 text-slate-700 rounded text-[11px] font-sans font-semibold transition-colors flex items-center gap-1 shrink-0 cursor-pointer shadow-2xs"
+                      >
+                        {copiedTarget ? <Check size={12} className="text-emerald-600" /> : <Copy size={12} />}
+                        {copiedTarget ? "Copied" : "Copy"}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
-          </form>
+
+            {/* Input Form to Connect */}
+            <form onSubmit={handleConnectDomain} className="space-y-4 pt-1">
+              <div className="max-w-xl">
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">
+                  Enter Your Configured Domain or Subdomain
+                </label>
+                <div className="flex gap-2">
+                  <div className="relative flex-1">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                      <Globe size={16} />
+                    </div>
+                    <input
+                      type="text"
+                      placeholder="e.g. verify.yourcompany.com"
+                      value={domainInput}
+                      onChange={(e) => setDomainInput(e.target.value)}
+                      className="w-full pl-9 pr-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                    />
+                  </div>
+                  <button
+                    type="submit"
+                    disabled={connectingDomain || !domainInput.trim()}
+                    className="px-5 py-2.5 bg-blue-600 text-white rounded-xl text-xs font-bold hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2 shrink-0 shadow-sm cursor-pointer"
+                  >
+                    {connectingDomain ? (
+                      <>
+                        <Loader2 size={14} className="animate-spin" /> Connecting...
+                      </>
+                    ) : (
+                      "Connect Domain"
+                    )}
+                  </button>
+                </div>
+                <p className="text-xs text-slate-400 mt-2">
+                  Example: <span className="font-mono text-slate-600">verify.acme.com</span> or{" "}
+                  <span className="font-mono text-slate-600">credentials.university.edu</span>
+                </p>
+              </div>
+            </form>
+          </div>
         )}
       </div>
 
@@ -619,7 +793,7 @@ const WhitelabelSettingsTab = ({ isEnterprise = false, onUpgrade }) => {
                 </>
               ) : (
                 <>
-                  <Sparkles size={14} /> Save Branding Preferences
+                  <Save size={14} /> Save Branding Preferences
                 </>
               )}
             </button>

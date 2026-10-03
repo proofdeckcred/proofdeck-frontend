@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import PublicHeader from "../components/PublicHeader";
 import PublicFooter from "../components/PublicFooter";
-import { Check, ChevronDown, ChevronUp, Sparkles, MessageSquare } from "lucide-react";
+import { Check, ChevronDown, ChevronUp, MessageSquare } from "lucide-react";
 import SEO from "../components/SEO";
 import CustomPricingModal from "../components/CustomPricingModal";
 
@@ -302,21 +302,21 @@ const PricingPage = () => {
             </div>
 
             {/* Want Custom? Landscape Banner */}
-            <div className="mt-12 bg-slate-900 text-white rounded-2xl sm:rounded-3xl p-6 sm:p-8 flex flex-col sm:flex-row items-center justify-between gap-6 border border-slate-800 shadow-sm">
+            <div className="mt-12 bg-gradient-to-r from-blue-50 via-sky-50/70 to-indigo-50/50 rounded-2xl sm:rounded-3xl p-6 sm:p-8 flex flex-col sm:flex-row items-center justify-between gap-6 border border-blue-200/90 shadow-xs">
               <div className="flex items-center gap-4 text-center sm:text-left">
-                <div className="w-12 h-12 rounded-2xl bg-indigo-500/20 text-indigo-400 flex items-center justify-center shrink-0 hidden sm:flex">
-                  <Sparkles size={24} />
+                <div className="w-12 h-12 rounded-2xl bg-blue-600 text-white flex items-center justify-center shrink-0 hidden sm:flex shadow-xs">
+                  <MessageSquare size={22} />
                 </div>
                 <div>
                   <div className="inline-flex items-center gap-2 mb-1">
-                    <span className="text-xs font-bold uppercase tracking-wider text-indigo-400 bg-indigo-500/10 px-2.5 py-0.5 rounded-full border border-indigo-500/20">
+                    <span className="text-xs font-bold uppercase tracking-wider text-blue-700 bg-blue-100/90 px-2.5 py-0.5 rounded-full border border-blue-200/80">
                       Tailored High-Volume
                     </span>
                   </div>
-                  <h3 className="text-lg sm:text-xl font-bold text-white mb-1">
+                  <h3 className="text-lg sm:text-xl font-bold text-slate-900 mb-1">
                     Need more than 10,000 credentials or custom integrations?
                   </h3>
-                  <p className="text-xs sm:text-sm text-slate-300 mb-0">
+                  <p className="text-xs sm:text-sm text-slate-600 mb-0">
                     Bespoke high-volume packs, custom SLAs, and specialized LMS/ERP integrations available.
                   </p>
                 </div>
@@ -324,9 +324,9 @@ const PricingPage = () => {
               <button
                 type="button"
                 onClick={() => setOpenCustomModal(true)}
-                className="w-full sm:w-auto px-6 py-3 bg-white text-slate-900 hover:bg-slate-100 rounded-xl text-xs sm:text-sm font-bold transition-all shadow-sm shrink-0 flex items-center justify-center gap-2 cursor-pointer whitespace-nowrap"
+                className="w-full sm:w-auto px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs sm:text-sm font-bold transition-all shadow-xs shrink-0 flex items-center justify-center gap-2 cursor-pointer whitespace-nowrap"
               >
-                Want custom? <span className="text-indigo-600 font-extrabold underline">Talk to Us</span>
+                Want custom? <span className="underline underline-offset-2 font-extrabold ml-0.5">Talk to Us</span>
               </button>
             </div>
           </div>
