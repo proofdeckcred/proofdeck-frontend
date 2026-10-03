@@ -138,15 +138,17 @@ const Pricing = () => (
         />
         <PricingCard
           title="Enterprise"
-          price="₦250,000"
-          suffix="5,000 credential credits"
+          price="₦650,000"
+          suffix="10,000 credential credits"
           features={[
-            "5,000 Credits Included",
+            "10,000 Credits Included",
+            "Custom Domain & White-Label (SSL included)",
+            "100% White-Label Portal (Zero ProofDeck Branding)",
             "Everything in Pro",
             "Exclusive High-Res PNG Image Downloads",
             "Unlimited Bulk Processing",
             "Multi-Seat Organization Access",
-            "Dedicated Support & Fast-Track Assistance",
+            "Dedicated VIP Account Manager",
           ]}
           link="/signup?plan=enterprise"
         />

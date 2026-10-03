@@ -2,34 +2,46 @@ import React, { createContext, useContext, useEffect, useState } from "react";
 import axios from "axios";
 import { API_BASE_URL } from "../config";
 
+const checkIsCustomDomain = () => {
+  if (typeof window === "undefined") return false;
+  const params = new URLSearchParams(window.location.search);
+  const testDomain = params.get("test_domain");
+  if (testDomain) return true;
+  const hostname = window.location.hostname;
+  if (!hostname) return false;
+  if (
+    hostname === "proofdeck.app" ||
+    hostname === "www.proofdeck.app" ||
+    hostname === "domains.proofdeck.app" ||
+    hostname === "localhost" ||
+    hostname === "127.0.0.1" ||
+    hostname.endsWith(".vercel.app") ||
+    hostname.endsWith(".proofdeck.app")
+  ) {
+    return false;
+  }
+  return true;
+};
+
 const WhiteLabelContext = createContext({
   brand: null,
   isWhiteLabel: false,
-  loading: true,
+  loading: false,
 });
 
 export const WhiteLabelProvider = ({ children }) => {
   const [brand, setBrand] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const isCustom = checkIsCustomDomain();
+  const [loading, setLoading] = useState(isCustom);
 
   useEffect(() => {
+    if (!isCustom) {
+      return;
+    }
+
     const params = new URLSearchParams(window.location.search);
     const testDomain = params.get("test_domain");
     const hostname = testDomain || window.location.hostname;
-
-    const standardHostnames = [
-      "proofdeck.app",
-      "www.proofdeck.app",
-      "proofdeck-frontend.vercel.app",
-      "localhost",
-      "127.0.0.1",
-      "domains.proofdeck.app",
-    ];
-
-    if (!hostname || standardHostnames.includes(hostname)) {
-      setLoading(false);
-      return;
-    }
 
     axios
       .get(`${API_BASE_URL}/whitelabel/config?domain=${encodeURIComponent(hostname)}`)

@@ -128,18 +128,21 @@ const PricingPage = () => {
     },
     {
       name: "Enterprise",
-      priceNGN: "₦250,000",
-      priceUSD: "$189.00",
-      certs: "5,000",
-      costPerCert: "₦50 (~$0.03)",
-      for: "Universities, professional exam bodies, government",
+      priceNGN: "₦650,000",
+      priceUSD: "$490.00",
+      certs: "10,000",
+      costPerCert: "₦65 (~$0.04)",
+      for: "Universities, institutions, enterprise corporations",
       features: [
-        "5,000 Credits Included",
+        "10,000 Credits Included",
+        "Custom Domain & SSL (credentials.yourcompany.com)",
+        "100% White-Label Portal (Zero ProofDeck Branding)",
         "Everything in Pro",
+        "Developer REST API & Webhooks Access",
         "Exclusive High-Res PNG Image Downloads",
         "Unlimited Bulk Processing",
         "Multi-Seat Organization Access",
-        "Dedicated Support & Fast-Track Assistance",
+        "Dedicated VIP Account Manager & Support",
       ],
     },
   ];
@@ -151,6 +154,11 @@ const PricingPage = () => {
   };
 
   const pricingFaqs = [
+    {
+      question: "Can I use my own custom domain and branding for verification?",
+      answer:
+        "Yes! Enterprise plans include full custom domain support (e.g. credentials.yourcompany.com) with automated Cloudflare SSL certificates, custom logos, primary brand colors, and custom email sender names. The entire verification experience runs 100% under your brand identity with zero ProofDeck badges.",
+    },
     {
       question: "Can I pay in Nigerian Naira (NGN) with a local debit card?",
       answer:
@@ -195,7 +203,7 @@ const PricingPage = () => {
       "@type": "AggregateOffer",
       "priceCurrency": "NGN",
       "lowPrice": "15000",
-      "highPrice": "250000",
+      "highPrice": "650000",
       "offerCount": "4",
       "offers": plans.map(p => ({
         "@type": "Offer",
