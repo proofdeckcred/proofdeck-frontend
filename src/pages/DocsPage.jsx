@@ -5,23 +5,27 @@ import PublicHeader from "../components/PublicHeader";
 import PublicFooter from "../components/PublicFooter";
 import {
   Terminal,
-  Menu,
+  List as Menu,
   X,
-  ChevronRight,
-  ChevronDown,
+  CaretRight as ChevronRight,
+  CaretDown as ChevronDown,
   Copy,
-  CheckCircle2,
-  Code2,
+  CheckCircle as CheckCircle2,
+  Code as Code2,
   UserCheck,
-  Layers,
-  Send,
+  Stack as Layers,
+  PaperPlaneTilt as Send,
   FileText,
-  Search,
-  ExternalLink,
+  MagnifyingGlass as Search,
+  ArrowSquareOut as ExternalLink,
   Check,
-  Download,
-  Smartphone
-} from "lucide-react";
+  DownloadSimple as Download,
+  DeviceMobile as Smartphone,
+} from "@phosphor-icons/react";
+import BrandIcon from "../components/ui/BrandIcon";
+import IconBadge from "../components/ui/IconBadge";
+import Tag from "../components/ui/Tag";
+import { Ring, DotGrid } from "../components/ui/decor";
 
 // --- Documentation Markdown Generator (for LLMs & Plain Text) ---
 const getDocsMarkdown = (baseUrl) => {
@@ -415,13 +419,16 @@ const CodeSnippetTabs = ({ snippetGroup, title }) => {
               <button
                 key={lang.id}
                 onClick={() => setActiveLang(lang.id)}
-                className={`pb-3 text-xs sm:text-sm font-medium transition-colors relative cursor-pointer ${
+                className={`pb-3 text-xs sm:text-sm font-medium transition-colors relative cursor-pointer flex items-center gap-1.5 ${
                   isActive
                     ? "text-[#00A3FF] font-semibold"
                     : "text-slate-400 hover:text-slate-200"
                 }`}
               >
-                {lang.label}
+                {lang.id === "python" && <BrandIcon name="python" size={13} useBrandColor />}
+                {lang.id === "js" && <BrandIcon name="javascript" size={13} useBrandColor />}
+                {lang.id === "curl" && <Terminal size={13} />}
+                <span>{lang.label}</span>
                 {isActive && (
                   <span className="absolute bottom-0 left-0 right-0 h-[2px] bg-[#00A3FF] rounded-full" />
                 )}
@@ -806,28 +813,40 @@ function DocsPage() {
         {/* Main Content Area */}
         <main className="flex-grow min-w-0 py-10 px-6 sm:px-10 lg:px-16 xl:px-20 lg:ml-72">
           <div className="max-w-4xl mx-auto">
-            {/* Header Hero Banner */}
-            <div className="mb-12 border-b border-slate-100 pb-10">
-              <div className="flex items-center gap-2 mb-4">
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-indigo-50 text-indigo-700 rounded-full font-mono text-xs font-bold border border-indigo-100">
-                  REST API v1.0
-                </span>
-                <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-emerald-50 text-emerald-700 rounded-full font-mono text-xs font-bold border border-emerald-100">
-                  <Check size={13} /> Production Active
-                </span>
+            {/* Header Hero Banner with ambient DotGrid & Ring (§5.2) */}
+            <div className="mb-12 border-b border-slate-100 pb-10 relative overflow-hidden rounded-3xl p-6 sm:p-8 bg-slate-50/60 border">
+              <Ring
+                size={280}
+                strokeWidth={28}
+                color="#5144E8"
+                className="absolute -top-16 -right-16 opacity-10 pointer-events-none"
+              />
+              <div className="absolute inset-0 opacity-20 pointer-events-none">
+                <DotGrid dotSize={1.2} gap={16} color="#5144E8" opacity={0.3} />
               </div>
-              <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
-                <h1 className="text-3xl sm:text-4xl md:text-5xl font-black text-slate-900 tracking-tight">
-                  Developer API Guide
-                </h1>
-                <CopyPageDropdown
-                  onCopyMarkdown={handleCopyAllMarkdown}
-                  onViewMarkdown={() => setShowMarkdownModal(true)}
-                />
+
+              <div className="relative z-10">
+                <div className="flex items-center gap-2 mb-4">
+                  <Tag tone="indigo" size="sm">
+                    REST API v1.0
+                  </Tag>
+                  <Tag tone="green" size="sm" icon={Check}>
+                    Production Active
+                  </Tag>
+                </div>
+                <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
+                  <h1 className="text-3xl sm:text-4xl md:text-5xl font-black text-slate-900 tracking-tight">
+                    Developer API Guide
+                  </h1>
+                  <CopyPageDropdown
+                    onCopyMarkdown={handleCopyAllMarkdown}
+                    onViewMarkdown={() => setShowMarkdownModal(true)}
+                  />
+                </div>
+                <p className="text-base sm:text-lg text-slate-600 leading-relaxed font-normal max-w-3xl">
+                  Integrate automated credential generation, PDF certificate creation, bulk email dispatch, and instant verification into your platforms.
+                </p>
               </div>
-              <p className="text-base sm:text-lg text-slate-600 leading-relaxed font-normal max-w-3xl">
-                Integrate automated credential generation, PDF certificate creation, bulk email dispatch, and instant verification into your platforms.
-              </p>
 
               {/* Base URL Box */}
               <div className="mt-6 p-4 bg-slate-900 rounded-2xl border border-slate-800 text-white flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-xl">

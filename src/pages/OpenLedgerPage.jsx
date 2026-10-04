@@ -2,19 +2,22 @@ import React, { useState, useEffect, useCallback } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { advancedSearchCertificates } from "../api";
 import {
-  Search,
-  Building,
+  MagnifyingGlass,
+  Buildings,
   User,
   BookOpen,
-  Filter,
+  Funnel,
   X,
-  Calendar,
-  ChevronRight,
-  Loader2,
-} from "lucide-react";
+  CalendarBlank,
+  CaretRight,
+  CircleNotch,
+} from "@phosphor-icons/react";
 import DatePicker from "react-datepicker";
 import PublicHeader from "../components/PublicHeader";
 import PublicFooter from "../components/PublicFooter";
+import Tag from "../components/ui/Tag";
+import IconBadge from "../components/ui/IconBadge";
+import { Ring } from "../components/ui/decor";
 import "react-datepicker/dist/react-datepicker.css";
 
 // --- COMPONENTS ---
@@ -25,10 +28,10 @@ const CredentialCard = ({ cert }) => {
   return (
     <Link
       to={`/verify/${cert.verification_id}`}
-      className="block bg-white rounded-xl border border-gray-200 p-6 hover:shadow-lg hover:border-indigo-200 transition-all duration-300 group no-underline"
+      className="block bg-white rounded-2xl border border-gray-200 p-6 hover:shadow-lg hover:border-indigo-300 transition-all duration-300 group no-underline"
     >
       <div className="flex items-center gap-2 mb-4 text-xs font-bold text-gray-400 uppercase tracking-wider">
-        {isCompany ? <Building size={14} /> : <User size={14} />}
+        {isCompany ? <Buildings size={14} weight="duotone" /> : <User size={14} weight="duotone" />}
         {cert.issuer_name}
       </div>
 
@@ -37,14 +40,14 @@ const CredentialCard = ({ cert }) => {
       </h3>
 
       <div className="flex items-center gap-2 text-gray-600 mb-6 text-sm line-clamp-1">
-        <BookOpen size={16} className="text-gray-400" />
+        <BookOpen size={16} weight="duotone" className="text-gray-400" />
         {cert.course_title}
       </div>
 
       <div className="pt-4 border-t border-gray-100 flex justify-between items-center text-xs text-gray-500">
         <span>{new Date(cert.issue_date).toLocaleDateString()}</span>
-        <span className="flex items-center text-indigo-600 font-medium opacity-0 group-hover:opacity-100 transition-opacity transform translate-x-2 group-hover:translate-x-0">
-          Verify <ChevronRight size={14} className="ml-1" />
+        <span className="flex items-center text-indigo-600 font-semibold opacity-0 group-hover:opacity-100 transition-opacity transform translate-x-2 group-hover:translate-x-0">
+          Verify <CaretRight size={14} weight="bold" className="ml-1" />
         </span>
       </div>
     </Link>
@@ -156,14 +159,15 @@ const OpenLedgerPage = () => {
 
       <main className="flex-grow">
         {/* Header */}
-        <div className="bg-white border-b border-gray-200 py-12 px-4 sm:px-6 lg:px-8">
-          <div className="max-w-7xl mx-auto">
+        <div className="bg-white border-b border-gray-200 py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
+          <Ring size={260} className="absolute -top-16 -right-16 text-indigo-50 pointer-events-none" />
+          <div className="max-w-7xl mx-auto relative z-10">
+            <Tag tone="indigo" dot className="mb-3">Public Ledger</Tag>
             <h1 className="text-3xl font-bold text-gray-900 mb-2">
               Public Credential Ledger
             </h1>
             <p className="text-gray-500 text-lg">
-              Search and verify credentials issued by organizations on
-              ProofDeck.
+              Search and verify credentials issued by organizations on ProofDeck.
             </p>
           </div>
         </div>
@@ -172,9 +176,9 @@ const OpenLedgerPage = () => {
           <div className="flex flex-col lg:flex-row gap-8">
             {/* Sidebar Filters */}
             <div className="w-full lg:w-80 flex-shrink-0">
-              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 sticky top-24">
+              <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 sticky top-24">
                 <div className="flex items-center gap-2 mb-6 text-gray-900 font-bold text-lg">
-                  <Filter size={20} className="text-indigo-600" />
+                  <Funnel size={20} weight="duotone" className="text-indigo-600" />
                   Search Filters
                 </div>
 
@@ -243,17 +247,17 @@ const OpenLedgerPage = () => {
                   <div className="pt-4 flex flex-col gap-2">
                     <button
                       type="submit"
-                      className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2.5 rounded-lg transition-colors flex items-center justify-center gap-2 shadow-sm"
+                      className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2.5 rounded-xl transition-colors flex items-center justify-center gap-2 shadow-sm cursor-pointer"
                     >
-                      <Search size={18} /> Search Ledger
+                      <MagnifyingGlass size={18} weight="bold" /> Search Ledger
                     </button>
                     {hasSearched && (
                       <button
                         type="button"
                         onClick={clearFilters}
-                        className="w-full bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 font-medium py-2.5 rounded-lg transition-colors flex items-center justify-center gap-2"
+                        className="w-full bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 font-medium py-2.5 rounded-xl transition-colors flex items-center justify-center gap-2 cursor-pointer"
                       >
-                        <X size={18} /> Clear Filters
+                        <X size={18} weight="bold" /> Clear Filters
                       </button>
                     )}
                   </div>
@@ -308,10 +312,8 @@ const OpenLedgerPage = () => {
                   )}
                 </>
               ) : hasSearched ? (
-                <div className="bg-white rounded-xl border border-gray-200 p-12 text-center">
-                  <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <Search size={32} className="text-gray-400" />
-                  </div>
+                <div className="bg-white rounded-2xl border border-gray-200 p-12 text-center">
+                  <IconBadge tone="paper" size="lg" icon={<MagnifyingGlass size={28} weight="duotone" />} className="mx-auto mb-4" />
                   <h3 className="text-lg font-bold text-gray-900 mb-2">
                     No credentials found
                   </h3>
@@ -320,10 +322,8 @@ const OpenLedgerPage = () => {
                   </p>
                 </div>
               ) : (
-                <div className="bg-white rounded-xl border border-gray-200 p-12 text-center h-full flex flex-col justify-center items-center min-h-[400px]">
-                  <div className="w-20 h-20 bg-indigo-50 rounded-full flex items-center justify-center mb-6">
-                    <BookOpen size={40} className="text-indigo-600" />
-                  </div>
+                <div className="bg-white rounded-2xl border border-gray-200 p-12 text-center h-full flex flex-col justify-center items-center min-h-[400px]">
+                  <IconBadge tone="indigo" size="xl" icon={<BookOpen size={36} weight="duotone" />} className="mx-auto mb-6" />
                   <h2 className="text-2xl font-bold text-gray-900 mb-3">
                     Start your search
                   </h2>

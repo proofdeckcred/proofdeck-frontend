@@ -92,10 +92,91 @@
   --sidebar-bg: #111827;
   --sidebar-text: #94a3b8;
   --sidebar-text-active: #ffffff;
-  --border-color: #e5e7eb;
-  --card-bg: #ffffff;
-  --input-bg: #f9fafb;
+  /* === ProofDeck Tone Tokens (Flat Badge & Bento Language) === */
+  --tone-ink-bg: #0B0B14;
+  --tone-ink-fg: #FFFFFF;
+  --tone-ink-deco: #252538;
+  --tone-ink-tint: #F1F1F5;
+
+  --tone-indigo-bg: #5144E8;
+  --tone-indigo-fg: #FFFFFF;
+  --tone-indigo-deco: #3B2FC9;
+  --tone-indigo-tint: #E9E7FD;
+
+  --tone-sky-bg: #0A9AF5;
+  --tone-sky-fg: #FFFFFF;
+  --tone-sky-deco: #0880CC;
+  --tone-sky-tint: #DDF1FD;
+
+  --tone-sun-bg: #FDEC8C;
+  --tone-sun-fg: #0B0B14;
+  --tone-sun-deco: #E3CE5B;
+  --tone-sun-tint: #FEF8D6;
+
+  --tone-orange-bg: #F97316;
+  --tone-orange-fg: #FFFFFF;
+  --tone-orange-deco: #D95D08;
+  --tone-orange-tint: #FFE3CC;
+
+  --tone-green-bg: #16A34A;
+  --tone-green-fg: #FFFFFF;
+  --tone-green-deco: #12823B;
+  --tone-green-tint: #DDF5E6;
+
+  --tone-paper-bg: #F7F7F8;
+  --tone-paper-fg: #0B0B14;
+  --tone-paper-deco: #E2E2E8;
+  --tone-paper-tint: #FFFFFF;
+
+  --tone-current-bg: var(--tone-indigo-bg);
+  --tone-current-fg: var(--tone-indigo-fg);
+  --tone-current-deco: var(--tone-indigo-deco);
+  --tone-current-tint: var(--tone-indigo-tint);
 }
+
+[data-tone="ink"] {
+  --tone-current-bg: var(--tone-ink-bg);
+  --tone-current-fg: var(--tone-ink-fg);
+  --tone-current-deco: var(--tone-ink-deco);
+  --tone-current-tint: var(--tone-ink-tint);
+}
+[data-tone="indigo"] {
+  --tone-current-bg: var(--tone-indigo-bg);
+  --tone-current-fg: var(--tone-indigo-fg);
+  --tone-current-deco: var(--tone-indigo-deco);
+  --tone-current-tint: var(--tone-indigo-tint);
+}
+[data-tone="sky"] {
+  --tone-current-bg: var(--tone-sky-bg);
+  --tone-current-fg: var(--tone-sky-fg);
+  --tone-current-deco: var(--tone-sky-deco);
+  --tone-current-tint: var(--tone-sky-tint);
+}
+[data-tone="sun"] {
+  --tone-current-bg: var(--tone-sun-bg);
+  --tone-current-fg: var(--tone-sun-fg);
+  --tone-current-deco: var(--tone-sun-deco);
+  --tone-current-tint: var(--tone-sun-tint);
+}
+[data-tone="orange"] {
+  --tone-current-bg: var(--tone-orange-bg);
+  --tone-current-fg: var(--tone-orange-fg);
+  --tone-current-deco: var(--tone-orange-deco);
+  --tone-current-tint: var(--tone-orange-tint);
+}
+[data-tone="green"] {
+  --tone-current-bg: var(--tone-green-bg);
+  --tone-current-fg: var(--tone-green-fg);
+  --tone-current-deco: var(--tone-green-deco);
+  --tone-current-tint: var(--tone-green-tint);
+}
+[data-tone="paper"] {
+  --tone-current-bg: var(--tone-paper-bg);
+  --tone-current-fg: var(--tone-paper-fg);
+  --tone-current-deco: var(--tone-paper-deco);
+  --tone-current-tint: var(--tone-paper-tint);
+}
+
 
 /* === ProofDeck Dot-Grid Background === */
 .pd-dot-grid {

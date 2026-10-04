@@ -3,7 +3,17 @@ import { Link } from "react-router-dom";
 import PublicHeader from "../../components/PublicHeader";
 import PublicFooter from "../../components/PublicFooter";
 import SEO from "../../components/SEO";
-import { ArrowRight, BookOpen, Clock, Calendar } from "lucide-react";
+import {
+  ArrowRight,
+  Clock,
+  CalendarBlank,
+  ShieldCheck,
+  ShareNetwork,
+  BookOpen,
+} from "@phosphor-icons/react";
+import Tag from "../../components/ui/Tag";
+import IconBadge from "../../components/ui/IconBadge";
+import { Guilloche, Seal, Ring } from "../../components/ui/decor";
 
 export default function BlogIndexPage() {
   const articles = [
@@ -15,6 +25,9 @@ export default function BlogIndexPage() {
       date: "September 2026",
       readTime: "6 min read",
       category: "Verification & Fraud Prevention",
+      tone: "green",
+      icon: ShieldCheck,
+      motif: <Guilloche size={140} color="#16A34A" opacity={0.22} className="absolute -bottom-6 -right-6" />,
     },
     {
       slug: "how-to-add-certificate-to-linkedin",
@@ -24,6 +37,9 @@ export default function BlogIndexPage() {
       date: "September 2026",
       readTime: "5 min read",
       category: "Career & Credentials",
+      tone: "indigo",
+      icon: ShareNetwork,
+      motif: <Seal size={130} color="#5144E8" opacity={0.22} className="absolute -bottom-6 -right-6" />,
     },
   ];
 
@@ -58,9 +74,17 @@ export default function BlogIndexPage() {
 
       <main className="flex-grow">
         {/* Hero */}
-        <section className="py-20 md:py-28 bg-[var(--pd-paper)] pd-dot-grid border-b border-[var(--pd-line)] text-center">
-          <div className="max-w-4xl mx-auto px-4 sm:px-6">
-            <span className="pd-pill-label mb-4 inline-flex">Resources & Insights</span>
+        <section className="py-20 md:py-28 bg-[var(--pd-paper)] pd-dot-grid border-b border-[var(--pd-line)] text-center relative overflow-hidden">
+          <Ring
+            size={380}
+            strokeWidth={38}
+            color="#5144E8"
+            className="absolute -top-28 -left-20 opacity-[0.07] pointer-events-none"
+          />
+          <div className="max-w-4xl mx-auto px-4 sm:px-6 relative z-10">
+            <div className="mb-4">
+              <Tag tone="indigo" icon={BookOpen}>Resources & Insights</Tag>
+            </div>
             <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold tracking-tight mb-6 leading-tight">
               ProofDeck Guides & Credential Insights
             </h1>
@@ -77,40 +101,60 @@ export default function BlogIndexPage() {
               {articles.map((art, idx) => (
                 <article
                   key={idx}
-                  className="flex flex-col p-8 rounded-2xl border border-[var(--pd-line)] bg-[var(--pd-paper)] hover:border-slate-300 transition-all shadow-2xs hover:shadow-sm"
+                  className="flex flex-col rounded-3xl border border-[var(--pd-line)] bg-white overflow-hidden transition-all shadow-sm hover:shadow-md group"
                 >
-                  <div className="flex items-center gap-3 text-xs font-semibold text-[var(--pd-indigo)] mb-4">
-                    <span className="bg-indigo-50 px-2.5 py-1 rounded-full border border-indigo-100">
-                      {art.category}
-                    </span>
-                    <span className="text-[var(--pd-mute)] flex items-center gap-1 font-normal">
-                      <Clock size={12} /> {art.readTime}
-                    </span>
+                  {/* Card Thumbnail with Tone Surface & Credential Motif (§5.2) */}
+                  <div className={`h-40 relative overflow-hidden p-6 flex items-center justify-between ${
+                    art.tone === "green" ? "bg-[#DDF5E6]/75" : "bg-[#E9E7FD]/75"
+                  }`}>
+                    {art.motif}
+                    <div className="relative z-10">
+                      <IconBadge
+                        icon={art.icon}
+                        tone={art.tone}
+                        size="lg"
+                        shape="squircle"
+                        tilt={idx === 0 ? -3 : 3}
+                      />
+                    </div>
+                    <div className="relative z-10">
+                      <Tag tone={art.tone} size="sm">
+                        {art.category}
+                      </Tag>
+                    </div>
                   </div>
 
-                  <h2 className="text-xl font-bold text-[var(--pd-ink)] mb-3 leading-snug">
-                    <Link
-                      to={`/blog/${art.slug}`}
-                      className="hover:text-[var(--pd-indigo)] transition-colors no-underline text-inherit"
-                    >
-                      {art.title}
-                    </Link>
-                  </h2>
+                  <div className="p-8 flex flex-col flex-1">
+                    <div className="flex items-center gap-3 text-xs text-[var(--pd-mute)] mb-3">
+                      <span className="flex items-center gap-1 font-normal">
+                        <Clock size={13} weight="bold" /> {art.readTime}
+                      </span>
+                    </div>
 
-                  <p className="text-sm text-[var(--pd-mute)] leading-relaxed mb-6 flex-1 font-normal">
-                    {art.description}
-                  </p>
+                    <h2 className="text-xl font-bold text-[var(--pd-ink)] mb-3 leading-snug group-hover:text-[var(--pd-indigo)] transition-colors">
+                      <Link
+                        to={`/blog/${art.slug}`}
+                        className="text-inherit no-underline"
+                      >
+                        {art.title}
+                      </Link>
+                    </h2>
 
-                  <div className="pt-4 border-t border-[var(--pd-line)] flex items-center justify-between">
-                    <span className="text-xs text-[var(--pd-mute)] font-medium flex items-center gap-1">
-                      <Calendar size={13} /> {art.date}
-                    </span>
-                    <Link
-                      to={`/blog/${art.slug}`}
-                      className="inline-flex items-center gap-1.5 text-xs font-bold text-[var(--pd-indigo)] hover:text-[var(--pd-indigo-dark)] transition-colors no-underline"
-                    >
-                      Read Guide <ArrowRight size={14} />
-                    </Link>
+                    <p className="text-sm text-[var(--pd-mute)] leading-relaxed mb-6 flex-1 font-normal">
+                      {art.description}
+                    </p>
+
+                    <div className="pt-4 border-t border-[var(--pd-line)] flex items-center justify-between">
+                      <span className="text-xs text-[var(--pd-mute)] font-medium flex items-center gap-1.5">
+                        <CalendarBlank size={14} weight="bold" /> {art.date}
+                      </span>
+                      <Link
+                        to={`/blog/${art.slug}`}
+                        className="inline-flex items-center gap-1.5 text-xs font-bold text-[var(--pd-indigo)] hover:text-[var(--pd-indigo-dark)] transition-colors no-underline"
+                      >
+                        Read Guide <ArrowRight size={14} weight="bold" />
+                      </Link>
+                    </div>
                   </div>
                 </article>
               ))}

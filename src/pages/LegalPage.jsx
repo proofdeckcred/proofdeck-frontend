@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from "react";
-import { Shield, Lock, FileText, Server, Globe, Key, ArrowLeft } from "lucide-react";
+import { ShieldCheck, LockSimple, FileText, HardDrives, Globe, Key, ArrowLeft } from "@phosphor-icons/react";
 import { useLocation, Link } from "react-router-dom";
 import SEO from "../components/SEO";
+import IconBadge from "../components/ui/IconBadge";
+import { Seal } from "../components/ui/decor";
 
 const LegalPage = () => {
   const location = useLocation();
@@ -16,9 +18,9 @@ const LegalPage = () => {
   }, [location]);
 
   const tabs = [
-    { id: "privacy", label: "Privacy Policy", icon: Lock },
+    { id: "privacy", label: "Privacy Policy", icon: LockSimple },
     { id: "terms", label: "Terms of Service", icon: FileText },
-    { id: "security", label: "Security & Compliance", icon: Shield },
+    { id: "security", label: "Security & Compliance", icon: ShieldCheck },
   ];
 
   return (
@@ -54,7 +56,7 @@ const LegalPage = () => {
                         : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
                     }`}
                   >
-                    <tab.icon size={16} className="mr-2" />
+                    <tab.icon size={18} weight="duotone" className="mr-2" />
                     {tab.label}
                   </button>
                ))}
@@ -76,10 +78,13 @@ const LegalPage = () => {
              </select>
           </div>
 
-          <div className="bg-white shadow rounded-lg lg:col-span-12 xl:col-span-12 p-8 md:p-12 min-h-[60vh] prose prose-indigo max-w-none">
-            {activeTab === "privacy" && <PrivacyPolicy />}
-            {activeTab === "terms" && <TermsOfService />}
-            {activeTab === "security" && <SecurityPolicy />}
+          <div className="bg-white shadow rounded-2xl lg:col-span-12 xl:col-span-12 p-8 md:p-12 min-h-[60vh] prose prose-indigo max-w-none relative overflow-hidden border border-slate-200">
+            <Seal size={280} className="absolute -top-12 -right-12 text-slate-100 opacity-60 pointer-events-none" />
+            <div className="relative z-10">
+              {activeTab === "privacy" && <PrivacyPolicy />}
+              {activeTab === "terms" && <TermsOfService />}
+              {activeTab === "security" && <SecurityPolicy />}
+            </div>
           </div>
         </div>
       </div>
@@ -157,8 +162,8 @@ const SecurityPolicy = () => (
     <h1 className="text-3xl font-extrabold text-gray-900 border-b pb-4">Security Infrastructure</h1>
     
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 my-8">
-        <div className="flex items-start gap-4 p-4 bg-gray-50 rounded-lg border">
-            <Server className="text-indigo-600 shrink-0" />
+        <div className="flex items-start gap-4 p-5 bg-slate-50 rounded-2xl border border-slate-200">
+            <IconBadge tone="indigo" size="md" icon={<HardDrives weight="duotone" />} />
             <div>
                 <h3 className="font-bold text-gray-900">Infrastructure Security</h3>
                 <p className="text-sm text-gray-600 mt-2">
@@ -166,8 +171,8 @@ const SecurityPolicy = () => (
                 </p>
             </div>
         </div>
-        <div className="flex items-start gap-4 p-4 bg-gray-50 rounded-lg border">
-            <Lock className="text-indigo-600 shrink-0" />
+        <div className="flex items-start gap-4 p-5 bg-slate-50 rounded-2xl border border-slate-200">
+            <IconBadge tone="sky" size="md" icon={<LockSimple weight="duotone" />} />
             <div>
                 <h3 className="font-bold text-gray-900">Encryption Standards</h3>
                 <p className="text-sm text-gray-600 mt-2">
@@ -175,8 +180,8 @@ const SecurityPolicy = () => (
                 </p>
             </div>
         </div>
-        <div className="flex items-start gap-4 p-4 bg-gray-50 rounded-lg border">
-            <Key className="text-indigo-600 shrink-0" />
+        <div className="flex items-start gap-4 p-5 bg-slate-50 rounded-2xl border border-slate-200">
+            <IconBadge tone="sun" size="md" icon={<Key weight="duotone" />} />
             <div>
                 <h3 className="font-bold text-gray-900">Access Control</h3>
                 <p className="text-sm text-gray-600 mt-2">
@@ -184,8 +189,8 @@ const SecurityPolicy = () => (
                 </p>
             </div>
         </div>
-        <div className="flex items-start gap-4 p-4 bg-gray-50 rounded-lg border">
-            <Globe className="text-indigo-600 shrink-0" />
+        <div className="flex items-start gap-4 p-5 bg-slate-50 rounded-2xl border border-slate-200">
+            <IconBadge tone="green" size="md" icon={<Globe weight="duotone" />} />
             <div>
                 <h3 className="font-bold text-gray-900">Vulnerability Management</h3>
                 <p className="text-sm text-gray-600 mt-2">

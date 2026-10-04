@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from "react";
-import { Quote, ChevronLeft, ChevronRight } from "lucide-react";
+import { Quotes, CaretLeft, CaretRight } from "@phosphor-icons/react";
 import { motion, AnimatePresence } from "motion/react";
+import Tag from "./ui/Tag";
+import { Guilloche } from "./ui/decor";
 
 export function TestimonialSection() {
   const testimonials = [
@@ -58,11 +60,19 @@ export function TestimonialSection() {
 
   return (
     <section className="py-24 bg-white border-b border-gray-100 relative overflow-hidden">
-      {/* Background decorations */}
+      {/* Background decoration */}
+      <Guilloche
+        size={340}
+        color="#5144E8"
+        opacity={0.07}
+        className="absolute -top-24 -right-24 pointer-events-none"
+      />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         <div className="text-center mb-16">
-          <span className="pd-pill-label mb-3 inline-flex">Testimonials</span>
+          <div className="mb-3">
+            <Tag tone="indigo">Testimonials</Tag>
+          </div>
           <p className="mt-2 text-3xl font-extrabold text-gray-900 sm:text-4xl">
             Trusted by Industry Leaders
           </p>
@@ -72,17 +82,18 @@ export function TestimonialSection() {
           {/* Previous Button */}
           <button
             onClick={handlePrev}
-            className="absolute left-0 top-1/2 -translate-y-1/2 z-20 p-2.5 rounded-full bg-white border border-gray-200 shadow-md text-gray-600 hover:text-indigo-600 hover:border-indigo-200 transition-all hover:scale-110 active:scale-95 focus:outline-none"
+            className="absolute left-0 top-1/2 -translate-y-1/2 z-20 p-2.5 rounded-full bg-white border border-gray-200 shadow-md text-gray-600 hover:text-indigo-600 hover:border-indigo-200 transition-all hover:scale-110 active:scale-95 focus:outline-none cursor-pointer"
             aria-label="Previous Testimonial"
           >
-            <ChevronLeft size={22} />
+            <CaretLeft size={20} weight="bold" />
           </button>
 
           {/* Testimonial Card */}
-          <div className="bg-white p-8 sm:p-12 md:p-14 rounded-3xl shadow-xl shadow-indigo-100/60 border border-gray-100 relative text-center min-h-[340px] flex flex-col justify-center overflow-hidden">
-            <Quote
+          <div className="bg-white p-8 sm:p-12 md:p-14 rounded-3xl shadow-xl shadow-indigo-100/50 border border-gray-100 relative text-center min-h-[340px] flex flex-col justify-center overflow-hidden">
+            <Quotes
               size={72}
-              className="text-indigo-50 absolute top-6 left-8 -z-0 transform -scale-x-100 pointer-events-none select-none"
+              weight="duotone"
+              className="text-indigo-100/80 absolute top-6 left-8 -z-0 pointer-events-none select-none"
             />
 
             <AnimatePresence mode="wait" custom={direction}>
@@ -100,21 +111,19 @@ export function TestimonialSection() {
                   "{currentTestimonial.quote}"
                 </p>
 
-                <div className="flex flex-col items-center justify-center gap-3">
-                  <div className="p-1 rounded-full bg-[var(--pd-indigo)]">
-                    <img
-                      src={currentTestimonial.image}
-                      alt={currentTestimonial.name}
-                      className="w-16 h-16 rounded-full object-cover border-2 border-white shadow-xs"
-                    />
-                  </div>
-                  <div>
-                    <div className="text-lg font-bold text-gray-900">
+                <div className="flex items-center justify-center space-x-4">
+                  <img
+                    src={currentTestimonial.image}
+                    alt={currentTestimonial.name}
+                    className="w-14 h-14 rounded-full object-cover border-2 border-indigo-600 shadow-xs"
+                  />
+                  <div className="text-left">
+                    <p className="font-bold text-gray-900 text-base">
                       {currentTestimonial.name}
-                    </div>
-                    <div className="text-indigo-600 font-semibold text-xs sm:text-sm bg-indigo-50 px-3 py-1 rounded-full inline-block mt-1 border border-indigo-100">
+                    </p>
+                    <p className="text-sm text-gray-500">
                       {currentTestimonial.title}
-                    </div>
+                    </p>
                   </div>
                 </div>
               </motion.div>
@@ -124,32 +133,15 @@ export function TestimonialSection() {
           {/* Next Button */}
           <button
             onClick={handleNext}
-            className="absolute right-0 top-1/2 -translate-y-1/2 z-20 p-2.5 rounded-full bg-white border border-gray-200 shadow-md text-gray-600 hover:text-indigo-600 hover:border-indigo-200 transition-all hover:scale-110 active:scale-95 focus:outline-none"
+            className="absolute right-0 top-1/2 -translate-y-1/2 z-20 p-2.5 rounded-full bg-white border border-gray-200 shadow-md text-gray-600 hover:text-indigo-600 hover:border-indigo-200 transition-all hover:scale-110 active:scale-95 focus:outline-none cursor-pointer"
             aria-label="Next Testimonial"
           >
-            <ChevronRight size={22} />
+            <CaretRight size={20} weight="bold" />
           </button>
-
-          {/* Pagination Indicators */}
-          <div className="flex justify-center items-center gap-2 mt-8">
-            {testimonials.map((_, idx) => (
-              <button
-                key={idx}
-                onClick={() => {
-                  setDirection(idx > currentIndex ? 1 : -1);
-                  setCurrentIndex(idx);
-                }}
-                className={`h-2.5 rounded-full transition-all duration-300 ${
-                  idx === currentIndex
-                    ? "w-8 bg-indigo-600"
-                    : "w-2.5 bg-gray-200 hover:bg-gray-300"
-                }`}
-                aria-label={`Go to slide ${idx + 1}`}
-              />
-            ))}
-          </div>
         </div>
       </div>
     </section>
   );
 }
+
+export default TestimonialSection;

@@ -1,6 +1,8 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { Copy, Check } from "lucide-react";
+import { Copy, Check } from "@phosphor-icons/react";
+import Tag from "./ui/Tag";
+import { Ring, DotGrid } from "./ui/decor";
 
 export function ApiSection() {
   const [copied, setCopied] = React.useState(false);
@@ -12,12 +14,25 @@ export function ApiSection() {
   };
 
   return (
-    <section className="py-24 bg-[var(--pd-ink)] text-white overflow-hidden relative">
+    <section className="py-24 bg-[#0B0B14] text-white overflow-hidden relative border-t border-slate-800">
+      {/* Credential ring decor */}
+      <Ring
+        size={420}
+        strokeWidth={40}
+        color="#5144E8"
+        className="absolute -top-28 -right-28 opacity-15 pointer-events-none"
+      />
+      <div className="absolute inset-0 opacity-10 pointer-events-none">
+        <DotGrid dotSize={1.2} gap={20} color="#5144E8" opacity={0.3} />
+      </div>
+
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 flex flex-col md:flex-row items-center justify-between gap-16">
         
         {/* Text Content */}
         <div className="md:w-1/2 space-y-8">
-          <span className="pd-pill-label" style={{ background: "rgba(91,76,245,0.1)", borderColor: "rgba(91,76,245,0.3)", color: "rgba(91,76,245,0.8)" }}>For Developers</span>
+          <div>
+            <Tag tone="indigo">For Developers</Tag>
+          </div>
           
           <div className="space-y-4">
             <h2 className="text-4xl md:text-5xl font-bold tracking-tight text-white leading-tight">
@@ -48,7 +63,7 @@ export function ApiSection() {
 
         {/* Code Visual */}
         <div className="md:w-1/2 w-full">
-          <div className="bg-[#0a0a14] rounded-2xl border border-white/10 overflow-hidden font-mono text-sm leading-relaxed" style={{ boxShadow: "var(--pd-shadow)" }}>
+          <div className="bg-[#0e0e1a] rounded-3xl border border-white/10 overflow-hidden font-mono text-sm leading-relaxed shadow-2xl">
             {/* Window Controls */}
             <div className="flex items-center justify-between px-4 py-3 bg-white/5 border-b border-white/10">
               <div className="flex gap-2">
@@ -64,8 +79,8 @@ export function ApiSection() {
               <div>
                 <div className="flex items-center justify-between text-white/30 text-xs mb-2">
                   <span>// Generate a certificate via API</span>
-                  <button onClick={copyEndpoint} className="hover:text-white transition-colors flex items-center gap-1">
-                    {copied ? <Check size={14} className="text-[var(--pd-success)]" /> : <Copy size={14} />}
+                  <button onClick={copyEndpoint} className="hover:text-white transition-colors flex items-center gap-1 cursor-pointer">
+                    {copied ? <Check size={14} weight="bold" className="text-emerald-400" /> : <Copy size={14} />}
                     <span>{copied ? "Copied" : "Copy"}</span>
                   </button>
                 </div>
@@ -99,3 +114,5 @@ export function ApiSection() {
     </section>
   );
 }
+
+export default ApiSection;

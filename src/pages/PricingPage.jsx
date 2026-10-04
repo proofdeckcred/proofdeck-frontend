@@ -2,80 +2,162 @@ import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import PublicHeader from "../components/PublicHeader";
 import PublicFooter from "../components/PublicFooter";
-import { Check, ChevronDown, ChevronUp, MessageSquare } from "lucide-react";
+import {
+  Check,
+  CaretDown,
+  CaretUp,
+  ChatCircleDots,
+  Rocket,
+  TrendUp,
+  Crown,
+  Buildings,
+} from "@phosphor-icons/react";
 import SEO from "../components/SEO";
 import CustomPricingModal from "../components/CustomPricingModal";
+import Tag from "../components/ui/Tag";
+import CheckBadge from "../components/ui/CheckBadge";
+import IconBadge from "../components/ui/IconBadge";
+import { Ring, Swirl } from "../components/ui/decor";
+
+const TIER_ICONS = {
+  Starter: Rocket,
+  Growth: TrendUp,
+  Pro: Crown,
+  Enterprise: Buildings,
+};
+
+const TIER_TONES = {
+  Starter: "indigo-tint",
+  Growth: "sky",
+  Pro: "indigo",
+  Enterprise: "ink",
+};
 
 const PricingCard = ({ plan, isPopular }) => {
+  const isEnterprise = plan.name === "Enterprise";
+  const TierIcon = TIER_ICONS[plan.name] || Rocket;
+  const tierTone = TIER_TONES[plan.name] || "indigo";
+
   return (
     <div
-      className={`relative flex flex-col p-8 rounded-2xl border transition-colors ${
-        isPopular
-          ? "border-[var(--pd-indigo)] z-10"
-          : "border-[var(--pd-line)] bg-white hover:border-[var(--pd-mute)]/30"
+      className={`relative flex flex-col p-8 rounded-3xl border transition-all ${
+        isEnterprise
+          ? "bg-[#0B0B14] text-white border-slate-800 shadow-xl overflow-hidden"
+          : isPopular
+          ? "bg-[#E9E7FD]/90 border-[#5144E8] ring-2 ring-[#5144E8]/20 shadow-lg z-10 text-[var(--pd-ink)]"
+          : "bg-white border-[var(--pd-line)] hover:border-[var(--pd-mute)]/30 text-[var(--pd-ink)]"
       }`}
-      style={{
-        boxShadow: "var(--pd-shadow)",
-        ...(isPopular ? { background: "linear-gradient(135deg, #f0edff 0%, #e8e4ff 50%, #f5f3ff 100%)" } : { background: "white" }),
-      }}
+      style={{ boxShadow: "var(--pd-shadow)" }}
     >
+      {/* Enterprise Cropped Indigo Ring Motif (§5.2) */}
+      {isEnterprise && (
+        <Ring
+          size={260}
+          strokeWidth={28}
+          color="#5144E8"
+          className="absolute -bottom-16 -right-16 opacity-30 pointer-events-none"
+        />
+      )}
+
+      {/* Tilted Sticker-Style "Best value" Label (§5.2) */}
       {isPopular && (
-        <div className="absolute -top-3.5 left-1/2 -translate-x-1/2">
-          <span className="px-4 py-1.5 bg-[var(--pd-amber)] text-[var(--pd-ink)] rounded-full text-xs font-bold">
+        <div className="absolute -top-3.5 right-6 z-20">
+          <span
+            className="inline-block px-3.5 py-1 bg-[#FDEC8C] text-[#0B0B14] rounded-full text-xs font-bold border border-amber-300/80 shadow-xs"
+            style={{ transform: "rotate(3deg)" }}
+          >
             Best value
           </span>
         </div>
       )}
 
-      <h3 className="text-lg font-bold text-[var(--pd-ink)] mb-2">{plan.name}</h3>
-      <p className="text-[var(--pd-mute)] text-sm mb-6 h-10 leading-relaxed">{plan.for}</p>
+      <div className="flex items-center justify-between mb-4 relative z-10">
+        <div className="flex items-center gap-2.5">
+          <IconBadge
+            icon={TierIcon}
+            tone={tierTone}
+            size="md"
+            shape="squircle"
+            tilt={isPopular ? -2 : 0}
+          />
+          <h3 className={`text-xl font-bold ${isEnterprise ? "text-white" : "text-[var(--pd-ink)]"} mb-0`}>
+            {plan.name}
+          </h3>
+        </div>
+      </div>
 
-      <div className="flex items-baseline gap-2 mb-2">
-        <span className="text-4xl font-bold text-[var(--pd-ink)] tracking-tight tabular-nums">
+      <p className={`${isEnterprise ? "text-slate-300" : "text-[var(--pd-mute)]"} text-sm mb-6 h-10 leading-relaxed relative z-10`}>
+        {plan.for}
+      </p>
+
+      <div className="flex items-baseline gap-2 mb-2 relative z-10">
+        <span className={`text-4xl font-bold tracking-tight tabular-nums ${isEnterprise ? "text-white" : "text-[var(--pd-ink)]"}`}>
           {plan.priceNGN}
         </span>
-        <span className="text-sm font-medium text-[var(--pd-mute)] bg-[var(--pd-paper)] px-2 py-0.5 rounded-md border border-[var(--pd-line)]">
+        <span className={`text-xs font-medium px-2 py-0.5 rounded-md border ${
+          isEnterprise
+            ? "text-slate-300 bg-slate-900 border-slate-700"
+            : "text-[var(--pd-mute)] bg-[var(--pd-paper)] border-[var(--pd-line)]"
+        }`}>
           {plan.priceUSD}
         </span>
       </div>
-      <span className="text-[var(--pd-mute)] text-xs font-medium block mb-3">
+
+      <span className={`${isEnterprise ? "text-slate-400" : "text-[var(--pd-mute)]"} text-xs font-medium block mb-3 relative z-10`}>
         {plan.interval === "yearly" ? "Billed annually" : "One-time payment"}
       </span>
-      <p className="text-xs font-medium text-[var(--pd-indigo)] bg-[var(--pd-paper)] inline-block py-1 px-2.5 rounded-full mb-4 w-max border border-[var(--pd-line)]">
-        {plan.certs} Credits Included
-      </p>
+
+      <div className="mb-4 relative z-10">
+        <Tag tone={isEnterprise ? "ink" : isPopular ? "indigo" : "sky"} size="sm">
+          {plan.certs} Credits Included
+        </Tag>
+      </div>
 
       {plan.rolloverNotice && (
-        <div className="mb-6 p-2.5 bg-amber-50 border border-amber-200/80 rounded-xl text-[11px] text-amber-900 leading-snug">
+        <div className={`mb-6 p-2.5 rounded-xl text-[11px] leading-snug border relative z-10 ${
+          isEnterprise
+            ? "bg-slate-900 border-slate-800 text-amber-200"
+            : "bg-amber-50 border-amber-200/80 text-amber-900"
+        }`}>
           <span className="font-bold">Partial Rollover:</span> {plan.rolloverNotice}
         </div>
       )}
 
-      <div className="bg-[var(--pd-paper)] rounded-xl py-3 px-4 mb-8 border border-[var(--pd-line)] flex items-center justify-between">
+      <div className={`rounded-2xl py-3 px-4 mb-8 border flex items-center justify-between relative z-10 ${
+        isEnterprise
+          ? "bg-slate-900/90 border-slate-800"
+          : "bg-[var(--pd-paper)] border-[var(--pd-line)]"
+      }`}>
         <div>
-          <p className="text-xs text-[var(--pd-mute)] font-medium">Cost per cert</p>
-          <p className="font-bold text-[var(--pd-ink)] text-sm">{plan.costPerCert}</p>
+          <p className={`text-xs font-medium ${isEnterprise ? "text-slate-400" : "text-[var(--pd-mute)]"}`}>Cost per cert</p>
+          <p className={`font-bold text-sm ${isEnterprise ? "text-white" : "text-[var(--pd-ink)]"}`}>{plan.costPerCert}</p>
         </div>
-        <div className="h-8 w-px bg-[var(--pd-line)]"></div>
+        <div className={`h-8 w-px ${isEnterprise ? "bg-slate-800" : "bg-[var(--pd-line)]"}`}></div>
         <div className="text-right">
-          <p className="text-xs text-[var(--pd-mute)] font-medium">Validity</p>
-          <p className="font-bold text-[var(--pd-ink)] text-sm">{plan.validity || "Lifetime"}</p>
+          <p className={`text-xs font-medium ${isEnterprise ? "text-slate-400" : "text-[var(--pd-mute)]"}`}>Validity</p>
+          <p className={`font-bold text-sm ${isEnterprise ? "text-white" : "text-[var(--pd-ink)]"}`}>{plan.validity || "Lifetime"}</p>
         </div>
       </div>
 
-      <ul className="space-y-3.5 mb-8 flex-1">
+      <ul className="space-y-3.5 mb-8 flex-1 relative z-10">
         {plan.features.map((feat, idx) => (
-          <li key={idx} className="flex items-start text-sm text-[var(--pd-ink)]">
-            <Check size={14} className="text-[var(--pd-success)] shrink-0 mr-2.5 mt-0.5 stroke-[2.5]" />
-            {feat}
+          <li key={idx} className={`flex items-start text-sm ${isEnterprise ? "text-slate-200" : "text-[var(--pd-ink)]"}`}>
+            <CheckBadge
+              tone={isEnterprise ? "indigo" : isPopular ? "indigo" : "green"}
+              size={18}
+              className="mr-2.5 mt-0.5"
+            />
+            <span>{feat}</span>
           </li>
         ))}
       </ul>
 
       <Link
         to={`/signup?plan=${plan.name.toLowerCase()}`}
-        className={`w-full py-3 px-4 rounded-full text-sm font-medium text-center transition-colors no-underline ${
-          isPopular
+        className={`w-full py-3 px-4 rounded-full text-sm font-medium text-center transition-colors no-underline relative z-10 ${
+          isEnterprise
+            ? "bg-[#5144E8] text-white hover:bg-[#4433E0]"
+            : isPopular
             ? "bg-[var(--pd-indigo)] text-white hover:bg-[var(--pd-indigo-dark)]"
             : "bg-white text-[var(--pd-ink)] border border-[var(--pd-line)] hover:bg-[var(--pd-paper)]"
         }`}
@@ -274,9 +356,15 @@ const PricingPage = () => {
       <PublicHeader />
       <main>
         {/* Hero Section */}
-        <section className="relative py-24 text-center bg-[var(--pd-paper)]">
-          <div className="max-w-4xl mx-auto px-6">
-            <span className="pd-pill-label mb-4 inline-flex">Pricing</span>
+        <section className="relative py-24 text-center bg-[var(--pd-paper)] pd-dot-grid border-b border-[var(--pd-line)] overflow-hidden">
+          <Ring
+            size={360}
+            strokeWidth={36}
+            color="#5144E8"
+            className="absolute -top-24 -left-20 opacity-[0.08]"
+          />
+          <div className="max-w-4xl mx-auto px-6 relative z-10">
+            <Tag tone="sun" dot>Pricing</Tag>
             <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold text-[var(--pd-ink)] tracking-tight mb-6 leading-tight pt-4">
               Transparent Naira pricing.<br />
               Pay only for what you issue.
@@ -301,17 +389,21 @@ const PricingPage = () => {
               ))}
             </div>
 
-            {/* Want Custom? Landscape Banner */}
-            <div className="mt-12 bg-gradient-to-r from-blue-50 via-sky-50/70 to-indigo-50/50 rounded-2xl sm:rounded-3xl p-6 sm:p-8 flex flex-col sm:flex-row items-center justify-between gap-6 border border-blue-200/90 shadow-xs">
-              <div className="flex items-center gap-4 text-center sm:text-left">
-                <div className="w-12 h-12 rounded-2xl bg-blue-600 text-white flex items-center justify-center shrink-0 hidden sm:flex shadow-xs">
-                  <MessageSquare size={22} />
+            {/* Want Custom? Flat Tone Landscape Banner (§5.2) */}
+            <div className="mt-14 bg-[#E9E7FD]/85 rounded-3xl p-6 sm:p-8 flex flex-col sm:flex-row items-center justify-between gap-6 border border-[#5144E8]/20 shadow-xs relative overflow-hidden">
+              <Ring
+                size={240}
+                strokeWidth={24}
+                color="#5144E8"
+                className="absolute -bottom-16 -right-16 opacity-15"
+              />
+              <div className="flex items-center gap-4 text-center sm:text-left relative z-10">
+                <div className="shrink-0 hidden sm:flex">
+                  <IconBadge icon={ChatCircleDots} tone="indigo" size="lg" shape="squircle" />
                 </div>
                 <div>
-                  <div className="inline-flex items-center gap-2 mb-1">
-                    <span className="text-xs font-bold uppercase tracking-wider text-blue-700 bg-blue-100/90 px-2.5 py-0.5 rounded-full border border-blue-200/80">
-                      Tailored High-Volume
-                    </span>
+                  <div className="inline-flex items-center gap-2 mb-1.5">
+                    <Tag tone="indigo" size="sm">Tailored High-Volume</Tag>
                   </div>
                   <h3 className="text-lg sm:text-xl font-bold text-slate-900 mb-1">
                     Need more than 10,000 credentials or custom integrations?
@@ -324,7 +416,7 @@ const PricingPage = () => {
               <button
                 type="button"
                 onClick={() => setOpenCustomModal(true)}
-                className="w-full sm:w-auto px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs sm:text-sm font-bold transition-all shadow-xs shrink-0 flex items-center justify-center gap-2 cursor-pointer whitespace-nowrap"
+                className="w-full sm:w-auto px-6 py-3 bg-[#5144E8] hover:bg-[#4433E0] text-white rounded-xl text-xs sm:text-sm font-bold transition-all shadow-xs shrink-0 flex items-center justify-center gap-2 cursor-pointer whitespace-nowrap relative z-10"
               >
                 Want custom? <span className="underline underline-offset-2 font-extrabold ml-0.5">Talk to Us</span>
               </button>
@@ -341,7 +433,7 @@ const PricingPage = () => {
             </div>
             
             <div className="grid md:grid-cols-2 gap-8">
-              <div className="bg-white p-8 rounded-2xl border border-[var(--pd-line)]" style={{ boxShadow: "var(--pd-shadow)" }}>
+              <div className="bg-white p-8 rounded-3xl border border-[var(--pd-line)]" style={{ boxShadow: "var(--pd-shadow)" }}>
                 <h3 className="font-bold text-[var(--pd-ink)] text-xl mb-6">
                   Available on All Plans
                 </h3>
@@ -353,17 +445,24 @@ const PricingPage = () => {
                     "Unlimited templates design",
                     "Fraud-resistant certificate IDs"
                   ].map((item, i) => (
-                    <li key={i} className="flex items-center gap-3 text-[var(--pd-ink)] text-sm">
-                      <Check size={16} className="text-[var(--pd-success)] shrink-0 stroke-[2.5]" /> {item}
+                    <li key={i} className="flex items-center gap-3 text-[var(--pd-ink)] text-sm font-medium">
+                      <CheckBadge tone="green" size={20} />
+                      <span>{item}</span>
                     </li>
                   ))}
                 </ul>
               </div>
-              <div className="bg-[var(--pd-ink)] p-8 rounded-2xl text-white" style={{ boxShadow: "var(--pd-shadow)" }}>
-                <h3 className="font-bold text-white text-xl mb-6">
+              <div className="bg-[#0B0B14] p-8 rounded-3xl text-white border border-slate-800 relative overflow-hidden" style={{ boxShadow: "var(--pd-shadow)" }}>
+                <Ring
+                  size={200}
+                  strokeWidth={22}
+                  color="#5144E8"
+                  className="absolute -bottom-10 -right-10 opacity-30"
+                />
+                <h3 className="font-bold text-white text-xl mb-6 relative z-10">
                   Pro & Enterprise Exclusives
                 </h3>
-                <ul className="space-y-4">
+                <ul className="space-y-4 relative z-10">
                   {[
                     "Full API Access", 
                     "SLA-backed support guarantees",
@@ -371,8 +470,9 @@ const PricingPage = () => {
                     "Onboarding Assistance & Priority Support",
                     "Advanced Analytics Dashboard"
                   ].map((item, i) => (
-                    <li key={i} className="flex items-center gap-3 text-white/70 text-sm">
-                      <Check size={16} className="text-[var(--pd-indigo)] shrink-0 stroke-[2.5]" /> {item}
+                    <li key={i} className="flex items-center gap-3 text-slate-200 text-sm font-medium">
+                      <CheckBadge tone="indigo" size={20} />
+                      <span>{item}</span>
                     </li>
                   ))}
                 </ul>
@@ -385,7 +485,9 @@ const PricingPage = () => {
         <section className="py-20 md:py-24 bg-white border-b border-[var(--pd-line)]">
           <div className="max-w-3xl mx-auto px-4 sm:px-6">
             <div className="text-center mb-12">
-              <span className="pd-pill-label mb-4 inline-flex">Pricing FAQ</span>
+              <div className="mb-4">
+                <Tag tone="indigo">Pricing FAQ</Tag>
+              </div>
               <h2 className="text-3xl font-bold text-[var(--pd-ink)] tracking-tight">
                 Frequently Asked Pricing Questions
               </h2>
@@ -408,9 +510,9 @@ const PricingPage = () => {
                     >
                       <span>{faq.question}</span>
                       {isOpen ? (
-                        <ChevronUp size={18} className="text-[var(--pd-indigo)] shrink-0 ml-4" />
+                        <CaretUp size={18} weight="bold" className="text-[var(--pd-indigo)] shrink-0 ml-4" />
                       ) : (
-                        <ChevronDown size={18} className="text-slate-400 shrink-0 ml-4" />
+                        <CaretDown size={18} weight="bold" className="text-slate-400 shrink-0 ml-4" />
                       )}
                     </button>
                     {isOpen && (
@@ -425,29 +527,46 @@ const PricingPage = () => {
           </div>
         </section>
 
-        {/* Final CTA */}
-        <section className="py-24 bg-[var(--pd-paper)]">
-          <div className="max-w-3xl mx-auto px-4 text-center">
-            <h2 className="text-4xl font-bold text-[var(--pd-ink)] mb-6">
-              Start issuing certificates within minutes
-            </h2>
-            <p className="text-lg text-[var(--pd-mute)] mb-10 max-w-2xl mx-auto">
-              No complex setup. No long onboarding. Choose a credit pack and start
-              issuing verifiable certificates today.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link
-                to="/signup"
-                className="inline-flex items-center justify-center px-6 py-3 text-sm font-medium text-white bg-[var(--pd-indigo)] rounded-full hover:bg-[var(--pd-indigo-dark)] transition-colors no-underline"
-              >
-                Get started with ProofDeck
-              </Link>
-              <Link
-                to="/contact"
-                className="inline-flex items-center justify-center px-6 py-3 text-sm font-medium text-[var(--pd-ink)] bg-white border border-[var(--pd-line)] hover:bg-[var(--pd-paper)] rounded-full transition-colors no-underline"
-              >
-                Contact Sales
-              </Link>
+        {/* Final CTA (§5.2: Flat indigo/ink rounded panel with cropped Rings/Swirl in tone-on-tone) */}
+        <section className="py-20 md:py-28 bg-[var(--pd-paper)] pd-dot-grid">
+          <div className="max-w-4xl mx-auto px-4 sm:px-6">
+            <div className="rounded-[32px] sm:rounded-[40px] bg-[#5144E8] text-white p-8 sm:p-14 relative overflow-hidden text-center shadow-xl">
+              <Ring
+                size={340}
+                strokeWidth={36}
+                color="#3B2FC9"
+                className="absolute -top-24 -right-20 opacity-40 pointer-events-none"
+              />
+              <Swirl
+                size={220}
+                strokeWidth={22}
+                color="#3B2FC9"
+                className="absolute -bottom-16 -left-16 opacity-35 pointer-events-none"
+              />
+
+              <div className="relative z-10 max-w-2xl mx-auto space-y-4">
+                <h2 className="text-3xl sm:text-4xl font-bold text-white tracking-tight mb-4">
+                  Start issuing certificates within minutes
+                </h2>
+                <p className="text-base sm:text-lg text-white/80 mb-8 max-w-xl mx-auto leading-relaxed">
+                  No complex setup. No long onboarding. Choose a credit pack and start
+                  issuing verifiable certificates today.
+                </p>
+                <div className="flex flex-col sm:flex-row gap-4 justify-center pt-2">
+                  <Link
+                    to="/signup"
+                    className="inline-flex items-center justify-center px-7 py-3 text-sm font-semibold text-[#0B0B14] bg-white rounded-full hover:bg-slate-100 transition-colors no-underline shadow-sm"
+                  >
+                    Get started with ProofDeck
+                  </Link>
+                  <Link
+                    to="/contact"
+                    className="inline-flex items-center justify-center px-7 py-3 text-sm font-semibold text-white border border-white/30 hover:bg-white/10 rounded-full transition-colors no-underline"
+                  >
+                    Contact Sales
+                  </Link>
+                </div>
+              </div>
             </div>
           </div>
         </section>

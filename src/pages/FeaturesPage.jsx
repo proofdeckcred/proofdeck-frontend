@@ -2,9 +2,13 @@ import React from "react";
 import { Link } from "react-router-dom";
 import PublicHeader from "../components/PublicHeader";
 import PublicFooter from "../components/PublicFooter";
-import { ShieldCheck, Layers, Award, Check } from "lucide-react";
+import { ShieldCheck, Stack, SealCheck, Check, ArrowRight } from "@phosphor-icons/react";
 import { motion } from "motion/react";
 import SEO from "../components/SEO";
+import IconBadge from "../components/ui/IconBadge";
+import Tag from "../components/ui/Tag";
+import CheckBadge from "../components/ui/CheckBadge";
+import { Ring, Guilloche, Seal, DotGrid } from "../components/ui/decor";
 
 export default function FeaturesPage() {
   const breadcrumbSchema = {
@@ -39,11 +43,25 @@ export default function FeaturesPage() {
       <main className="flex-grow">
         {/* SECTION 1: SOLUTIONS (Matches top half of Image 1) */}
         <section className="py-20 md:py-28 bg-[var(--pd-paper)] border-b border-[var(--pd-line)] pd-dot-grid relative overflow-hidden">
+          {/* Ambient section decor */}
+          <Ring
+            size={360}
+            strokeWidth={36}
+            color="#5144E8"
+            className="absolute -top-24 -left-24 text-indigo-500 opacity-[0.07]"
+          />
+          <Guilloche
+            size={320}
+            color="#0A9AF5"
+            opacity={0.12}
+            className="absolute -bottom-28 -right-20"
+          />
+
           <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 text-center">
             
             {/* Pill label */}
             <div className="mb-4">
-              <span className="pd-pill-label">Platform Features</span>
+              <Tag tone="indigo" icon={Stack}>Platform Features</Tag>
             </div>
 
             {/* Section Headline */}
@@ -54,50 +72,106 @@ export default function FeaturesPage() {
               Everything your institution needs to design custom templates, bulk issue from spreadsheets, and deliver tamper-proof verifiable certificates in seconds.
             </p>
 
-            {/* 3-Up Value Props */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-4xl mx-auto mb-14 text-center md:text-left">
-              <div className="space-y-2.5">
-                <div className="w-8 h-8 rounded-lg bg-white border border-[var(--pd-line)] flex items-center justify-center mx-auto md:mx-0 shadow-2xs">
-                  <ShieldCheck size={18} className="text-[var(--pd-indigo)]" />
+            {/* 3-Up Value Props: Crafted Tinted Tiles with Solid IconBadges and Cropped Motifs */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8 max-w-5xl mx-auto mb-16 text-left">
+              {/* Tile 1: Tamper-Proof Verification (Indigo tone) */}
+              <div className="relative rounded-[28px] p-7 sm:p-8 bg-[#E9E7FD]/75 border border-[#5144E8]/20 overflow-hidden transition-all duration-300 hover:border-[#5144E8]/40">
+                <Ring
+                  size={180}
+                  strokeWidth={22}
+                  color="#5144E8"
+                  className="absolute -top-10 -right-10 opacity-20"
+                />
+                <div className="relative z-10 space-y-4">
+                  <IconBadge
+                    icon={ShieldCheck}
+                    tone="indigo"
+                    size="xl"
+                    shape="squircle"
+                    tilt={-3}
+                  />
+                  <div>
+                    <h3 className="font-bold text-base sm:text-lg text-[var(--pd-ink)] mb-2">
+                      Tamper-Proof Verification
+                    </h3>
+                    <p className="text-xs sm:text-sm text-[var(--pd-mute)] leading-relaxed font-normal">
+                      Ensure your team and recipients are always on the same page with real-time verification and transparent credential ledgers.
+                    </p>
+                  </div>
                 </div>
-                <h3 className="font-bold text-sm text-[var(--pd-ink)]">Tamper-Proof Verification</h3>
-                <p className="text-xs sm:text-sm text-[var(--pd-mute)] leading-relaxed font-normal">
-                  Ensure your team and recipients are always on the same page with real-time verification and transparent credential ledgers.
-                </p>
               </div>
 
-              <div className="space-y-2.5">
-                <div className="w-8 h-8 rounded-lg bg-white border border-[var(--pd-line)] flex items-center justify-center mx-auto md:mx-0 shadow-2xs">
-                  <Layers size={18} className="text-[var(--pd-indigo)]" />
+              {/* Tile 2: Automate Issuance at Scale (Sky tone) */}
+              <div className="relative rounded-[28px] p-7 sm:p-8 bg-[#DDF1FD]/75 border border-[#0A9AF5]/20 overflow-hidden transition-all duration-300 hover:border-[#0A9AF5]/40">
+                <Guilloche
+                  size={200}
+                  color="#0A9AF5"
+                  opacity={0.2}
+                  className="absolute -bottom-12 -right-12"
+                />
+                <div className="relative z-10 space-y-4">
+                  <IconBadge
+                    icon={Stack}
+                    tone="sky"
+                    size="xl"
+                    shape="squircle"
+                    tilt={0}
+                  />
+                  <div>
+                    <h3 className="font-bold text-base sm:text-lg text-[var(--pd-ink)] mb-2">
+                      Automate Issuance at Scale
+                    </h3>
+                    <p className="text-xs sm:text-sm text-[var(--pd-mute)] leading-relaxed font-normal">
+                      Prioritize and automate bulk issuing effectively so your organization can focus on what matters most.
+                    </p>
+                  </div>
                 </div>
-                <h3 className="font-bold text-sm text-[var(--pd-ink)]">Automate Issuance at Scale</h3>
-                <p className="text-xs sm:text-sm text-[var(--pd-mute)] leading-relaxed font-normal">
-                  Prioritize and automate bulk issuing effectively so your organization can focus on what matters most.
-                </p>
               </div>
 
-              <div className="space-y-2.5">
-                <div className="w-8 h-8 rounded-lg bg-white border border-[var(--pd-line)] flex items-center justify-center mx-auto md:mx-0 shadow-2xs">
-                  <Award size={18} className="text-[var(--pd-indigo)]" />
+              {/* Tile 3: Boost Organic Credibility (Sun tone) */}
+              <div className="relative rounded-[28px] p-7 sm:p-8 bg-[#FEF8D6]/80 border border-[#E3CE5B]/35 overflow-hidden transition-all duration-300 hover:border-[#E3CE5B]/60">
+                <Seal
+                  size={190}
+                  color="#E3CE5B"
+                  opacity={0.28}
+                  className="absolute -top-12 -right-12"
+                />
+                <div className="relative z-10 space-y-4">
+                  <IconBadge
+                    icon={SealCheck}
+                    tone="sun"
+                    size="xl"
+                    shape="squircle"
+                    tilt={3}
+                  />
+                  <div>
+                    <h3 className="font-bold text-base sm:text-lg text-[var(--pd-ink)] mb-2">
+                      Boost Organic Credibility
+                    </h3>
+                    <p className="text-xs sm:text-sm text-[#713F12]/80 leading-relaxed font-normal">
+                      Hold credentials accountable without the need for manual confirmation calls or slow paperwork checks.
+                    </p>
+                  </div>
                 </div>
-                <h3 className="font-bold text-sm text-[var(--pd-ink)]">Boost Organic Credibility</h3>
-                <p className="text-xs sm:text-sm text-[var(--pd-mute)] leading-relaxed font-normal">
-                  Hold credentials accountable without the need for manual confirmation calls or slow paperwork checks.
-                </p>
               </div>
             </div>
 
-            {/* Blue/Indigo Panel with floating mockup & stickers */}
+            {/* Flat Sky-Blue Panel with floating mockup & stickers (no gradient) */}
             <div className="relative max-w-5xl mx-auto">
               <div 
-                className="rounded-3xl sm:rounded-[32px] p-4 sm:p-8 md:p-12 relative overflow-hidden bg-[#00A3FF] shadow-2xl"
-                style={{
-                  background: "linear-gradient(180deg, #00A3FF 0%, #0284C7 100%)"
-                }}
+                className="rounded-3xl sm:rounded-[32px] p-4 sm:p-8 md:p-12 relative overflow-hidden bg-[#0A9AF5] shadow-2xl"
               >
+                {/* Tone decor on the frame */}
+                <Ring
+                  size={320}
+                  strokeWidth={36}
+                  color="#0880CC"
+                  className="absolute -bottom-20 -right-16 opacity-35"
+                />
+
                 {/* Floating Badge 1 (Left - sticker '20k+') */}
                 <motion.div 
-                  className="hidden sm:flex absolute left-4 sm:left-6 top-1/2 -translate-y-1/2 z-20 bg-white rounded-2xl p-3 sm:p-4 shadow-xl border border-white/40 flex-col items-center justify-center"
+                  className="hidden sm:flex absolute left-4 sm:left-6 top-1/2 -translate-y-1/2 z-20 bg-white rounded-2xl p-3 sm:p-4 shadow-xl border border-black/5 flex-col items-center justify-center"
                   style={{ transform: "rotate(-8deg)" }}
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
@@ -109,15 +183,13 @@ export default function FeaturesPage() {
 
                 {/* Floating Badge 2 (Right - checkmark pill sticker) */}
                 <motion.div 
-                  className="hidden sm:flex absolute right-4 sm:right-6 top-1/3 z-20 bg-white rounded-2xl p-3 sm:p-4 shadow-xl border border-white/40 items-center gap-2"
+                  className="hidden sm:flex absolute right-4 sm:right-6 top-1/3 z-20 bg-white rounded-2xl p-3 sm:p-4 shadow-xl border border-black/5 items-center gap-2.5"
                   style={{ transform: "rotate(6deg)" }}
                   initial={{ opacity: 0, x: 20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ duration: 0.6, delay: 0.3 }}
                 >
-                  <div className="w-7 h-7 rounded-lg bg-emerald-500/15 flex items-center justify-center">
-                    <Check size={16} className="text-emerald-600 stroke-[3]" />
-                  </div>
+                  <CheckBadge tone="green" size={24} />
                   <span className="text-xs font-bold text-[var(--pd-ink)]">Verified</span>
                 </motion.div>
 
@@ -142,7 +214,7 @@ export default function FeaturesPage() {
 
             {/* Pill label */}
             <div className="text-center mb-3">
-              <span className="pd-pill-label">Features</span>
+              <Tag tone="indigo">Features</Tag>
             </div>
 
             {/* Heading & Subtitle */}
@@ -171,7 +243,9 @@ export default function FeaturesPage() {
                   />
                 </div>
                 <div>
-                  <span className="pd-pill-label mb-3 inline-flex">Design Studio</span>
+                  <div className="mb-3">
+                    <Tag tone="indigo" size="sm">Design Studio</Tag>
+                  </div>
                   <h3 className="text-xl sm:text-2xl font-bold text-[var(--pd-ink)] mb-2">
                     Customizable Template Designer
                   </h3>
@@ -194,7 +268,9 @@ export default function FeaturesPage() {
                   />
                 </div>
                 <div>
-                  <span className="pd-pill-label mb-3 inline-flex">Tamper-Proof</span>
+                  <div className="mb-3">
+                    <Tag tone="green" size="sm">Tamper-Proof</Tag>
+                  </div>
                   <h3 className="text-xl sm:text-2xl font-bold text-[var(--pd-ink)] mb-2">
                     Instant Public Verification Portal
                   </h3>
@@ -217,7 +293,9 @@ export default function FeaturesPage() {
                   />
                 </div>
                 <div>
-                  <span className="pd-pill-label mb-3 inline-flex">Social Growth</span>
+                  <div className="mb-3">
+                    <Tag tone="indigo" size="sm">Social Growth</Tag>
+                  </div>
                   <h3 className="text-xl sm:text-2xl font-bold text-[var(--pd-ink)] mb-2">
                     1-Click LinkedIn & Social Sharing
                   </h3>
@@ -240,7 +318,9 @@ export default function FeaturesPage() {
                   />
                 </div>
                 <div>
-                  <span className="pd-pill-label mb-3 inline-flex">Insights</span>
+                  <div className="mb-3">
+                    <Tag tone="orange" size="sm">Insights</Tag>
+                  </div>
                   <h3 className="text-xl sm:text-2xl font-bold text-[var(--pd-ink)] mb-2">
                     Real-Time Analytics & Tracking
                   </h3>
@@ -263,7 +343,9 @@ export default function FeaturesPage() {
                   />
                 </div>
                 <div>
-                  <span className="pd-pill-label mb-3 inline-flex">Workspaces</span>
+                  <div className="mb-3">
+                    <Tag tone="sky" size="sm">Workspaces</Tag>
+                  </div>
                   <h3 className="text-xl sm:text-2xl font-bold text-[var(--pd-ink)] mb-2">
                     Seamless Team Collaboration
                   </h3>
@@ -286,7 +368,9 @@ export default function FeaturesPage() {
                   />
                 </div>
                 <div>
-                  <span className="pd-pill-label mb-3 inline-flex">Developer Platform</span>
+                  <div className="mb-3">
+                    <Tag tone="ink" size="sm">Developer Platform</Tag>
+                  </div>
                   <h3 className="text-xl sm:text-2xl font-bold text-[var(--pd-ink)] mb-2">
                     Developer REST API & Integrations
                   </h3>

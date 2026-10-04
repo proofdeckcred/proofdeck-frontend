@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Menu, X, ArrowRight, ChevronRight } from "lucide-react";
+import { List, X, ArrowRight, CaretRight } from "@phosphor-icons/react";
 
 const PublicHeader = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -84,6 +84,7 @@ const PublicHeader = () => {
                 Get Started
                 <ArrowRight
                   size={14}
+                  weight="bold"
                   className="ml-1.5 group-hover:translate-x-0.5 transition-transform"
                 />
               </Link>
@@ -92,9 +93,10 @@ const PublicHeader = () => {
             <div className="md:hidden z-50">
               <button
                 onClick={() => setIsMenuOpen(!isMenuOpen)}
-                className="p-2 -mr-2 rounded-full text-gray-500 hover:bg-gray-100 transition-colors focus:outline-none"
+                className="p-2 -mr-2 rounded-full text-gray-500 hover:bg-gray-100 transition-colors focus:outline-none cursor-pointer"
+                aria-label={isMenuOpen ? "Close menu" : "Open menu"}
               >
-                {isMenuOpen ? <X size={28} /> : <Menu size={28} />}
+                {isMenuOpen ? <X size={26} weight="bold" /> : <List size={26} weight="bold" />}
               </button>
             </div>
           </div>
@@ -125,7 +127,7 @@ const PublicHeader = () => {
                   className="flex items-center justify-between py-3 text-lg font-bold text-gray-900 border-b border-gray-100 no-underline group"
                 >
                   {item.label}
-                  <ChevronRight className="text-gray-300 group-hover:text-indigo-600 transition-colors" />
+                  <CaretRight size={18} weight="bold" className="text-gray-300 group-hover:text-indigo-600 transition-colors" />
                 </a>
               ) : (
                 <Link
@@ -134,7 +136,7 @@ const PublicHeader = () => {
                   className="flex items-center justify-between py-3 text-lg font-bold text-gray-900 border-b border-gray-100 no-underline group"
                 >
                   {item.label}
-                  <ChevronRight className="text-gray-300 group-hover:text-indigo-600 transition-colors" />
+                  <CaretRight size={18} weight="bold" className="text-gray-300 group-hover:text-indigo-600 transition-colors" />
                 </Link>
               )
             )}
@@ -149,7 +151,7 @@ const PublicHeader = () => {
             </Link>
             <Link
               to="/signup"
-              className="flex items-center justify-center w-full py-4 text-lg font-bold text-white bg-indigo-600 rounded-xl no-underline"
+              className="flex items-center justify-center w-full py-4 text-lg font-bold text-white bg-[var(--pd-indigo)] rounded-xl no-underline"
             >
               Create Free Account
             </Link>

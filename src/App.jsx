@@ -37,6 +37,7 @@ import AdminProtectedRoute from "./components/AdminProtectedRoute";
 
 // Lazy-loaded routes for performance & Core Web Vitals (prevents bundling Konva, Chart.js, etc. into marketing pages)
 const DocsPage = lazy(() => import("./pages/DocsPage"));
+const StyleKitPage = lazy(() => import("./pages/StyleKitPage"));
 const OpenLedgerPage = lazy(() => import("./pages/OpenLedgerPage"));
 const VerifyEmailPage = lazy(() => import("./pages/VerifyEmailPage"));
 const ForgotPasswordPage = lazy(() => import("./pages/ForgotPasswordPage"));
@@ -80,10 +81,13 @@ const AdminBlogPage = lazy(() => import("./pages/AdminBlogPage"));
 const AdminBlogEditorPage = lazy(() => import("./pages/AdminBlogEditorPage"));
 
 const NotFoundPage = () => (
-  <div className="min-h-[60vh] flex flex-col items-center justify-center p-8 text-center">
-    <h1 className="text-4xl font-bold text-slate-900 mb-2">404</h1>
-    <p className="text-slate-500 mb-6">The page you are looking for does not exist.</p>
-    <a href="/" className="px-5 py-2.5 bg-indigo-600 text-white rounded-xl text-sm font-semibold no-underline">
+  <div className="min-h-[60vh] flex flex-col items-center justify-center p-8 text-center relative overflow-hidden font-sans">
+    <div className="w-16 h-16 rounded-2xl bg-[var(--tone-indigo-surface)] text-[var(--tone-indigo-accent)] flex items-center justify-center font-black text-xl mb-4 border border-[var(--tone-indigo-border)] shadow-2xs">
+      404
+    </div>
+    <h1 className="text-3xl font-extrabold text-slate-900 mb-2">Page Not Found</h1>
+    <p className="text-slate-500 mb-6 max-w-sm text-sm">The page you are looking for does not exist or has been moved.</p>
+    <a href="/" className="px-6 py-2.5 bg-[var(--pd-indigo)] hover:bg-[var(--pd-indigo-dark)] text-white rounded-full text-sm font-semibold no-underline transition-colors shadow-xs">
       Return Home
     </a>
   </div>
@@ -169,6 +173,7 @@ function App() {
             <Route path="/verify/:verificationId" element={<VerifyCertificatePage />} />
             <Route path="/search" element={<OpenLedgerPage />} />
             <Route path="/docs" element={<DocsPage />} />
+            <Route path="/dev/style-kit" element={<StyleKitPage />} />
             <Route path="/email/unsubscribe" element={<UnsubscribePage />} />
 
             {/* Admin Routes */}

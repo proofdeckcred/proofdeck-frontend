@@ -6,16 +6,19 @@ import toast, { Toaster } from "react-hot-toast";
 import { motion } from "motion/react";
 import { sendContactMessage } from "../api";
 import {
-  Mail,
+  EnvelopeSimple,
   User,
-  MessageSquare,
-  Send,
-  Loader2,
-  CheckCircle2,
+  ChatCircleDots,
+  PaperPlaneTilt,
+  CircleNotch,
+  CheckCircle,
   MapPin,
   Phone,
-} from "lucide-react";
+} from "@phosphor-icons/react";
 import SEO from "../components/SEO";
+import Tag from "../components/ui/Tag";
+import IconBadge from "../components/ui/IconBadge";
+import { Ring, Guilloche } from "../components/ui/decor";
 
 const ContactPage = () => {
   const [formData, setFormData] = useState({
@@ -53,8 +56,22 @@ const ContactPage = () => {
       <Toaster position="top-right" />
       <PublicHeader />
 
-      <main className="flex-grow relative bg-[var(--pd-paper)] pd-dot-grid">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-20">
+      <main className="flex-grow relative bg-[var(--pd-paper)] pd-dot-grid overflow-hidden">
+        {/* Ambient Ring & Guilloche Decor (§5.2) */}
+        <Ring
+          size={380}
+          strokeWidth={38}
+          color="#5144E8"
+          className="absolute -top-24 -left-20 opacity-[0.07] pointer-events-none"
+        />
+        <Guilloche
+          size={300}
+          color="#0A9AF5"
+          opacity={0.1}
+          className="absolute -bottom-20 -right-20 pointer-events-none"
+        />
+
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-20 relative z-10">
           <div className="grid lg:grid-cols-2 gap-12 lg:gap-20 items-start">
             {/* Left Column: Content */}
             <motion.div 
@@ -64,7 +81,9 @@ const ContactPage = () => {
               className="space-y-8"
             >
               <div>
-                <span className="pd-pill-label mb-4 inline-flex">Contact</span>
+                <div className="mb-4">
+                  <Tag tone="indigo" icon={ChatCircleDots}>Contact</Tag>
+                </div>
                 <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-[var(--pd-ink)] tracking-tight leading-tight mb-4">
                   Let's start a conversation
                 </h1>
@@ -75,7 +94,8 @@ const ContactPage = () => {
 
               <div className="space-y-6 pt-2">
                 <ContactInfoRow 
-                  icon={Mail}
+                  icon={EnvelopeSimple}
+                  tone="indigo"
                   title="Email Us"
                   content="support@proofdeck.app"
                   link="mailto:support@proofdeck.app"
@@ -83,12 +103,14 @@ const ContactPage = () => {
                 />
                 <ContactInfoRow 
                   icon={MapPin}
+                  tone="sky"
                   title="Headquarters"
                   content="Abuja, Nigeria"
                   desc="Building the modern standard for verifiable digital credentials."
                 />
                 <ContactInfoRow 
                   icon={Phone}
+                  tone="green"
                   title="Support Hours"
                   content="Mon - Fri from 9am to 6pm GMT+1"
                   desc="We aim to respond to all inquiries within 24 hours."
@@ -110,8 +132,8 @@ const ContactPage = () => {
                   animate={{ scale: 1, opacity: 1 }}
                   className="text-center py-12"
                 >
-                  <div className="w-16 h-16 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-4 border border-emerald-100">
-                    <CheckCircle2 size={32} />
+                  <div className="w-16 h-16 bg-[#DDF5E6] text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-4 border border-emerald-200/50">
+                    <CheckCircle size={32} weight="duotone" />
                   </div>
                   <h2 className="text-xl sm:text-2xl font-bold text-[var(--pd-ink)] mb-2">Message Received!</h2>
                   <p className="text-sm text-[var(--pd-mute)] mb-6 max-w-xs mx-auto leading-relaxed">
@@ -128,63 +150,66 @@ const ContactPage = () => {
                 <form onSubmit={handleSubmit} className="space-y-5">
                   <div>
                     <h3 className="text-xl sm:text-2xl font-bold text-[var(--pd-ink)] mb-1">Send a message</h3>
-                    <p className="text-xs sm:text-sm text-[var(--pd-mute)]">Fill out the form below and we'll reply promptly.</p>
+                    <p className="text-xs sm:text-sm text-[var(--pd-mute)]">Fill out the form below and we'll reply via email.</p>
                   </div>
 
-                  <FormInput
-                    label="Full Name"
-                    name="name"
+                  <FormInput 
+                    label="Your Name" 
                     icon={User}
-                    placeholder="Jane Doe"
-                    value={formData.name}
-                    onChange={handleChange}
-                    required
+                    name="name" 
+                    type="text" 
+                    placeholder="Jane Doe" 
+                    value={formData.name} 
+                    onChange={handleChange} 
+                    required 
                   />
-                  <FormInput
-                    label="Email Address"
-                    name="email"
-                    type="email"
-                    icon={Mail}
-                    placeholder="jane@example.com"
-                    value={formData.email}
-                    onChange={handleChange}
-                    required
+
+                  <FormInput 
+                    label="Email Address" 
+                    icon={EnvelopeSimple}
+                    name="email" 
+                    type="email" 
+                    placeholder="jane@example.com" 
+                    value={formData.email} 
+                    onChange={handleChange} 
+                    required 
                   />
 
                   <div>
-                    <label htmlFor="message" className="block text-xs font-semibold text-[var(--pd-ink)] mb-1.5 flex items-center gap-1.5">
-                      <MessageSquare size={13} className="text-[var(--pd-indigo)]" /> Your Message
+                    <label 
+                      htmlFor="message" 
+                      className="block text-xs font-semibold text-[var(--pd-ink)] mb-1.5 flex items-center gap-1.5"
+                    >
+                      <ChatCircleDots size={13} weight="bold" className="text-[var(--pd-indigo)]" /> Message
                     </label>
                     <textarea
                       id="message"
                       name="message"
                       rows="4"
                       required
+                      placeholder="Tell us how we can help..."
                       value={formData.message}
                       onChange={handleChange}
-                      className="block w-full rounded-xl border border-[var(--pd-line)] bg-[var(--pd-paper)]/60 focus:bg-white px-3.5 py-2.5 text-xs sm:text-sm text-[var(--pd-ink)] placeholder-[var(--pd-mute)]/60 focus:border-[var(--pd-indigo)] focus:ring-2 focus:ring-[var(--pd-indigo)]/10 transition-all outline-none resize-none"
-                      placeholder="Tell us how we can help..."
-                    ></textarea>
+                      className="block w-full rounded-xl border border-[var(--pd-line)] bg-[var(--pd-paper)]/60 focus:bg-white p-3.5 text-xs sm:text-sm text-[var(--pd-ink)] placeholder-[var(--pd-mute)]/60 focus:border-[var(--pd-indigo)] focus:ring-2 focus:ring-[var(--pd-indigo)]/10 transition-all outline-none resize-none"
+                    />
                   </div>
 
                   <button
                     type="submit"
                     disabled={loading}
-                    className="w-full rounded-full bg-[var(--pd-indigo)] hover:bg-[var(--pd-indigo-dark)] py-3 px-6 text-white text-sm font-medium transition-colors shadow-sm disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
+                    className="w-full flex items-center justify-center gap-2 py-3.5 px-4 rounded-xl text-sm font-semibold text-white bg-[var(--pd-indigo)] hover:bg-[var(--pd-indigo-dark)] disabled:opacity-70 transition-all shadow-sm cursor-pointer"
                   >
-                    <div className="flex items-center justify-center gap-2">
-                      {loading ? (
-                        <>
-                          <Loader2 className="animate-spin" size={16} />
-                          <span>Sending...</span>
-                        </>
-                      ) : (
-                        <>
-                          <span>Send Message</span>
-                          <Send size={15} />
-                        </>
-                      )}
-                    </div>
+                    {loading ? (
+                      <>
+                        <CircleNotch size={16} className="animate-spin" />
+                        <span>Sending...</span>
+                      </>
+                    ) : (
+                      <>
+                        <span>Send Message</span>
+                        <PaperPlaneTilt size={15} weight="bold" />
+                      </>
+                    )}
                   </button>
                 </form>
               )}
@@ -198,11 +223,9 @@ const ContactPage = () => {
   );
 };
 
-const ContactInfoRow = ({ icon: Icon, title, content, link, desc }) => (
+const ContactInfoRow = ({ icon, tone = "indigo", title, content, link, desc }) => (
   <div className="flex gap-4 items-start group">
-    <div className="shrink-0 w-10 h-10 bg-white text-[var(--pd-indigo)] rounded-xl border border-[var(--pd-line)] flex items-center justify-center shadow-2xs group-hover:border-[var(--pd-indigo)]/50 transition-colors mt-0.5">
-      <Icon size={18} />
-    </div>
+    <IconBadge icon={icon} tone={tone} size="md" shape="squircle" className="mt-0.5" />
     <div>
       <h3 className="font-bold text-sm text-[var(--pd-ink)] mb-0.5">{title}</h3>
       {link ? (
@@ -223,7 +246,7 @@ const FormInput = ({ label, icon: Icon, required, ...props }) => (
       htmlFor={props.name}
       className="block text-xs font-semibold text-[var(--pd-ink)] mb-1.5 flex items-center gap-1.5"
     >
-      <Icon size={13} className="text-[var(--pd-indigo)]" /> {label}
+      <Icon size={13} weight="bold" className="text-[var(--pd-indigo)]" /> {label}
     </label>
     <div className="relative">
       <input

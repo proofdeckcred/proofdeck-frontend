@@ -3,7 +3,11 @@ import { Link } from "react-router-dom";
 import PublicHeader from "../../components/PublicHeader";
 import PublicFooter from "../../components/PublicFooter";
 import SEO from "../../components/SEO";
-import { ArrowLeft, Check, Linkedin, Share2, Award } from "lucide-react";
+import { ArrowLeft, Check, Medal } from "@phosphor-icons/react";
+import BrandIcon from "../../components/ui/BrandIcon";
+import Tag from "../../components/ui/Tag";
+import CheckBadge from "../../components/ui/CheckBadge";
+import IconBadge from "../../components/ui/IconBadge";
 
 export default function LinkedInCertificateGuidePage() {
   const breadcrumbSchema = {
@@ -67,12 +71,12 @@ export default function LinkedInCertificateGuidePage() {
             to="/blog"
             className="inline-flex items-center gap-1.5 text-xs font-semibold text-[var(--pd-mute)] hover:text-[var(--pd-ink)] transition-colors no-underline mb-8"
           >
-            <ArrowLeft size={14} /> Back to Guides
+            <ArrowLeft size={14} weight="bold" /> Back to Guides
           </Link>
 
           <header className="mb-10">
-            <span className="text-xs font-bold text-[#0A66C2] bg-blue-50 px-3 py-1 rounded-full border border-blue-100 uppercase tracking-wider flex items-center gap-1.5 w-max">
-              <Linkedin size={13} /> LinkedIn Credentials
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold text-[#0A66C2] bg-blue-50 border border-blue-100 uppercase tracking-wider">
+              <BrandIcon name="linkedin" size={13} useBrandColor /> LinkedIn Credentials
             </span>
             <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-[var(--pd-ink)] mt-4 mb-4 leading-tight">
               How to Add a Verifiable Certificate to Your LinkedIn Profile (Step-by-Step)
@@ -117,8 +121,8 @@ export default function LinkedInCertificateGuidePage() {
               <li>Click <strong>Save</strong>.</li>
             </ol>
 
-            <div className="p-8 rounded-2xl bg-[var(--pd-paper)] border border-[var(--pd-line)] text-center my-10 space-y-4">
-              <Award size={36} className="text-[#0A66C2] mx-auto" />
+            <div className="p-8 rounded-3xl bg-[var(--pd-paper)] border border-[var(--pd-line)] text-center my-10 space-y-4">
+              <IconBadge icon={Medal} tone="sky" size="lg" shape="squircle" className="mx-auto" />
               <h3 className="text-xl font-bold text-[var(--pd-ink)]">
                 Issue 1-Click LinkedIn Certificates to Your Students
               </h3>

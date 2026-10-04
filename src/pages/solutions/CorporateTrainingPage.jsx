@@ -3,7 +3,11 @@ import { Link } from "react-router-dom";
 import PublicHeader from "../../components/PublicHeader";
 import PublicFooter from "../../components/PublicFooter";
 import SEO from "../../components/SEO";
-import { Check, Briefcase, Award, TrendingUp, ArrowRight, ShieldCheck } from "lucide-react";
+import { Briefcase, Medal, TrendUp, ArrowRight } from "@phosphor-icons/react";
+import Tag from "../../components/ui/Tag";
+import IconBadge from "../../components/ui/IconBadge";
+import CheckBadge from "../../components/ui/CheckBadge";
+import { Ring, Guilloche, Seal, Swirl } from "../../components/ui/decor";
 
 export default function CorporateTrainingPage() {
   const breadcrumbSchema = {
@@ -43,9 +47,10 @@ export default function CorporateTrainingPage() {
 
       <main className="flex-grow">
         {/* Hero */}
-        <section className="py-20 md:py-28 bg-[var(--pd-paper)] pd-dot-grid border-b border-[var(--pd-line)] text-center">
-          <div className="max-w-4xl mx-auto px-4 sm:px-6">
-            <span className="pd-pill-label mb-4 inline-flex">Corporate L&D & HR Teams</span>
+        <section className="py-20 md:py-28 bg-[var(--pd-paper)] pd-dot-grid border-b border-[var(--pd-line)] text-center relative overflow-hidden">
+          <Ring size={320} className="absolute -top-16 -right-16 text-indigo-50 pointer-events-none" />
+          <div className="max-w-4xl mx-auto px-4 sm:px-6 relative z-10">
+            <Tag tone="indigo" dot className="mb-4">Corporate L&D & HR Teams</Tag>
             <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold tracking-tight mb-6 leading-tight">
               Employee Training & Corporate Certificate Platform
             </h1>
@@ -58,7 +63,7 @@ export default function CorporateTrainingPage() {
                 className="inline-flex items-center justify-center px-6 py-3 rounded-full text-sm font-medium text-white bg-[var(--pd-indigo)] hover:bg-[var(--pd-indigo-dark)] transition-colors no-underline shadow-xs"
               >
                 Start Issuing Employee Credentials
-                <ArrowRight size={16} className="ml-2" />
+                <ArrowRight size={16} weight="bold" className="ml-2" />
               </Link>
               <Link
                 to="/pricing"
@@ -83,34 +88,37 @@ export default function CorporateTrainingPage() {
             </div>
 
             <div className="grid md:grid-cols-3 gap-8">
-              <div className="p-7 rounded-2xl border border-[var(--pd-line)] bg-[var(--pd-paper)] space-y-3">
-                <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center border border-[var(--pd-line)] text-[var(--pd-indigo)] shadow-2xs">
-                  <Briefcase size={20} />
+              <div className="p-7 rounded-2xl border border-[var(--pd-line)] bg-[var(--pd-paper)] space-y-4 relative overflow-hidden">
+                <Ring size={160} className="absolute -bottom-8 -right-8 text-indigo-50 pointer-events-none" />
+                <div className="relative z-10 space-y-3">
+                  <IconBadge tone="indigo" size="md" icon={<Briefcase weight="duotone" />} />
+                  <h3 className="font-bold text-lg">Mandatory Compliance Training</h3>
+                  <p className="text-sm text-[var(--pd-mute)] leading-relaxed">
+                    Automate certificate delivery for AML, cyber hygiene, data privacy, and workplace safety training with verifiable completion records.
+                  </p>
                 </div>
-                <h3 className="font-bold text-lg">Mandatory Compliance Training</h3>
-                <p className="text-sm text-[var(--pd-mute)] leading-relaxed">
-                  Automate certificate delivery for AML, cyber hygiene, data privacy, and workplace safety training with verifiable completion records.
-                </p>
               </div>
 
-              <div className="p-7 rounded-2xl border border-[var(--pd-line)] bg-[var(--pd-paper)] space-y-3">
-                <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center border border-[var(--pd-line)] text-emerald-600 shadow-2xs">
-                  <Award size={20} />
+              <div className="p-7 rounded-2xl border border-[var(--pd-line)] bg-[var(--pd-paper)] space-y-4 relative overflow-hidden">
+                <Seal size={160} className="absolute -bottom-8 -right-8 text-emerald-50 pointer-events-none" />
+                <div className="relative z-10 space-y-3">
+                  <IconBadge tone="green" size="md" icon={<Medal weight="duotone" />} />
+                  <h3 className="font-bold text-lg">Employee Recognition & Awards</h3>
+                  <p className="text-sm text-[var(--pd-mute)] leading-relaxed">
+                    Boost morale with quarterly high-performer certificates, hackathon trophies, leadership program completions, and tenure milestones.
+                  </p>
                 </div>
-                <h3 className="font-bold text-lg">Employee Recognition & Awards</h3>
-                <p className="text-sm text-[var(--pd-mute)] leading-relaxed">
-                  Boost morale with quarterly high-performer certificates, hackathon trophies, leadership program completions, and tenure milestones.
-                </p>
               </div>
 
-              <div className="p-7 rounded-2xl border border-[var(--pd-line)] bg-[var(--pd-paper)] space-y-3">
-                <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center border border-[var(--pd-line)] text-indigo-500 shadow-2xs">
-                  <TrendingUp size={20} />
+              <div className="p-7 rounded-2xl border border-[var(--pd-line)] bg-[var(--pd-paper)] space-y-4 relative overflow-hidden">
+                <Guilloche size={160} className="absolute -bottom-8 -right-8 text-sky-50 pointer-events-none" />
+                <div className="relative z-10 space-y-3">
+                  <IconBadge tone="sky" size="md" icon={<TrendUp weight="duotone" />} />
+                  <h3 className="font-bold text-lg">Employer Brand Amplification</h3>
+                  <p className="text-sm text-[var(--pd-mute)] leading-relaxed">
+                    When employees share their ProofDeck credentials on LinkedIn, your company branding and reputation as a great place to learn expands organically.
+                  </p>
                 </div>
-                <h3 className="font-bold text-lg">Employer Brand Amplification</h3>
-                <p className="text-sm text-[var(--pd-mute)] leading-relaxed">
-                  When employees share their ProofDeck credentials on LinkedIn, your company branding and reputation as a great place to learn expands organically.
-                </p>
               </div>
             </div>
           </div>
@@ -134,7 +142,7 @@ export default function CorporateTrainingPage() {
                 "Role-based multi-user workspace access for HR coordinators"
               ].map((feat, idx) => (
                 <div key={idx} className="flex items-center gap-3 p-4 bg-white rounded-xl border border-[var(--pd-line)]">
-                  <Check size={18} className="text-emerald-600 shrink-0 stroke-[2.5]" />
+                  <CheckBadge tone="green" className="shrink-0" />
                   <span className="text-sm font-semibold">{feat}</span>
                 </div>
               ))}
@@ -143,18 +151,22 @@ export default function CorporateTrainingPage() {
         </section>
 
         {/* CTA */}
-        <section className="py-20 text-center">
-          <div className="max-w-3xl mx-auto px-4">
-            <h2 className="text-3xl font-bold mb-4">Upskill and recognize your team today</h2>
-            <p className="text-[var(--pd-mute)] mb-8">
-              Join forward-thinking corporate HR teams using ProofDeck for learning recognition.
-            </p>
-            <Link
-              to="/signup"
-              className="inline-flex items-center justify-center px-6 py-3 rounded-full text-sm font-medium text-white bg-[var(--pd-indigo)] hover:bg-[var(--pd-indigo-dark)] transition-colors no-underline"
-            >
-              Get Started with ProofDeck
-            </Link>
+        <section className="py-20 px-4 sm:px-6">
+          <div className="max-w-4xl mx-auto rounded-3xl bg-[var(--pd-indigo)] text-white p-10 md:p-14 text-center relative overflow-hidden">
+            <Ring size={320} className="absolute -top-16 -right-16 text-white/10 pointer-events-none" />
+            <Swirl size={260} className="absolute -bottom-16 -left-16 text-white/10 pointer-events-none" />
+            <div className="relative z-10 max-w-2xl mx-auto">
+              <h2 className="text-3xl font-bold mb-4 text-white">Upskill and recognize your team today</h2>
+              <p className="text-indigo-100 mb-8 leading-relaxed">
+                Join forward-thinking corporate HR teams using ProofDeck for learning recognition.
+              </p>
+              <Link
+                to="/signup"
+                className="inline-flex items-center justify-center px-6 py-3 rounded-full text-sm font-semibold text-[var(--pd-ink)] bg-white hover:bg-slate-100 transition-colors no-underline shadow-sm"
+              >
+                Get Started with ProofDeck
+              </Link>
+            </div>
           </div>
         </section>
       </main>

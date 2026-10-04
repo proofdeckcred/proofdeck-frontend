@@ -1,30 +1,81 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { motion } from "motion/react";
-import { 
-  Check, 
-  Award, 
-  Linkedin, 
-  Mail, 
-  Code 
-} from "lucide-react";
+import { motion, useReducedMotion } from "motion/react";
+import {
+  Check,
+  SealCheck,
+  Medal,
+  Buildings,
+  Pulse,
+  EnvelopeSimple,
+  Code,
+} from "@phosphor-icons/react";
+import IconBadge from "./IconBadge";
+import BrandIcon from "./BrandIcon";
+import { Ring, Seal, DotGrid, TapeStrip } from "./decor";
 
 export function LandingHero() {
+  const shouldReduceMotion = useReducedMotion();
+
   return (
-    <section className="relative overflow-hidden pd-dot-grid pt-16 sm:pt-20 pb-20 sm:pb-28">
+    <section className="relative overflow-hidden pd-dot-grid pt-14 sm:pt-18 pb-20 sm:pb-28 z-0">
+      {/* ========================================================
+          BACKGROUND DECOR MOTIFS (§2.1)
+          Clipped inside hero, no bleed into nav, balanced composition
+         ======================================================== */}
+      {/* Left Ring (deliberate, large, partially cropped full ring centered vertically behind sticky note) */}
+      <div 
+        className="absolute top-10 sm:top-14 -left-32 sm:-left-40 md:-left-44 pointer-events-none select-none z-0" 
+        aria-hidden="true"
+      >
+        <Ring
+          size={420}
+          strokeWidth={38}
+          color="#5144E8"
+          className="text-indigo-500 opacity-[0.09] max-w-none transform scale-75 sm:scale-85 lg:scale-100 origin-center"
+        />
+      </div>
+
+      {/* Right Counterweight (cropped Seal rosette behind credential card in sky-tint, balanced but not mirrored) */}
+      <div 
+        className="hidden sm:block absolute top-20 sm:top-24 -right-24 sm:-right-28 md:-right-32 pointer-events-none select-none z-0" 
+        aria-hidden="true"
+      >
+        <Seal
+          size={320}
+          color="#0A9AF5"
+          opacity={0.09}
+          className="max-w-none transform scale-75 md:scale-85 lg:scale-100 origin-center"
+        />
+      </div>
+
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full relative z-10">
         
         {/* ========================================================
-            STICKER 1: Top-Left (Yellow Sticky Note + Blue Check Tile)
-            Matches ChronoTask Image 1 top-left note
+            STICKER CLUSTER 1: Top-Left (Yellow Sticky Note + Check Tile + Round Rosette Sticker)
+            Matches Change Request 02 §2.2
            ======================================================== */}
         <motion.div
-          className="hidden lg:block absolute top-10 xl:top-14 left-2 xl:left-6 z-20 pointer-events-none select-none"
-          initial={{ opacity: 0, y: -20, rotate: -8 }}
+          className="hidden lg:block absolute top-8 xl:top-12 left-2 xl:left-6 z-20 pointer-events-none select-none"
+          initial={shouldReduceMotion ? false : { opacity: 0, y: -14, rotate: -9 }}
           animate={{ opacity: 1, y: 0, rotate: -6 }}
-          transition={{ duration: 0.6, delay: 0.1 }}
+          transition={{ duration: 0.5, ease: "easeOut" }}
         >
           <div className="relative">
+            {/* Small tilted round stamp/rosette sticker (§2.2, visible >=1280px) */}
+            <div
+              className="hidden xl:block absolute -bottom-3.5 -left-3.5 z-10 pointer-events-none select-none"
+              style={{ transform: "rotate(-10deg)" }}
+              aria-hidden="true"
+            >
+              <svg width="42" height="42" viewBox="0 0 42 42" fill="none">
+                <circle cx="21" cy="21" r="20" fill="#E9E7FD" stroke="#5144E8" strokeWidth="1.5" />
+                <circle cx="21" cy="21" r="16.5" stroke="#5144E8" strokeWidth="1" strokeDasharray="2.5 2.5" />
+                <circle cx="21" cy="21" r="12" fill="#5144E8" />
+                <polygon points="21,15 22.8,19 27,19.4 23.8,22.2 24.8,26.4 21,24.1 17.2,26.4 18.2,22.2 15,19.4 19.2,19" fill="#FFFFFF" />
+              </svg>
+            </div>
+
             {/* Sticky Note */}
             <div 
               className="bg-[#FEF08A] text-[#713F12] p-5 rounded-sm w-[210px] xl:w-[230px] border border-amber-300/40 relative text-left"
@@ -46,33 +97,38 @@ export function LandingHero() {
 
             {/* Overlapping Floating Blue Checkmark Tile */}
             <motion.div
-              className="absolute -bottom-5 -right-4 w-12 h-12 rounded-xl bg-white flex items-center justify-center border border-black/5"
+              className="absolute -bottom-5 -right-4 w-12 h-12 rounded-xl bg-white flex items-center justify-center border border-black/5 z-20"
               style={{ 
                 boxShadow: "0 12px 24px -4px rgba(11,11,18,0.18)",
                 transform: "rotate(6deg)"
               }}
-              initial={{ scale: 0.8, opacity: 0 }}
+              initial={shouldReduceMotion ? false : { scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
-              transition={{ duration: 0.4, delay: 0.3 }}
+              transition={{ duration: 0.25, delay: shouldReduceMotion ? 0 : 0.35 }}
             >
               <div className="w-8 h-8 rounded-lg bg-[var(--pd-indigo)] flex items-center justify-center text-white">
-                <Check size={18} className="stroke-[3]" />
+                <Check size={18} weight="bold" />
               </div>
             </motion.div>
           </div>
         </motion.div>
 
         {/* ========================================================
-            STICKER 2: Top-Right (Verified Credential Folder + Award Badge)
-            Matches ChronoTask Image 1 top-right reminders card
+            STICKER CLUSTER 2: Top-Right (Verified Credential Card + Award Badge + QR Sticker)
+            Matches Change Request 02 §2.2
            ======================================================== */}
         <motion.div
-          className="hidden lg:block absolute top-10 xl:top-14 right-2 xl:right-6 z-20 pointer-events-none select-none"
-          initial={{ opacity: 0, y: -20, rotate: 7 }}
+          className="hidden lg:block absolute top-8 xl:top-12 right-2 xl:right-6 z-20 pointer-events-none select-none"
+          initial={shouldReduceMotion ? false : { opacity: 0, y: -14, rotate: 7.5 }}
           animate={{ opacity: 1, y: 0, rotate: 5 }}
-          transition={{ duration: 0.6, delay: 0.2 }}
+          transition={{ duration: 0.5, ease: "easeOut", delay: shouldReduceMotion ? 0 : 0.1 }}
         >
           <div className="relative">
+            {/* Tactile tape motif attached to top edge */}
+            <div className="absolute -top-3 left-1/2 -translate-x-1/2 z-30">
+              <TapeStrip width={60} height={18} tilt={2} color="rgba(255,255,255,0.85)" />
+            </div>
+
             {/* Card Container */}
             <div 
               className="bg-white rounded-2xl p-5 w-[240px] xl:w-[260px] border border-[var(--pd-line)] text-left relative"
@@ -95,19 +151,48 @@ export function LandingHero() {
               </div>
             </div>
 
+            {/* Small tilted QR-pattern sticker (§2.2, visible >=1280px) */}
+            <div
+              className="hidden xl:block absolute -bottom-3.5 -right-3.5 z-20 pointer-events-none select-none rounded-xl bg-white border border-slate-200/90 p-1.5 shadow-md"
+              style={{ transform: "rotate(8deg)" }}
+              aria-hidden="true"
+            >
+              <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+                {/* Decorative non-scannable QR pattern */}
+                <rect x="2" y="2" width="10" height="10" rx="1.5" fill="#0B0B14" />
+                <rect x="4" y="4" width="6" height="6" fill="#FFFFFF" />
+                <rect x="5.5" y="5.5" width="3" height="3" fill="#0B0B14" />
+                <rect x="20" y="2" width="10" height="10" rx="1.5" fill="#0B0B14" />
+                <rect x="22" y="4" width="6" height="6" fill="#FFFFFF" />
+                <rect x="23.5" y="5.5" width="3" height="3" fill="#0B0B14" />
+                <rect x="2" y="20" width="10" height="10" rx="1.5" fill="#0B0B14" />
+                <rect x="4" y="22" width="6" height="6" fill="#FFFFFF" />
+                <rect x="5.5" y="23.5" width="3" height="3" fill="#0B0B14" />
+                <rect x="14" y="3" width="3" height="3" rx="0.5" fill="#0B0B14" />
+                <rect x="14" y="8" width="3" height="3" rx="0.5" fill="#0B0B14" />
+                <rect x="14" y="14" width="4" height="4" rx="0.5" fill="#0B0B14" />
+                <rect x="20" y="14" width="3" height="3" rx="0.5" fill="#0B0B14" />
+                <rect x="25" y="14" width="3" height="3" rx="0.5" fill="#0B0B14" />
+                <rect x="14" y="20" width="3" height="3" rx="0.5" fill="#0B0B14" />
+                <rect x="20" y="20" width="4" height="4" rx="0.5" fill="#0B0B14" />
+                <rect x="26" y="25" width="4" height="4" rx="0.5" fill="#0B0B14" />
+                <rect x="15" y="26" width="3" height="3" rx="0.5" fill="#0B0B14" />
+              </svg>
+            </div>
+
             {/* Overlapping Floating Award Badge */}
             <motion.div
-              className="absolute -top-3.5 -left-3.5 w-11 h-11 rounded-xl bg-white flex items-center justify-center border border-black/5"
+              className="absolute -top-3.5 -left-3.5 w-11 h-11 rounded-xl bg-white flex items-center justify-center border border-black/5 z-20"
               style={{ 
                 boxShadow: "0 10px 20px -4px rgba(11,11,18,0.16)",
                 transform: "rotate(-10deg)"
               }}
-              initial={{ scale: 0.8, opacity: 0 }}
+              initial={shouldReduceMotion ? false : { scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
-              transition={{ duration: 0.4, delay: 0.4 }}
+              transition={{ duration: 0.25, delay: shouldReduceMotion ? 0 : 0.45 }}
             >
               <div className="w-7 h-7 rounded-lg bg-amber-50 flex items-center justify-center text-[var(--pd-amber)]">
-                <Award size={16} className="stroke-[2.5]" />
+                <Medal size={16} weight="duotone" />
               </div>
             </motion.div>
           </div>
@@ -116,14 +201,14 @@ export function LandingHero() {
         {/* ========================================================
             CENTER CONTENT: Headline, Subtitle, CTA & Stats
            ======================================================== */}
-        <div className="flex flex-col items-center text-center max-w-3xl mx-auto pt-4 sm:pt-8 pb-4">
+        <div className="flex flex-col items-center text-center max-w-3xl mx-auto pt-2 sm:pt-6 pb-2">
           
-          {/* Headline (Line 1 in ink, Line 2 in muted gray, exactly like Image 1) */}
+          {/* Headline (Line 1 in ink, Line 2 in muted gray) */}
           <motion.h1
             className="text-4xl sm:text-5xl lg:text-[3.85rem] font-bold tracking-tight leading-[1.12] mb-5"
-            initial={{ opacity: 0, y: 15 }}
+            initial={shouldReduceMotion ? false : { opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.1 }}
+            transition={{ duration: 0.5, delay: 0.1 }}
           >
             <span className="text-[var(--pd-ink)] block">
               Issue, verify, and track
@@ -136,7 +221,7 @@ export function LandingHero() {
           {/* Subheadline */}
           <motion.p
             className="text-sm sm:text-base text-[var(--pd-mute)] max-w-lg mx-auto leading-relaxed mb-7"
-            initial={{ opacity: 0, y: 10 }}
+            initial={shouldReduceMotion ? false : { opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.2 }}
           >
@@ -145,9 +230,9 @@ export function LandingHero() {
 
           {/* Primary CTA button */}
           <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
+            initial={shouldReduceMotion ? false : { opacity: 0, scale: 0.96 }}
             animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.4, delay: 0.3 }}
+            transition={{ duration: 0.4, delay: 0.25 }}
           >
             <Link
               to="/signup"
@@ -157,46 +242,97 @@ export function LandingHero() {
             </Link>
           </motion.div>
 
-          {/* Micro Stats (500+ Certs Verified) */}
+          {/* Micro Stats (10+, 500+, 99.9%) (§2.3: 36px squircles, tint bg with deeper icon, optically centered) */}
           <motion.div
-            className="flex items-center justify-center gap-6 sm:gap-8 pt-8"
-            initial={{ opacity: 0 }}
+            className="flex flex-col items-center pt-8 sm:pt-10"
+            initial={shouldReduceMotion ? false : { opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ duration: 0.5, delay: 0.4 }}
+            transition={{ duration: 0.5, delay: 0.35 }}
           >
-            <div>
-              <p className="text-xl font-bold text-[var(--pd-ink)] tabular-nums">10+</p>
-              <p className="text-[11px] font-medium text-[var(--pd-mute)]">Companies</p>
-            </div>
-            <div className="w-px h-6 bg-[var(--pd-line)]"></div>
-            <div>
-              <p className="text-xl font-bold text-[var(--pd-ink)] tabular-nums">500+</p>
-              <p className="text-[11px] font-medium text-[var(--pd-mute)]">Certs Verified</p>
-            </div>
-            <div className="w-px h-6 bg-[var(--pd-line)]"></div>
-            <div>
-              <p className="text-xl font-bold text-[var(--pd-ink)] tabular-nums">99.9%</p>
-              <p className="text-[11px] font-medium text-[var(--pd-mute)]">Uptime</p>
+            <div className="flex items-center justify-center gap-6 sm:gap-8">
+              {/* Stat 1: 10+ Companies */}
+              <div className="flex items-center gap-3 text-left">
+                <div className="w-9 h-9 min-w-[36px] rounded-xl bg-[#E9E7FD] text-[#5144E8] ring-1 ring-inset ring-[#5144E8]/15 flex items-center justify-center shrink-0">
+                  <Buildings size={18} weight="duotone" />
+                </div>
+                <div className="flex flex-col justify-center">
+                  <span className="text-xl font-bold text-[var(--pd-ink)] tabular-nums leading-tight">10+</span>
+                  <span className="text-[11px] font-medium text-[var(--pd-mute)] leading-tight mt-0.5">Companies</span>
+                </div>
+              </div>
+
+              {/* Divider 1 (1px, ~32px tall, low contrast, vertically centered) */}
+              <div className="w-px h-8 bg-slate-200/80 shrink-0 self-center" aria-hidden="true" />
+
+              {/* Stat 2: 500+ Certs Verified */}
+              <div className="flex items-center gap-3 text-left">
+                <div className="w-9 h-9 min-w-[36px] rounded-xl bg-[#DDF1FD] text-[#0A9AF5] ring-1 ring-inset ring-[#0A9AF5]/15 flex items-center justify-center shrink-0">
+                  <SealCheck size={18} weight="duotone" />
+                </div>
+                <div className="flex flex-col justify-center">
+                  <span className="text-xl font-bold text-[var(--pd-ink)] tabular-nums leading-tight">500+</span>
+                  <span className="text-[11px] font-medium text-[var(--pd-mute)] leading-tight mt-0.5">Certs Verified</span>
+                </div>
+              </div>
+
+              {/* Divider 2 (1px, ~32px tall, low contrast, vertically centered) */}
+              <div className="w-px h-8 bg-slate-200/80 shrink-0 self-center" aria-hidden="true" />
+
+              {/* Stat 3: 99.9% Uptime */}
+              <div className="flex items-center gap-3 text-left">
+                <div className="w-9 h-9 min-w-[36px] rounded-xl bg-[#DDF5E6] text-[#16A34A] ring-1 ring-inset ring-[#16A34A]/15 flex items-center justify-center shrink-0">
+                  <Pulse size={18} weight="duotone" />
+                </div>
+                <div className="flex flex-col justify-center">
+                  <span className="text-xl font-bold text-[var(--pd-ink)] tabular-nums leading-tight">99.9%</span>
+                  <span className="text-[11px] font-medium text-[var(--pd-mute)] leading-tight mt-0.5">Uptime</span>
+                </div>
+              </div>
             </div>
           </motion.div>
         </div>
 
         {/* ========================================================
+            PERFORATION DIVIDER WITH TICKET NOTCHES (§2.4)
+            Full-width dashed line with half-circle tear notches at both ends
+           ======================================================== */}
+        <div 
+          className="w-full max-w-4xl mx-auto my-8 sm:my-10 flex items-center px-4 pointer-events-none select-none" 
+          aria-hidden="true"
+        >
+          {/* Left ticket notch */}
+          <svg width="10" height="18" viewBox="0 0 10 18" fill="none" className="shrink-0 text-indigo-400 opacity-35">
+            <path d="M 0 1 A 8 8 0 0 1 0 17" stroke="currentColor" strokeWidth="1.5" />
+          </svg>
+          {/* Dashed perforation line */}
+          <div className="flex-1 mx-3 border-t-2 border-dashed border-[#5144E8]/20" />
+          {/* Right ticket notch */}
+          <svg width="10" height="18" viewBox="0 0 10 18" fill="none" className="shrink-0 text-indigo-400 opacity-35">
+            <path d="M 10 1 A 8 8 0 0 0 10 17" stroke="currentColor" strokeWidth="1.5" />
+          </svg>
+        </div>
+
+        {/* ========================================================
             CENTERPIECE: Dashboard Mockup + 2 Floating Cards
-            Vibrant blue showcase container matching Image 3
+            Vibrant flat sky-blue frame matching Section 5.2 (no gradients)
            ======================================================== */}
         <motion.div
-          className="relative mt-12 sm:mt-16 w-full max-w-5xl mx-auto"
-          initial={{ opacity: 0, y: 35, scale: 0.98 }}
+          className="relative mt-2 sm:mt-4 w-full max-w-5xl mx-auto"
+          initial={shouldReduceMotion ? false : { opacity: 0, y: 30, scale: 0.98 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
-          transition={{ duration: 0.7, delay: 0.3 }}
+          transition={{ duration: 0.6, delay: shouldReduceMotion ? 0 : 0.3 }}
         >
+          {/* Ambient dot pattern outside frame */}
+          <div className="absolute -inset-4 pointer-events-none opacity-40">
+            <DotGrid dotSize={1.2} gap={18} color="#0A9AF5" opacity={0.25} />
+          </div>
+
           {/* Floating Card 1: Recent Batches (Left) */}
           <motion.div
             className="hidden sm:block absolute -left-4 md:-left-8 lg:-left-12 bottom-12 md:bottom-20 z-20 pointer-events-none select-none"
-            initial={{ opacity: 0, x: -30, rotate: -4 }}
+            initial={shouldReduceMotion ? false : { opacity: 0, x: -30, rotate: -4 }}
             animate={{ opacity: 1, x: 0, rotate: -2 }}
-            transition={{ duration: 0.6, delay: 0.5 }}
+            transition={{ duration: 0.5, delay: shouldReduceMotion ? 0 : 0.45 }}
           >
             <div 
               className="bg-white rounded-2xl md:rounded-3xl p-4 sm:p-5 w-[230px] sm:w-[260px] md:w-[280px] border border-slate-100/90 shadow-2xl shadow-slate-900/10"
@@ -245,9 +381,9 @@ export function LandingHero() {
           {/* Floating Card 2: 1-Click Sharing & APIs (Right) */}
           <motion.div
             className="hidden sm:block absolute -right-4 md:-right-8 lg:-right-12 bottom-6 md:bottom-12 z-20 pointer-events-none select-none"
-            initial={{ opacity: 0, x: 30, rotate: 4 }}
+            initial={shouldReduceMotion ? false : { opacity: 0, x: 30, rotate: 4 }}
             animate={{ opacity: 1, x: 0, rotate: 2 }}
-            transition={{ duration: 0.6, delay: 0.6 }}
+            transition={{ duration: 0.5, delay: shouldReduceMotion ? 0 : 0.5 }}
           >
             <div 
               className="bg-white rounded-2xl md:rounded-3xl p-4 sm:p-6 w-[230px] sm:w-[260px] md:w-[280px] border border-slate-100/90 shadow-2xl shadow-slate-900/10 text-center"
@@ -259,22 +395,18 @@ export function LandingHero() {
               <div className="grid grid-cols-3 gap-2 sm:gap-3">
                 {/* LinkedIn */}
                 <div className="flex flex-col items-center">
-                  <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl border border-slate-100 bg-slate-50/50 flex items-center justify-center shadow-xs hover:border-slate-200 transition-colors">
-                    <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-[#0077b5] flex items-center justify-center text-white shadow-xs">
-                      <Linkedin size={16} className="fill-current" />
-                    </div>
+                  <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl border border-slate-100 bg-slate-50 flex items-center justify-center">
+                    <BrandIcon name="linkedin" size={22} useBrandColor />
                   </div>
                   <span className="text-[10px] sm:text-[11px] font-medium text-slate-600 mt-1.5">
-                    Linkedin
+                    LinkedIn
                   </span>
                 </div>
 
                 {/* Email */}
                 <div className="flex flex-col items-center">
-                  <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl border border-slate-100 bg-slate-50/50 flex items-center justify-center shadow-xs hover:border-slate-200 transition-colors">
-                    <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-red-50 border border-red-100 flex items-center justify-center text-red-500 shadow-xs">
-                      <Mail size={16} className="stroke-[2.2]" />
-                    </div>
+                  <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl border border-slate-100 bg-slate-50 flex items-center justify-center">
+                    <IconBadge icon={EnvelopeSimple} tone="sky" size="sm" shape="squircle" />
                   </div>
                   <span className="text-[10px] sm:text-[11px] font-medium text-slate-600 mt-1.5">
                     Email
@@ -283,10 +415,8 @@ export function LandingHero() {
 
                 {/* REST API */}
                 <div className="flex flex-col items-center">
-                  <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl border border-slate-100 bg-slate-50/50 flex items-center justify-center shadow-xs hover:border-slate-200 transition-colors">
-                    <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-slate-900 flex items-center justify-center text-white shadow-xs">
-                      <Code size={16} className="stroke-[2.5]" />
-                    </div>
+                  <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl border border-slate-100 bg-slate-50 flex items-center justify-center">
+                    <IconBadge icon={Code} tone="ink" size="sm" shape="squircle" />
                   </div>
                   <span className="text-[10px] sm:text-[11px] font-medium text-slate-600 mt-1.5">
                     REST API
@@ -296,12 +426,18 @@ export function LandingHero() {
             </div>
           </motion.div>
 
+          {/* Flat Sky-Blue Showcase Container (no linear gradient) */}
           <div 
-            className="rounded-3xl sm:rounded-[32px] p-4 sm:p-8 md:p-12 relative overflow-hidden shadow-2xl"
-            style={{
-              background: "linear-gradient(180deg, #00A3FF 0%, #0284C7 100%)"
-            }}
+            className="rounded-3xl sm:rounded-[32px] p-4 sm:p-8 md:p-12 relative overflow-hidden bg-[#0A9AF5] shadow-2xl"
           >
+            {/* Tone cropped ring on frame */}
+            <Ring
+              size={320}
+              strokeWidth={36}
+              color="#0880CC"
+              className="absolute -bottom-24 -left-20 opacity-30"
+            />
+
             {/* Center Dashboard Mockup */}
             <div className="relative rounded-xl sm:rounded-2xl overflow-hidden bg-white shadow-2xl border border-white/20">
               <img
@@ -317,3 +453,5 @@ export function LandingHero() {
     </section>
   );
 }
+
+export default LandingHero;

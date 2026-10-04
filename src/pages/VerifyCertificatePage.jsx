@@ -6,19 +6,17 @@ import QRCode from "react-qr-code";
 import {
   CheckCircle,
   XCircle,
-  Search,
-  Building,
-  AlertCircle,
-  Loader2,
+  MagnifyingGlass,
+  Buildings,
+  WarningCircle,
+  CircleNotch,
   ArrowLeft,
-  Share2,
-  Linkedin,
-  Facebook,
+  ShareNetwork,
   Copy,
   Check,
-  Twitter,
-  LogIn,
-} from "lucide-react";
+  SignIn,
+} from "@phosphor-icons/react";
+import BrandIcon from "../components/ui/BrandIcon";
 import TemplateRenderer from "../components/templates/TemplateRenderer";
 import PublicHeader from "../components/PublicHeader";
 import PublicFooter from "../components/PublicFooter";
@@ -76,7 +74,7 @@ const ShareCredentialSection = ({ currentUrl, companyName, certificate }) => {
     <div className="mt-8 bg-white rounded-2xl shadow-sm border border-slate-200 p-6 font-sans">
       <div className="flex items-center gap-3 mb-4">
         <div className="bg-indigo-50 p-2.5 rounded-xl text-indigo-600 border border-indigo-100">
-          <Share2 size={20} />
+          <ShareNetwork size={20} weight="duotone" />
         </div>
         <div>
           <h3 className="text-base font-bold text-slate-900 mb-0">
@@ -92,7 +90,7 @@ const ShareCredentialSection = ({ currentUrl, companyName, certificate }) => {
       <div className="mb-6 bg-slate-900 text-white rounded-2xl p-5 border border-slate-800 shadow-md">
         <div className="flex items-center justify-between mb-3 border-b border-slate-800 pb-2.5">
           <span className="text-[10px] font-extrabold uppercase text-slate-400 tracking-wider flex items-center gap-1.5">
-            <Linkedin size={14} className="text-[#0A66C2]" />
+            <BrandIcon name="linkedin" size={14} />
             LinkedIn Licenses & Certifications Preview
           </span>
           <span className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
@@ -101,7 +99,7 @@ const ShareCredentialSection = ({ currentUrl, companyName, certificate }) => {
         </div>
 
         <div className="flex items-start gap-4">
-          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-black text-lg shrink-0 shadow-sm">
+          <div className="w-12 h-12 rounded-xl bg-indigo-600 border border-indigo-400/30 flex items-center justify-center text-white font-black text-lg shrink-0 shadow-sm">
             {issuerOrg.charAt(0).toUpperCase()}
           </div>
           <div className="flex-1 min-w-0">
@@ -146,7 +144,7 @@ const ShareCredentialSection = ({ currentUrl, companyName, certificate }) => {
             rel="noopener noreferrer"
             className="inline-flex items-center gap-2 px-4 py-2.5 bg-[#0A66C2] text-white rounded-xl hover:bg-[#004182] transition-colors font-bold text-xs no-underline shadow-sm cursor-pointer"
           >
-            <Linkedin size={16} />
+            <BrandIcon name="linkedin" size={16} />
             Add to LinkedIn Profile
           </a>
 
@@ -169,7 +167,7 @@ const ShareCredentialSection = ({ currentUrl, companyName, certificate }) => {
           rel="noopener noreferrer"
           className="flex items-center justify-center gap-2 px-4 py-2.5 bg-black text-white rounded-xl hover:bg-gray-800 transition-colors font-bold text-xs no-underline"
         >
-          <Twitter size={16} />
+          <BrandIcon name="x" size={16} />
           Post to X (Twitter)
         </a>
 
@@ -179,7 +177,7 @@ const ShareCredentialSection = ({ currentUrl, companyName, certificate }) => {
           rel="noopener noreferrer"
           className="flex items-center justify-center gap-2 px-4 py-2.5 bg-[#1877F2] text-white rounded-xl hover:bg-[#0d65d9] transition-colors font-bold text-xs no-underline"
         >
-          <Facebook size={16} />
+          <BrandIcon name="facebook" size={16} />
           Share to Facebook
         </a>
 
@@ -189,12 +187,12 @@ const ShareCredentialSection = ({ currentUrl, companyName, certificate }) => {
         >
           {copied ? (
             <>
-              <Check size={16} className="text-emerald-600" />
+              <Check size={16} weight="bold" className="text-emerald-600" />
               <span>Copied Link!</span>
             </>
           ) : (
             <>
-              <Copy size={16} />
+              <Copy size={16} weight="bold" />
               <span>Copy Verification Link</span>
             </>
           )}
@@ -291,14 +289,14 @@ const VerifyCertificatePage = () => {
                   </a>
                 )}
                 <span className="text-xs font-bold px-2.5 sm:px-3 py-1 bg-emerald-50 text-emerald-700 rounded-full border border-emerald-200 flex items-center gap-1.5 shrink-0">
-                  <CheckCircle size={13} className="text-emerald-600" /> <span className="hidden xs:inline">Official</span> Portal
+                  <CheckCircle size={14} weight="bold" className="text-emerald-600" /> <span className="hidden xs:inline">Official</span> Portal
                 </span>
                 <Link
                   to="/login"
                   className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-250 transition-colors no-underline shadow-2xs shrink-0 cursor-pointer"
                   title="Sign in to your issuer workspace"
                 >
-                  <LogIn size={13} className="text-slate-500" />
+                  <SignIn size={14} className="text-slate-500" />
                   <span>Issuer Sign In</span>
                 </Link>
               </div>
@@ -345,10 +343,10 @@ const VerifyCertificatePage = () => {
                 className="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-base font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-70 disabled:cursor-not-allowed transition-colors"
               >
                 {loading ? (
-                  <Loader2 className="animate-spin" />
+                  <CircleNotch size={20} className="animate-spin" />
                 ) : (
                   <span className="flex items-center gap-2">
-                    <Search size={20} /> Verify Credential
+                    <MagnifyingGlass size={20} weight="bold" /> Verify Credential
                   </span>
                 )}
               </button>
@@ -357,7 +355,7 @@ const VerifyCertificatePage = () => {
 
           {error && (
             <div className="max-w-xl mx-auto mb-8 bg-red-50 border-l-4 border-red-500 p-4 rounded-r-lg flex items-start gap-3">
-              <XCircle className="text-red-500 mt-0.5 shrink-0" size={20} />
+              <XCircle className="text-red-500 mt-0.5 shrink-0" size={20} weight="duotone" />
               <p className="text-red-700 font-medium">{error}</p>
             </div>
           )}
@@ -373,9 +371,9 @@ const VerifyCertificatePage = () => {
                 }`}
               >
                 {certificate.status === "valid" ? (
-                  <CheckCircle className="text-green-600 shrink-0" size={24} />
+                  <CheckCircle className="text-green-600 shrink-0" size={24} weight="duotone" />
                 ) : (
-                  <AlertCircle className="text-red-600 shrink-0" size={24} />
+                  <WarningCircle className="text-red-600 shrink-0" size={24} weight="duotone" />
                 )}
                 <div>
                   <h3
@@ -406,7 +404,7 @@ const VerifyCertificatePage = () => {
               {company && (
                 <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 mb-8 flex items-center gap-3">
                   <div className="bg-blue-100 p-2 rounded-full text-blue-600">
-                    <Building size={20} />
+                    <Buildings size={20} weight="duotone" />
                   </div>
                   <div>
                     <p className="text-sm text-blue-900">
@@ -463,7 +461,7 @@ const VerifyCertificatePage = () => {
                 to="/login"
                 className="text-xs text-slate-400 hover:text-slate-600 font-medium transition-colors no-underline inline-flex items-center gap-1"
               >
-                <LogIn size={12} />
+                <SignIn size={13} />
                 <span>Issuer & Staff Sign In</span>
               </Link>
             </div>

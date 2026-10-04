@@ -3,7 +3,10 @@ import { Link } from "react-router-dom";
 import PublicHeader from "../../components/PublicHeader";
 import PublicFooter from "../../components/PublicFooter";
 import SEO from "../../components/SEO";
-import { ArrowLeft, Check, AlertTriangle, ShieldCheck, QrCode } from "lucide-react";
+import { ArrowLeft, Warning, ShieldCheck, QrCode } from "@phosphor-icons/react";
+import Tag from "../../components/ui/Tag";
+import CheckBadge from "../../components/ui/CheckBadge";
+import IconBadge from "../../components/ui/IconBadge";
 
 export default function VerifyCertificateGuidePage() {
   const breadcrumbSchema = {
@@ -67,13 +70,13 @@ export default function VerifyCertificateGuidePage() {
             to="/blog"
             className="inline-flex items-center gap-1.5 text-xs font-semibold text-[var(--pd-mute)] hover:text-[var(--pd-ink)] transition-colors no-underline mb-8"
           >
-            <ArrowLeft size={14} /> Back to Guides
+            <ArrowLeft size={14} weight="bold" /> Back to Guides
           </Link>
 
           <header className="mb-10">
-            <span className="text-xs font-bold text-[var(--pd-indigo)] bg-indigo-50 px-3 py-1 rounded-full border border-indigo-100 uppercase tracking-wider">
+            <Tag tone="green" icon={ShieldCheck} size="sm">
               Verification & Security
-            </span>
+            </Tag>
             <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-[var(--pd-ink)] mt-4 mb-4 leading-tight">
               How to Verify a Certificate Online (and Spot Fake Credentials in Nigeria)
             </h1>
@@ -95,7 +98,7 @@ export default function VerifyCertificateGuidePage() {
             </p>
 
             <div className="p-5 rounded-2xl bg-amber-50 border border-amber-200 flex gap-3 text-amber-900 text-sm">
-              <AlertTriangle size={20} className="shrink-0 text-amber-600 mt-0.5" />
+              <Warning size={22} weight="duotone" className="shrink-0 text-amber-600 mt-0.5" />
               <div>
                 <strong>Common red flag:</strong> If a certificate only exists as an image or PDF attachment without an official verification URL hosted on the issuing authority's domain, treat it with caution.
               </div>
@@ -107,17 +110,17 @@ export default function VerifyCertificateGuidePage() {
             <p>
               Modern digital credential platforms like ProofDeck replace unverified static attachments with <strong>tamper-evident, hosted credentials</strong>. Here is the verification sequence:
             </p>
-            <ul className="space-y-3 pl-4">
-              <li className="flex items-start gap-2">
-                <Check size={18} className="text-emerald-600 shrink-0 mt-0.5" />
+            <ul className="space-y-3 pl-0 list-none">
+              <li className="flex items-start gap-2.5">
+                <CheckBadge tone="green" size={20} className="mt-0.5" />
                 <span><strong>Cryptographic Unique Identifier:</strong> Every certificate issued receives a unique, random credential ID stored in a tamper-resistant record.</span>
               </li>
-              <li className="flex items-start gap-2">
-                <Check size={18} className="text-emerald-600 shrink-0 mt-0.5" />
+              <li className="flex items-start gap-2.5">
+                <CheckBadge tone="green" size={20} className="mt-0.5" />
                 <span><strong>Dynamic QR Code:</strong> A QR code printed on the physical or digital certificate points directly to the hosted verification page on ProofDeck.</span>
               </li>
-              <li className="flex items-start gap-2">
-                <Check size={18} className="text-emerald-600 shrink-0 mt-0.5" />
+              <li className="flex items-start gap-2.5">
+                <CheckBadge tone="green" size={20} className="mt-0.5" />
                 <span><strong>Direct Domain Authority:</strong> Verifiers inspect the browser address bar to confirm the verification is served directly by <code>proofdeck.app</code> or the organization's verified custom domain.</span>
               </li>
             </ul>
@@ -137,8 +140,8 @@ export default function VerifyCertificateGuidePage() {
               </li>
             </ol>
 
-            <div className="p-8 rounded-2xl bg-[var(--pd-paper)] border border-[var(--pd-line)] text-center my-10 space-y-4">
-              <ShieldCheck size={36} className="text-[var(--pd-indigo)] mx-auto" />
+            <div className="p-8 rounded-3xl bg-[var(--pd-paper)] border border-[var(--pd-line)] text-center my-10 space-y-4">
+              <IconBadge icon={ShieldCheck} tone="indigo" size="lg" shape="squircle" className="mx-auto" />
               <h3 className="text-xl font-bold text-[var(--pd-ink)]">
                 Issue Tamper-Proof Certificates for Your Organization
               </h3>
