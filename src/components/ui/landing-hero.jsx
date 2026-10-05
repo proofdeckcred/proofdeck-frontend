@@ -12,7 +12,16 @@ import {
 } from "@phosphor-icons/react";
 import IconBadge from "./IconBadge";
 import BrandIcon from "./BrandIcon";
-import { Ring, Seal, DotGrid, TapeStrip } from "./decor";
+import {
+  Ring,
+  Seal,
+  DotGrid,
+  TapeStrip,
+  CertCorner,
+  GuillocheRosette,
+  GuillocheWaveBand,
+  Guilloche,
+} from "./decor";
 
 export function LandingHero() {
   const shouldReduceMotion = useReducedMotion();
@@ -20,8 +29,46 @@ export function LandingHero() {
   return (
     <section className="relative overflow-hidden pd-dot-grid pt-14 sm:pt-18 pb-20 sm:pb-28 z-0">
       {/* ========================================================
-          BACKGROUND DECOR MOTIFS (§2.1)
-          Clipped inside hero, no bleed into nav, balanced composition
+          DIPLOMA CORNER FLOURISHES (ADD §1)
+          Four ornate double-line corner brackets with inner scroll curl
+          Inset 20-28px, indigo-tint at ~14% visibility
+         ======================================================== */}
+      <div className="absolute top-5 sm:top-7 left-5 sm:left-7 z-0 pointer-events-none select-none" aria-hidden="true">
+        <CertCorner className="w-7 h-7 sm:w-10 sm:h-10 lg:w-14 lg:h-14" color="#5144E8" opacity={0.14} />
+      </div>
+      <div className="absolute top-5 sm:top-7 right-5 sm:right-7 z-0 pointer-events-none select-none" aria-hidden="true">
+        <CertCorner className="w-7 h-7 sm:w-10 sm:h-10 lg:w-14 lg:h-14 -scale-x-100" color="#5144E8" opacity={0.14} />
+      </div>
+      <div className="absolute bottom-5 sm:bottom-7 left-5 sm:left-7 z-0 pointer-events-none select-none" aria-hidden="true">
+        <CertCorner className="w-7 h-7 sm:w-10 sm:h-10 lg:w-14 lg:h-14 -scale-y-100" color="#5144E8" opacity={0.14} />
+      </div>
+      <div className="absolute bottom-5 sm:bottom-7 right-5 sm:right-7 z-0 pointer-events-none select-none" aria-hidden="true">
+        <CertCorner className="w-7 h-7 sm:w-10 sm:h-10 lg:w-14 lg:h-14 -scale-100" color="#5144E8" opacity={0.14} />
+      </div>
+
+      {/* ========================================================
+          GUILLOCHE SECURITY BANDS & ROSETTE (ADD §2)
+          Interlaced sine wave bands + central banknote spirograph rosette
+         ======================================================== */}
+      {/* Wave bands along top and bottom inner edges */}
+      <GuillocheWaveBand className="hidden sm:block absolute top-0 left-0 right-0 z-0" color="#5144E8" opacity={0.055} />
+      <GuillocheWaveBand className="hidden sm:block absolute bottom-0 left-0 right-0 z-0" color="#5144E8" opacity={0.055} />
+
+      {/* Central Banknote Guilloche Rosette behind headline area */}
+      <div 
+        className="absolute left-1/2 -translate-x-1/2 top-4 sm:top-6 lg:top-8 pointer-events-none select-none z-0" 
+        aria-hidden="true"
+      >
+        <GuillocheRosette
+          className="w-[340px] h-[340px] sm:w-[480px] sm:h-[480px] lg:w-[820px] lg:h-[820px]"
+          color="#5144E8"
+          opacity={0.055}
+        />
+      </div>
+
+      {/* ========================================================
+          BACKGROUND DECOR MOTIFS (KEPT EXACTLY AS THEY ARE)
+          Left lavender ring + Right scalloped seal
          ======================================================== */}
       {/* Left Ring (deliberate, large, partially cropped full ring centered vertically behind sticky note) */}
       <div 
@@ -62,20 +109,6 @@ export function LandingHero() {
           transition={{ duration: 0.5, ease: "easeOut" }}
         >
           <div className="relative">
-            {/* Small tilted round stamp/rosette sticker (§2.2, visible >=1280px) */}
-            <div
-              className="hidden xl:block absolute -bottom-3.5 -left-3.5 z-10 pointer-events-none select-none"
-              style={{ transform: "rotate(-10deg)" }}
-              aria-hidden="true"
-            >
-              <svg width="42" height="42" viewBox="0 0 42 42" fill="none">
-                <circle cx="21" cy="21" r="20" fill="#E9E7FD" stroke="#5144E8" strokeWidth="1.5" />
-                <circle cx="21" cy="21" r="16.5" stroke="#5144E8" strokeWidth="1" strokeDasharray="2.5 2.5" />
-                <circle cx="21" cy="21" r="12" fill="#5144E8" />
-                <polygon points="21,15 22.8,19 27,19.4 23.8,22.2 24.8,26.4 21,24.1 17.2,26.4 18.2,22.2 15,19.4 19.2,19" fill="#FFFFFF" />
-              </svg>
-            </div>
-
             {/* Sticky Note */}
             <div 
               className="bg-[#FEF08A] text-[#713F12] p-5 rounded-sm w-[210px] xl:w-[230px] border border-amber-300/40 relative text-left"
@@ -131,22 +164,41 @@ export function LandingHero() {
 
             {/* Card Container */}
             <div 
-              className="bg-white rounded-2xl p-5 w-[240px] xl:w-[260px] border border-[var(--pd-line)] text-left relative"
+              className="bg-white rounded-2xl p-5 w-[240px] xl:w-[260px] border border-[var(--pd-line)] text-left relative overflow-hidden"
               style={{ boxShadow: "0 14px 30px -8px rgba(11,11,18,0.14)" }}
             >
-              <div className="flex items-center justify-between border-b border-[var(--pd-line)] pb-2.5 mb-3">
-                <span className="text-[11px] font-bold text-[var(--pd-ink)] tracking-tight">Verified Credential</span>
-                <span className="text-[10px] font-mono text-[var(--pd-mute)]">#PD-8492</span>
+              {/* Hairline Inset Double Border & Corner Ticks (ADD §4) */}
+              <div 
+                className="absolute inset-2 sm:inset-2.5 rounded-xl border border-[#5144E8]/[0.12] pointer-events-none select-none z-0"
+                aria-hidden="true"
+              >
+                <div className="absolute inset-[3px] rounded-lg border border-[#5144E8]/[0.08]" />
+                <span className="absolute -top-[1px] -left-[1px] w-2 h-2 border-t-2 border-l-2 border-[#5144E8]/25 rounded-tl-sm" />
+                <span className="absolute -top-[1px] -right-[1px] w-2 h-2 border-t-2 border-r-2 border-[#5144E8]/25 rounded-tr-sm" />
+                <span className="absolute -bottom-[1px] -left-[1px] w-2 h-2 border-b-2 border-l-2 border-[#5144E8]/25 rounded-bl-sm" />
+                <span className="absolute -bottom-[1px] -right-[1px] w-2 h-2 border-b-2 border-r-2 border-[#5144E8]/25 rounded-br-sm" />
               </div>
 
-              <div className="space-y-1.5">
-                <p className="text-xs font-bold text-[var(--pd-ink)]">Full-Stack Development</p>
-                <p className="text-[11px] text-[var(--pd-mute)]">Jane Doe · ProofDeck Academy</p>
-                <div className="pt-2">
-                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200/60">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                    Authentic & Valid
-                  </span>
+              {/* Faint Guilloche Watermark behind card text (ADD §4, ~5% opacity) */}
+              <div className="absolute -right-8 -bottom-8 pointer-events-none select-none z-0" aria-hidden="true">
+                <Guilloche size={135} color="#5144E8" opacity={0.05} />
+              </div>
+
+              <div className="relative z-10">
+                <div className="flex items-center justify-between border-b border-[var(--pd-line)] pb-2.5 mb-3">
+                  <span className="text-[11px] font-bold text-[var(--pd-ink)] tracking-tight">Verified Credential</span>
+                  <span className="text-[10px] font-mono text-[var(--pd-mute)]">#PD-8492</span>
+                </div>
+
+                <div className="space-y-1.5">
+                  <p className="text-xs font-bold text-[var(--pd-ink)]">Full-Stack Development</p>
+                  <p className="text-[11px] text-[var(--pd-mute)]">Jane Doe · ProofDeck Academy</p>
+                  <div className="pt-2">
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200/60">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                      Authentic & Valid
+                    </span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -180,19 +232,49 @@ export function LandingHero() {
               </svg>
             </div>
 
-            {/* Overlapping Floating Award Badge */}
+            {/* Overlapping Floating Award Badge with Medal Ribbon Tails (ADD §3) */}
             <motion.div
-              className="absolute -top-3.5 -left-3.5 w-11 h-11 rounded-xl bg-white flex items-center justify-center border border-black/5 z-20"
-              style={{ 
-                boxShadow: "0 10px 20px -4px rgba(11,11,18,0.16)",
-                transform: "rotate(-10deg)"
-              }}
+              className="absolute -top-3.5 -left-3.5 z-20 pointer-events-none select-none"
+              style={{ transform: "rotate(-10deg)" }}
               initial={shouldReduceMotion ? false : { scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               transition={{ duration: 0.25, delay: shouldReduceMotion ? 0 : 0.45 }}
             >
-              <div className="w-7 h-7 rounded-lg bg-amber-50 flex items-center justify-center text-[var(--pd-amber)]">
-                <Medal size={16} weight="duotone" />
+              <div className="relative">
+                {/* Ribbon tails hanging beneath medal */}
+                <svg
+                  width="26"
+                  height="16"
+                  viewBox="0 0 26 16"
+                  fill="none"
+                  className="absolute -bottom-2.5 left-1/2 -translate-x-1/2 pointer-events-none -z-10"
+                  aria-hidden="true"
+                >
+                  <path
+                    d="M 5 0 L 1.5 13 L 6 10.5 L 10.5 13 L 8.5 0 Z"
+                    fill="#FBBF24"
+                    stroke="#D97706"
+                    strokeWidth="1"
+                    strokeLinejoin="round"
+                  />
+                  <path
+                    d="M 17.5 0 L 15.5 13 L 20 10.5 L 24.5 13 L 21 0 Z"
+                    fill="#F59E0B"
+                    stroke="#D97706"
+                    strokeWidth="1"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+
+                {/* Badge tile (unchanged) */}
+                <div 
+                  className="w-11 h-11 rounded-xl bg-white flex items-center justify-center border border-black/5 relative z-10"
+                  style={{ boxShadow: "0 10px 20px -4px rgba(11,11,18,0.16)" }}
+                >
+                  <div className="w-7 h-7 rounded-lg bg-amber-50 flex items-center justify-center text-[var(--pd-amber)]">
+                    <Medal size={16} weight="duotone" />
+                  </div>
+                </div>
               </div>
             </motion.div>
           </div>
@@ -293,35 +375,61 @@ export function LandingHero() {
         </div>
 
         {/* ========================================================
-            PERFORATION DIVIDER WITH TICKET NOTCHES (§2.4)
-            Full-width dashed line with half-circle tear notches at both ends
-           ======================================================== */}
-        <div 
-          className="w-full max-w-4xl mx-auto my-8 sm:my-10 flex items-center px-4 pointer-events-none select-none" 
-          aria-hidden="true"
-        >
-          {/* Left ticket notch */}
-          <svg width="10" height="18" viewBox="0 0 10 18" fill="none" className="shrink-0 text-indigo-400 opacity-35">
-            <path d="M 0 1 A 8 8 0 0 1 0 17" stroke="currentColor" strokeWidth="1.5" />
-          </svg>
-          {/* Dashed perforation line */}
-          <div className="flex-1 mx-3 border-t-2 border-dashed border-[#5144E8]/20" />
-          {/* Right ticket notch */}
-          <svg width="10" height="18" viewBox="0 0 10 18" fill="none" className="shrink-0 text-indigo-400 opacity-35">
-            <path d="M 10 1 A 8 8 0 0 0 10 17" stroke="currentColor" strokeWidth="1.5" />
-          </svg>
-        </div>
-
-        {/* ========================================================
             CENTERPIECE: Dashboard Mockup + 2 Floating Cards
             Vibrant flat sky-blue frame matching Section 5.2 (no gradients)
            ======================================================== */}
         <motion.div
-          className="relative mt-2 sm:mt-4 w-full max-w-5xl mx-auto"
+          className="relative mt-10 sm:mt-14 w-full max-w-5xl mx-auto"
           initial={shouldReduceMotion ? false : { opacity: 0, y: 30, scale: 0.98 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
           transition={{ duration: 0.6, delay: shouldReduceMotion ? 0 : 0.3 }}
         >
+          {/* Peeking Certificate Sheet 1: Top-Left (ADD §5, visible >=1280px, tilted -4deg) */}
+          <div
+            className="hidden xl:flex flex-col justify-between absolute -top-6 left-6 xl:left-10 w-[180px] h-[125px] rounded-lg bg-white border border-[#5144E8]/20 shadow-md p-3 pointer-events-none select-none z-0 overflow-hidden"
+            style={{ transform: "rotate(-4deg)" }}
+            aria-hidden="true"
+          >
+            <div className="border border-[#5144E8]/10 rounded p-2 h-full flex flex-col justify-between">
+              <div>
+                <div className="w-16 h-1.5 bg-[#5144E8]/20 rounded-full mb-2" />
+                <div className="w-28 h-1 bg-slate-200/80 rounded-full mb-1" />
+                <div className="w-20 h-1 bg-slate-200/80 rounded-full mb-1" />
+                <div className="w-24 h-1 bg-slate-200/80 rounded-full" />
+              </div>
+              <div className="flex items-end justify-between pt-1">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                  <circle cx="12" cy="12" r="9" stroke="#5144E8" strokeWidth="1" strokeOpacity="0.25" strokeDasharray="2 2" />
+                  <circle cx="12" cy="12" r="5" stroke="#5144E8" strokeWidth="1" strokeOpacity="0.2" />
+                </svg>
+                <div className="w-12 h-1 bg-slate-200/70 rounded-full" />
+              </div>
+            </div>
+          </div>
+
+          {/* Peeking Certificate Sheet 2: Top-Right (ADD §5, visible >=1280px, tilted +3deg) */}
+          <div
+            className="hidden xl:flex flex-col justify-between absolute -top-7 right-6 xl:right-12 w-[190px] h-[130px] rounded-lg bg-white border border-[#5144E8]/20 shadow-md p-3 pointer-events-none select-none z-0 overflow-hidden"
+            style={{ transform: "rotate(3deg)" }}
+            aria-hidden="true"
+          >
+            <div className="border border-[#5144E8]/10 rounded p-2 h-full flex flex-col justify-between">
+              <div>
+                <div className="w-20 h-1.5 bg-[#5144E8]/20 rounded-full mb-2" />
+                <div className="w-32 h-1 bg-slate-200/80 rounded-full mb-1" />
+                <div className="w-24 h-1 bg-slate-200/80 rounded-full mb-1" />
+                <div className="w-28 h-1 bg-slate-200/80 rounded-full" />
+              </div>
+              <div className="flex items-end justify-between pt-1">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                  <circle cx="12" cy="12" r="9" stroke="#0A9AF5" strokeWidth="1" strokeOpacity="0.25" />
+                  <path d="M 9 19 L 12 16 L 15 19" stroke="#0A9AF5" strokeWidth="1" strokeOpacity="0.25" />
+                </svg>
+                <div className="w-14 h-1 bg-slate-200/70 rounded-full" />
+              </div>
+            </div>
+          </div>
+
           {/* Ambient dot pattern outside frame */}
           <div className="absolute -inset-4 pointer-events-none opacity-40">
             <DotGrid dotSize={1.2} gap={18} color="#0A9AF5" opacity={0.25} />
@@ -428,7 +536,7 @@ export function LandingHero() {
 
           {/* Flat Sky-Blue Showcase Container (no linear gradient) */}
           <div 
-            className="rounded-3xl sm:rounded-[32px] p-4 sm:p-8 md:p-12 relative overflow-hidden bg-[#0A9AF5] shadow-2xl"
+            className="rounded-3xl sm:rounded-[32px] p-4 sm:p-8 md:p-12 relative z-10 overflow-hidden bg-[#0A9AF5] shadow-2xl"
           >
             {/* Tone cropped ring on frame */}
             <Ring

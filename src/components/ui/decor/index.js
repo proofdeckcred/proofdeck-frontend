@@ -10,3 +10,5 @@ export { Perforation } from "./Perforation";
 export { Wave } from "./Wave";
 export { TapeStrip } from "./TapeStrip";
 export { PaperClip } from "./PaperClip";
+export { GuillocheRosette } from "./GuillocheRosette";
+export { GuillocheWaveBand } from "./GuillocheWaveBand";
