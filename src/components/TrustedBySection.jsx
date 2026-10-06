@@ -1,153 +1,257 @@
 import React from "react";
 import { Wave } from "./ui/decor";
 
-export function TrustedBySection() {
+// Partner data configuration
+const PARTNERS = [
+  {
+    id: "001",
+    name: "Zitopy Technologies",
+    logo: "/images/partners/zitopy.png",
+    alt: "Zitopy Technologies logo",
+    url: "https://zitopy.com/",
+    type: "square",
+  },
+  {
+    id: "002",
+    name: "Thrive Initiative",
+    logo: "/images/partners/thrive-initiative.png",
+    alt: "Thrive Initiative logo",
+    url: "https://www.thriveinitiativeafrica.com/",
+    type: "stacked",
+  },
+  {
+    id: "003",
+    name: "The AI Nexus",
+    logo: "/images/partners/ai-nexus.png",
+    alt: "The AI Nexus logo",
+    url: null,
+    type: "wide",
+  },
+  {
+    id: "004",
+    name: "Nile University of Nigeria, Collective Labs",
+    logo: "/images/partners/nile-university.png",
+    alt: "Nile University of Nigeria logo",
+    url: null,
+    type: "wide",
+  },
+  {
+    id: "005",
+    name: "Staunch Analytics",
+    logo: "/images/partners/staunch-analytics.png",
+    alt: "Staunch Analytics logo",
+    url: null,
+    type: "stacked",
+  },
+];
+
+/**
+ * Normalized logo sizing helpers to balance optical weight across
+ * wide wordmarks, square marks, and stacked emblems.
+ */
+function getLogoSizeClasses(type) {
+  switch (type) {
+    case "square":
+      return "max-h-[46px] sm:max-h-[50px] max-w-[46px] sm:max-w-[50px] rounded-md";
+    case "stacked":
+      return "max-h-[54px] sm:max-h-[60px] max-w-[82%]";
+    case "wide":
+    default:
+      return "max-h-[38px] sm:max-h-[44px] max-w-[90%]";
+  }
+}
+
+/**
+ * Single Partner Cell Component
+ */
+function PartnerCard({ partner, borderClasses = "" }) {
+  const isInteractive = Boolean(partner.url);
+  const TagName = isInteractive ? "a" : "div";
+  const interactiveProps = isInteractive
+    ? {
+        href: partner.url,
+        target: "_blank",
+        rel: "noopener noreferrer",
+      }
+    : {};
+
   return (
-    <div className="relative bg-[#F7F7FA] border-b border-slate-100 overflow-hidden py-10 md:py-16">
-      <Wave height={24} fill="#FFFFFF" flip className="opacity-90 absolute top-0 left-0 right-0" />
-      <div className="py-2 max-w-6xl mx-auto px-4 relative z-10">
-        <p className="text-center text-sm font-medium text-[var(--pd-mute)] mb-8 md:mb-12">
-          Trusted by forward-thinking organizations
-        </p>
+    <TagName
+      {...interactiveProps}
+      className={`group relative flex flex-col justify-between p-3.5 sm:p-5 md:p-6 bg-white aspect-[4/3] w-full transition-colors duration-200 select-none ${
+        isInteractive
+          ? "cursor-pointer hover:bg-[#F2F1F8] focus:outline-hidden focus-visible:ring-2 focus-visible:ring-[var(--pd-indigo)] focus-visible:ring-offset-2 z-10"
+          : "cursor-default hover:bg-[#F8F7FC]"
+      } ${borderClasses}`}
+    >
+      {/* 1. Top-Left: Partner Name */}
+      <div className="flex items-start justify-between min-h-[24px] sm:min-h-[30px]">
+        <span
+          className="text-[9px] sm:text-[10px] md:text-[11px] font-semibold uppercase tracking-wider text-[var(--pd-ink)] leading-tight line-clamp-2 max-w-[90%]"
+          title={partner.name}
+        >
+          {partner.name}
+        </span>
+      </div>
 
-        {/* Desktop Layout: ProofDeck in the Center, Partners Surrounding */}
-        <div className="hidden md:flex flex-col items-center gap-7 lg:gap-8">
-          {/* Top Row: Zitopy (Left) & The AI Nexus (Right) */}
-          <div className="flex items-center justify-center gap-20 lg:gap-32">
-            <a
-              href="https://zitopy.com/"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="hover:scale-105 transition-all duration-300 flex items-center no-underline"
-              title="Zitopy"
-            >
-              <img
-                src="/images/partners/zitopy.png"
-                alt="Zitopy"
-                className="h-12 lg:h-14 w-auto object-contain rounded-xl drop-shadow-[0_6px_14px_rgba(0,0,0,0.14)] hover:drop-shadow-[0_10px_20px_rgba(91,76,245,0.3)] transition-all"
-              />
-            </a>
+      {/* 2. Center: Logo in normalized fixed-size box */}
+      <div className="w-[75%] h-[52px] sm:h-[64px] md:h-[72px] mx-auto flex items-center justify-center my-auto">
+        <img
+          src={partner.logo}
+          alt={partner.alt}
+          className={`w-auto object-contain grayscale opacity-60 group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-200 ${getLogoSizeClasses(
+            partner.type
+          )}`}
+        />
+      </div>
 
-            <div
-              className="hover:scale-105 transition-all duration-300 flex items-center"
-              title="The AI Nexus"
-            >
-              <img
-                src="/images/partners/ai-nexus.png"
-                alt="The AI Nexus"
-                className="h-8 lg:h-10 w-auto object-contain drop-shadow-[0_4px_10px_rgba(0,0,0,0.12)] hover:drop-shadow-[0_8px_18px_rgba(91,76,245,0.25)] transition-all"
-              />
+      {/* 3. Bottom Row: Link & Index */}
+      <div className="flex items-center justify-between text-xs pt-1">
+        {isInteractive ? (
+          <span className="text-[10px] sm:text-xs font-medium text-[var(--pd-indigo)] group-hover:underline flex items-center gap-0.5 sm:gap-1">
+            View website ↗
+          </span>
+        ) : (
+          <span aria-hidden="true" />
+        )}
+        <span className="font-mono text-[9px] sm:text-[11px] font-medium text-[var(--pd-mute)]/70">
+          [{partner.id}]
+        </span>
+      </div>
+    </TagName>
+  );
+}
+
+export function TrustedBySection() {
+  const row1Partners = PARTNERS.slice(0, 3); // Zitopy [001], Thrive [002], AI Nexus [003]
+  const row2Partners = PARTNERS.slice(3, 5); // Nile University [004], Staunch [005]
+
+  return (
+    <section
+      aria-labelledby="partners-heading"
+      className="relative bg-[#F7F7FA] border-b border-[var(--pd-line)] overflow-hidden py-10 md:py-20"
+    >
+      <Wave height={24} fill="#FFFFFF" flip className="opacity-90 absolute top-0 left-0 right-0 pointer-events-none" />
+
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 relative z-10 pt-4">
+        {/* ============================================================== */}
+        {/* DESKTOP (lg+): Staggered 3 + 2 layout with shared borders     */}
+        {/* ============================================================== */}
+        <div className="hidden lg:flex lg:flex-col">
+          {/* Row 1: Header in Col 0, then 3 partner cells (Cols 1, 2, 3) */}
+          <div className="flex w-full items-stretch">
+            {/* Top-Left Empty Space with Section Header */}
+            <div className="w-1/4 aspect-[4/3] flex flex-col justify-end p-6 pr-8 pb-8 select-none">
+              <p className="text-xs font-bold uppercase tracking-widest text-[var(--pd-mute)] mb-2">
+                Partners
+              </p>
+              <h2
+                id="partners-heading"
+                className="text-base xl:text-lg font-bold text-[var(--pd-ink)] tracking-tight leading-snug"
+              >
+                Trusted by forward-thinking organizations
+              </h2>
+            </div>
+
+            {/* 3 Partner Cells Pushed to the Right */}
+            <div className="flex w-3/4">
+              <div className="w-1/3">
+                <PartnerCard
+                  partner={row1Partners[0]}
+                  borderClasses="border border-[var(--pd-line)] rounded-tl-2xl"
+                />
+              </div>
+              <div className="w-1/3">
+                <PartnerCard
+                  partner={row1Partners[1]}
+                  borderClasses="border-y border-r border-[var(--pd-line)]"
+                />
+              </div>
+              <div className="w-1/3">
+                <PartnerCard
+                  partner={row1Partners[2]}
+                  borderClasses="border-y border-r border-[var(--pd-line)] rounded-tr-2xl rounded-br-2xl"
+                />
+              </div>
             </div>
           </div>
 
-          {/* Middle Row: Staunch Analytics (Left) — ProofDeck (Center Hub, Bigger) — Nile University (Right) */}
-          <div className="flex items-center justify-center gap-16 lg:gap-24">
-            <div
-              className="hover:scale-105 transition-all duration-300 flex items-center"
-              title="Staunch Analytics"
-            >
-              <img
-                src="/images/partners/staunch-analytics.png"
-                alt="Staunch Analytics"
-                className="h-16 lg:h-20 w-auto object-contain drop-shadow-[0_6px_14px_rgba(0,0,0,0.12)] hover:drop-shadow-[0_10px_20px_rgba(91,76,245,0.25)] transition-all"
-              />
+          {/* Row 2: 2 partner cells aligned to the left (Cols 0, 1), overlapping top row by 1px */}
+          <div className="flex w-full -mt-[1px]">
+            <div className="flex w-2/4">
+              <div className="w-1/2">
+                <PartnerCard
+                  partner={row2Partners[0]}
+                  borderClasses="border border-[var(--pd-line)] rounded-tl-2xl rounded-bl-2xl"
+                />
+              </div>
+              <div className="w-1/2">
+                <PartnerCard
+                  partner={row2Partners[1]}
+                  borderClasses="border-y border-r border-[var(--pd-line)] rounded-br-2xl"
+                />
+              </div>
             </div>
-
-            {/* ProofDeck Logo (Prominent Center Anchor) */}
-            <div className="hover:scale-105 transition-all duration-300 flex items-center justify-center px-4">
-              <img
-                src="/logo.png"
-                alt="ProofDeck"
-                className="h-24 lg:h-32 w-auto object-contain drop-shadow-[0_12px_28px_rgba(91,76,245,0.38)] transition-all"
-              />
-            </div>
-
-            <a
-              href="https://nileuniversity.edu.ng/"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="hover:scale-105 transition-all duration-300 flex items-center no-underline"
-              title="Nile University of Nigeria"
-            >
-              <img
-                src="/images/partners/nile-university.png"
-                alt="Nile University of Nigeria"
-                className="h-12 lg:h-14 w-auto object-contain drop-shadow-[0_6px_14px_rgba(0,0,0,0.1)] hover:drop-shadow-[0_10px_20px_rgba(91,76,245,0.25)] transition-all"
-              />
-            </a>
-          </div>
-
-          {/* Bottom Row: Thrive Initiative */}
-          <div className="flex items-center justify-center">
-            <div
-              className="hover:scale-105 transition-all duration-300 flex items-center"
-              title="Thrive Initiative"
-            >
-              <img
-                src="/images/partners/thrive-initiative.png"
-                alt="Thrive Initiative"
-                className="h-18 lg:h-22 w-auto object-contain drop-shadow-[0_6px_16px_rgba(0,0,0,0.12)] hover:drop-shadow-[0_10px_22px_rgba(91,76,245,0.25)] transition-all"
-              />
-            </div>
+            {/* Cols 2 & 3: Empty space */}
+            <div className="w-2/4" aria-hidden="true" />
           </div>
         </div>
 
-        {/* Mobile Layout (< md) */}
-        <div className="md:hidden flex flex-col items-center gap-6">
-          {/* ProofDeck Logo in Center */}
-          <div className="flex items-center justify-center">
-            <img
-              src="/logo.png"
-              alt="ProofDeck"
-              className="h-20 w-auto object-contain drop-shadow-[0_8px_20px_rgba(91,76,245,0.35)]"
-            />
+        {/* ============================================================== */}
+        {/* TABLET & MOBILE (< lg): 2-column compact table grid           */}
+        {/* ============================================================== */}
+        <div className="lg:hidden">
+          {/* Header above grid */}
+          <div className="mb-5 sm:mb-6 px-1 select-none">
+            <p className="text-[11px] sm:text-xs font-bold uppercase tracking-widest text-[var(--pd-mute)] mb-1">
+              Partners
+            </p>
+            <h2 className="text-base sm:text-xl font-bold text-[var(--pd-ink)] tracking-tight">
+              Trusted by forward-thinking organizations
+            </h2>
           </div>
 
-          {/* Surrounding Partners in Clean Grid */}
-          <div className="flex flex-wrap items-center justify-center gap-6 sm:gap-8 pt-2">
-            <a
-              href="https://zitopy.com/"
-              target="_blank"
-              rel="noopener noreferrer"
-              title="Zitopy"
-            >
-              <img
-                src="/images/partners/zitopy.png"
-                alt="Zitopy"
-                className="h-11 w-auto object-contain rounded-lg drop-shadow-[0_4px_10px_rgba(0,0,0,0.14)]"
+          <ul role="list" className="grid grid-cols-2">
+            {/* Row 1 */}
+            <li className="list-none">
+              <PartnerCard
+                partner={PARTNERS[0]}
+                borderClasses="border border-[var(--pd-line)] rounded-tl-2xl"
               />
-            </a>
-            <img
-              src="/images/partners/ai-nexus.png"
-              alt="The AI Nexus"
-              className="h-6 w-auto object-contain drop-shadow-[0_3px_8px_rgba(0,0,0,0.1)]"
-            />
-            <img
-              src="/images/partners/staunch-analytics.png"
-              alt="Staunch Analytics"
-              className="h-12 w-auto object-contain drop-shadow-[0_4px_10px_rgba(0,0,0,0.12)]"
-            />
-            <a
-              href="https://nileuniversity.edu.ng/"
-              target="_blank"
-              rel="noopener noreferrer"
-              title="Nile University of Nigeria"
-            >
-              <img
-                src="/images/partners/nile-university.png"
-                alt="Nile University of Nigeria"
-                className="h-8 w-auto object-contain drop-shadow-[0_4px_10px_rgba(0,0,0,0.1)]"
+            </li>
+            <li className="list-none">
+              <PartnerCard
+                partner={PARTNERS[1]}
+                borderClasses="border-y border-r border-[var(--pd-line)] rounded-tr-2xl"
               />
-            </a>
-            <img
-              src="/images/partners/thrive-initiative.png"
-              alt="Thrive Initiative"
-              className="h-14 w-auto object-contain drop-shadow-[0_5px_12px_rgba(0,0,0,0.12)]"
-            />
-          </div>
+            </li>
+
+            {/* Row 2 */}
+            <li className="list-none -mt-[1px]">
+              <PartnerCard
+                partner={PARTNERS[2]}
+                borderClasses="border-x border-b border-[var(--pd-line)]"
+              />
+            </li>
+            <li className="list-none -mt-[1px]">
+              <PartnerCard
+                partner={PARTNERS[3]}
+                borderClasses="border-r border-b border-[var(--pd-line)]"
+              />
+            </li>
+
+            {/* Row 3 */}
+            <li className="list-none -mt-[1px]">
+              <PartnerCard
+                partner={PARTNERS[4]}
+                borderClasses="border-x border-b border-[var(--pd-line)] rounded-bl-2xl rounded-br-2xl"
+              />
+            </li>
+            <li className="list-none" aria-hidden="true" />
+          </ul>
         </div>
       </div>
-    </div>
+    </section>
   );
 }
 
