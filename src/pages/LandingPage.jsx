@@ -7,6 +7,7 @@ import { LandingHero } from "../components/ui/landing-hero";
 import { FeaturesSection } from "../components/FeaturesSection";
 import { BenefitsSection } from "../components/BenefitsSection";
 import { TestimonialSection } from "../components/TestimonialSection";
+import { TrustedBySection } from "../components/TrustedBySection";
 import { ApiSection } from "../components/ApiSection";
 import SEO from "../components/SEO";
 import CustomPricingModal from "../components/CustomPricingModal";
@@ -370,45 +371,8 @@ function LandingPage() {
         {/* 1. Hero with integrated stats */}
         <LandingHero />
 
-        {/* 2. Trusted By Logos Bar (§5.2) */}
-        <div className="relative bg-[#F7F7FA] border-b border-slate-100 overflow-hidden">
-          <Wave height={24} fill="#FFFFFF" flip className="opacity-90" />
-          <div className="py-10 md:py-12 max-w-7xl mx-auto px-4 relative z-10">
-            <p className="text-center text-sm font-medium text-[var(--pd-mute)] mb-8">
-              Trusted by forward-thinking organizations
-            </p>
-            <div className="flex flex-wrap justify-center items-center gap-8 md:gap-16 opacity-75 hover:opacity-100 transition-all duration-500">
-              <a
-                href="https://zitopy.com/"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="hover:scale-105 transition-transform flex items-center gap-2 no-underline group"
-                title="Zitopy"
-              >
-                <img
-                  src="/zitopy-logo.jpeg"
-                  className="h-8 md:h-10 object-contain rounded shadow-xs border border-slate-200/80 group-hover:border-indigo-300"
-                  alt="Zitopy"
-                />
-              </a>
-              <img
-                src="/images/partners/logo1.png"
-                className="h-8 md:h-10 object-contain grayscale hover:grayscale-0"
-                alt="Partner"
-              />
-              <img
-                src="/images/partners/logo2.png"
-                className="h-8 md:h-10 object-contain grayscale hover:grayscale-0"
-                alt="Partner"
-              />
-              <img
-                src="/images/partners/logo3.png"
-                className="h-8 md:h-10 object-contain grayscale hover:grayscale-0"
-                alt="Partner"
-              />
-            </div>
-          </div>
-        </div>
+        {/* 2. Trusted By Organizations Section (Focal Hub + Partner Constellation) */}
+        <TrustedBySection />
 
         {/* 3. Features (Sticky Stacking Cards) */}
         <FeaturesSection />
