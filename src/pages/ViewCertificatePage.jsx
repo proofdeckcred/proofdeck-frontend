@@ -202,21 +202,21 @@ function ViewCertificatePage() {
   const isReceipt = templateType === "receipt";
 
   const InfoRow = ({ icon: Icon, label, value }) => (
-    <div className="flex items-start gap-3 py-3 border-b border-slate-100 last:border-0">
+    <div className="flex items-start gap-3 py-3 border-b border-slate-100 dark:border-[#28282d] last:border-0">
       <div className={`p-2 rounded-lg shrink-0 border ${
         isInvitation 
-          ? "bg-rose-50 text-rose-600 border-rose-100" 
+          ? "bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 border-rose-100 dark:border-rose-900/50" 
           : isReceipt
-          ? "bg-emerald-50 text-emerald-600 border-emerald-100"
-          : "bg-indigo-50 text-indigo-650 border-indigo-100"
+          ? "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border-emerald-100 dark:border-emerald-900/50"
+          : "bg-indigo-50 dark:bg-indigo-950/40 text-indigo-650 dark:text-indigo-400 border-indigo-100 dark:border-indigo-900/50"
       }`}>
         <Icon size={16} />
       </div>
       <div className="min-w-0 flex-1">
-        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">
+        <p className="text-[10px] font-bold text-slate-400 dark:text-zinc-400 uppercase tracking-wider mb-0.5">
           {label}
         </p>
-        <p className="text-slate-800 font-bold text-xs break-all leading-normal">
+        <p className="text-slate-800 dark:text-white font-bold text-xs break-all leading-normal">
           {value}
         </p>
       </div>
@@ -386,8 +386,8 @@ function ViewCertificatePage() {
           
           {/* LEFT COLUMN: DOCUMENT PREVIEW CONTAINER (col-span-8) */}
           <div className="lg:col-span-8">
-            <div className="bg-slate-50 border border-slate-200/60 rounded-xl p-4 sm:p-6 flex flex-col items-center shadow-inner min-h-[450px] justify-center">
-              <div className="w-full relative shadow-2xl rounded-xl bg-white max-w-3xl border border-slate-200/50 overflow-hidden">
+            <div className="bg-slate-50 dark:bg-[#141417] border border-slate-200/60 dark:border-[#2b2b31] rounded-xl p-4 sm:p-6 flex flex-col items-center shadow-inner min-h-[450px] justify-center">
+              <div className="w-full relative shadow-2xl rounded-xl bg-white max-w-3xl border border-slate-200/50 dark:border-[#2b2b31] overflow-hidden">
                 <TemplateRenderer 
                   template={template} 
                   formData={certificate}
@@ -396,7 +396,7 @@ function ViewCertificatePage() {
 
               <button
                 onClick={() => setShowFullscreen(true)}
-                className="mt-6 flex items-center gap-1.5 text-slate-500 hover:text-indigo-650 text-xs font-semibold transition-all border border-slate-200/60 hover:border-indigo-200 bg-white shadow-xs px-3.5 py-1.5 rounded-lg hover:shadow-sm cursor-pointer"
+                className="mt-6 flex items-center gap-1.5 text-slate-500 dark:text-zinc-300 hover:text-indigo-650 dark:hover:text-white text-xs font-semibold transition-all border border-slate-200/60 dark:border-[#32323a] hover:border-indigo-200 dark:hover:border-zinc-600 bg-white dark:bg-[#222228] shadow-xs px-3.5 py-1.5 rounded-lg hover:shadow-sm cursor-pointer"
               >
                 <Maximize2 size={13} />
                 <span>View Fullscreen</span>
@@ -408,9 +408,9 @@ function ViewCertificatePage() {
           <div className="lg:col-span-4 space-y-6">
             
             {/* Bento metadata card */}
-            <div className="bg-white rounded-xl shadow-xs border border-slate-200 p-4">
-              <h3 className="font-bold text-slate-800 text-xs uppercase tracking-wider mb-3 pb-2 border-b border-slate-100 flex items-center gap-1.5">
-                <User className="text-slate-400" size={14} />
+            <div className="bg-white dark:bg-[#18181b] rounded-xl shadow-xs border border-slate-200 dark:border-[#2b2b31] p-4">
+              <h3 className="font-bold text-slate-800 dark:text-white text-xs uppercase tracking-wider mb-3 pb-2 border-b border-slate-100 dark:border-[#28282d] flex items-center gap-1.5">
+                <User className="text-slate-400 dark:text-zinc-400" size={14} />
                 <span>
                   {isInvitation 
                     ? "Guest Details" 
@@ -463,26 +463,27 @@ function ViewCertificatePage() {
             </div>
 
             {/* Bento Verification QR card */}
-            <div className="bg-white rounded-xl shadow-xs border border-slate-200 p-4 text-center">
-              <h3 className="font-bold text-slate-850 text-xs uppercase tracking-wider mb-4 pb-2 border-b border-slate-100 text-left flex items-center gap-1.5">
-                <QrCode className="text-slate-400" size={14} />
+            <div className="bg-white dark:bg-[#18181b] rounded-xl shadow-xs border border-slate-200 dark:border-[#2b2b31] p-4 text-center">
+              <h3 className="font-bold text-slate-850 dark:text-white text-xs uppercase tracking-wider mb-4 pb-2 border-b border-slate-100 dark:border-[#28282d] text-left flex items-center gap-1.5">
+                <QrCode className="text-slate-400 dark:text-zinc-400" size={14} />
                 <span>Secure Verification</span>
               </h3>
               
-              <div className="bg-slate-50 p-4 rounded-xl border border-slate-200/60 inline-block mb-4 shadow-inner">
+              <div className="bg-white p-3.5 rounded-xl border border-slate-200 dark:border-zinc-700 inline-block mb-4 shadow-sm">
                 <QRCode
                   value={verificationUrl}
                   size={120}
-                  className="mix-blend-multiply"
+                  bgColor="#FFFFFF"
+                  fgColor="#000000"
                 />
               </div>
               
-              <div className="bg-slate-50 rounded-xl p-3 mb-4 border border-slate-200/50 text-left">
-                <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-1 flex items-center gap-1">
+              <div className="bg-slate-50 dark:bg-[#141417] rounded-xl p-3 mb-4 border border-slate-200/50 dark:border-[#2b2b31] text-left">
+                <p className="text-[9px] font-bold text-slate-400 dark:text-zinc-400 uppercase tracking-widest mb-1 flex items-center gap-1">
                   <Lock size={10} />
                   <span>Ledger Hash ID</span>
                 </p>
-                <code className="text-xs font-mono text-indigo-650 select-all font-bold break-all leading-normal block">
+                <code className="text-xs font-mono text-indigo-650 dark:text-indigo-400 select-all font-bold break-all leading-normal block">
                   {certificate.verification_id}
                 </code>
               </div>
@@ -494,10 +495,10 @@ function ViewCertificatePage() {
                   rel="noopener noreferrer"
                   className={`flex items-center justify-center gap-2 w-full py-2 border rounded-xl font-bold transition-all text-xs cursor-pointer no-underline ${
                     isInvitation 
-                      ? "bg-rose-50 text-rose-700 border-rose-200 hover:bg-rose-100/50" 
+                      ? "bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-900/50 hover:bg-rose-100/50" 
                       : isReceipt 
-                      ? "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100/50" 
-                      : "bg-indigo-50 text-indigo-700 border-indigo-200 hover:bg-indigo-100/50"
+                      ? "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-900/50 hover:bg-emerald-100/50" 
+                      : "bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 border-indigo-200 dark:border-indigo-900/50 hover:bg-indigo-100/50"
                   }`}
                 >
                   <Globe size={13} />
@@ -507,16 +508,16 @@ function ViewCertificatePage() {
                 <button
                   type="button"
                   onClick={handleCopyLink}
-                  className="flex items-center justify-center gap-2 w-full py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-250 rounded-xl font-bold transition-all text-xs cursor-pointer shadow-2xs"
+                  className="flex items-center justify-center gap-2 w-full py-2 bg-slate-100 dark:bg-[#222228] hover:bg-slate-200 dark:hover:bg-[#2a2a32] text-slate-700 dark:text-zinc-200 border border-slate-250 dark:border-[#32323a] rounded-xl font-bold transition-all text-xs cursor-pointer shadow-2xs"
                 >
                   {copiedLink ? (
                     <>
-                      <Check size={13} className="text-emerald-600" />
-                      <span className="text-emerald-700">Copied Link!</span>
+                      <Check size={13} className="text-emerald-600 dark:text-emerald-400" />
+                      <span className="text-emerald-700 dark:text-emerald-400">Copied Link!</span>
                     </>
                   ) : (
                     <>
-                      <Copy size={13} className="text-slate-500" />
+                      <Copy size={13} className="text-slate-500 dark:text-zinc-400" />
                       <span>Copy Verification Link</span>
                     </>
                   )}

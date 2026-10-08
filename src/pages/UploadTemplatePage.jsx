@@ -1675,9 +1675,9 @@ const UploadTemplatePage = () => {
         )}
 
         {/* 2. CENTER AREA: Canvas Viewport */}
-        <main className="flex-1 bg-slate-200/70 flex flex-col overflow-hidden relative">
+        <main className="flex-1 bg-slate-200/70 dark:bg-[#121214] flex flex-col overflow-hidden relative">
           {/* Canvas Sub-Header & Zoom Bar */}
-          <div className="bg-white border-b border-gray-200 px-4 py-1.5 flex items-center justify-between z-10 shadow-xs">
+          <div className="bg-white dark:bg-[#18181b] border-b border-gray-200 dark:border-[#28282d] px-4 py-1.5 flex items-center justify-between z-10 shadow-xs">
             <div className="flex items-center gap-2">
               <button
                 type="button"
@@ -1834,10 +1834,10 @@ const UploadTemplatePage = () => {
 
         {/* 3. RIGHT SIDEBAR: Properties Inspector */}
         {isRightSidebarOpen && (
-          <aside className="w-72 bg-white border-l border-gray-200 flex flex-col shrink-0 overflow-y-auto animate-in slide-in-from-right duration-200 shadow-sm">
-            <div className="p-3 border-b border-gray-100 flex items-center gap-1.5 bg-gray-50/70">
-              <Settings size={14} className="text-gray-500" />
-              <h4 className="text-xs font-bold text-gray-800 uppercase tracking-wider">
+          <aside className="w-72 bg-white dark:bg-[#18181b] border-l border-gray-200 dark:border-[#28282d] flex flex-col shrink-0 overflow-y-auto animate-in slide-in-from-right duration-200 shadow-sm">
+            <div className="p-3 border-b border-gray-100 dark:border-[#28282d] flex items-center gap-1.5 bg-gray-50/70 dark:bg-[#141417]">
+              <Settings size={14} className="text-gray-500 dark:text-zinc-400" />
+              <h4 className="text-xs font-bold text-gray-800 dark:text-white uppercase tracking-wider">
                 {selectedElement ? "Element Inspector" : "Canvas Properties"}
               </h4>
             </div>

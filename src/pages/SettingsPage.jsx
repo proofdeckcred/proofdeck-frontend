@@ -686,7 +686,7 @@ function SettingsPage() {
 
       <div className="max-w-5xl mx-auto px-0 sm:px-4 mt-2 sm:mt-6">
         <div className="overflow-x-auto scrollbar-none pb-2 mb-6 -mx-4 px-4 sm:mx-0 sm:px-0">
-          <div className="bg-slate-100/80 p-1 rounded-xl inline-flex gap-1 border border-slate-200/40 min-w-max">
+          <div className="bg-slate-100/80 dark:bg-[#141417] p-1 rounded-xl inline-flex gap-1 border border-slate-200/40 dark:border-[#2b2b31] min-w-max">
             {tabs.map((tab) => {
               const isActive = activeTab === tab.id;
               return (
@@ -696,8 +696,8 @@ function SettingsPage() {
                   onClick={() => setActiveTab(tab.id)}
                   className={`flex items-center gap-2 px-3.5 sm:px-4 py-2 text-xs font-bold rounded-lg transition-all decoration-none whitespace-nowrap ${
                     isActive
-                      ? "bg-white text-slate-900 shadow-sm border border-slate-200/30"
-                      : "text-slate-500 hover:text-slate-800"
+                      ? "bg-white dark:bg-[#27272e] text-slate-900 dark:text-white shadow-sm border border-slate-200/30 dark:border-[#383842]"
+                      : "text-slate-500 dark:text-zinc-400 hover:text-slate-800 dark:hover:text-white"
                   } ${tab.locked ? "opacity-40 cursor-not-allowed" : ""}`}
                 >
                   <tab.icon size={14} />

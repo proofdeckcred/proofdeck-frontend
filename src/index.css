@@ -456,50 +456,88 @@ html.dark .dark\:bg-\[\#18181b\] {
   background-color: #18181b !important;
 }
 
-.dark .bg-gray-50:not(.certificate-preview-container *):not(.konva-stage *):not(.canvas-container *):not([data-theme-ignore] *),
-.dark .bg-slate-50:not(.certificate-preview-container *):not(.konva-stage *):not(.canvas-container *):not([data-theme-ignore] *) {
-  background-color: #121214 !important;
+/* Base surface overrides in dark mode (strictly preserving certificate templates and Konva stages) */
+.dark .bg-white:not(.certificate-preview-container *):not(.konva-stage *):not(.canvas-container *):not([data-theme-ignore] *) {
+  background-color: #18181b !important;
 }
 
-.dark .bg-slate-100:not(.certificate-preview-container *):not(.konva-stage *):not(.canvas-container *):not([data-theme-ignore] *),
-.dark .bg-gray-100:not(.certificate-preview-container *):not(.konva-stage *):not(.canvas-container *):not([data-theme-ignore] *) {
-  background-color: #202024 !important;
+/* All slate/gray background variants (including opacity like /20, /30, /50, /70) in dark mode */
+.dark [class*="bg-slate-50"]:not(.certificate-preview-container *):not(.konva-stage *):not(.canvas-container *):not([data-theme-ignore] *),
+.dark [class*="bg-gray-50"]:not(.certificate-preview-container *):not(.konva-stage *):not(.canvas-container *):not([data-theme-ignore] *),
+.dark [class*="bg-slate-100"]:not(.certificate-preview-container *):not(.konva-stage *):not(.canvas-container *):not([data-theme-ignore] *),
+.dark [class*="bg-gray-100"]:not(.certificate-preview-container *):not(.konva-stage *):not(.canvas-container *):not([data-theme-ignore] *),
+.dark [class*="bg-slate-200"]:not(.certificate-preview-container *):not(.konva-stage *):not(.canvas-container *):not([data-theme-ignore] *),
+.dark [class*="bg-gray-200"]:not(.certificate-preview-container *):not(.konva-stage *):not(.canvas-container *):not([data-theme-ignore] *) {
+  background-color: #141417 !important;
 }
 
-.dark .bg-slate-200:not(.certificate-preview-container *):not(.konva-stage *):not(.canvas-container *):not([data-theme-ignore] *),
-.dark .bg-gray-200:not(.certificate-preview-container *):not(.konva-stage *):not(.canvas-container *):not([data-theme-ignore] *) {
-  background-color: #2a2a30 !important;
-}
-
-.dark .border-slate-200:not(.certificate-preview-container *):not(.konva-stage *):not(.canvas-container *):not([data-theme-ignore] *),
-.dark .border-slate-200\/80:not(.certificate-preview-container *):not(.konva-stage *):not(.canvas-container *):not([data-theme-ignore] *),
-.dark .border-slate-200\/90:not(.certificate-preview-container *):not(.konva-stage *):not(.canvas-container *):not([data-theme-ignore] *),
-.dark .border-slate-200\/40:not(.certificate-preview-container *):not(.konva-stage *):not(.canvas-container *):not([data-theme-ignore] *),
-.dark .border-gray-200:not(.certificate-preview-container *):not(.konva-stage *):not(.canvas-container *):not([data-theme-ignore] *),
-.dark .border-gray-200\/80:not(.certificate-preview-container *):not(.konva-stage *):not(.canvas-container *):not([data-theme-ignore] *),
-.dark .border-slate-100:not(.certificate-preview-container *):not(.konva-stage *):not(.canvas-container *):not([data-theme-ignore] *),
-.dark .border-gray-100:not(.certificate-preview-container *):not(.konva-stage *):not(.canvas-container *):not([data-theme-ignore] *) {
+/* All slate/gray borders in dark mode */
+.dark [class*="border-slate-100"]:not(.certificate-preview-container *):not(.konva-stage *):not(.canvas-container *):not([data-theme-ignore] *),
+.dark [class*="border-slate-200"]:not(.certificate-preview-container *):not(.konva-stage *):not(.canvas-container *):not([data-theme-ignore] *),
+.dark [class*="border-slate-250"]:not(.certificate-preview-container *):not(.konva-stage *):not(.canvas-container *):not([data-theme-ignore] *),
+.dark [class*="border-gray-100"]:not(.certificate-preview-container *):not(.konva-stage *):not(.canvas-container *):not([data-theme-ignore] *),
+.dark [class*="border-gray-200"]:not(.certificate-preview-container *):not(.konva-stage *):not(.canvas-container *):not([data-theme-ignore] *) {
   border-color: #2b2b31 !important;
 }
 
-.dark .text-slate-900:not(.certificate-preview-container *):not(.konva-stage *):not(.canvas-container *):not([data-theme-ignore] *),
-.dark .text-slate-800:not(.certificate-preview-container *):not(.konva-stage *):not(.canvas-container *):not([data-theme-ignore] *),
-.dark .text-gray-900:not(.certificate-preview-container *):not(.konva-stage *):not(.canvas-container *):not([data-theme-ignore] *),
-.dark .text-gray-800:not(.certificate-preview-container *):not(.konva-stage *):not(.canvas-container *):not([data-theme-ignore] *) {
+/* Table headers & pagination in dark mode */
+.dark thead,
+.dark thead tr,
+.dark thead th {
+  background-color: #141417 !important;
+  color: #f4f4f5 !important;
+  border-color: #2b2b31 !important;
+}
+
+.dark thead th,
+.dark thead th span,
+.dark thead th p,
+.dark th [class*="text-slate-"] {
+  color: #e4e4e7 !important;
+}
+
+.dark tbody tr {
+  background-color: #18181b !important;
+  border-color: #232328 !important;
+}
+
+.dark tbody tr:hover {
+  background-color: #1f1f25 !important;
+}
+
+/* Headings in dark mode: crisp white */
+.dark h1:not(.certificate-preview-container *):not(.konva-stage *):not([data-theme-ignore] *),
+.dark h2:not(.certificate-preview-container *):not(.konva-stage *):not([data-theme-ignore] *),
+.dark h3:not(.certificate-preview-container *):not(.konva-stage *):not([data-theme-ignore] *),
+.dark h4:not(.certificate-preview-container *):not(.konva-stage *):not([data-theme-ignore] *),
+.dark h5:not(.certificate-preview-container *):not(.konva-stage *):not([data-theme-ignore] *),
+.dark h6:not(.certificate-preview-container *):not(.konva-stage *):not([data-theme-ignore] *) {
+  color: #ffffff !important;
+}
+
+/* Primary text in dark mode: crisp white */
+.dark [class*="text-slate-900"]:not(.certificate-preview-container *):not(.konva-stage *):not([data-theme-ignore] *),
+.dark [class*="text-slate-850"]:not(.certificate-preview-container *):not(.konva-stage *):not([data-theme-ignore] *),
+.dark [class*="text-slate-800"]:not(.certificate-preview-container *):not(.konva-stage *):not([data-theme-ignore] *),
+.dark [class*="text-slate-700"]:not(.certificate-preview-container *):not(.konva-stage *):not([data-theme-ignore] *),
+.dark [class*="text-gray-900"]:not(.certificate-preview-container *):not(.konva-stage *):not([data-theme-ignore] *),
+.dark [class*="text-gray-850"]:not(.certificate-preview-container *):not(.konva-stage *):not([data-theme-ignore] *),
+.dark [class*="text-gray-800"]:not(.certificate-preview-container *):not(.konva-stage *):not([data-theme-ignore] *),
+.dark [class*="text-gray-700"]:not(.certificate-preview-container *):not(.konva-stage *):not([data-theme-ignore] *) {
   color: #f4f4f5 !important;
 }
 
-.dark .text-slate-700:not(.certificate-preview-container *):not(.konva-stage *):not(.canvas-container *):not([data-theme-ignore] *),
-.dark .text-slate-600:not(.certificate-preview-container *):not(.konva-stage *):not(.canvas-container *):not([data-theme-ignore] *),
-.dark .text-gray-700:not(.certificate-preview-container *):not(.konva-stage *):not(.canvas-container *):not([data-theme-ignore] *),
-.dark .text-gray-600:not(.certificate-preview-container *):not(.konva-stage *):not(.canvas-container *):not([data-theme-ignore] *) {
+/* Secondary body & labels in dark mode: clean readable light grey */
+.dark [class*="text-slate-600"]:not(.certificate-preview-container *):not(.konva-stage *):not([data-theme-ignore] *),
+.dark [class*="text-gray-600"]:not(.certificate-preview-container *):not(.konva-stage *):not([data-theme-ignore] *),
+.dark [class*="text-slate-500"]:not(.certificate-preview-container *):not(.konva-stage *):not([data-theme-ignore] *),
+.dark [class*="text-gray-500"]:not(.certificate-preview-container *):not(.konva-stage *):not([data-theme-ignore] *) {
   color: #d4d4d8 !important;
 }
 
-.dark .text-slate-500:not(.certificate-preview-container *):not(.konva-stage *):not(.canvas-container *):not([data-theme-ignore] *),
-.dark .text-slate-400:not(.certificate-preview-container *):not(.konva-stage *):not(.canvas-container *):not([data-theme-ignore] *),
-.dark .text-gray-500:not(.certificate-preview-container *):not(.konva-stage *):not(.canvas-container *):not([data-theme-ignore] *),
-.dark .text-gray-400:not(.certificate-preview-container *):not(.konva-stage *):not(.canvas-container *):not([data-theme-ignore] *) {
+/* Muted captions in dark mode */
+.dark [class*="text-slate-400"]:not(.certificate-preview-container *):not(.konva-stage *):not([data-theme-ignore] *),
+.dark [class*="text-gray-400"]:not(.certificate-preview-container *):not(.konva-stage *):not([data-theme-ignore] *) {
   color: #a1a1aa !important;
 }
 
