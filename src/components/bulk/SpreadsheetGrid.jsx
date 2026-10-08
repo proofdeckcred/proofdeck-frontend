@@ -18,7 +18,9 @@ import {
   PenTool,
   ChevronLeft,
   ChevronRight,
-  Sparkles,
+  SlidersHorizontal,
+  Tag,
+  Columns3,
   Zap
 } from "lucide-react";
 import { PROOFDECK_CORE_FIELDS, looksLikeEmail, looksLikeDate } from "../../utils/columnMapping";
@@ -53,7 +55,7 @@ const SpreadsheetGrid = ({
           label: cf.label,
           required: false,
           type: "text",
-          icon: Sparkles
+          icon: Tag
         });
       }
     });
@@ -478,7 +480,7 @@ const SpreadsheetGrid = ({
       {/* 2. BATCH DEFAULTS BAR (Fill once for the whole batch) */}
       <div className="bg-slate-50/80 p-3 rounded-xl border border-slate-200/80 flex flex-wrap items-center justify-between gap-3 text-xs">
         <div className="flex items-center gap-2 text-slate-700 font-bold">
-          <Sparkles size={14} className="text-indigo-600" />
+          <SlidersHorizontal size={14} className="text-indigo-600" />
           <span>Batch Defaults:</span>
           <span className="text-[11px] font-normal text-slate-400">
             Apply to empty optional cells across all rows

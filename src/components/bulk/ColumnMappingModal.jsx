@@ -3,7 +3,7 @@
 import React, { useState, useMemo } from "react";
 import {
   X,
-  Sparkles,
+  Wand2,
   CheckCircle2,
   AlertCircle,
   HelpCircle,
@@ -260,7 +260,7 @@ const ColumnMappingModal = ({
                 {isAiLoading ? (
                   <Loader2 size={13} className="animate-spin text-indigo-650" />
                 ) : (
-                  <Sparkles size={13} className="text-indigo-650" />
+                  <Wand2 size={13} className="text-indigo-650" />
                 )}
                 <span>AI Auto-Map</span>
               </button>
@@ -269,7 +269,7 @@ const ColumnMappingModal = ({
                 className="px-2.5 py-1 rounded-lg bg-slate-100 border border-slate-200 text-slate-400 text-[11px] font-medium flex items-center gap-1 cursor-default"
                 title="AI auto-mapping is available on Pro & Enterprise plans"
               >
-                <Sparkles size={11} className="text-slate-400" />
+                <Wand2 size={11} className="text-slate-400" />
                 <span>AI Mapping (Pro)</span>
               </div>
             )}

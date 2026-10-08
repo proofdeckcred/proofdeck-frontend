@@ -35,8 +35,11 @@ import {
   Download,
   Users,
   Pencil,
-  Sparkles,
+  Columns3,
+  SlidersHorizontal,
   Table,
+  FileSpreadsheet,
+  Minimize2,
   CheckCircle2,
   AlertCircle,
   Zap,
@@ -129,6 +132,10 @@ const CreateCertificatePage = () => {
   const [rawUploadedRows, setRawUploadedRows] = useState([]);
   const [activeMapping, setActiveMapping] = useState({});
   const [splitNamesInfo, setSplitNamesInfo] = useState(null);
+
+  // In-Page Spreadsheet Popover / Expand State
+  const [isSpreadsheetOpen, setIsSpreadsheetOpen] = useState(false);
+  const [isSpreadsheetExpanded, setIsSpreadsheetExpanded] = useState(false);
 
   const [templates, setTemplates] = useState([]);
   const [selectedTemplate, setSelectedTemplate] = useState(null);
@@ -1039,7 +1046,7 @@ const CreateCertificatePage = () => {
                         onClick={() => setIsMappingModalOpen(true)}
                         className="text-[10px] text-indigo-650 hover:underline font-bold flex items-center gap-1"
                       >
-                        <Sparkles size={11} /> Re-map Columns
+                        <Columns3 size={11} /> Re-map Columns
                       </button>
                     )}
                   </div>
@@ -1059,6 +1066,26 @@ const CreateCertificatePage = () => {
                     </span>
                   </div>
                 </div>
+
+                {/* In-Page Spreadsheet Shortcut Button in Form */}
+                <button
+                  type="button"
+                  onClick={() => setIsSpreadsheetOpen(true)}
+                  className="w-full py-2.5 px-3 rounded-xl border border-indigo-200/80 bg-gradient-to-r from-indigo-50/70 to-slate-50 hover:from-indigo-100/80 hover:to-slate-100 text-slate-800 transition-all flex items-center justify-between shadow-2xs group"
+                >
+                  <div className="flex items-center gap-2">
+                    <Table size={16} className="text-indigo-650 group-hover:scale-110 transition-transform" />
+                    <div className="text-left">
+                      <span className="block text-xs font-bold text-slate-800">In-Page Spreadsheet</span>
+                      <span className="block text-[10px] text-slate-400">
+                        Type or paste directly from Excel/Sheets
+                      </span>
+                    </div>
+                  </div>
+                  <span className="text-[10px] font-mono font-semibold bg-white text-indigo-700 px-2.5 py-1 rounded-full border border-indigo-200 shadow-2xs">
+                    {spreadsheetRows.length} {spreadsheetRows.length === 1 ? "row" : "rows"} &rarr;
+                  </span>
+                </button>
 
                 <div className="flex justify-between items-center text-[10px]">
                   <button
@@ -1181,46 +1208,33 @@ const CreateCertificatePage = () => {
             </p>
           </div>
 
-            {/* In-Page Spreadsheet Editor in Bulk Mode */}
+            {/* In-Page Spreadsheet Status Bar in Bulk Mode */}
             {creationMode === "bulk" && (
-              <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm animate-in fade-in slide-in-from-bottom-2 space-y-3">
-                <div className="flex flex-wrap items-center justify-between pb-3 border-b border-slate-100 gap-2">
-                  <div className="flex items-center gap-2">
-                    <Table className="text-indigo-650" size={16} />
-                    <div>
-                      <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider mb-0">
-                        In-Page Spreadsheet Editor
-                      </h3>
-                      <p className="text-[10px] text-slate-400 mb-0">
-                        Type directly, edit cells live, or paste from Excel & Google Sheets
-                      </p>
-                    </div>
+              <div className="bg-white rounded-xl border border-slate-200 p-3.5 shadow-2xs flex flex-wrap items-center justify-between gap-3">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-lg bg-indigo-50 border border-indigo-200/80 flex items-center justify-center text-indigo-650">
+                    <Table size={16} />
                   </div>
-
-                  <div className="flex items-center gap-2">
-                    {detectedHeaders.length > 0 && (
-                      <button
-                        type="button"
-                        onClick={() => setIsMappingModalOpen(true)}
-                        className="px-2.5 py-1 rounded-lg bg-indigo-50 hover:bg-indigo-100/80 border border-indigo-200 text-indigo-700 text-xs font-semibold flex items-center gap-1 shadow-2xs transition-all"
-                      >
-                        <Sparkles size={12} />
-                        <span>Column Mapping</span>
-                      </button>
-                    )}
+                  <div>
+                    <span className="text-xs font-bold text-slate-800 flex items-center gap-2">
+                      <span>In-Page Spreadsheet:</span>
+                      <span className="text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full font-mono text-[10px]">
+                        {spreadsheetRows.length} {spreadsheetRows.length === 1 ? "row" : "rows"}
+                      </span>
+                    </span>
+                    <span className="block text-[10px] text-slate-400">
+                      Type directly, paste from Excel, or review mapped columns
+                    </span>
                   </div>
                 </div>
-
-                <SpreadsheetGrid
-                  rows={spreadsheetRows}
-                  onChangeRows={setSpreadsheetRows}
-                  userQuota={userCredits}
-                  batchDefaults={batchDefaults}
-                  onChangeBatchDefaults={setBatchDefaults}
-                  onOpenMappingModal={() => setIsMappingModalOpen(true)}
-                  templateCustomFields={templateCustomPlaceholders}
-                  isProOrEnterprise={isProOrEnterprise}
-                />
+                <button
+                  type="button"
+                  onClick={() => setIsSpreadsheetOpen(true)}
+                  className="px-3 py-1.5 rounded-lg bg-slate-900 hover:bg-black text-white text-xs font-bold transition-all shadow-xs flex items-center gap-1.5"
+                >
+                  <Table size={13} />
+                  <span>Open Spreadsheet Editor</span>
+                </button>
               </div>
             )}
           </div>
@@ -1267,6 +1281,129 @@ const CreateCertificatePage = () => {
         isProOrEnterprise={isProOrEnterprise}
         templateCustomFields={templateCustomPlaceholders}
       />
+
+      {/* Floating Action Button for In-Page Spreadsheet Editor */}
+      {creationMode === "bulk" && isBulkAllowed && (
+        <div className="fixed bottom-6 right-6 z-40">
+          <button
+            type="button"
+            onClick={() => setIsSpreadsheetOpen(true)}
+            className="flex items-center gap-2.5 px-4 py-3 bg-slate-900 hover:bg-black text-white rounded-full shadow-2xl hover:scale-105 active:scale-95 transition-all text-xs font-bold border border-slate-700/80 group cursor-pointer"
+            title="Open In-Page Spreadsheet Editor"
+          >
+            <div className="relative flex items-center justify-center">
+              <FileSpreadsheet size={16} className="text-indigo-400 group-hover:text-indigo-300 transition-colors" />
+              {spreadsheetRows.length > 0 && (
+                <span className="absolute -top-1 -right-1 w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
+              )}
+            </div>
+            <span>Spreadsheet Editor</span>
+            <span className="bg-slate-800 text-slate-300 px-2 py-0.5 rounded-full text-[10px] font-mono border border-slate-700">
+              {spreadsheetRows.length} {spreadsheetRows.length === 1 ? "row" : "rows"}
+            </span>
+          </button>
+        </div>
+      )}
+
+      {/* In-Page Spreadsheet Popover / Modal with Expand capability */}
+      {isSpreadsheetOpen && (
+        <div
+          className="fixed inset-0 bg-slate-950/75 backdrop-blur-xs z-50 flex items-center justify-center p-3 md:p-6 animate-in fade-in duration-200"
+          onClick={() => setIsSpreadsheetOpen(false)}
+        >
+          <div
+            className={`bg-white rounded-2xl shadow-2xl border border-slate-200 flex flex-col overflow-hidden transition-all duration-300 ${
+              isSpreadsheetExpanded
+                ? "w-full h-full max-w-none max-h-none rounded-none md:rounded-2xl md:h-[96vh] md:w-[98vw]"
+                : "w-full max-w-6xl max-h-[90vh] h-[85vh]"
+            }`}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className="px-5 py-3.5 border-b border-slate-200 bg-white flex items-center justify-between gap-3 shrink-0">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-lg bg-indigo-50 border border-indigo-200/80 flex items-center justify-center text-indigo-650">
+                  <Table size={18} />
+                </div>
+                <div>
+                  <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider mb-0 flex items-center gap-2">
+                    <span>In-Page Spreadsheet Editor</span>
+                    <span className="text-[10px] font-semibold normal-case text-slate-600 bg-slate-100 px-2 py-0.5 rounded-full border border-slate-200">
+                      {spreadsheetRows.length} {spreadsheetRows.length === 1 ? "row" : "rows"}
+                    </span>
+                  </h3>
+                  <p className="text-[11px] text-slate-400 mb-0">
+                    Type directly, edit cells live, or paste from Excel & Google Sheets (Ctrl+V)
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                {detectedHeaders.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setIsMappingModalOpen(true)}
+                    className="px-2.5 py-1.5 rounded-lg bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 text-indigo-700 text-xs font-semibold flex items-center gap-1.5 transition-all shadow-2xs"
+                  >
+                    <Columns3 size={13} />
+                    <span>Column Mapping</span>
+                  </button>
+                )}
+
+                {/* Expand / Minimize Toggle */}
+                <button
+                  type="button"
+                  onClick={() => setIsSpreadsheetExpanded((prev) => !prev)}
+                  className="px-2.5 py-1.5 rounded-lg border border-slate-200 hover:bg-slate-100 text-slate-700 text-xs font-medium flex items-center gap-1.5 transition-all cursor-pointer"
+                  title={isSpreadsheetExpanded ? "Collapse View" : "Expand Fullscreen"}
+                >
+                  {isSpreadsheetExpanded ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
+                  <span>{isSpreadsheetExpanded ? "Collapse" : "Expand"}</span>
+                </button>
+
+                {/* Close Button */}
+                <button
+                  type="button"
+                  onClick={() => setIsSpreadsheetOpen(false)}
+                  className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-all cursor-pointer"
+                  title="Close Spreadsheet"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+            </div>
+
+            {/* Modal Body: Scrollable Spreadsheet Grid */}
+            <div className="flex-1 p-4 md:p-5 overflow-y-auto bg-slate-50/50">
+              <SpreadsheetGrid
+                rows={spreadsheetRows}
+                onChangeRows={setSpreadsheetRows}
+                userQuota={userCredits}
+                batchDefaults={batchDefaults}
+                onChangeBatchDefaults={setBatchDefaults}
+                onOpenMappingModal={() => setIsMappingModalOpen(true)}
+                templateCustomFields={templateCustomPlaceholders}
+                isProOrEnterprise={isProOrEnterprise}
+              />
+            </div>
+
+            {/* Modal Footer */}
+            <div className="px-5 py-3 border-t border-slate-200 bg-white flex items-center justify-between shrink-0">
+              <p className="text-[11px] text-slate-400 mb-0 flex items-center gap-1.5">
+                <Info size={13} className="text-slate-400" />
+                <span>Rows are saved automatically and synchronized with the Live Preview.</span>
+              </p>
+              <button
+                type="button"
+                onClick={() => setIsSpreadsheetOpen(false)}
+                className="bg-slate-900 hover:bg-black text-white text-xs font-bold px-4 py-2 rounded-lg transition-all shadow-sm cursor-pointer"
+              >
+                Done & Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
