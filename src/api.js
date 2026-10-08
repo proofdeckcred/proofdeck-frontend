@@ -138,6 +138,8 @@ export const bulkCreateCertificates = (formData) =>
   API.post("/certificates/bulk", formData, {
     headers: { "Content-Type": "multipart/form-data" },
   });
+export const aiMapColumns = (data) =>
+  API.post("/certificates/bulk/ai-map", data);
 export const updateCertificateStatus = (certId, status) =>
   API.put(`/certificates/${certId}/status`, { status });
 export const advancedSearchCertificates = (params) => {
