@@ -213,7 +213,13 @@ export function validateRow(row, emailFrequencies = new Map()) {
     isValid = false;
   } else {
     const cleanEmail = String(row.recipient_email).trim().toLowerCase();
-    if (emailFrequencies.get(cleanEmail) > 1) {
+    const freq =
+      emailFrequencies instanceof Map
+        ? emailFrequencies.get(cleanEmail) || 0
+        : emailFrequencies && typeof emailFrequencies === "object"
+        ? emailFrequencies[cleanEmail] || 0
+        : 0;
+    if (freq > 1) {
       cellErrors.recipient_email = "Duplicate email in batch";
       isValid = false;
     }

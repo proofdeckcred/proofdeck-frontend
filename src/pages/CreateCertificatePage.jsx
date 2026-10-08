@@ -61,6 +61,7 @@ import {
   saveMappingMemory,
   isRowNonEmpty,
   validateRow,
+  looksLikeEmail,
 } from "../utils/columnMapping";
 
 // --- REUSABLE UI COMPONENTS ---
@@ -394,22 +395,24 @@ const CreateCertificatePage = () => {
     const ready = [];
     const invalid = [];
 
-    const emails = spreadsheetRows
-      .filter((r) => isRowNonEmpty(r, customKeys) && r.recipient_email && String(r.recipient_email).trim())
-      .map((r) => String(r.recipient_email).trim().toLowerCase());
-    const emailFreqs = {};
-    emails.forEach((em) => {
-      emailFreqs[em] = (emailFreqs[em] || 0) + 1;
+    const emailCounts = new Map();
+    spreadsheetRows.forEach((r) => {
+      if (isRowNonEmpty(r, customKeys)) {
+        const email = String(r.recipient_email || "").trim().toLowerCase();
+        if (email && looksLikeEmail(email)) {
+          emailCounts.set(email, (emailCounts.get(email) || 0) + 1);
+        }
+      }
     });
 
     spreadsheetRows.forEach((r, idx) => {
       if (isRowNonEmpty(r, customKeys)) {
         nonEmpty.push({ row: r, index: idx });
-        const errs = validateRow(r, emailFreqs, customKeys);
-        if (errs.length === 0) {
+        const { isValid, cellErrors } = validateRow(r, emailCounts);
+        if (isValid) {
           ready.push({ row: r, index: idx });
         } else {
-          invalid.push({ row: r, index: idx, errors: errs });
+          invalid.push({ row: r, index: idx, errors: cellErrors });
         }
       }
     });
