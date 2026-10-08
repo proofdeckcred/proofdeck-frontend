@@ -49,7 +49,7 @@ function DashboardLayout() {
   }, []);
 
   return (
-    <div className="flex h-screen bg-gray-50 dark:bg-[#121214] overflow-hidden w-full max-w-full">
+    <div className="flex h-screen bg-[#f8f9fc] dark:bg-[#121214] overflow-hidden w-full max-w-full">
       <MobileWarning />
       {/*  
         DESKTOP SIDEBAR 
@@ -82,7 +82,7 @@ function DashboardLayout() {
         min-w-0: Prevents flexbox overflow issues.
         flex-col: Stacks content vertically.
       */}
-      <div className="flex-1 flex flex-col min-w-0 overflow-hidden bg-gray-50 dark:bg-[#121214]">
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden bg-[#f8f9fc] dark:bg-[#121214]">
         {!isEditorPage && (
           <DashboardTopbar 
             isCollapsed={isCollapsed} 
@@ -95,7 +95,7 @@ function DashboardLayout() {
           overflow-y-auto overflow-x-hidden: Prevents horizontal shake/scrollbar.
           relative: For positioning modals/toasts relative to view.
         */}
-        <main className={`flex-1 focus:outline-none scroll-smooth relative overflow-x-hidden ${isEditorPage ? "overflow-hidden" : "overflow-y-auto"}`}>
+        <main className={`flex-1 focus:outline-none scroll-smooth relative overflow-x-hidden bg-[#f8f9fc] dark:bg-[#121214] ${isEditorPage ? "overflow-hidden" : "overflow-y-auto"}`}>
           {isEditorPage ? (
             <Outlet />
           ) : (

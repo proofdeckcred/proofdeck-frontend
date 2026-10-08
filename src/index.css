@@ -375,6 +375,68 @@ html.dark body {
   color: #f4f4f5 !important;
 }
 
+html:not(.dark),
+html:not(.dark) body {
+  color-scheme: light;
+  background-color: #f8f9fc !important;
+  color: #1e293b !important;
+}
+
+/* Guard: Ensure dark utility classes never leak into light mode via CDN media queries or overrides */
+html:not(.dark) .dark\:bg-\[\#121214\],
+html:not(.dark) [class*="dark:bg-[#121214]"] {
+  background-color: #f8f9fc !important;
+}
+
+html:not(.dark) .dark\:bg-\[\#18181b\],
+html:not(.dark) [class*="dark:bg-[#18181b]"] {
+  background-color: #ffffff !important;
+}
+
+html:not(.dark) .dark\:bg-\[\#141417\],
+html:not(.dark) [class*="dark:bg-[#141417]"] {
+  background-color: #f8f9fc !important;
+}
+
+html:not(.dark) .dark\:bg-\[\#202025\],
+html:not(.dark) [class*="dark:bg-[#202025]"] {
+  background-color: #f8f9fc !important;
+}
+
+html:not(.dark) .dark\:bg-zinc-900,
+html:not(.dark) .dark\:bg-zinc-950 {
+  background-color: #ffffff !important;
+}
+
+html:not(.dark) .dark\:border-\[\#28282d\],
+html:not(.dark) .dark\:border-\[\#2b2b31\],
+html:not(.dark) .dark\:border-\[\#2e2e34\],
+html:not(.dark) .dark\:border-zinc-800,
+html:not(.dark) .dark\:border-zinc-700 {
+  border-color: #e2e8f0 !important;
+}
+
+html:not(.dark) .dark\:text-zinc-100,
+html:not(.dark) .dark\:text-zinc-200,
+html:not(.dark) .dark\:text-zinc-300 {
+  color: #1e293b !important;
+}
+
+html:not(.dark) .dark\:text-zinc-400 {
+  color: #64748b !important;
+}
+
+/* Ensure dark mode applies greyish dark styling deterministically */
+.dark .dark\:bg-\[\#121214\],
+html.dark .dark\:bg-\[\#121214\] {
+  background-color: #121214 !important;
+}
+
+.dark .dark\:bg-\[\#18181b\],
+html.dark .dark\:bg-\[\#18181b\] {
+  background-color: #18181b !important;
+}
+
 /* Modals & Popovers in Dark Mode */
 .dark .modal-content {
   background-color: #18181b !important;

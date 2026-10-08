@@ -8,12 +8,17 @@
         try {
           var saved = localStorage.getItem('proofdeck-theme');
           var prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-          if (saved === 'dark' || (saved === 'system' && prefersDark)) {
+          var isDark = saved === 'dark' || (saved === 'system' && prefersDark);
+          if (isDark) {
             document.documentElement.classList.add('dark');
             document.documentElement.setAttribute('data-theme', 'dark');
+            document.documentElement.setAttribute('data-bs-theme', 'dark');
+            document.documentElement.style.colorScheme = 'dark';
           } else {
             document.documentElement.classList.remove('dark');
             document.documentElement.setAttribute('data-theme', 'light');
+            document.documentElement.setAttribute('data-bs-theme', 'light');
+            document.documentElement.style.colorScheme = 'light';
           }
         } catch (e) {}
       })();
@@ -136,12 +141,18 @@
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400;1,600&display=swap" rel="stylesheet" />
 
     <script>
-      try {
-        localStorage.removeItem('proofdeck_theme');
-        document.documentElement.classList.remove('dark');
-      } catch (e) {}
+      window.tailwind = {
+        darkMode: 'class',
+      };
     </script>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      if (window.tailwind) {
+        window.tailwind.config = {
+          darkMode: 'class',
+        };
+      }
+    </script>
   </head>
   <body>
     <div id="root"></div>
