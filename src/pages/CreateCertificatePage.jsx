@@ -40,8 +40,10 @@ import {
   Table,
   FileSpreadsheet,
   Minimize2,
+  Minus,
   CheckCircle2,
   AlertCircle,
+  AlertTriangle,
   Zap,
 } from "lucide-react";
 import { Spinner } from "react-bootstrap";
@@ -57,6 +59,8 @@ import {
   inferMappingLayerA,
   getSavedMapping,
   saveMappingMemory,
+  isRowNonEmpty,
+  validateRow,
 } from "../utils/columnMapping";
 
 // --- REUSABLE UI COMPONENTS ---
@@ -112,12 +116,8 @@ const CreateCertificatePage = () => {
   const [bulkFile, setBulkFile] = useState(null);
   const [bulkSubmitting, setBulkSubmitting] = useState(false);
 
-  // In-Page Spreadsheet Rows (Starts with 3 clean rows ready for editing or pasting)
-  const [spreadsheetRows, setSpreadsheetRows] = useState([
-    { recipient_name: "", recipient_email: "", course_title: "", issuer_name: "", issue_date: new Date().toLocaleDateString("en-CA"), signature: "" },
-    { recipient_name: "", recipient_email: "", course_title: "", issuer_name: "", issue_date: new Date().toLocaleDateString("en-CA"), signature: "" },
-    { recipient_name: "", recipient_email: "", course_title: "", issuer_name: "", issue_date: new Date().toLocaleDateString("en-CA"), signature: "" },
-  ]);
+  // In-Page Spreadsheet Rows (Starts strictly EMPTY with zero rows)
+  const [spreadsheetRows, setSpreadsheetRows] = useState([]);
 
   // Batch Defaults applied across the whole batch
   const [batchDefaults, setBatchDefaults] = useState({
@@ -133,9 +133,57 @@ const CreateCertificatePage = () => {
   const [activeMapping, setActiveMapping] = useState({});
   const [splitNamesInfo, setSplitNamesInfo] = useState(null);
 
-  // In-Page Spreadsheet Popover / Expand State
-  const [isSpreadsheetOpen, setIsSpreadsheetOpen] = useState(false);
-  const [isSpreadsheetExpanded, setIsSpreadsheetExpanded] = useState(false);
+  // In-Page Spreadsheet Docked Widget States (Persisted for session)
+  const [isSpreadsheetOpen, setIsSpreadsheetOpen] = useState(() => {
+    try {
+      return sessionStorage.getItem("pd_bulk_sheet_open") === "true";
+    } catch (e) {
+      return false;
+    }
+  });
+  const [isSpreadsheetExpanded, setIsSpreadsheetExpanded] = useState(() => {
+    try {
+      return sessionStorage.getItem("pd_bulk_sheet_size") === "expanded";
+    } catch (e) {
+      return false;
+    }
+  });
+
+  const launcherButtonRef = React.useRef(null);
+  const panelRef = React.useRef(null);
+
+  // Sync session storage when open or size state changes
+  useEffect(() => {
+    try {
+      sessionStorage.setItem("pd_bulk_sheet_open", isSpreadsheetOpen ? "true" : "false");
+    } catch (e) {}
+  }, [isSpreadsheetOpen]);
+
+  useEffect(() => {
+    try {
+      sessionStorage.setItem("pd_bulk_sheet_size", isSpreadsheetExpanded ? "expanded" : "compact");
+    } catch (e) {}
+  }, [isSpreadsheetExpanded]);
+
+  const handleClosePanel = () => {
+    setIsSpreadsheetOpen(false);
+    launcherButtonRef.current?.focus();
+  };
+
+  const handlePanelKeyDown = (e) => {
+    if (e.key === "Escape") {
+      e.stopPropagation();
+      handleClosePanel();
+    }
+  };
+
+  // Import Conflict Confirmation Modal State
+  const [importConflictModal, setImportConflictModal] = useState({
+    isOpen: false,
+    matrix: null,
+    fileName: "",
+    existingCount: 0,
+  });
 
   const [templates, setTemplates] = useState([]);
   const [selectedTemplate, setSelectedTemplate] = useState(null);
@@ -332,68 +380,115 @@ const CreateCertificatePage = () => {
     });
   };
 
+  // Single Source of Truth for Spreadsheet Row Validation & Counts
+  const {
+    nonEmptyRows,
+    readyRows,
+    invalidRows,
+    readyRowsCount,
+    invalidRowsCount,
+    nonEmptyRowsCount,
+  } = useMemo(() => {
+    const customKeys = templateCustomPlaceholders.map((cf) => cf.key);
+    const nonEmpty = [];
+    const ready = [];
+    const invalid = [];
+
+    const emails = spreadsheetRows
+      .filter((r) => isRowNonEmpty(r, customKeys) && r.recipient_email && String(r.recipient_email).trim())
+      .map((r) => String(r.recipient_email).trim().toLowerCase());
+    const emailFreqs = {};
+    emails.forEach((em) => {
+      emailFreqs[em] = (emailFreqs[em] || 0) + 1;
+    });
+
+    spreadsheetRows.forEach((r, idx) => {
+      if (isRowNonEmpty(r, customKeys)) {
+        nonEmpty.push({ row: r, index: idx });
+        const errs = validateRow(r, emailFreqs, customKeys);
+        if (errs.length === 0) {
+          ready.push({ row: r, index: idx });
+        } else {
+          invalid.push({ row: r, index: idx, errors: errs });
+        }
+      }
+    });
+
+    return {
+      nonEmptyRows: nonEmpty,
+      readyRows: ready,
+      invalidRows: invalid,
+      readyRowsCount: ready.length,
+      invalidRowsCount: invalid.length,
+      nonEmptyRowsCount: nonEmpty.length,
+    };
+  }, [spreadsheetRows, templateCustomPlaceholders]);
+
   // Apply Mappings to convert raw 2D sheet rows into standardized ProofDeck row objects
   const applyMappingsToRows = useCallback(
     (headers, rows, mapping, splitNames, currentDefaults) => {
-      return rows.map((r) => {
-        const rowObj = {
-          recipient_name: "",
-          recipient_email: "",
-          course_title: currentDefaults?.course_title || "",
-          issuer_name: currentDefaults?.issuer_name || "",
-          issue_date: currentDefaults?.issue_date || new Date().toLocaleDateString("en-CA"),
-          signature: currentDefaults?.signature || "",
-        };
+      const customKeys = templateCustomPlaceholders.map((cf) => cf.key);
+      return rows
+        .map((r) => {
+          const rowObj = {
+            recipient_name: "",
+            recipient_email: "",
+            course_title: currentDefaults?.course_title || "",
+            issuer_name: currentDefaults?.issuer_name || "",
+            issue_date: currentDefaults?.issue_date || new Date().toLocaleDateString("en-CA"),
+            signature: currentDefaults?.signature || "",
+          };
 
-        // 1. Recipient Name: Split vs Direct
-        if (splitNames?.firstNameColumn && splitNames?.lastNameColumn) {
-          const fIdx = headers.indexOf(splitNames.firstNameColumn);
-          const lIdx = headers.indexOf(splitNames.lastNameColumn);
-          const fVal = fIdx !== -1 && r[fIdx] !== undefined ? String(r[fIdx]).trim() : "";
-          const lVal = lIdx !== -1 && r[lIdx] !== undefined ? String(r[lIdx]).trim() : "";
-          rowObj.recipient_name = `${fVal} ${lVal}`.trim();
-        } else if (mapping.recipient_name?.sourceColumn) {
-          const idx = headers.indexOf(mapping.recipient_name.sourceColumn);
-          if (idx !== -1 && r[idx] !== undefined) {
-            rowObj.recipient_name = String(r[idx]).trim();
-          }
-        }
-
-        // 2. Core Fields
-        ["recipient_email", "course_title", "issuer_name", "issue_date", "signature"].forEach((key) => {
-          const srcCol = mapping[key]?.sourceColumn;
-          if (srcCol) {
-            const idx = headers.indexOf(srcCol);
+          // 1. Recipient Name: Split vs Direct
+          if (splitNames?.firstNameColumn && splitNames?.lastNameColumn) {
+            const fIdx = headers.indexOf(splitNames.firstNameColumn);
+            const lIdx = headers.indexOf(splitNames.lastNameColumn);
+            const fVal = fIdx !== -1 && r[fIdx] !== undefined ? String(r[fIdx]).trim() : "";
+            const lVal = lIdx !== -1 && r[lIdx] !== undefined ? String(r[lIdx]).trim() : "";
+            rowObj.recipient_name = `${fVal} ${lVal}`.trim();
+          } else if (mapping.recipient_name?.sourceColumn) {
+            const idx = headers.indexOf(mapping.recipient_name.sourceColumn);
             if (idx !== -1 && r[idx] !== undefined) {
-              const val = String(r[idx]).trim();
-              if (val) rowObj[key] = val;
-            }
-          } else if (currentDefaults[key]) {
-            rowObj[key] = currentDefaults[key];
-          }
-        });
-
-        // 3. Custom Template Placeholders
-        templateCustomPlaceholders.forEach((cf) => {
-          const srcCol = mapping[cf.key]?.sourceColumn;
-          if (srcCol) {
-            const idx = headers.indexOf(srcCol);
-            if (idx !== -1 && r[idx] !== undefined) {
-              const val = String(r[idx]).trim();
-              if (val) rowObj[cf.key] = val;
+              rowObj.recipient_name = String(r[idx]).trim();
             }
           }
-        });
 
-        return rowObj;
-      });
+          // 2. Core Fields
+          ["recipient_email", "course_title", "issuer_name", "issue_date", "signature"].forEach((key) => {
+            const srcCol = mapping[key]?.sourceColumn;
+            if (srcCol) {
+              const idx = headers.indexOf(srcCol);
+              if (idx !== -1 && r[idx] !== undefined) {
+                const val = String(r[idx]).trim();
+                if (val) rowObj[key] = val;
+              }
+            } else if (currentDefaults[key]) {
+              rowObj[key] = currentDefaults[key];
+            }
+          });
+
+          // 3. Custom Template Placeholders
+          templateCustomPlaceholders.forEach((cf) => {
+            const srcCol = mapping[cf.key]?.sourceColumn;
+            if (srcCol) {
+              const idx = headers.indexOf(srcCol);
+              if (idx !== -1 && r[idx] !== undefined) {
+                const val = String(r[idx]).trim();
+                if (val) rowObj[cf.key] = val;
+              }
+            }
+          });
+
+          return rowObj;
+        })
+        .filter((rowObj) => isRowNonEmpty(rowObj, customKeys));
     },
     [templateCustomPlaceholders]
   );
 
-  // Process raw matrix (array of rows) through Scattered Cleaner & Layer A Rules
-  const handleParsedMatrix = useCallback(
-    (matrix, fileName) => {
+  // Proceed with parsed import (mode = "replace" or "append")
+  const proceedWithImport = useCallback(
+    (matrix, fileName, mode = "replace") => {
       const { cleanedHeaders, cleanedRows } = cleanScatteredSheet(matrix);
       if (!cleanedRows || cleanedRows.length === 0) {
         toast.error("No data rows found in the uploaded spreadsheet.");
@@ -426,7 +521,15 @@ const CreateCertificatePage = () => {
           splitToUse,
           batchDefaults
         );
-        setSpreadsheetRows(converted);
+
+        setSpreadsheetRows((prev) => {
+          if (mode === "append") {
+            const customKeys = templateCustomPlaceholders.map((cf) => cf.key);
+            const existingNonEmpty = prev.filter((r) => isRowNonEmpty(r, customKeys));
+            return [...existingNonEmpty, ...converted];
+          }
+          return converted;
+        });
 
         // Sync first row into WYSIWYG preview
         if (converted.length > 0) {
@@ -442,14 +545,35 @@ const CreateCertificatePage = () => {
           }));
         }
 
-        toast.success(`${fileName} mapped! ${converted.length} rows loaded into editor.`);
+        toast.success(
+          mode === "append"
+            ? `Appended ${converted.length} rows from ${fileName}!`
+            : `${fileName} mapped! ${converted.length} rows loaded into editor.`
+        );
       } else {
         // Low confidence or messy headers -> Open mapping modal for easy review
         setIsMappingModalOpen(true);
         toast("Please review the column mappings for your sheet.", { icon: "ℹ️" });
       }
     },
-    [applyMappingsToRows, batchDefaults]
+    [applyMappingsToRows, batchDefaults, templateCustomPlaceholders]
+  );
+
+  // Process raw matrix (array of rows) through Scattered Cleaner & Layer A Rules
+  const handleParsedMatrix = useCallback(
+    (matrix, fileName) => {
+      if (nonEmptyRowsCount > 0) {
+        setImportConflictModal({
+          isOpen: true,
+          matrix,
+          fileName,
+          existingCount: nonEmptyRowsCount,
+        });
+        return;
+      }
+      proceedWithImport(matrix, fileName, "replace");
+    },
+    [nonEmptyRowsCount, proceedWithImport]
   );
 
   // Bulk File Upload Parsing (CSV & Excel)
@@ -497,39 +621,48 @@ const CreateCertificatePage = () => {
     }
   };
 
+  // Live callback from ColumnMappingModal: updates grid and live preview immediately
+  const handleLiveMappingUpdate = useCallback(
+    ({ mapping, splitNames, batchDefaults: newDefaults }) => {
+      if (newDefaults) {
+        setBatchDefaults((prev) => ({ ...prev, ...newDefaults }));
+      }
+      if (mapping) setActiveMapping(mapping);
+      if (splitNames !== undefined) setSplitNamesInfo(splitNames);
+
+      if (detectedHeaders.length > 0 && rawUploadedRows.length > 0) {
+        const converted = applyMappingsToRows(
+          detectedHeaders,
+          rawUploadedRows,
+          mapping || activeMapping,
+          splitNames !== undefined ? splitNames : splitNamesInfo,
+          newDefaults || batchDefaults
+        );
+        setSpreadsheetRows(converted);
+
+        if (converted.length > 0) {
+          const first = converted[0];
+          setFormData((prev) => ({
+            ...prev,
+            recipient_name: first.recipient_name || prev.recipient_name,
+            recipient_email: first.recipient_email || prev.recipient_email,
+            course_title: first.course_title || prev.course_title,
+            issuer_name: first.issuer_name || prev.issuer_name,
+            issue_date: first.issue_date || prev.issue_date,
+            signature: first.signature || prev.signature,
+          }));
+        }
+      }
+    },
+    [detectedHeaders, rawUploadedRows, applyMappingsToRows, activeMapping, splitNamesInfo, batchDefaults]
+  );
+
   // Callback from ColumnMappingModal when user confirms mappings
   const handleConfirmMappingFromModal = ({ mapping, splitNames, batchDefaults: newDefaults }) => {
-    setActiveMapping(mapping);
-    setSplitNamesInfo(splitNames);
-    if (newDefaults) {
-      setBatchDefaults((prev) => ({ ...prev, ...newDefaults }));
-    }
-
-    if (detectedHeaders.length > 0 && rawUploadedRows.length > 0) {
-      const converted = applyMappingsToRows(
-        detectedHeaders,
-        rawUploadedRows,
-        mapping,
-        splitNames,
-        newDefaults || batchDefaults
-      );
-      setSpreadsheetRows(converted);
-
-      if (converted.length > 0) {
-        const first = converted[0];
-        setFormData((prev) => ({
-          ...prev,
-          recipient_name: first.recipient_name || prev.recipient_name,
-          recipient_email: first.recipient_email || prev.recipient_email,
-          course_title: first.course_title || prev.course_title,
-          issuer_name: first.issuer_name || prev.issuer_name,
-          issue_date: first.issue_date || prev.issue_date,
-          signature: first.signature || prev.signature,
-        }));
-      }
-
-      toast.success(`Columns applied! ${converted.length} rows loaded into editor.`);
-    }
+    handleLiveMappingUpdate({ mapping, splitNames, batchDefaults: newDefaults });
+    setIsMappingModalOpen(false);
+    saveMappingMemory(detectedHeaders, mapping, splitNames);
+    toast.success("Column mappings applied.");
   };
 
   // Sync spreadsheet first row into WYSIWYG Live Preview when rows change
@@ -585,7 +718,7 @@ const CreateCertificatePage = () => {
     }
   };
 
-  // Bulk Form submission (Validates cells, checks credits, converts grid to CSV, submits)
+  // Bulk Form submission (Uses canonical readyRows and credit check)
   const handleBulkSubmit = async (e) => {
     e.preventDefault();
     if (!formData.template_id || !selectedGroupId) {
@@ -593,48 +726,29 @@ const CreateCertificatePage = () => {
       return;
     }
 
-    // Filter non-empty rows
-    const nonBlankRows = spreadsheetRows.filter(
-      (r) =>
-        (r.recipient_name && String(r.recipient_name).trim()) ||
-        (r.recipient_email && String(r.recipient_email).trim()) ||
-        (r.course_title && String(r.course_title).trim())
-    );
-
-    if (nonBlankRows.length === 0) {
+    if (nonEmptyRowsCount === 0) {
       toast.error("Please enter at least one recipient row in the spreadsheet.");
       return;
     }
 
-    // Validate mandatory fields: recipient_name, recipient_email, course_title
-    const missingRequired = nonBlankRows.filter(
-      (r) =>
-        !r.recipient_name?.trim() ||
-        !r.recipient_email?.trim() ||
-        !r.course_title?.trim()
-    );
-    if (missingRequired.length > 0) {
+    if (invalidRowsCount > 0) {
       toast.error(
-        `${missingRequired.length} rows have missing required fields. Please fill Recipient Name, Email, and Course Title before issuing.`
+        `${invalidRowsCount} ${
+          invalidRowsCount === 1 ? "row needs" : "rows need"
+        } attention before you can generate documents. Please fix the highlighted errors in the spreadsheet.`
       );
       return;
     }
 
-    // Validate email formats
-    const invalidEmails = nonBlankRows.filter(
-      (r) => !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(r.recipient_email).trim())
-    );
-    if (invalidEmails.length > 0) {
-      toast.error(
-        `${invalidEmails.length} rows have invalid email addresses. Please correct them in the spreadsheet.`
-      );
+    if (readyRowsCount === 0) {
+      toast.error("Please enter at least one valid recipient row in the spreadsheet.");
       return;
     }
 
-    // Check user credit balance
-    if (userCredits < nonBlankRows.length) {
+    // Check user credit balance against readyRowsCount
+    if (userCredits < readyRowsCount) {
       toast.error(
-        `Insufficient credits: Batch requires ${nonBlankRows.length} credits, but you only have ${userCredits} available. Please purchase credits to continue.`
+        `Insufficient credits: Batch requires ${readyRowsCount} credits, but you only have ${userCredits} available. Please purchase credits to continue.`
       );
       return;
     }
@@ -642,8 +756,8 @@ const CreateCertificatePage = () => {
     setBulkSubmitting(true);
 
     try {
-      // Build clean CSV array with batch defaults applied
-      const cleanRowsToSubmit = nonBlankRows.map((r) => ({
+      // Build clean CSV array from canonical readyRows with batch defaults applied
+      const cleanRowsToSubmit = readyRows.map(({ row: r }) => ({
         recipient_name: String(r.recipient_name).trim(),
         recipient_email: String(r.recipient_email).trim().toLowerCase(),
         course_title: String(r.course_title).trim(),
@@ -1083,7 +1197,7 @@ const CreateCertificatePage = () => {
                     </div>
                   </div>
                   <span className="text-[10px] font-mono font-semibold bg-white text-indigo-700 px-2.5 py-1 rounded-full border border-indigo-200 shadow-2xs">
-                    {spreadsheetRows.length} {spreadsheetRows.length === 1 ? "row" : "rows"} &rarr;
+                    {nonEmptyRowsCount === 0 ? "0 rows" : `${readyRowsCount} ready`} &rarr;
                   </span>
                 </button>
 
@@ -1142,18 +1256,26 @@ const CreateCertificatePage = () => {
                     bulkSubmitting ||
                     !formData.template_id ||
                     !selectedGroupId ||
-                    spreadsheetRows.length === 0 ||
-                    userCredits < spreadsheetRows.length
+                    readyRowsCount === 0 ||
+                    invalidRowsCount > 0 ||
+                    userCredits < readyRowsCount
                   }
                   className="w-full bg-slate-900 border border-slate-900 hover:bg-black text-white text-xs font-bold py-2.5 px-4 rounded-lg shadow-sm transition-all flex items-center justify-center gap-1.5 disabled:opacity-60 disabled:cursor-not-allowed mt-3"
                 >
                   {bulkSubmitting ? <Loader2 className="animate-spin" size={14} /> : <Save size={14} />}
-                  <span>Generate Bulk Documents ({spreadsheetRows.length} rows)</span>
+                  <span>
+                    Generate Bulk Documents ({readyRowsCount} {readyRowsCount === 1 ? "document" : "documents"})
+                  </span>
                 </button>
 
-                {userCredits < spreadsheetRows.length && spreadsheetRows.length > 0 && (
+                {userCredits < readyRowsCount && readyRowsCount > 0 && (
                   <p className="text-[10px] text-red-600 text-center font-semibold mt-1">
-                    You need {spreadsheetRows.length} credits but have {userCredits}. Please purchase more credits.
+                    You need {readyRowsCount} credits but have {userCredits}. Please purchase more credits.
+                  </p>
+                )}
+                {invalidRowsCount > 0 && (
+                  <p className="text-[10px] text-amber-600 text-center font-semibold mt-1">
+                    {invalidRowsCount} {invalidRowsCount === 1 ? "row needs" : "rows need"} attention in the spreadsheet before issuing.
                   </p>
                 )}
               </form>
@@ -1219,7 +1341,11 @@ const CreateCertificatePage = () => {
                     <span className="text-xs font-bold text-slate-800 flex items-center gap-2">
                       <span>In-Page Spreadsheet:</span>
                       <span className="text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full font-mono text-[10px]">
-                        {spreadsheetRows.length} {spreadsheetRows.length === 1 ? "row" : "rows"}
+                        {nonEmptyRowsCount === 0
+                          ? "0 rows"
+                          : invalidRowsCount > 0
+                          ? `${readyRowsCount} ready, ${invalidRowsCount} need attention`
+                          : `${readyRowsCount} ready`}
                       </span>
                     </span>
                     <span className="block text-[10px] text-slate-400">
@@ -1278,127 +1404,240 @@ const CreateCertificatePage = () => {
         splitNames={splitNamesInfo}
         batchDefaults={batchDefaults}
         onConfirmMapping={handleConfirmMappingFromModal}
+        onLiveMappingChange={handleLiveMappingUpdate}
         isProOrEnterprise={isProOrEnterprise}
         templateCustomFields={templateCustomPlaceholders}
       />
 
-      {/* Floating Action Button for In-Page Spreadsheet Editor */}
+      {/* Floating Action Button for In-Page Spreadsheet Editor (Offset from SupportWidget at bottom-6 right-6) */}
       {creationMode === "bulk" && isBulkAllowed && (
-        <div className="fixed bottom-6 right-6 z-40">
+        <div className="fixed bottom-6 right-20 sm:right-24 z-40">
           <button
+            ref={launcherButtonRef}
             type="button"
-            onClick={() => setIsSpreadsheetOpen(true)}
-            className="flex items-center gap-2.5 px-4 py-3 bg-slate-900 hover:bg-black text-white rounded-full shadow-2xl hover:scale-105 active:scale-95 transition-all text-xs font-bold border border-slate-700/80 group cursor-pointer"
-            title="Open In-Page Spreadsheet Editor"
+            onClick={() => setIsSpreadsheetOpen((prev) => !prev)}
+            className="flex items-center gap-2.5 px-3.5 sm:px-4 py-2.5 sm:py-3 bg-slate-900 hover:bg-black text-white rounded-full shadow-xl hover:scale-105 active:scale-95 transition-all text-xs font-bold border border-slate-700/80 group cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+            title={isSpreadsheetOpen ? "Collapse Spreadsheet Editor" : "Open Spreadsheet Editor"}
+            aria-label="Toggle Spreadsheet Editor"
+            aria-expanded={isSpreadsheetOpen}
           >
             <div className="relative flex items-center justify-center">
               <FileSpreadsheet size={16} className="text-indigo-400 group-hover:text-indigo-300 transition-colors" />
-              {spreadsheetRows.length > 0 && (
-                <span className="absolute -top-1 -right-1 w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
+              {nonEmptyRowsCount > 0 && (
+                <span
+                  className={`absolute -top-1 -right-1 w-2 h-2 rounded-full ${
+                    invalidRowsCount > 0 ? "bg-amber-500 animate-pulse" : "bg-emerald-500 animate-pulse"
+                  }`}
+                />
               )}
             </div>
-            <span>Spreadsheet Editor</span>
+            <span className="hidden xs:inline">Spreadsheet</span>
             <span className="bg-slate-800 text-slate-300 px-2 py-0.5 rounded-full text-[10px] font-mono border border-slate-700">
-              {spreadsheetRows.length} {spreadsheetRows.length === 1 ? "row" : "rows"}
+              {nonEmptyRowsCount === 0
+                ? "0 rows"
+                : invalidRowsCount > 0
+                ? `${readyRowsCount}/${nonEmptyRowsCount} ready`
+                : `${readyRowsCount} ready`}
             </span>
           </button>
         </div>
       )}
 
-      {/* In-Page Spreadsheet Popover / Modal with Expand capability */}
+      {/* Docked In-Page Spreadsheet Widget Panel (Floating, non-modal, interactive background) */}
       {isSpreadsheetOpen && (
         <div
-          className="fixed inset-0 bg-slate-950/75 backdrop-blur-xs z-50 flex items-center justify-center p-3 md:p-6 animate-in fade-in duration-200"
-          onClick={() => setIsSpreadsheetOpen(false)}
+          ref={panelRef}
+          tabIndex={-1}
+          onKeyDown={handlePanelKeyDown}
+          aria-label="In-Page Spreadsheet Editor Panel"
+          role="region"
+          className={`fixed z-40 bg-white rounded-2xl shadow-2xl border border-slate-200/90 flex flex-col overflow-hidden transition-all duration-300 ease-in-out pointer-events-auto ${
+            /* Mobile styles (screens < 640px): bottom sheet */
+            isSpreadsheetExpanded
+              ? "inset-x-2 bottom-2 h-[92vh] max-h-[92vh] sm:inset-x-auto sm:bottom-20 sm:right-6 md:right-20 sm:w-[calc(100vw-48px)] md:w-[94vw] sm:max-w-[1260px] sm:h-[calc(100vh-100px)] sm:max-h-[840px]"
+              : "inset-x-2 bottom-2 h-[60vh] max-h-[480px] sm:inset-x-auto sm:bottom-20 sm:right-6 md:right-20 sm:w-[460px] sm:max-w-[calc(100vw-32px)] sm:h-[580px] sm:max-h-[calc(100vh-100px)]"
+          }`}
         >
-          <div
-            className={`bg-white rounded-2xl shadow-2xl border border-slate-200 flex flex-col overflow-hidden transition-all duration-300 ${
-              isSpreadsheetExpanded
-                ? "w-full h-full max-w-none max-h-none rounded-none md:rounded-2xl md:h-[96vh] md:w-[98vw]"
-                : "w-full max-w-6xl max-h-[90vh] h-[85vh]"
-            }`}
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* Modal Header */}
-            <div className="px-5 py-3.5 border-b border-slate-200 bg-white flex items-center justify-between gap-3 shrink-0">
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-lg bg-indigo-50 border border-indigo-200/80 flex items-center justify-center text-indigo-650">
-                  <Table size={18} />
-                </div>
-                <div>
-                  <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider mb-0 flex items-center gap-2">
-                    <span>In-Page Spreadsheet Editor</span>
-                    <span className="text-[10px] font-semibold normal-case text-slate-600 bg-slate-100 px-2 py-0.5 rounded-full border border-slate-200">
-                      {spreadsheetRows.length} {spreadsheetRows.length === 1 ? "row" : "rows"}
-                    </span>
+          {/* Panel Header */}
+          <div className="px-4 py-3 border-b border-slate-200 bg-white flex items-center justify-between gap-2 shrink-0 select-none">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div className="w-7 h-7 rounded-lg bg-indigo-50 border border-indigo-200/80 flex items-center justify-center text-indigo-650 shrink-0">
+                <Table size={15} />
+              </div>
+              <div className="min-w-0">
+                <div className="flex items-center gap-2">
+                  <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider mb-0 truncate">
+                    Spreadsheet Editor
                   </h3>
-                  <p className="text-[11px] text-slate-400 mb-0">
-                    Type directly, edit cells live, or paste from Excel & Google Sheets (Ctrl+V)
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-2">
-                {detectedHeaders.length > 0 && (
-                  <button
-                    type="button"
-                    onClick={() => setIsMappingModalOpen(true)}
-                    className="px-2.5 py-1.5 rounded-lg bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 text-indigo-700 text-xs font-semibold flex items-center gap-1.5 transition-all shadow-2xs"
+                  <span
+                    className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border shrink-0 ${
+                      nonEmptyRowsCount === 0
+                        ? "text-slate-500 bg-slate-100 border-slate-200"
+                        : invalidRowsCount > 0
+                        ? "text-amber-700 bg-amber-50 border-amber-200 flex items-center gap-1"
+                        : "text-emerald-700 bg-emerald-50 border-emerald-200"
+                    }`}
                   >
-                    <Columns3 size={13} />
-                    <span>Column Mapping</span>
-                  </button>
-                )}
-
-                {/* Expand / Minimize Toggle */}
-                <button
-                  type="button"
-                  onClick={() => setIsSpreadsheetExpanded((prev) => !prev)}
-                  className="px-2.5 py-1.5 rounded-lg border border-slate-200 hover:bg-slate-100 text-slate-700 text-xs font-medium flex items-center gap-1.5 transition-all cursor-pointer"
-                  title={isSpreadsheetExpanded ? "Collapse View" : "Expand Fullscreen"}
-                >
-                  {isSpreadsheetExpanded ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
-                  <span>{isSpreadsheetExpanded ? "Collapse" : "Expand"}</span>
-                </button>
-
-                {/* Close Button */}
-                <button
-                  type="button"
-                  onClick={() => setIsSpreadsheetOpen(false)}
-                  className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-all cursor-pointer"
-                  title="Close Spreadsheet"
-                >
-                  <X size={18} />
-                </button>
+                    {nonEmptyRowsCount === 0 ? (
+                      "0 rows"
+                    ) : invalidRowsCount > 0 ? (
+                      <>
+                        <AlertTriangle size={10} className="text-amber-600" />
+                        <span>
+                          {readyRowsCount} ready, {invalidRowsCount} need attention
+                        </span>
+                      </>
+                    ) : (
+                      `${readyRowsCount} ready`
+                    )}
+                  </span>
+                </div>
+                <p className="text-[10px] text-slate-400 mb-0 truncate hidden sm:block">
+                  Type cells or paste from Excel (Ctrl+V) &bull; Live updates preview
+                </p>
               </div>
             </div>
 
-            {/* Modal Body: Scrollable Spreadsheet Grid */}
-            <div className="flex-1 p-4 md:p-5 overflow-y-auto bg-slate-50/50">
-              <SpreadsheetGrid
-                rows={spreadsheetRows}
-                onChangeRows={setSpreadsheetRows}
-                userQuota={userCredits}
-                batchDefaults={batchDefaults}
-                onChangeBatchDefaults={setBatchDefaults}
-                onOpenMappingModal={() => setIsMappingModalOpen(true)}
-                templateCustomFields={templateCustomPlaceholders}
-                isProOrEnterprise={isProOrEnterprise}
-              />
-            </div>
+            {/* Header Controls: Re-map, Expand/Compact, Minimize, Close */}
+            <div className="flex items-center gap-1 shrink-0">
+              {detectedHeaders.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setIsMappingModalOpen(true)}
+                  className="px-2 py-1 rounded-lg bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 text-indigo-700 text-[11px] font-semibold flex items-center gap-1 transition-all shadow-2xs"
+                  title="Review Column Mapping"
+                >
+                  <Columns3 size={12} />
+                  <span className="hidden md:inline">Mapping</span>
+                </button>
+              )}
 
-            {/* Modal Footer */}
-            <div className="px-5 py-3 border-t border-slate-200 bg-white flex items-center justify-between shrink-0">
-              <p className="text-[11px] text-slate-400 mb-0 flex items-center gap-1.5">
-                <Info size={13} className="text-slate-400" />
-                <span>Rows are saved automatically and synchronized with the Live Preview.</span>
-              </p>
+              {/* Expand / Compact Toggle */}
               <button
                 type="button"
-                onClick={() => setIsSpreadsheetOpen(false)}
-                className="bg-slate-900 hover:bg-black text-white text-xs font-bold px-4 py-2 rounded-lg transition-all shadow-sm cursor-pointer"
+                onClick={() => setIsSpreadsheetExpanded((prev) => !prev)}
+                className="p-1.5 rounded-lg border border-slate-200 hover:bg-slate-100 text-slate-600 hover:text-slate-900 transition-all cursor-pointer"
+                title={isSpreadsheetExpanded ? "Compact View" : "Expand Panel"}
+                aria-label={isSpreadsheetExpanded ? "Compact View" : "Expand Panel"}
               >
-                Done & Close
+                {isSpreadsheetExpanded ? <Minimize2 size={13} /> : <Maximize2 size={13} />}
+              </button>
+
+              {/* Minimize Control */}
+              <button
+                type="button"
+                onClick={handleClosePanel}
+                className="p-1.5 rounded-lg border border-slate-200 hover:bg-slate-100 text-slate-600 hover:text-slate-900 transition-all cursor-pointer"
+                title="Minimize to floating pill"
+                aria-label="Minimize spreadsheet panel"
+              >
+                <Minus size={13} />
+              </button>
+
+              {/* Close Control */}
+              <button
+                type="button"
+                onClick={handleClosePanel}
+                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-all cursor-pointer"
+                title="Close spreadsheet panel"
+                aria-label="Close spreadsheet panel"
+              >
+                <X size={15} />
+              </button>
+            </div>
+          </div>
+
+          {/* Panel Body: Scrollable Spreadsheet Grid */}
+          <div className="flex-1 p-3 sm:p-4 overflow-auto bg-slate-50/50">
+            <SpreadsheetGrid
+              rows={spreadsheetRows}
+              onChangeRows={setSpreadsheetRows}
+              userQuota={userCredits}
+              batchDefaults={batchDefaults}
+              onChangeBatchDefaults={setBatchDefaults}
+              onOpenMappingModal={() => setIsMappingModalOpen(true)}
+              templateCustomFields={templateCustomPlaceholders}
+              isProOrEnterprise={isProOrEnterprise}
+            />
+          </div>
+
+          {/* Panel Footer: Summary & Done */}
+          <div className="px-4 py-2.5 border-t border-slate-200 bg-white flex items-center justify-between gap-2 shrink-0">
+            <div className="text-[11px] text-slate-500 truncate flex items-center gap-1.5">
+              {invalidRowsCount > 0 ? (
+                <span className="text-amber-600 font-medium flex items-center gap-1">
+                  <AlertTriangle size={12} />
+                  <span>Fix {invalidRowsCount} highlighted rows before issuing</span>
+                </span>
+              ) : userCredits < readyRowsCount ? (
+                <span className="text-red-600 font-medium">
+                  Needs {readyRowsCount} credits (you have {userCredits})
+                </span>
+              ) : (
+                <span className="text-slate-400 flex items-center gap-1">
+                  <Info size={12} />
+                  <span>Changes auto-sync with the Live Preview</span>
+                </span>
+              )}
+            </div>
+            <button
+              type="button"
+              onClick={handleClosePanel}
+              className="bg-slate-900 hover:bg-black text-white text-xs font-bold px-3.5 py-1.5 rounded-lg transition-all shadow-xs cursor-pointer shrink-0"
+            >
+              Done & Minimize
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Import Conflict Confirmation Modal */}
+      {importConflictModal.isOpen && (
+        <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 p-6 max-w-md w-full animate-in fade-in zoom-in-95 duration-150">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="w-10 h-10 rounded-xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600 shrink-0">
+                <FileSpreadsheet size={20} />
+              </div>
+              <div>
+                <h3 className="text-sm font-bold text-slate-800 mb-0">Replace or Append Data?</h3>
+                <p className="text-xs text-slate-500 mb-0">
+                  You already have {importConflictModal.existingCount} data {importConflictModal.existingCount === 1 ? "row" : "rows"} in the editor.
+                </p>
+              </div>
+            </div>
+            <p className="text-xs text-slate-600 mb-5 leading-relaxed">
+              How would you like to handle the incoming data from <strong>{importConflictModal.fileName}</strong>?
+            </p>
+            <div className="flex flex-col sm:flex-row gap-2 justify-end">
+              <button
+                type="button"
+                onClick={() => setImportConflictModal({ isOpen: false, matrix: null, fileName: "", existingCount: 0 })}
+                className="px-3.5 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-lg transition-colors order-3 sm:order-1"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  const { matrix, fileName } = importConflictModal;
+                  setImportConflictModal({ isOpen: false, matrix: null, fileName: "", existingCount: 0 });
+                  proceedWithImport(matrix, fileName, "append");
+                }}
+                className="px-3.5 py-2 text-xs font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded-lg transition-colors order-2"
+              >
+                Append to Existing
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  const { matrix, fileName } = importConflictModal;
+                  setImportConflictModal({ isOpen: false, matrix: null, fileName: "", existingCount: 0 });
+                  proceedWithImport(matrix, fileName, "replace");
+                }}
+                className="px-3.5 py-2 text-xs font-bold text-white bg-slate-900 hover:bg-black rounded-lg transition-colors shadow-sm order-1 sm:order-3"
+              >
+                Replace All
               </button>
             </div>
           </div>

@@ -23,7 +23,13 @@ import {
   Columns3,
   Zap
 } from "lucide-react";
-import { PROOFDECK_CORE_FIELDS, looksLikeEmail, looksLikeDate } from "../../utils/columnMapping";
+import {
+  PROOFDECK_CORE_FIELDS,
+  looksLikeEmail,
+  looksLikeDate,
+  isRowNonEmpty,
+  validateRow
+} from "../../utils/columnMapping";
 import toast from "react-hot-toast";
 
 const PAGE_SIZE_OPTIONS = [25, 50, 100];
@@ -76,77 +82,65 @@ const SpreadsheetGrid = ({
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(25);
 
-  // Validate all rows
-  const validationMap = useMemo(() => {
+  const customKeys = useMemo(
+    () => templateCustomFields.map((cf) => cf.key),
+    [templateCustomFields]
+  );
+
+  // Validate all rows using single source of truth
+  const { validationMap, nonEmptyRowsCount, readyRowsCount, invalidRowsCount } = useMemo(() => {
     const map = new Map();
     const emailCounts = new Map();
 
-    // Pass 1: Count email frequencies to identify duplicates
-    rows.forEach((r, idx) => {
-      const email = String(r.recipient_email || "").trim().toLowerCase();
-      if (email && looksLikeEmail(email)) {
-        emailCounts.set(email, (emailCounts.get(email) || 0) + 1);
+    // Pass 1: Count email frequencies strictly among non-empty rows
+    rows.forEach((r) => {
+      if (isRowNonEmpty(r, customKeys)) {
+        const email = String(r.recipient_email || "").trim().toLowerCase();
+        if (email && looksLikeEmail(email)) {
+          emailCounts.set(email, (emailCounts.get(email) || 0) + 1);
+        }
       }
     });
+
+    let nonEmptyCount = 0;
+    let invalidCount = 0;
 
     // Pass 2: Inspect row cells
     rows.forEach((r, idx) => {
-      const cellErrors = {};
-      let rowHasErrors = false;
-
-      // 1. Mandatory fields: name, email, course_title
-      if (!r.recipient_name || !String(r.recipient_name).trim()) {
-        cellErrors.recipient_name = "Recipient Name is required";
-        rowHasErrors = true;
+      const isNonEmpty = isRowNonEmpty(r, customKeys);
+      if (!isNonEmpty) {
+        // Completely empty row: ignore in counts and warnings
+        map.set(idx, { cellErrors: {}, hasErrors: false, isEmpty: true });
+        return;
       }
 
-      if (!r.recipient_email || !String(r.recipient_email).trim()) {
-        cellErrors.recipient_email = "Email is required";
-        rowHasErrors = true;
-      } else if (!looksLikeEmail(r.recipient_email)) {
-        cellErrors.recipient_email = "Invalid email format";
-        rowHasErrors = true;
-      } else {
-        const cleanEmail = String(r.recipient_email).trim().toLowerCase();
-        if (emailCounts.get(cleanEmail) > 1) {
-          cellErrors.recipient_email = "Duplicate email in batch";
-          rowHasErrors = true;
-        }
+      nonEmptyCount += 1;
+      const { isValid, cellErrors } = validateRow(r, emailCounts);
+      if (!isValid) {
+        invalidCount += 1;
       }
 
-      if (!r.course_title || !String(r.course_title).trim()) {
-        cellErrors.course_title = "Course Title is required";
-        rowHasErrors = true;
-      }
-
-      // 2. Date validation (if provided)
-      if (r.issue_date && String(r.issue_date).trim() && !looksLikeDate(r.issue_date)) {
-        cellErrors.issue_date = "Unparseable date";
-        rowHasErrors = true;
-      }
-
-      map.set(idx, { cellErrors, hasErrors: rowHasErrors });
+      map.set(idx, { cellErrors, hasErrors: !isValid, isEmpty: false });
     });
 
-    return map;
-  }, [rows]);
-
-  // Row counts
-  const totalRows = rows.length;
-  const invalidRowsCount = useMemo(() => {
-    let count = 0;
-    validationMap.forEach((v) => {
-      if (v.hasErrors) count += 1;
-    });
-    return count;
-  }, [validationMap]);
-  const readyRowsCount = totalRows - invalidRowsCount;
+    return {
+      validationMap: map,
+      nonEmptyRowsCount: nonEmptyCount,
+      invalidRowsCount: invalidCount,
+      readyRowsCount: nonEmptyCount - invalidCount
+    };
+  }, [rows, customKeys]);
 
   // Filtered rows indices
   const displayedRowIndices = useMemo(() => {
     const indices = [];
     rows.forEach((_, idx) => {
-      if (!filterNeedsAttention || validationMap.get(idx)?.hasErrors) {
+      const v = validationMap.get(idx);
+      if (filterNeedsAttention) {
+        if (!v?.isEmpty && v?.hasErrors) {
+          indices.push(idx);
+        }
+      } else {
         indices.push(idx);
       }
     });
@@ -373,8 +367,8 @@ const SpreadsheetGrid = ({
     [isEditing, activeCell, columns, rows, commitEdit, startEditing, handleAddRow, onChangeRows]
   );
 
-  // Credit calculation
-  const creditsNeeded = totalRows;
+  // Credit calculation (strictly based on valid ready rows)
+  const creditsNeeded = readyRowsCount;
   const hasSufficientCredits = userQuota >= creditsNeeded;
 
   return (
@@ -388,40 +382,49 @@ const SpreadsheetGrid = ({
       <div className="bg-white p-3.5 rounded-xl border border-slate-200/90 shadow-2xs flex flex-wrap items-center justify-between gap-3">
         {/* Left: Validation Counts & Filter */}
         <div className="flex items-center gap-2.5 flex-wrap">
-          <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold shadow-2xs">
-            <CheckCircle2 size={13} className="text-emerald-600" />
-            <span>{readyRowsCount} ready</span>
-          </div>
-
-          {invalidRowsCount > 0 ? (
-            <button
-              type="button"
-              onClick={() => setFilterNeedsAttention(!filterNeedsAttention)}
-              className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold transition-all border shadow-2xs ${
-                filterNeedsAttention
-                  ? "bg-amber-500 text-white border-amber-600"
-                  : "bg-amber-50 text-amber-800 border-amber-200 hover:bg-amber-100"
-              }`}
-            >
-              <AlertTriangle size={13} className={filterNeedsAttention ? "text-white" : "text-amber-600"} />
-              <span>{invalidRowsCount} need attention</span>
-              {filterNeedsAttention && <span className="text-[10px] ml-1">(Filtering)</span>}
-            </button>
+          {nonEmptyRowsCount === 0 ? (
+            <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-100 border border-slate-200 text-slate-500 text-xs font-semibold shadow-2xs">
+              <CheckCircle2 size={13} className="text-slate-400" />
+              <span>0 rows</span>
+            </div>
           ) : (
-            <span className="text-xs text-slate-400 font-medium">
-              All rows valid
-            </span>
-          )}
+            <>
+              <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold shadow-2xs">
+                <CheckCircle2 size={13} className="text-emerald-600" />
+                <span>{readyRowsCount} ready</span>
+              </div>
 
-          {totalRows > 0 && onOpenMappingModal && (
-            <button
-              type="button"
-              onClick={onOpenMappingModal}
-              className="text-indigo-650 hover:text-indigo-800 text-xs font-bold flex items-center gap-1 ml-2 transition-colors"
-            >
-              <Filter size={12} />
-              <span>Review Column Mapping</span>
-            </button>
+              {invalidRowsCount > 0 ? (
+                <button
+                  type="button"
+                  onClick={() => setFilterNeedsAttention(!filterNeedsAttention)}
+                  className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold transition-all border shadow-2xs ${
+                    filterNeedsAttention
+                      ? "bg-amber-500 text-white border-amber-600"
+                      : "bg-amber-50 text-amber-800 border-amber-200 hover:bg-amber-100"
+                  }`}
+                >
+                  <AlertTriangle size={13} className={filterNeedsAttention ? "text-white" : "text-amber-600"} />
+                  <span>{invalidRowsCount} need attention</span>
+                  {filterNeedsAttention && <span className="text-[10px] ml-1">(Filtering)</span>}
+                </button>
+              ) : (
+                <span className="text-xs text-slate-400 font-medium">
+                  All rows valid
+                </span>
+              )}
+
+              {onOpenMappingModal && (
+                <button
+                  type="button"
+                  onClick={onOpenMappingModal}
+                  className="text-indigo-650 hover:text-indigo-800 text-xs font-bold flex items-center gap-1 ml-2 transition-colors cursor-pointer"
+                >
+                  <Filter size={12} />
+                  <span>Review Column Mapping</span>
+                </button>
+              )}
+            </>
           )}
         </div>
 
@@ -444,11 +447,11 @@ const SpreadsheetGrid = ({
             </span>
           </div>
 
-          {totalRows > 0 && (
+          {rows.length > 0 && (
             <button
               type="button"
               onClick={handleClearAll}
-              className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+              className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
               title="Clear all rows"
             >
               <Trash2 size={15} />
@@ -458,7 +461,7 @@ const SpreadsheetGrid = ({
       </div>
 
       {/* INSUFFICIENT CREDITS WARNING ALERT */}
-      {!hasSufficientCredits && totalRows > 0 && (
+      {!hasSufficientCredits && creditsNeeded > 0 && (
         <div className="bg-red-50/90 border border-red-200 p-3 rounded-xl flex items-center justify-between text-xs text-red-800 animate-in fade-in">
           <div className="flex items-center gap-2">
             <AlertCircle size={16} className="text-red-600 shrink-0" />
@@ -582,7 +585,7 @@ const SpreadsheetGrid = ({
                 currentIndices.map((realRowIdx, pageOffset) => {
                   const row = rows[realRowIdx];
                   const rowValidation = validationMap.get(realRowIdx);
-                  const isRowInvalid = rowValidation?.hasErrors;
+                  const isRowInvalid = rowValidation?.hasErrors && !rowValidation?.isEmpty;
 
                   return (
                     <tr
@@ -601,7 +604,7 @@ const SpreadsheetGrid = ({
                         const cellValue = row?.[col.key] ?? "";
                         const isCellSelected =
                           activeCell.rowIdx === realRowIdx && activeCell.colKey === col.key;
-                        const cellError = rowValidation?.cellErrors?.[col.key];
+                        const cellError = !rowValidation?.isEmpty ? rowValidation?.cellErrors?.[col.key] : null;
 
                         return (
                           <td

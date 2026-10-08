@@ -30,10 +30,18 @@ const ColumnMappingModal = ({
   splitNames = null,
   batchDefaults = {},
   onConfirmMapping,
+  onLiveMappingChange,
   isProOrEnterprise = false,
   templateCustomFields = []
 }) => {
   if (!isOpen) return null;
+
+  // Snapshot of state prior to opening (used for clean revert on cancel/close)
+  const initialSnapshotRef = React.useRef({
+    mapping: initialMapping,
+    splitNames,
+    batchDefaults
+  });
 
   // Active mappings: { fieldKey: { sourceColumn: string | null, confidence: number, type: string } }
   const [currentMapping, setCurrentMapping] = useState(() => ({
@@ -59,6 +67,37 @@ const ColumnMappingModal = ({
 
   const [isAiLoading, setIsAiLoading] = useState(false);
 
+  // Broadcast changes live to parent page & preview
+  const notifyLiveUpdate = (newMapping, newSplitMode, newFirstCol, newLastCol, newDefaults) => {
+    if (onLiveMappingChange) {
+      onLiveMappingChange({
+        mapping: newMapping,
+        splitNames: newSplitMode && newFirstCol && newLastCol ? { firstNameColumn: newFirstCol, lastNameColumn: newLastCol } : null,
+        batchDefaults: newDefaults
+      });
+    }
+  };
+
+  // Revert on cancel/close
+  const handleCancel = () => {
+    if (onLiveMappingChange && initialSnapshotRef.current) {
+      onLiveMappingChange(initialSnapshotRef.current);
+    }
+    onClose();
+  };
+
+  // Handle ESC key to cancel
+  React.useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        handleCancel();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
+
   // All combined target fields (6 core + any custom template placeholders)
   const allTargetFields = useMemo(() => {
     const list = [...PROOFDECK_CORE_FIELDS];
@@ -78,60 +117,65 @@ const ColumnMappingModal = ({
 
   // Handle single column change
   const handleSelectColumn = (fieldKey, selectedCol) => {
-    setCurrentMapping((prev) => ({
-      ...prev,
+    const updated = {
+      ...currentMapping,
       [fieldKey]: {
         sourceColumn: selectedCol === "__none__" ? null : selectedCol,
         confidence: selectedCol === "__none__" ? 0 : 1.0,
         type: "manual"
       }
-    }));
+    };
+    setCurrentMapping(updated);
+    notifyLiveUpdate(updated, isSplitNameMode, splitFirstCol, splitLastCol, defaults);
   };
 
   // Handle split name toggle
   const handleToggleSplitName = (enabled) => {
     setIsSplitNameMode(enabled);
+    let updated = { ...currentMapping };
     if (enabled) {
       if (splitFirstCol && splitLastCol) {
-        setCurrentMapping((prev) => ({
-          ...prev,
-          recipient_name: {
-            sourceColumn: `${splitFirstCol} + ${splitLastCol}`,
-            confidence: 1.0,
-            type: "split_combine",
-            parts: [splitFirstCol, splitLastCol]
-          }
-        }));
+        updated.recipient_name = {
+          sourceColumn: `${splitFirstCol} + ${splitLastCol}`,
+          confidence: 1.0,
+          type: "split_combine",
+          parts: [splitFirstCol, splitLastCol]
+        };
       }
     } else {
-      setCurrentMapping((prev) => ({
-        ...prev,
-        recipient_name: {
-          sourceColumn: null,
-          confidence: 0,
-          type: "manual"
-        }
-      }));
+      updated.recipient_name = {
+        sourceColumn: null,
+        confidence: 0,
+        type: "manual"
+      };
     }
+    setCurrentMapping(updated);
+    notifyLiveUpdate(updated, enabled, splitFirstCol, splitLastCol, defaults);
   };
 
   const handleSplitColsChange = (first, last) => {
     setSplitFirstCol(first);
     setSplitLastCol(last);
+    let updated = { ...currentMapping };
     if (first && last) {
-      setCurrentMapping((prev) => ({
-        ...prev,
-        recipient_name: {
-          sourceColumn: `${first} + ${last}`,
-          confidence: 1.0,
-          type: "split_combine",
-          parts: [first, last]
-        }
-      }));
+      updated.recipient_name = {
+        sourceColumn: `${first} + ${last}`,
+        confidence: 1.0,
+        type: "split_combine",
+        parts: [first, last]
+      };
     }
+    setCurrentMapping(updated);
+    notifyLiveUpdate(updated, isSplitNameMode, first, last, defaults);
   };
 
-  // Trigger Layer B AI mapping
+  const handleDefaultChange = (fieldKey, val) => {
+    const updatedDefaults = { ...defaults, [fieldKey]: val };
+    setDefaults(updatedDefaults);
+    notifyLiveUpdate(currentMapping, isSplitNameMode, splitFirstCol, splitLastCol, updatedDefaults);
+  };
+
+  // Trigger Layer B AI mapping (pre-fills for review, does not apply silently)
   const handleTriggerAiMapping = async () => {
     if (!isProOrEnterprise) return;
     setIsAiLoading(true);
@@ -148,13 +192,21 @@ const ColumnMappingModal = ({
         });
         setCurrentMapping(formatted);
 
+        let newSplit = isSplitNameMode;
+        let newFirst = splitFirstCol;
+        let newLast = splitLastCol;
+
         if (res.splitNames) {
+          newSplit = true;
+          newFirst = res.splitNames.first_name_column || res.splitNames.firstNameColumn || "";
+          newLast = res.splitNames.last_name_column || res.splitNames.lastNameColumn || "";
           setIsSplitNameMode(true);
-          setSplitFirstCol(res.splitNames.first_name_column || res.splitNames.firstNameColumn || "");
-          setSplitLastCol(res.splitNames.last_name_column || res.splitNames.lastNameColumn || "");
+          setSplitFirstCol(newFirst);
+          setSplitLastCol(newLast);
         }
 
-        toast.success("AI column mapping applied!");
+        notifyLiveUpdate(formatted, newSplit, newFirst, newLast, defaults);
+        toast.success("AI column suggestions loaded! Review before confirming.");
       } else {
         toast.error("Could not determine AI mapping. Keeping current suggestions.");
       }
@@ -276,8 +328,8 @@ const ColumnMappingModal = ({
 
             <button
               type="button"
-              onClick={onClose}
-              className="p-1.5 text-slate-400 hover:text-slate-650 rounded-lg hover:bg-slate-100 transition-colors"
+              onClick={handleCancel}
+              className="p-1.5 text-slate-400 hover:text-slate-650 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer"
               aria-label="Close modal"
             >
               <X size={18} />
@@ -434,9 +486,7 @@ const ColumnMappingModal = ({
                                 type={field.key === "issue_date" ? "date" : "text"}
                                 placeholder={`Batch default...`}
                                 value={defaults[field.key] || ""}
-                                onChange={(e) =>
-                                  setDefaults((prev) => ({ ...prev, [field.key]: e.target.value }))
-                                }
+                                onChange={(e) => handleDefaultChange(field.key, e.target.value)}
                                 className="w-1/3 text-xs py-1.5 px-2 rounded-lg border border-slate-200 bg-white focus:outline-none focus:border-indigo-500 text-slate-700 shadow-2xs"
                                 title="Default applied if column is empty or unmapped"
                               />
@@ -494,8 +544,8 @@ const ColumnMappingModal = ({
         <div className="px-5 py-3 border-t border-slate-100 bg-slate-50/70 flex items-center justify-between shrink-0">
           <button
             type="button"
-            onClick={onClose}
-            className="px-4 py-2 text-xs font-semibold text-slate-600 hover:text-slate-800 transition-colors"
+            onClick={handleCancel}
+            className="px-4 py-2 text-xs font-semibold text-slate-600 hover:text-slate-800 transition-colors cursor-pointer"
           >
             Cancel
           </button>
