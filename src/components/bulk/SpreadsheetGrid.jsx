@@ -1,6 +1,7 @@
 // frontend/src/components/bulk/SpreadsheetGrid.jsx
 
 import React, { useState, useEffect, useRef, useMemo, useCallback } from "react";
+import { Modal } from "react-bootstrap";
 import {
   Plus,
   Trash2,
@@ -218,12 +219,18 @@ const SpreadsheetGrid = ({
     }
   };
 
+  const [showClearModal, setShowClearModal] = useState(false);
+
   // Clear all rows
   const handleClearAll = () => {
-    if (window.confirm("Are you sure you want to clear all spreadsheet rows?")) {
-      onChangeRows([]);
-      setActiveCell({ rowIdx: 0, colKey: "recipient_name" });
-    }
+    setShowClearModal(true);
+  };
+
+  const handleConfirmClearAll = () => {
+    onChangeRows([]);
+    setActiveCell({ rowIdx: 0, colKey: "recipient_name" });
+    setShowClearModal(false);
+    toast.success("Spreadsheet rows cleared");
   };
 
   // Apply batch defaults to all empty cells in the batch
@@ -730,6 +737,48 @@ const SpreadsheetGrid = ({
           )}
         </div>
       </div>
+
+      {/* CLEAR ALL ROWS CONFIRMATION MODAL */}
+      <Modal
+        show={showClearModal}
+        onHide={() => setShowClearModal(false)}
+        centered
+        contentClassName="rounded-xl border border-slate-200/80 dark:border-zinc-800 shadow-xl overflow-hidden bg-white dark:bg-zinc-900"
+      >
+        <Modal.Body className="p-6">
+          <div className="flex items-start gap-4">
+            <div className="p-3 bg-red-50 dark:bg-red-950/40 text-red-600 dark:text-red-400 rounded-full shrink-0">
+              <AlertCircle size={22} />
+            </div>
+            <div>
+              <h3 className="font-bold text-sm text-slate-800 dark:text-zinc-100 mb-1.5">
+                Clear All Spreadsheet Rows?
+              </h3>
+              <p className="text-xs text-slate-500 dark:text-zinc-400 leading-relaxed mb-0">
+                Are you sure you want to clear all{" "}
+                <strong className="text-slate-700 dark:text-zinc-200">{rows.length} rows</strong> from the
+                spreadsheet? All entered recipient and batch data will be removed. This action cannot be undone.
+              </p>
+            </div>
+          </div>
+        </Modal.Body>
+        <Modal.Footer className="border-0 pt-0 bg-slate-50/50 dark:bg-zinc-900/60 p-4">
+          <button
+            type="button"
+            onClick={() => setShowClearModal(false)}
+            className="px-3.5 py-1.5 text-xs font-semibold text-slate-700 dark:text-zinc-300 bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 hover:bg-slate-50 dark:hover:bg-zinc-700 rounded-lg transition-colors shadow-2xs"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            onClick={handleConfirmClearAll}
+            className="px-4 py-1.5 text-xs font-semibold text-white bg-red-600 hover:bg-red-700 rounded-lg shadow-2xs transition-colors"
+          >
+            Clear All Rows
+          </button>
+        </Modal.Footer>
+      </Modal>
     </div>
   );
 };

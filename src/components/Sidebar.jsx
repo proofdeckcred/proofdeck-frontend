@@ -50,8 +50,8 @@ function Sidebar({ isCollapsed: propIsCollapsed, toggleSidebar: propToggleSideba
       isCollapsed ? "justify-center px-0 w-9 h-9 mx-auto" : "px-3"
     } ${
       isActive
-        ? "bg-indigo-50 text-indigo-700 font-semibold"
-        : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+        ? "bg-indigo-50 text-indigo-700 dark:bg-indigo-950/60 dark:text-indigo-400 font-semibold"
+        : "text-gray-600 dark:text-zinc-400 hover:bg-gray-50 dark:hover:bg-[#242429] hover:text-gray-900 dark:hover:text-zinc-100"
     }`;
 
   const renderNavLink = (to, icon, label, end = false) => {
@@ -87,14 +87,14 @@ function Sidebar({ isCollapsed: propIsCollapsed, toggleSidebar: propToggleSideba
 
   return (
     <aside
-      className={`relative bg-white border-r border-gray-200/80 flex flex-col h-screen sticky top-0 left-0 transition-all duration-300 ease-in-out z-40 select-none ${
+      className={`relative bg-white dark:bg-[#18181b] border-r border-gray-200/80 dark:border-[#28282d] flex flex-col h-screen sticky top-0 left-0 transition-all duration-300 ease-in-out z-40 select-none ${
         isCollapsed ? "w-16" : "w-60"
       }`}
     >
 
       {/* --- LOGO HEADER --- */}
       <div
-        className={`border-b border-gray-100 flex items-center ${
+        className={`border-b border-gray-100 dark:border-[#28282d] flex items-center ${
           isCollapsed ? "p-3 justify-center" : "p-4 justify-between"
         }`}
       >
@@ -111,7 +111,7 @@ function Sidebar({ isCollapsed: propIsCollapsed, toggleSidebar: propToggleSideba
             className="w-8 h-8 object-contain shrink-0"
           />
           {!isCollapsed && (
-            <span className="text-base font-bold text-gray-900 tracking-tight">
+            <span className="text-base font-bold text-gray-900 dark:text-zinc-100 tracking-tight">
               ProofDeck
             </span>
           )}
@@ -128,7 +128,7 @@ function Sidebar({ isCollapsed: propIsCollapsed, toggleSidebar: propToggleSideba
       </div>
 
       {/* --- WORKSPACE SWITCHER --- */}
-      <div className={`px-3 py-2.5 border-b border-gray-100/80 ${isCollapsed ? "flex justify-center" : ""}`}>
+      <div className={`px-3 py-2.5 border-b border-gray-100/80 dark:border-[#28282d] ${isCollapsed ? "flex justify-center" : ""}`}>
         <WorkspaceSwitcher isCollapsed={isCollapsed} />
       </div>
 
@@ -182,7 +182,7 @@ function Sidebar({ isCollapsed: propIsCollapsed, toggleSidebar: propToggleSideba
       </div>
 
       {/* --- FOOTER SECTION --- */}
-      <div className={`border-t border-gray-100 bg-gray-50/40 ${isCollapsed ? "p-1" : "p-3"}`}>
+      <div className={`border-t border-gray-100 dark:border-[#28282d] bg-gray-50/40 dark:bg-[#141417] ${isCollapsed ? "p-1" : "p-3"}`}>
         <div className="space-y-0.5">
           {renderNavLink("/dashboard/settings", <Settings />, "Settings")}
           {renderNavLink("/dashboard/support", <HelpCircle />, "Support")}
@@ -193,19 +193,19 @@ function Sidebar({ isCollapsed: propIsCollapsed, toggleSidebar: propToggleSideba
           (() => {
             const profileSection = (
               <div
-                className={`pt-3 border-t border-gray-200 flex items-center gap-2 ${
+                className={`pt-3 border-t border-gray-200 dark:border-[#28282d] flex items-center gap-2 ${
                   isCollapsed ? "justify-center px-0 mt-2" : "px-1 mt-3"
                 }`}
               >
-                <div className="w-7 h-7 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold text-xs shrink-0">
+                <div className="w-7 h-7 rounded-full bg-indigo-100 dark:bg-indigo-950 flex items-center justify-center text-indigo-700 dark:text-indigo-300 font-bold text-xs shrink-0">
                   {user.name.charAt(0)}
                 </div>
                 {!isCollapsed && (
                   <div className="flex-1 min-w-0">
-                    <p className="text-xs font-semibold text-gray-900 truncate">
+                    <p className="text-xs font-semibold text-gray-900 dark:text-zinc-100 truncate">
                       {user.name}
                     </p>
-                    <p className="text-[10px] text-gray-500 truncate capitalize">
+                    <p className="text-[10px] text-gray-500 dark:text-zinc-400 truncate capitalize">
                       {user.role} Plan
                     </p>
                   </div>

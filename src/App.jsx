@@ -4,6 +4,7 @@ import Lenis from "lenis";
 import "lenis/dist/lenis.css";
 
 // Context providers
+import { ThemeProvider } from "./context/ThemeContext";
 import { UserProvider } from "./context/UserContext";
 import { AdminAuthProvider } from "./context/AdminAuthContext";
 import { WhiteLabelProvider, useWhiteLabel } from "./context/WhiteLabelContext";
@@ -136,10 +137,11 @@ function ScrollToTop() {
 
 function App() {
   return (
-    <WhiteLabelProvider>
-      <UserProvider>
-        <AdminAuthProvider>
-          <ScrollToTop />
+    <ThemeProvider>
+      <WhiteLabelProvider>
+        <UserProvider>
+          <AdminAuthProvider>
+            <ScrollToTop />
           <Suspense fallback={<PageLoader />}>
             <Routes>
               {/* Core Public Marketing routes */}
@@ -232,6 +234,7 @@ function App() {
       </AdminAuthProvider>
     </UserProvider>
     </WhiteLabelProvider>
+    </ThemeProvider>
   );
 }
 

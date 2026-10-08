@@ -49,7 +49,7 @@ function DashboardLayout() {
   }, []);
 
   return (
-    <div className="flex h-screen bg-gray-50 overflow-hidden w-full max-w-full">
+    <div className="flex h-screen bg-gray-50 dark:bg-[#121214] overflow-hidden w-full max-w-full">
       <MobileWarning />
       {/*  
         DESKTOP SIDEBAR 
@@ -70,7 +70,7 @@ function DashboardLayout() {
             className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs transition-opacity"
             onClick={() => setMobileSidebarOpen(false)}
           />
-          <div className="relative flex-1 flex flex-col max-w-[280px] w-full bg-white z-50 shadow-2xl animate-in slide-in-from-left duration-300">
+          <div className="relative flex-1 flex flex-col max-w-[280px] w-full bg-white dark:bg-[#18181b] z-50 shadow-2xl animate-in slide-in-from-left duration-300">
             <Sidebar onClose={() => setMobileSidebarOpen(false)} />
           </div>
         </div>
@@ -82,7 +82,7 @@ function DashboardLayout() {
         min-w-0: Prevents flexbox overflow issues.
         flex-col: Stacks content vertically.
       */}
-      <div className="flex-1 flex flex-col min-w-0 overflow-hidden bg-gray-50">
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden bg-gray-50 dark:bg-[#121214]">
         {!isEditorPage && (
           <DashboardTopbar 
             isCollapsed={isCollapsed} 

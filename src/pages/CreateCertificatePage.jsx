@@ -1466,7 +1466,7 @@ const CreateCertificatePage = () => {
           onKeyDown={handlePanelKeyDown}
           aria-label="In-Page Spreadsheet Editor Panel"
           role="region"
-          className={`fixed z-40 bg-white rounded-2xl shadow-2xl border border-slate-200/90 flex flex-col overflow-hidden transition-all duration-300 ease-in-out pointer-events-auto ${
+          className={`fixed z-40 bg-white dark:bg-[#18181b] rounded-2xl shadow-2xl border border-slate-200/90 dark:border-[#2b2b31] flex flex-col overflow-hidden transition-all duration-300 ease-in-out pointer-events-auto ${
             /* Mobile styles (screens < 640px): bottom sheet */
             isSpreadsheetExpanded
               ? "inset-x-2 bottom-2 h-[92vh] max-h-[92vh] sm:inset-x-auto sm:bottom-20 sm:right-6 md:right-20 sm:w-[calc(100vw-48px)] md:w-[94vw] sm:max-w-[1260px] sm:h-[calc(100vh-100px)] sm:max-h-[840px]"
@@ -1474,7 +1474,7 @@ const CreateCertificatePage = () => {
           }`}
         >
           {/* Panel Header */}
-          <div className="px-4 py-3 border-b border-slate-200 bg-white flex items-center justify-between gap-2 shrink-0 select-none">
+          <div className="px-4 py-3 border-b border-slate-200 dark:border-[#28282d] bg-white dark:bg-[#18181b] flex items-center justify-between gap-2 shrink-0 select-none">
             <div className="flex items-center gap-2.5 min-w-0">
               <div className="w-7 h-7 rounded-lg bg-indigo-50 border border-indigo-200/80 flex items-center justify-center text-indigo-650 shrink-0">
                 <Table size={15} />
@@ -1563,7 +1563,7 @@ const CreateCertificatePage = () => {
           </div>
 
           {/* Panel Body: Scrollable Spreadsheet Grid */}
-          <div className="flex-1 p-3 sm:p-4 overflow-auto bg-slate-50/50">
+          <div className="flex-1 p-3 sm:p-4 overflow-auto bg-slate-50/50 dark:bg-[#121214]">
             <SpreadsheetGrid
               rows={spreadsheetRows}
               onChangeRows={setSpreadsheetRows}
@@ -1577,7 +1577,7 @@ const CreateCertificatePage = () => {
           </div>
 
           {/* Panel Footer: Summary & Done */}
-          <div className="px-4 py-2.5 border-t border-slate-200 bg-white flex items-center justify-between gap-2 shrink-0">
+          <div className="px-4 py-2.5 border-t border-slate-200 dark:border-[#28282d] bg-white dark:bg-[#18181b] flex items-center justify-between gap-2 shrink-0">
             <div className="text-[11px] text-slate-500 truncate flex items-center gap-1.5">
               {invalidRowsCount > 0 ? (
                 <span className="text-amber-600 font-medium flex items-center gap-1">

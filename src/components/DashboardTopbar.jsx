@@ -1,11 +1,17 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { PanelLeft, Menu } from 'lucide-react';
+import { PanelLeft, Menu, Sun, Moon } from 'lucide-react';
 import { OverlayTrigger, Tooltip } from 'react-bootstrap';
 import NotificationBell from './NotificationBell';
 import ProfileDropdown from './ProfileDropdown';
+import { useTheme } from '../context/ThemeContext';
 
 export default function DashboardTopbar({ isCollapsed, toggleSidebar, toggleMobileSidebar }) {
+  const { setTheme, resolvedTheme } = useTheme();
+
+  const toggleTheme = () => {
+    setTheme(resolvedTheme === 'dark' ? 'light' : 'dark');
+  };
   return (
     <header className="flex bg-white border-b border-slate-200/80 px-4 sm:px-6 md:px-8 py-2.5 items-center justify-between sticky top-0 z-30 shrink-0">
       {/* Mobile Left: Drawer Toggle + Branding */}
@@ -50,8 +56,30 @@ export default function DashboardTopbar({ isCollapsed, toggleSidebar, toggleMobi
       {/* Desktop spacer */}
       <div className="hidden md:flex flex-1"></div>
 
-      {/* Action items: Notifications + User Profile */}
-      <div className="flex items-center gap-3">
+      {/* Action items: Theme Toggle + Notifications + User Profile */}
+      <div className="flex items-center gap-2 sm:gap-3">
+        <OverlayTrigger
+          placement="bottom"
+          delay={{ show: 150, hide: 50 }}
+          popperConfig={{ strategy: "fixed" }}
+          overlay={
+            <Tooltip id="theme-toggle-tip">
+              {resolvedTheme === 'dark' ? "Switch to Light mode" : "Switch to Dark mode"}
+            </Tooltip>
+          }
+        >
+          <button
+            onClick={toggleTheme}
+            className="p-1.5 text-slate-500 hover:text-slate-900 hover:bg-slate-100 dark:hover:bg-zinc-800 rounded-lg transition-colors cursor-pointer flex items-center justify-center focus:outline-none"
+            aria-label="Toggle theme"
+          >
+            {resolvedTheme === 'dark' ? (
+              <Sun size={18} className="text-amber-400 hover:text-amber-300 transition-colors" />
+            ) : (
+              <Moon size={18} className="text-slate-600 hover:text-slate-900 transition-colors" />
+            )}
+          </button>
+        </OverlayTrigger>
         <NotificationBell />
         <ProfileDropdown />
       </div>

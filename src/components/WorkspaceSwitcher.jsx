@@ -133,14 +133,14 @@ const WorkspaceSwitcher = ({ isCollapsed }) => {
       ) : (
         <button
           onClick={() => setIsOpen(!isOpen)}
-          className="w-full flex items-center justify-between p-2.5 rounded-xl border border-slate-200/90 bg-slate-50/70 hover:bg-slate-100/80 transition-all text-left cursor-pointer group shadow-2xs"
+          className="w-full flex items-center justify-between p-2.5 rounded-xl border border-slate-200/90 dark:border-[#28282d] bg-slate-50/70 dark:bg-[#202025] hover:bg-slate-100/80 dark:hover:bg-[#27272c] transition-all text-left cursor-pointer group shadow-2xs"
         >
           <div className="flex items-center gap-2.5 min-w-0">
             <div
               className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 shadow-2xs ${
                 workspace === "personal"
                   ? "bg-indigo-650 text-white"
-                  : "bg-slate-900 text-white"
+                  : "bg-slate-900 dark:bg-zinc-800 text-white"
               }`}
             >
               {workspace === "personal" ? (
@@ -151,18 +151,18 @@ const WorkspaceSwitcher = ({ isCollapsed }) => {
             </div>
             <div className="flex flex-col min-w-0">
               <div className="flex items-center gap-1.5">
-                <span className="text-xs font-bold text-slate-800 truncate">
+                <span className="text-xs font-bold text-slate-800 dark:text-zinc-100 truncate">
                   {currentDisplayName}
                 </span>
               </div>
-              <span className="text-[10px] font-semibold text-slate-500">
+              <span className="text-[10px] font-semibold text-slate-500 dark:text-zinc-400">
                 {currentCreditCount} Credits Available
               </span>
             </div>
           </div>
           <ChevronDown
             size={14}
-            className={`text-slate-400 group-hover:text-slate-600 transition-transform duration-200 shrink-0 ${
+            className={`text-slate-400 group-hover:text-slate-600 dark:text-zinc-500 dark:group-hover:text-zinc-300 transition-transform duration-200 shrink-0 ${
               isOpen ? "rotate-180" : ""
             }`}
           />
@@ -172,12 +172,12 @@ const WorkspaceSwitcher = ({ isCollapsed }) => {
       {/* --- POPOVER DROPDOWN MENU --- */}
       {isOpen && (
         <div
-          className={`absolute z-50 mt-1 bg-white rounded-2xl border border-slate-200 shadow-xl overflow-hidden animate-in fade-in duration-150 ${
+          className={`absolute z-50 mt-1 bg-white dark:bg-[#18181b] rounded-2xl border border-slate-200 dark:border-[#2e2e34] shadow-xl overflow-hidden animate-in fade-in duration-150 ${
             isCollapsed ? "left-12 top-0 w-64" : "left-0 right-0 w-full min-w-[240px]"
           }`}
         >
           {/* Header */}
-          <div className="px-3.5 py-2.5 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between">
+          <div className="px-3.5 py-2.5 border-b border-slate-100 dark:border-[#28282d] bg-slate-50/50 dark:bg-[#141417] flex items-center justify-between">
             <span className="text-[10px] font-extrabold uppercase text-slate-400 tracking-wider">
               Workspaces
             </span>

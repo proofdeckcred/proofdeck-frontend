@@ -44,9 +44,14 @@ import {
   Globe,
   ArrowRight,
   Zap,
+  Palette,
+  Sun,
+  Moon,
+  Monitor,
 } from "lucide-react";
 import { Modal, Spinner, Button } from "react-bootstrap";
 import WhitelabelSettingsTab from "../components/settings/WhitelabelSettingsTab";
+import { useTheme } from "../context/ThemeContext";
 
 const Section = ({ title, icon: Icon, children, className = "" }) => (
   <div
@@ -283,6 +288,7 @@ const ReferralSection = () => {
 
 function SettingsPage() {
   const { user, refreshUser, workspace } = useUser();
+  const { theme, setTheme, resolvedTheme } = useTheme();
   const [localUser, setLocalUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("profile");
@@ -363,7 +369,9 @@ function SettingsPage() {
       fetchUser();
     }
 
-    if (location.state?.defaultTab) {
+    if (params.get("tab")) {
+      setActiveTab(params.get("tab"));
+    } else if (location.state?.defaultTab) {
       setActiveTab(location.state.defaultTab);
     }
   }, [navigate, location.search, location.state, refreshUser]);
@@ -634,6 +642,7 @@ function SettingsPage() {
 
   const tabs = [
     { id: "profile", label: "Profile", icon: User },
+    { id: "appearance", label: "Appearance", icon: Palette },
     { id: "referrals", label: "Referrals", icon: Gift },
     ...(isCompanyOwnerOrAdmin ? [{ id: "team", label: "Team", icon: Building }] : []),
     ...(isCompanyOwnerOrAdmin
@@ -844,6 +853,277 @@ function SettingsPage() {
                   <LogOut size={18} /> Logout
                 </span>
               </button>
+            </div>
+          </Section>
+        </div>
+      )}
+
+      {activeTab === "appearance" && (
+        <div className="space-y-6">
+          <Section title="Appearance & Theme" icon={Palette}>
+            <div className="mb-6">
+              <h3 className="text-base font-bold text-slate-800 dark:text-zinc-100 mb-1">
+                Display Theme
+              </h3>
+              <p className="text-sm text-slate-500 dark:text-zinc-400 leading-relaxed mb-0">
+                Choose how ProofDeck looks on your screen. You can sync with your operating system settings or choose a default light or greyish dark mode.
+              </p>
+            </div>
+
+            {/* 3 Theme Choice Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+              {/* Option 1: System settings */}
+              <div
+                onClick={() => {
+                  setTheme("system");
+                  toast.success("Theme set to System Settings");
+                }}
+                className={`relative rounded-xl border p-4 cursor-pointer transition-all duration-200 ${
+                  theme === "system"
+                    ? "border-indigo-600 ring-2 ring-indigo-500/20 bg-indigo-50/20 dark:bg-indigo-950/20 shadow-xs"
+                    : "border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/60 hover:border-slate-300 dark:hover:border-zinc-700"
+                }`}
+              >
+                {/* Visual Graphic Representation */}
+                <div className="h-28 rounded-lg mb-3.5 border border-slate-200 dark:border-zinc-800 overflow-hidden flex flex-col bg-slate-100 dark:bg-zinc-950 select-none shadow-2xs">
+                  <div className="h-4.5 bg-white dark:bg-zinc-900 border-b border-slate-200 dark:border-zinc-800 px-2 flex items-center justify-between">
+                    <div className="w-2 h-2 rounded-full bg-indigo-500" />
+                    <div className="flex gap-1">
+                      <div className="w-5 h-1.5 rounded-full bg-slate-300 dark:bg-zinc-700" />
+                      <div className="w-3 h-1.5 rounded-full bg-slate-300 dark:bg-zinc-700" />
+                    </div>
+                  </div>
+                  <div className="flex-1 grid grid-cols-2">
+                    {/* Light half */}
+                    <div className="bg-slate-50 p-2 flex flex-col gap-1.5 border-r border-slate-200">
+                      <div className="w-10 h-1.5 rounded bg-slate-300" />
+                      <div className="w-full h-8 rounded bg-white border border-slate-200 shadow-2xs p-1">
+                        <div className="w-6 h-1 rounded bg-slate-200 mb-1" />
+                        <div className="w-10 h-1 rounded bg-slate-100" />
+                      </div>
+                    </div>
+                    {/* Greyish dark half */}
+                    <div className="bg-[#121214] p-2 flex flex-col gap-1.5">
+                      <div className="w-10 h-1.5 rounded bg-zinc-600" />
+                      <div className="w-full h-8 rounded bg-[#18181b] border border-zinc-800 shadow-2xs p-1">
+                        <div className="w-6 h-1 rounded bg-zinc-600 mb-1" />
+                        <div className="w-10 h-1 rounded bg-zinc-700" />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex items-center gap-2.5">
+                    <div
+                      className={`p-2 rounded-lg ${
+                        theme === "system"
+                          ? "bg-indigo-100 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300"
+                          : "bg-slate-100 text-slate-600 dark:bg-zinc-800 dark:text-zinc-400"
+                      }`}
+                    >
+                      <Monitor size={16} />
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-bold text-slate-800 dark:text-zinc-100 mb-0">
+                        System settings
+                      </h4>
+                      <span className="text-[10px] font-semibold text-slate-400 dark:text-zinc-500">
+                        Automatic
+                      </span>
+                    </div>
+                  </div>
+                  <div
+                    className={`w-4 h-4 rounded-full border flex items-center justify-center shrink-0 ${
+                      theme === "system"
+                        ? "border-indigo-600 bg-indigo-600 text-white"
+                        : "border-slate-300 dark:border-zinc-700"
+                    }`}
+                  >
+                    {theme === "system" && <Check size={10} strokeWidth={3} />}
+                  </div>
+                </div>
+
+                <p className="text-xs text-slate-500 dark:text-zinc-400 mt-2.5 mb-3 leading-relaxed">
+                  Automatically adapts to your computer or mobile device's system appearance.
+                </p>
+
+                <div className="inline-flex items-center gap-1.5 text-[11px] font-medium text-slate-600 dark:text-zinc-400 bg-slate-100 dark:bg-zinc-800/80 px-2 py-1 rounded-md">
+                  <span>Current device:</span>
+                  <span className="font-bold text-slate-800 dark:text-zinc-200 capitalize">
+                    {resolvedTheme === "dark" ? "Dark mode" : "Light mode"}
+                  </span>
+                </div>
+              </div>
+
+              {/* Option 2: Default Light */}
+              <div
+                onClick={() => {
+                  setTheme("light");
+                  toast.success("Theme set to Default Light");
+                }}
+                className={`relative rounded-xl border p-4 cursor-pointer transition-all duration-200 ${
+                  theme === "light"
+                    ? "border-indigo-600 ring-2 ring-indigo-500/20 bg-indigo-50/20 dark:bg-indigo-950/20 shadow-xs"
+                    : "border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/60 hover:border-slate-300 dark:hover:border-zinc-700"
+                }`}
+              >
+                {/* Visual Graphic Representation */}
+                <div className="h-28 rounded-lg mb-3.5 border border-slate-200 bg-slate-50 overflow-hidden flex flex-col select-none shadow-2xs">
+                  <div className="h-4.5 bg-white border-b border-slate-200 px-2 flex items-center justify-between">
+                    <div className="w-2 h-2 rounded-full bg-indigo-500" />
+                    <div className="flex gap-1">
+                      <div className="w-5 h-1.5 rounded-full bg-slate-300" />
+                      <div className="w-3 h-1.5 rounded-full bg-slate-300" />
+                    </div>
+                  </div>
+                  <div className="flex-1 p-2.5 flex gap-2">
+                    <div className="w-7 h-full bg-white rounded border border-slate-200 p-1 flex flex-col gap-1">
+                      <div className="w-full h-1 bg-indigo-400 rounded" />
+                      <div className="w-full h-1 bg-slate-200 rounded" />
+                      <div className="w-full h-1 bg-slate-200 rounded" />
+                    </div>
+                    <div className="flex-1 flex flex-col gap-1.5">
+                      <div className="w-14 h-1.5 rounded bg-slate-300" />
+                      <div className="flex-1 bg-white rounded border border-slate-200 p-1.5 shadow-2xs">
+                        <div className="w-10 h-1.5 rounded bg-slate-300 mb-1" />
+                        <div className="w-14 h-1 rounded bg-slate-200" />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex items-center gap-2.5">
+                    <div
+                      className={`p-2 rounded-lg ${
+                        theme === "light"
+                          ? "bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300"
+                          : "bg-slate-100 text-slate-600 dark:bg-zinc-800 dark:text-zinc-400"
+                      }`}
+                    >
+                      <Sun size={16} />
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-bold text-slate-800 dark:text-zinc-100 mb-0">
+                        Default Light
+                      </h4>
+                      <span className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400">
+                        Default
+                      </span>
+                    </div>
+                  </div>
+                  <div
+                    className={`w-4 h-4 rounded-full border flex items-center justify-center shrink-0 ${
+                      theme === "light"
+                        ? "border-indigo-600 bg-indigo-600 text-white"
+                        : "border-slate-300 dark:border-zinc-700"
+                    }`}
+                  >
+                    {theme === "light" && <Check size={10} strokeWidth={3} />}
+                  </div>
+                </div>
+
+                <p className="text-xs text-slate-500 dark:text-zinc-400 mt-2.5 mb-3 leading-relaxed">
+                  Clean, high-contrast light workspace with crisp white surfaces and soft grey borders.
+                </p>
+
+                <div className="inline-flex items-center gap-1.5 text-[11px] font-medium text-slate-600 dark:text-zinc-400 bg-slate-100 dark:bg-zinc-800/80 px-2 py-1 rounded-md">
+                  <span>Standard ProofDeck appearance</span>
+                </div>
+              </div>
+
+              {/* Option 3: Greyish Dark */}
+              <div
+                onClick={() => {
+                  setTheme("dark");
+                  toast.success("Theme set to Greyish Dark");
+                }}
+                className={`relative rounded-xl border p-4 cursor-pointer transition-all duration-200 ${
+                  theme === "dark"
+                    ? "border-indigo-600 ring-2 ring-indigo-500/20 bg-indigo-50/20 dark:bg-indigo-950/20 shadow-xs"
+                    : "border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/60 hover:border-slate-300 dark:hover:border-zinc-700"
+                }`}
+              >
+                {/* Visual Graphic Representation */}
+                <div className="h-28 rounded-lg mb-3.5 border border-[#2b2b31] bg-[#121214] overflow-hidden flex flex-col select-none shadow-2xs">
+                  <div className="h-4.5 bg-[#18181b] border-b border-[#28282d] px-2 flex items-center justify-between">
+                    <div className="w-2 h-2 rounded-full bg-indigo-500" />
+                    <div className="flex gap-1">
+                      <div className="w-5 h-1.5 rounded-full bg-zinc-700" />
+                      <div className="w-3 h-1.5 rounded-full bg-zinc-700" />
+                    </div>
+                  </div>
+                  <div className="flex-1 p-2.5 flex gap-2">
+                    <div className="w-7 h-full bg-[#18181b] rounded border border-[#2b2b31] p-1 flex flex-col gap-1">
+                      <div className="w-full h-1 bg-indigo-500 rounded" />
+                      <div className="w-full h-1 bg-zinc-700 rounded" />
+                      <div className="w-full h-1 bg-zinc-700 rounded" />
+                    </div>
+                    <div className="flex-1 flex flex-col gap-1.5">
+                      <div className="w-14 h-1.5 rounded bg-zinc-600" />
+                      <div className="flex-1 bg-[#18181b] rounded border border-[#2b2b31] p-1.5 shadow-2xs">
+                        <div className="w-10 h-1.5 rounded bg-zinc-500 mb-1" />
+                        <div className="w-14 h-1 rounded bg-zinc-700" />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex items-center gap-2.5">
+                    <div
+                      className={`p-2 rounded-lg ${
+                        theme === "dark"
+                          ? "bg-indigo-100 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300"
+                          : "bg-slate-100 text-slate-600 dark:bg-zinc-800 dark:text-zinc-400"
+                      }`}
+                    >
+                      <Moon size={16} />
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-bold text-slate-800 dark:text-zinc-100 mb-0">
+                        Dark
+                      </h4>
+                      <span className="text-[10px] font-semibold text-indigo-600 dark:text-indigo-400">
+                        Greyish Charcoal
+                      </span>
+                    </div>
+                  </div>
+                  <div
+                    className={`w-4 h-4 rounded-full border flex items-center justify-center shrink-0 ${
+                      theme === "dark"
+                        ? "border-indigo-600 bg-indigo-600 text-white"
+                        : "border-slate-300 dark:border-zinc-700"
+                    }`}
+                  >
+                    {theme === "dark" && <Check size={10} strokeWidth={3} />}
+                  </div>
+                </div>
+
+                <p className="text-xs text-slate-500 dark:text-zinc-400 mt-2.5 mb-3 leading-relaxed">
+                  Refined neutral graphite grey. Designed for low eye strain without blue tint or pitch black glare.
+                </p>
+
+                <div className="inline-flex items-center gap-1.5 text-[11px] font-medium text-slate-600 dark:text-zinc-400 bg-slate-100 dark:bg-zinc-800/80 px-2 py-1 rounded-md">
+                  <span>Greyish graphite palette</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Credential Rendering Safety Note */}
+            <div className="bg-slate-50 dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-xl p-4 flex items-start gap-3">
+              <div className="p-2 rounded-lg bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 shrink-0">
+                <Shield size={18} />
+              </div>
+              <div className="text-xs">
+                <h5 className="font-bold text-slate-800 dark:text-zinc-100 mb-1">
+                  Verifiable Credential Rendering Guarantee
+                </h5>
+                <p className="text-slate-500 dark:text-zinc-400 mb-0 leading-relaxed">
+                  Your certificate templates, live canvas editors, badge stamps, and recipient download PDFs always render in their authentic print colors and original backgrounds, ensuring true credential fidelity regardless of your dark mode selection.
+                </p>
+              </div>
             </div>
           </Section>
         </div>

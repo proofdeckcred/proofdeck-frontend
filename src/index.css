@@ -1,6 +1,7 @@
 /* frontend/src/index.css */
 @import url("https://fonts.googleapis.com/css2?family=Alex+Brush&family=Cinzel:wght@400;600;700&family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=Great+Vibes&family=Inter:wght@400;500;600;700&family=Lexend:wght@300;400;500;600;700&family=Montserrat:wght@400;600;700&family=Oswald:wght@400;600;700&family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400;1,600&family=Poppins:wght@600;700&family=Prompt:wght@400;500;600;700&family=Sacramento&display=swap");
 @import "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *));
 
 @font-face {
   font-family: 'Product Sans';
@@ -323,3 +324,170 @@ button.btn-loading::after {
     transform: rotate(360deg);
   }
 }
+
+/* ========================================================
+   PROOFDECK REFINED GREYISH DARK THEME ENGINE
+   Neutral graphite / zinc charcoal — Zero blue hue, Zero #000000 pitch black.
+   ======================================================== */
+
+html.dark,
+.dark {
+  color-scheme: dark;
+
+  /* Shadcn variables in dark */
+  --background: 240 5.9% 7.8%;
+  --foreground: 0 0% 98%;
+  --card: 240 5.3% 10.2%;
+  --card-foreground: 0 0% 98%;
+  --popover: 240 5.3% 10.2%;
+  --popover-foreground: 0 0% 98%;
+  --border: 240 3.7% 17.5%;
+  --input: 240 3.7% 17.5%;
+  --ring: 240 4.9% 83.9%;
+
+  /* ProofDeck Tokens in Greyish Dark */
+  --pd-ink: #f4f4f5;
+  --pd-indigo: #6366f1;
+  --pd-indigo-dark: #4f46e5;
+  --pd-amber: #f59e0b;
+  --pd-paper: #121214;
+  --pd-paper-dot: #25252a;
+  --pd-card: #18181b;
+  --pd-line: #2b2b31;
+  --pd-mute: #a1a1aa;
+  --pd-success: #10b981;
+
+  --background-white: #121214;
+  --text-slate: #f4f4f5;
+  --text-slate-light: #a1a1aa;
+  --sidebar-bg: #18181b;
+  --sidebar-text: #a1a1aa;
+  --sidebar-text-active: #ffffff;
+
+  --tone-ink-bg: #18181b;
+  --tone-ink-fg: #f4f4f5;
+  --tone-ink-deco: #2c2c33;
+  --tone-ink-tint: #202025;
+}
+
+html.dark body {
+  background-color: #121214 !important;
+  color: #f4f4f5 !important;
+}
+
+/* Modals & Popovers in Dark Mode */
+.dark .modal-content {
+  background-color: #18181b !important;
+  border-color: #2b2b31 !important;
+  color: #f4f4f5 !important;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7) !important;
+}
+
+.dark .modal-header,
+.dark .modal-footer {
+  background-color: #141417 !important;
+  border-color: #26262b !important;
+}
+
+/* Base surface overrides in dark mode (strictly preserving certificate templates and Konva stages) */
+.dark .bg-white:not(.certificate-preview-container *):not(.konva-stage *):not(.canvas-container *):not([data-theme-ignore] *) {
+  background-color: #18181b !important;
+}
+
+.dark .bg-gray-50:not(.certificate-preview-container *):not(.konva-stage *):not(.canvas-container *):not([data-theme-ignore] *),
+.dark .bg-slate-50:not(.certificate-preview-container *):not(.konva-stage *):not(.canvas-container *):not([data-theme-ignore] *) {
+  background-color: #121214 !important;
+}
+
+.dark .bg-slate-100:not(.certificate-preview-container *):not(.konva-stage *):not(.canvas-container *):not([data-theme-ignore] *),
+.dark .bg-gray-100:not(.certificate-preview-container *):not(.konva-stage *):not(.canvas-container *):not([data-theme-ignore] *) {
+  background-color: #202024 !important;
+}
+
+.dark .bg-slate-200:not(.certificate-preview-container *):not(.konva-stage *):not(.canvas-container *):not([data-theme-ignore] *),
+.dark .bg-gray-200:not(.certificate-preview-container *):not(.konva-stage *):not(.canvas-container *):not([data-theme-ignore] *) {
+  background-color: #2a2a30 !important;
+}
+
+.dark .border-slate-200:not(.certificate-preview-container *):not(.konva-stage *):not(.canvas-container *):not([data-theme-ignore] *),
+.dark .border-slate-200\/80:not(.certificate-preview-container *):not(.konva-stage *):not(.canvas-container *):not([data-theme-ignore] *),
+.dark .border-slate-200\/90:not(.certificate-preview-container *):not(.konva-stage *):not(.canvas-container *):not([data-theme-ignore] *),
+.dark .border-slate-200\/40:not(.certificate-preview-container *):not(.konva-stage *):not(.canvas-container *):not([data-theme-ignore] *),
+.dark .border-gray-200:not(.certificate-preview-container *):not(.konva-stage *):not(.canvas-container *):not([data-theme-ignore] *),
+.dark .border-gray-200\/80:not(.certificate-preview-container *):not(.konva-stage *):not(.canvas-container *):not([data-theme-ignore] *),
+.dark .border-slate-100:not(.certificate-preview-container *):not(.konva-stage *):not(.canvas-container *):not([data-theme-ignore] *),
+.dark .border-gray-100:not(.certificate-preview-container *):not(.konva-stage *):not(.canvas-container *):not([data-theme-ignore] *) {
+  border-color: #2b2b31 !important;
+}
+
+.dark .text-slate-900:not(.certificate-preview-container *):not(.konva-stage *):not(.canvas-container *):not([data-theme-ignore] *),
+.dark .text-slate-800:not(.certificate-preview-container *):not(.konva-stage *):not(.canvas-container *):not([data-theme-ignore] *),
+.dark .text-gray-900:not(.certificate-preview-container *):not(.konva-stage *):not(.canvas-container *):not([data-theme-ignore] *),
+.dark .text-gray-800:not(.certificate-preview-container *):not(.konva-stage *):not(.canvas-container *):not([data-theme-ignore] *) {
+  color: #f4f4f5 !important;
+}
+
+.dark .text-slate-700:not(.certificate-preview-container *):not(.konva-stage *):not(.canvas-container *):not([data-theme-ignore] *),
+.dark .text-slate-600:not(.certificate-preview-container *):not(.konva-stage *):not(.canvas-container *):not([data-theme-ignore] *),
+.dark .text-gray-700:not(.certificate-preview-container *):not(.konva-stage *):not(.canvas-container *):not([data-theme-ignore] *),
+.dark .text-gray-600:not(.certificate-preview-container *):not(.konva-stage *):not(.canvas-container *):not([data-theme-ignore] *) {
+  color: #d4d4d8 !important;
+}
+
+.dark .text-slate-500:not(.certificate-preview-container *):not(.konva-stage *):not(.canvas-container *):not([data-theme-ignore] *),
+.dark .text-slate-400:not(.certificate-preview-container *):not(.konva-stage *):not(.canvas-container *):not([data-theme-ignore] *),
+.dark .text-gray-500:not(.certificate-preview-container *):not(.konva-stage *):not(.canvas-container *):not([data-theme-ignore] *),
+.dark .text-gray-400:not(.certificate-preview-container *):not(.konva-stage *):not(.canvas-container *):not([data-theme-ignore] *) {
+  color: #a1a1aa !important;
+}
+
+/* Subtle badge / alert tint adjustments in dark mode */
+.dark .bg-indigo-50:not(.certificate-preview-container *) {
+  background-color: rgba(99, 102, 241, 0.15) !important;
+  color: #a5b4fc !important;
+}
+.dark .bg-red-50:not(.certificate-preview-container *) {
+  background-color: rgba(239, 68, 68, 0.15) !important;
+  color: #fca5a5 !important;
+}
+.dark .bg-amber-50:not(.certificate-preview-container *) {
+  background-color: rgba(245, 158, 11, 0.15) !important;
+  color: #fcd34d !important;
+}
+.dark .bg-emerald-50:not(.certificate-preview-container *) {
+  background-color: rgba(16, 185, 129, 0.15) !important;
+  color: #6ee7b7 !important;
+}
+
+/* Form controls in dark mode */
+.dark input:not([type="checkbox"]):not([type="radio"]):not(.certificate-preview-container *):not([data-theme-ignore] *),
+.dark select:not(.certificate-preview-container *):not([data-theme-ignore] *),
+.dark textarea:not(.certificate-preview-container *):not([data-theme-ignore] *) {
+  background-color: #161619 !important;
+  border-color: #2e2e34 !important;
+  color: #f4f4f5 !important;
+}
+.dark input::placeholder,
+.dark textarea::placeholder {
+  color: #71717a !important;
+}
+
+/* Dark scrollbars */
+.dark ::-webkit-scrollbar-thumb,
+.dark html::-webkit-scrollbar-thumb,
+.dark body::-webkit-scrollbar-thumb,
+.dark div::-webkit-scrollbar-thumb,
+.dark textarea::-webkit-scrollbar-thumb {
+  background: #3f3f46 !important;
+}
+.dark ::-webkit-scrollbar-thumb:hover,
+.dark html::-webkit-scrollbar-thumb:hover,
+.dark body::-webkit-scrollbar-thumb:hover,
+.dark div::-webkit-scrollbar-thumb:hover,
+.dark textarea::-webkit-scrollbar-thumb:hover {
+  background: #52525b !important;
+}
+.dark, .dark * {
+  scrollbar-color: #3f3f46 transparent !important;
+}
+

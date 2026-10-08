@@ -1,12 +1,14 @@
 import React from 'react';
 import * as Popover from '@radix-ui/react-popover';
-import { User, Settings, Users, HelpCircle, LogOut } from 'lucide-react';
+import { User, Settings, Users, HelpCircle, LogOut, Palette } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useUser } from '../context/UserContext';
+import { useTheme } from '../context/ThemeContext';
 
 export default function ProfileDropdown() {
   const navigate = useNavigate();
   const { user } = useUser();
+  const { theme } = useTheme();
   const [isOpen, setIsOpen] = React.useState(false);
 
   const handleLogout = () => {
@@ -65,6 +67,19 @@ export default function ProfileDropdown() {
             >
               <Settings className="w-4 h-4 text-slate-500 shrink-0" />
               <span>All Settings</span>
+            </button>
+
+            <button 
+              onClick={() => { setIsOpen(false); navigate('/dashboard/settings?tab=appearance'); }}
+              className="flex items-center justify-between px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 rounded-lg cursor-pointer transition-colors"
+            >
+              <div className="flex items-center gap-2.5">
+                <Palette className="w-4 h-4 text-slate-500 shrink-0" />
+                <span>Appearance</span>
+              </div>
+              <span className="text-[10px] capitalize font-medium text-slate-500 dark:text-zinc-400 px-1.5 py-0.5 rounded bg-slate-100 dark:bg-zinc-800">
+                {theme}
+              </span>
             </button>
 
             <button 
