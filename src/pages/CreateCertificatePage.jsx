@@ -45,6 +45,7 @@ import {
   AlertCircle,
   AlertTriangle,
   Zap,
+  Lock,
 } from "lucide-react";
 import { Spinner } from "react-bootstrap";
 import toast, { Toaster } from "react-hot-toast";
@@ -195,9 +196,20 @@ const CreateCertificatePage = () => {
   
   const { user, workspace } = useUser();
   const effectiveRole = user?.effective_role || user?.role || "free";
-  const isBulkAllowed = ["growth", "pro", "enterprise"].includes(effectiveRole);
+  const isBulkAllowed = true; // Bulk issuance is available on all plans (including Free)
+  const isSpreadsheetAllowed = ["growth", "pro", "enterprise"].includes(effectiveRole);
   const isProOrEnterprise = ["pro", "enterprise"].includes(effectiveRole);
   const isPro = isProOrEnterprise;
+
+  const [isSpreadsheetUpgradeModalOpen, setIsSpreadsheetUpgradeModalOpen] = useState(false);
+
+  const handleOpenSpreadsheet = () => {
+    if (!isSpreadsheetAllowed) {
+      setIsSpreadsheetUpgradeModalOpen(true);
+      return;
+    }
+    setIsSpreadsheetOpen(true);
+  };
 
   const activeWsObj =
     workspace !== "personal" && user?.workspaces
@@ -853,31 +865,8 @@ const CreateCertificatePage = () => {
         </div>
       </div>
 
-      {/* --- 2. Main Content (Locked Paywall or Bento Grid) --- */}
-      {creationMode === "bulk" && !isBulkAllowed ? (
-        <div className="space-y-4">
-          <div className="max-w-xs mx-auto bg-slate-100/80 p-1 rounded-xl flex gap-1 border border-slate-200/40">
-            <button
-              type="button"
-              onClick={() => setCreationMode("single")}
-              className="flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-lg transition-all text-slate-600 hover:text-slate-900"
-            >
-              <User size={13} className="shrink-0" />
-              <span>Single</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setCreationMode("bulk")}
-              className="flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-lg transition-all bg-white text-slate-900 shadow-sm border border-slate-200/30"
-            >
-              <Users size={13} className="shrink-0" />
-              <span>Bulk</span>
-            </button>
-          </div>
-          <BulkLockedState />
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+      {/* --- 2. Main Content (Bento Grid) --- */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         
         {/* LEFT COLUMN: FORM DETAILS (col-span-4) */}
         <div className="lg:col-span-4 space-y-4">
@@ -1000,7 +989,7 @@ const CreateCertificatePage = () => {
                 {templateCustomPlaceholders.length > 0 && (
                   <div className="pt-3.5 border-t border-slate-100">
                     <div className="flex items-center gap-1.5 mb-2.5">
-                      <Sparkles size={13} className="text-indigo-600" />
+                      <SlidersHorizontal size={13} className="text-indigo-600" />
                       <label className="block text-xs font-bold text-slate-800">
                         Template Custom Fields
                       </label>
@@ -1187,11 +1176,11 @@ const CreateCertificatePage = () => {
                 {/* In-Page Spreadsheet Shortcut Button in Form */}
                 <button
                   type="button"
-                  onClick={() => setIsSpreadsheetOpen(true)}
+                  onClick={handleOpenSpreadsheet}
                   className="w-full py-2.5 px-3 rounded-xl border border-indigo-200/80 bg-gradient-to-r from-indigo-50/70 to-slate-50 hover:from-indigo-100/80 hover:to-slate-100 text-slate-800 transition-all flex items-center justify-between shadow-2xs group"
                 >
                   <div className="flex items-center gap-2">
-                    <Table size={16} className="text-indigo-650 group-hover:scale-110 transition-transform" />
+                    <Table size={16} className="text-indigo-600 group-hover:scale-110 transition-transform" />
                     <div className="text-left">
                       <span className="block text-xs font-bold text-slate-800">In-Page Spreadsheet</span>
                       <span className="block text-[10px] text-slate-400">
@@ -1199,9 +1188,16 @@ const CreateCertificatePage = () => {
                       </span>
                     </div>
                   </div>
-                  <span className="text-[10px] font-mono font-semibold bg-white text-indigo-700 px-2.5 py-1 rounded-full border border-indigo-200 shadow-2xs">
-                    {nonEmptyRowsCount === 0 ? "0 rows" : `${readyRowsCount} ready`} &rarr;
-                  </span>
+                  {isSpreadsheetAllowed ? (
+                    <span className="text-[10px] font-mono font-semibold bg-white text-indigo-700 px-2.5 py-1 rounded-full border border-indigo-200 shadow-2xs">
+                      {nonEmptyRowsCount === 0 ? "0 rows" : `${readyRowsCount} ready`} &rarr;
+                    </span>
+                  ) : (
+                    <span className="text-[10px] font-semibold bg-amber-50 text-amber-800 px-2.5 py-1 rounded-full border border-amber-200 shadow-2xs flex items-center gap-1">
+                      <Lock size={10} className="text-amber-600" />
+                      <span>Growth</span>
+                    </span>
+                  )}
                 </button>
 
                 <div className="flex justify-between items-center text-[10px]">
@@ -1358,18 +1354,22 @@ const CreateCertificatePage = () => {
                 </div>
                 <button
                   type="button"
-                  onClick={() => setIsSpreadsheetOpen(true)}
+                  onClick={handleOpenSpreadsheet}
                   className="px-3 py-1.5 rounded-lg bg-slate-900 hover:bg-black text-white text-xs font-bold transition-all shadow-xs flex items-center gap-1.5"
                 >
                   <Table size={13} />
                   <span>Open Spreadsheet Editor</span>
+                  {!isSpreadsheetAllowed && (
+                    <span className="text-[9px] font-semibold bg-amber-500/20 text-amber-300 px-1.5 py-0.5 rounded border border-amber-400/30 flex items-center gap-0.5 ml-1">
+                      <Lock size={9} /> Growth
+                    </span>
+                  )}
                 </button>
               </div>
             )}
           </div>
 
       </div>
-      )}
 
       {/* Fullscreen Modal */}
       {showFullscreen && (
@@ -1413,20 +1413,26 @@ const CreateCertificatePage = () => {
       />
 
       {/* Floating Action Button for In-Page Spreadsheet Editor (Offset from SupportWidget at bottom-6 right-6) */}
-      {creationMode === "bulk" && isBulkAllowed && (
+      {creationMode === "bulk" && (
         <div className="fixed bottom-6 right-20 sm:right-24 z-40">
           <button
             ref={launcherButtonRef}
             type="button"
-            onClick={() => setIsSpreadsheetOpen((prev) => !prev)}
+            onClick={handleOpenSpreadsheet}
             className="flex items-center gap-2.5 px-3.5 sm:px-4 py-2.5 sm:py-3 bg-slate-900 hover:bg-black text-white rounded-full shadow-xl hover:scale-105 active:scale-95 transition-all text-xs font-bold border border-slate-700/80 group cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
-            title={isSpreadsheetOpen ? "Collapse Spreadsheet Editor" : "Open Spreadsheet Editor"}
+            title={
+              !isSpreadsheetAllowed
+                ? "In-Page Spreadsheet (Growth Plan)"
+                : isSpreadsheetOpen
+                ? "Collapse Spreadsheet Editor"
+                : "Open Spreadsheet Editor"
+            }
             aria-label="Toggle Spreadsheet Editor"
             aria-expanded={isSpreadsheetOpen}
           >
             <div className="relative flex items-center justify-center">
               <FileSpreadsheet size={16} className="text-indigo-400 group-hover:text-indigo-300 transition-colors" />
-              {nonEmptyRowsCount > 0 && (
+              {isSpreadsheetAllowed && nonEmptyRowsCount > 0 && (
                 <span
                   className={`absolute -top-1 -right-1 w-2 h-2 rounded-full ${
                     invalidRowsCount > 0 ? "bg-amber-500 animate-pulse" : "bg-emerald-500 animate-pulse"
@@ -1435,19 +1441,25 @@ const CreateCertificatePage = () => {
               )}
             </div>
             <span className="hidden xs:inline">Spreadsheet</span>
-            <span className="bg-slate-800 text-slate-300 px-2 py-0.5 rounded-full text-[10px] font-mono border border-slate-700">
-              {nonEmptyRowsCount === 0
-                ? "0 rows"
-                : invalidRowsCount > 0
-                ? `${readyRowsCount}/${nonEmptyRowsCount} ready`
-                : `${readyRowsCount} ready`}
-            </span>
+            {isSpreadsheetAllowed ? (
+              <span className="bg-slate-800 text-slate-300 px-2 py-0.5 rounded-full text-[10px] font-mono border border-slate-700">
+                {nonEmptyRowsCount === 0
+                  ? "0 rows"
+                  : invalidRowsCount > 0
+                  ? `${readyRowsCount}/${nonEmptyRowsCount} ready`
+                  : `${readyRowsCount} ready`}
+              </span>
+            ) : (
+              <span className="bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded-full text-[10px] font-medium border border-amber-400/30 flex items-center gap-1">
+                <Lock size={10} /> Growth
+              </span>
+            )}
           </button>
         </div>
       )}
 
       {/* Docked In-Page Spreadsheet Widget Panel (Floating, non-modal, interactive background) */}
-      {isSpreadsheetOpen && (
+      {isSpreadsheetOpen && isSpreadsheetAllowed && (
         <div
           ref={panelRef}
           tabIndex={-1}
@@ -1646,6 +1658,12 @@ const CreateCertificatePage = () => {
           </div>
         </div>
       )}
+
+      {/* Spreadsheet Editor Growth Upgrade Modal */}
+      <BulkLockedState
+        isOpen={isSpreadsheetUpgradeModalOpen}
+        onClose={() => setIsSpreadsheetUpgradeModalOpen(false)}
+      />
     </div>
   );
 };
