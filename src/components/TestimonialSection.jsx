@@ -18,16 +18,22 @@ export function TestimonialSection() {
       title: "Founder @ Zitopy Tech",
       image: "/founder-zitopy-tech.jpeg",
     },
+    {
+      quote: "ProofDeck has made things so much easier and faster for us at THRIVE Initiative! We recently hosted a webinar, and managing certificates for participants would have been much more stressful and time consuming without a tool like this. ProofDeck simplifies the process, saves valuable time, and makes issuing certificates more seamless and professional. As an organisation committed to empowering young people and creating meaningful impact, we appreciate tools that make our work easier and allow us to focus more on what truly matters. ProofDeck has definitely made a difference for us!",
+      name: "Eseoghene Awhatorhe",
+      title: "Founder, THRIVE INITIATIVE",
+      image: "/images/eseoghene-awhatorhe.jpg",
+    },
   ];
 
   const [currentIndex, setCurrentIndex] = useState(0);
   const [direction, setDirection] = useState(1); // 1 = next, -1 = prev
 
-  // Autoplay carousel every 6 seconds
+  // Autoplay carousel every 8 seconds
   useEffect(() => {
     const timer = setInterval(() => {
       handleNext();
-    }, 6000);
+    }, 8000);
     return () => clearInterval(timer);
   }, [currentIndex]);
 
@@ -107,7 +113,13 @@ export function TestimonialSection() {
                 transition={{ duration: 0.35, ease: "easeInOut" }}
                 className="relative z-10 space-y-8"
               >
-                <p className="text-xl sm:text-2xl md:text-3xl text-gray-800 font-medium leading-relaxed italic">
+                <p
+                  className={`text-gray-800 font-medium leading-relaxed italic ${
+                    currentTestimonial.quote.length > 200
+                      ? "text-base sm:text-lg md:text-xl"
+                      : "text-xl sm:text-2xl md:text-3xl"
+                  }`}
+                >
                   "{currentTestimonial.quote}"
                 </p>
 
@@ -138,6 +150,26 @@ export function TestimonialSection() {
           >
             <CaretRight size={20} weight="bold" />
           </button>
+
+          {/* Carousel Dot Indicators */}
+          <div className="flex justify-center items-center gap-2 mt-8">
+            {testimonials.map((_, idx) => (
+              <button
+                key={idx}
+                type="button"
+                onClick={() => {
+                  setDirection(idx > currentIndex ? 1 : -1);
+                  setCurrentIndex(idx);
+                }}
+                className={`h-2.5 rounded-full transition-all cursor-pointer ${
+                  currentIndex === idx
+                    ? "w-8 bg-indigo-600"
+                    : "w-2.5 bg-gray-200 hover:bg-gray-300"
+                }`}
+                aria-label={`Go to testimonial ${idx + 1}`}
+              />
+            ))}
+          </div>
         </div>
       </div>
     </section>
