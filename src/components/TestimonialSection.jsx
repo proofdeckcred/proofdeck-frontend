@@ -19,7 +19,7 @@ export function TestimonialSection() {
       image: "/founder-zitopy-tech.jpeg",
     },
     {
-      quote: "ProofDeck has made things so much easier and faster for us at THRIVE Initiative! We recently hosted a webinar, and managing certificates for participants would have been much more stressful and time consuming without a tool like this. ProofDeck simplifies the process, saves valuable time, and makes issuing certificates more seamless and professional. As an organisation committed to empowering young people and creating meaningful impact, we appreciate tools that make our work easier and allow us to focus more on what truly matters. ProofDeck has definitely made a difference for us!",
+      quote: "ProofDeck has made things so much easier and faster for us at THRIVE Initiative! It simplifies the process, saves valuable time, and makes issuing certificates seamless and professional.",
       name: "Eseoghene Awhatorhe",
       title: "Founder, THRIVE INITIATIVE",
       image: "/images/eseoghene-awhatorhe.jpg",
@@ -29,11 +29,11 @@ export function TestimonialSection() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [direction, setDirection] = useState(1); // 1 = next, -1 = prev
 
-  // Autoplay carousel every 8 seconds
+  // Autoplay carousel every 6 seconds
   useEffect(() => {
     const timer = setInterval(() => {
       handleNext();
-    }, 8000);
+    }, 6000);
     return () => clearInterval(timer);
   }, [currentIndex]);
 
