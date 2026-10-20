@@ -2,64 +2,166 @@ import React from 'react';
 import { SERVER_BASE_URL } from '../../../config';
 
 const DiplomaClassic = ({ data }) => {
-    const { backgroundStyle, logo_url, textStyle, recipient_name, certificateBody, course_title } = data;
-    
+    const {
+        backgroundStyle,
+        logo_url,
+        textStyle,
+        certificateTitle = 'Diploma',
+        recipient_name = 'Recipient Name',
+        certificateBody = 'Has completed the prescribed course of study in',
+        course_title = 'Course Title'
+    } = data;
+
+    const resolvedLogo = logo_url
+        ? (logo_url.startsWith('blob:') || logo_url.startsWith('data:') || logo_url.startsWith('http')
+            ? logo_url
+            : `${SERVER_BASE_URL}${logo_url}`)
+        : null;
+
+    const customFields = (data.customFieldsArray || []).filter(f => f.key !== 'amount');
+
     return (
-         <div className="h-full w-full bg-[#fdfbf7] relative p-12 flex flex-col items-center justify-between text-center shadow-lg" 
-              style={backgroundStyle}>
-            <div className="absolute inset-4 border-[3px] border-black pointer-events-none"></div>
-            <div className="absolute inset-6 border border-black pointer-events-none"></div>
-            
-            <div className="mt-4">
-                 {logo_url && <img src={logo_url.startsWith("blob:") ? logo_url : `${SERVER_BASE_URL}${logo_url}`} className="h-20 mx-auto mb-4" alt="Logo"/>}
-                 <h1 className="text-4xl font-black uppercase text-gray-900 tracking-wider font-serif">Diploma</h1>
-                 <p className="text-sm text-gray-500 uppercase tracking-[0.5em] mt-2">Of Graduation</p>
+        <div
+            style={{
+                width: '1122px',
+                height: '794px',
+                backgroundColor: '#fdfbf7',
+                position: 'relative',
+                padding: '56px 72px',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                textAlign: 'center',
+                boxSizing: 'border-box',
+                fontFamily: data.font_family || 'Georgia, serif',
+                overflow: 'hidden',
+                ...backgroundStyle
+            }}
+        >
+            <div style={{ position: 'absolute', top: '16px', right: '16px', bottom: '16px', left: '16px', border: '3px solid #000000', pointerEvents: 'none' }}></div>
+            <div style={{ position: 'absolute', top: '24px', right: '24px', bottom: '24px', left: '24px', border: '1px solid #000000', pointerEvents: 'none' }}></div>
+
+            <div style={{ marginTop: '8px' }}>
+                {resolvedLogo && (
+                    <img src={resolvedLogo} style={{ height: '72px', objectFit: 'contain', margin: '0 auto 14px auto', display: 'block' }} alt="Logo" />
+                )}
+                <h1 style={{ fontSize: '44px', fontWeight: 900, textTransform: 'uppercase', color: '#111827', letterSpacing: '0.08em', fontFamily: 'Georgia, serif', margin: 0 }}>
+                    {certificateTitle}
+                </h1>
+                <p style={{ fontSize: '13px', color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.5em', marginTop: '8px', marginBottom: 0 }}>
+                    Of Graduation
+                </p>
             </div>
 
-            <div className="my-4 w-full">
-                 <p className="italic font-serif text-gray-600 text-lg mb-4">This is to certify that</p>
-                 <h2 className="text-4xl font-serif font-bold text-black border-b border-black inline-block px-12 pb-2 mb-6" style={textStyle}>
-                     {recipient_name}
-                 </h2>
-                 <p className="font-serif text-gray-800 text-xl">
-                     Has completed the prescribed course of study in<br/>
-                     <strong className="text-2xl mt-2 block">{certificateBody} {course_title}</strong>
-                 </p>
+            <div style={{ margin: '12px 0', width: '100%' }}>
+                <p style={{ fontStyle: 'italic', fontFamily: 'Georgia, serif', color: '#4b5563', fontSize: '18px', margin: '0 0 14px 0' }}>
+                    This is to certify that
+                </p>
+                <h2
+                    style={{
+                        fontSize: '42px',
+                        fontFamily: 'Georgia, serif',
+                        fontWeight: 700,
+                        color: '#000000',
+                        borderBottom: '1px solid #000000',
+                        display: 'inline-block',
+                        padding: '0 48px 8px 48px',
+                        margin: '0 0 24px 0',
+                        ...textStyle
+                    }}
+                >
+                    {recipient_name}
+                </h2>
+                <p style={{ fontFamily: 'Georgia, serif', color: '#1f2937', fontSize: '20px', margin: 0, lineHeight: 1.5 }}>
+                    {certificateBody}
+                    <strong style={{ fontSize: '26px', marginTop: '10px', display: 'block', color: '#000000' }}>
+                        {course_title}
+                    </strong>
+                </p>
 
-                 {/* Custom Fields */}
-                 {data.customFieldsArray && data.customFieldsArray.length > 0 && (
-                     <div className="grid grid-cols-1 gap-1 max-w-lg mx-auto mt-6 text-left border-t border-gray-300 pt-4">
-                         {data.customFieldsArray.map((field, index) => (
-                              field.key !== "amount" && (
-                                 <div key={index} className="flex justify-between font-serif text-sm">
-                                     <span className="font-bold text-gray-500 uppercase">{field.key}</span>
-                                     <span className="font-bold text-gray-900">{field.value}</span>
-                                 </div>
-                             )
-                         ))}
-                     </div>
-                 )}
+                {/* Custom Fields */}
+                {customFields.length > 0 && (
+                    <div
+                        style={{
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: '6px',
+                            maxWidth: '520px',
+                            margin: '20px auto 0 auto',
+                            textAlign: 'left',
+                            borderTop: '1px solid #d1d5db',
+                            paddingTop: '14px'
+                        }}
+                    >
+                        {customFields.map((field, index) => (
+                            <div key={index} style={{ display: 'flex', justifyContent: 'space-between', fontFamily: 'Georgia, serif', fontSize: '14px' }}>
+                                <span style={{ fontWeight: 700, color: '#6b7280', textTransform: 'uppercase' }}>{field.key}</span>
+                                <span style={{ fontWeight: 700, color: '#111827' }}>{field.value}</span>
+                            </div>
+                        ))}
+                    </div>
+                )}
             </div>
 
-            <div className="w-full flex justify-around items-end mb-4">
-                 <div className="flex flex-col items-center">
-                     <div className="h-px w-40 bg-black mb-2"></div>
-                     <p className="font-serif text-xs uppercase font-bold">Principal</p>
-                 </div>
-                 <div className="flex flex-col items-center">
-                      <div className="w-24 h-24 relative">
-                          <div className="absolute inset-0 bg-yellow-600 rounded-full opacity-20 animate-pulse"></div>
-                          <div className="w-full h-full border-4 border-yellow-600 rounded-full flex items-center justify-center text-yellow-800 text-xs font-bold text-center p-2 uppercase">
-                              Official<br/>Seal
-                          </div>
-                      </div>
-                 </div>
-                 <div className="flex flex-col items-center">
-                     <div className="h-px w-40 bg-black mb-2"></div>
-                     <p className="font-serif text-xs uppercase font-bold">Secretary</p>
-                 </div>
+            <div style={{ width: '100%', display: 'flex', justifyContent: 'space-around', alignItems: 'flex-end', marginBottom: '8px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: '180px' }}>
+                    <div style={{ minHeight: '40px', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', marginBottom: '4px' }}>
+                        {data.signature_image ? (
+                            <img src={data.signature_image} alt="Signature" style={{ height: '38px', objectFit: 'contain' }} />
+                        ) : (
+                            <span className="font-signature" style={{ fontSize: '24px', color: '#111827' }}>
+                                {data.signature || 'Principal'}
+                            </span>
+                        )}
+                    </div>
+                    <div style={{ height: '1px', width: '180px', backgroundColor: '#000000', marginBottom: '8px' }}></div>
+                    <p style={{ fontFamily: 'Georgia, serif', fontSize: '12px', textTransform: 'uppercase', fontWeight: 700, margin: 0, color: '#111827' }}>
+                        {data.signature_title || 'Principal'}
+                    </p>
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                    <div style={{ width: '96px', height: '96px', position: 'relative' }}>
+                        <div
+                            style={{
+                                width: '100%',
+                                height: '100%',
+                                backgroundColor: 'rgba(202, 138, 4, 0.14)',
+                                border: '4px solid #ca8a04',
+                                borderRadius: '9999px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                color: '#854d0e',
+                                fontSize: '11px',
+                                fontWeight: 700,
+                                textAlign: 'center',
+                                padding: '8px',
+                                textTransform: 'uppercase',
+                                boxSizing: 'border-box',
+                                lineHeight: 1.3
+                            }}
+                        >
+                            Official<br />Seal
+                        </div>
+                    </div>
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: '180px' }}>
+                    <div style={{ minHeight: '40px', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', marginBottom: '4px' }}>
+                        <span style={{ fontFamily: 'Georgia, serif', fontSize: '15px', color: '#374151', fontStyle: 'italic' }}>
+                            {data.issueDateFormatted}
+                        </span>
+                    </div>
+                    <div style={{ height: '1px', width: '180px', backgroundColor: '#000000', marginBottom: '8px' }}></div>
+                    <p style={{ fontFamily: 'Georgia, serif', fontSize: '12px', textTransform: 'uppercase', fontWeight: 700, margin: 0, color: '#111827' }}>
+                        Date Conferred
+                    </p>
+                </div>
             </div>
         </div>
     );
 };
+
 export default DiplomaClassic;

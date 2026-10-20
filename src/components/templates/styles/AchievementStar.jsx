@@ -2,71 +2,237 @@ import React from 'react';
 import { SERVER_BASE_URL } from '../../../config';
 
 const AchievementStar = ({ data }) => {
-   const { backgroundStyle, logo_url, textStyle, recipient_name, certificateBody, course_title } = data;
+    const {
+        backgroundStyle,
+        logo_url,
+        textStyle,
+        certificateTitle = 'Congratulations!',
+        recipient_name = 'Recipient Name',
+        certificateBody = 'For outstanding performance and completion of',
+        course_title = 'Course Title'
+    } = data;
+
+    const resolvedLogo = logo_url
+        ? (logo_url.startsWith('blob:') || logo_url.startsWith('data:') || logo_url.startsWith('http')
+            ? logo_url
+            : `${SERVER_BASE_URL}${logo_url}`)
+        : null;
+
+    const customFields = (data.customFieldsArray || []).filter(f => f.key !== 'amount');
 
     return (
-        <div className="h-full w-full bg-indigo-900 text-white relative overflow-hidden flex shadow-lg" style={{...backgroundStyle, backgroundColor: '#312e81'}}>
-             <div className="absolute inset-0 overflow-hidden">
-                 <div className="absolute -right-24 -top-24 w-96 h-96 bg-white opacity-5 rounded-full blur-3xl"></div>
-                 <div className="absolute -left-24 -bottom-24 w-96 h-96 bg-indigo-500 opacity-20 rounded-full blur-3xl"></div>
-             </div>
+        <div
+            style={{
+                width: '1122px',
+                height: '794px',
+                backgroundColor: '#312e81',
+                color: '#ffffff',
+                position: 'relative',
+                overflow: 'hidden',
+                display: 'flex',
+                boxSizing: 'border-box',
+                fontFamily: data.font_family || "'Montserrat', sans-serif",
+                ...backgroundStyle
+            }}
+        >
+            {/* Soft radial background glow (Browser & WeasyPrint 1:1 compatible) */}
+            <div
+                style={{
+                    position: 'absolute',
+                    top: '-120px',
+                    right: '-120px',
+                    width: '460px',
+                    height: '460px',
+                    borderRadius: '9999px',
+                    background: 'radial-gradient(circle, rgba(255,255,255,0.08) 0%, transparent 70%)'
+                }}
+            ></div>
+            <div
+                style={{
+                    position: 'absolute',
+                    bottom: '-120px',
+                    left: '-120px',
+                    width: '460px',
+                    height: '460px',
+                    borderRadius: '9999px',
+                    background: 'radial-gradient(circle, rgba(99,102,241,0.3) 0%, transparent 70%)'
+                }}
+            ></div>
 
-             <div className="w-16 h-full bg-yellow-500 flex flex-col items-center py-8 relative z-10 shadow-lg">
-                  <div className="text-indigo-900 font-black text-2xl rotate-90 mt-12 whitespace-nowrap tracking-widest origin-center translate-y-24">
-                      ACHIEVEMENT
-                  </div>
-             </div>
+            {/* Yellow Left Strip */}
+            <div
+                style={{
+                    width: '80px',
+                    height: '100%',
+                    backgroundColor: '#eab308',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    position: 'relative',
+                    zIndex: 10,
+                    flexShrink: 0,
+                    boxShadow: '4px 0 16px rgba(0, 0, 0, 0.2)'
+                }}
+            >
+                <div
+                    style={{
+                        color: '#312e81',
+                        fontWeight: 900,
+                        fontSize: '26px',
+                        transform: 'rotate(90deg)',
+                        whiteSpace: 'nowrap',
+                        letterSpacing: '0.2em'
+                    }}
+                >
+                    ACHIEVEMENT
+                </div>
+            </div>
 
-             <div className="flex-1 p-10 flex flex-col justify-center relative z-10">
-                  <div className="flex items-center gap-4 mb-4">
-                      <div className="bg-white/10 p-2 rounded-lg backdrop-blur-sm">
-                          {logo_url ? <img src={logo_url.startsWith("blob:") ? logo_url : `${SERVER_BASE_URL}${logo_url}`} className="h-8" alt="Logo"/> : <span className="text-2xl">⭐</span>}
-                      </div>
-                      <p className="text-indigo-200 uppercase tracking-widest text-sm font-semibold">Star Student Award</p>
-                  </div>
+            {/* Main Content */}
+            <div
+                style={{
+                    flex: 1,
+                    padding: '56px 72px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'center',
+                    position: 'relative',
+                    zIndex: 10,
+                    boxSizing: 'border-box'
+                }}
+            >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '20px' }}>
+                    <div
+                        style={{
+                            backgroundColor: 'rgba(255, 255, 255, 0.12)',
+                            padding: '10px',
+                            borderRadius: '10px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center'
+                        }}
+                    >
+                        {resolvedLogo ? (
+                            <img src={resolvedLogo} style={{ height: '36px', objectFit: 'contain' }} alt="Logo" />
+                        ) : (
+                            <svg width="28" height="28" viewBox="0 0 24 24" fill="#facc15">
+                                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                            </svg>
+                        )}
+                    </div>
+                    <p style={{ color: '#c7d2fe', textTransform: 'uppercase', letterSpacing: '0.16em', fontSize: '14px', fontWeight: 700, margin: 0 }}>
+                        Star Student Award
+                    </p>
+                </div>
 
-                  <h1 className="text-5xl font-bold mb-2 text-white">Congratulations!</h1>
-                  <h2 className="text-4xl font-extrabold text-yellow-400 mb-6" style={textStyle}>{recipient_name}</h2>
-                  
-                  <div className="bg-white/10 backdrop-blur-md p-6 rounded-xl border border-white/10 mb-8 max-w-lg">
-                      <p className="text-lg text-indigo-100 leading-relaxed mb-4">
-                          {certificateBody} <strong>{course_title}</strong>.
-                          <br/>Your hard work has truly shone through!
-                      </p>
+                <h1 style={{ fontSize: '52px', fontWeight: 800, margin: '0 0 8px 0', color: '#ffffff' }}>
+                    {certificateTitle}
+                </h1>
+                <h2
+                    style={{
+                        fontSize: '42px',
+                        fontWeight: 800,
+                        color: '#facc15',
+                        margin: '0 0 28px 0',
+                        ...textStyle
+                    }}
+                >
+                    {recipient_name}
+                </h2>
 
-                      {/* Custom Fields */}
-                      {data.customFieldsArray && data.customFieldsArray.length > 0 && (
-                          <div className="grid grid-cols-2 gap-4 border-t border-white/10 pt-4">
-                              {data.customFieldsArray.map((field, index) => (
-                                   field.key !== "amount" && (
-                                      <div key={index}>
-                                          <p className="text-xs text-indigo-300 uppercase font-bold mb-1">{field.key}</p>
-                                          <p className="text-sm font-semibold text-white">{field.value}</p>
-                                      </div>
-                                  )
-                              ))}
-                          </div>
-                      )}
-                  </div>
+                <div
+                    style={{
+                        backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                        padding: '28px 32px',
+                        borderRadius: '14px',
+                        border: '1px solid rgba(255, 255, 255, 0.14)',
+                        marginBottom: '36px',
+                        maxWidth: '680px',
+                        boxSizing: 'border-box'
+                    }}
+                >
+                    <p style={{ fontSize: '18px', color: '#e0e7ff', lineHeight: 1.6, margin: 0 }}>
+                        {certificateBody} <strong style={{ color: '#ffffff' }}>{course_title}</strong>.
+                        <br />
+                        Your hard work has truly shone through!
+                    </p>
 
-                  <div className="flex items-center gap-8">
-                       <div>
-                           <p className="text-xs text-indigo-300 uppercase font-bold mb-1">Total Points</p>
-                           <p className="text-2xl font-bold text-white">2,500 XP</p>
-                       </div>
-                       <div className="h-8 w-px bg-indigo-700"></div>
-                       <div>
-                           <p className="text-xs text-indigo-300 uppercase font-bold mb-1">Rank</p>
-                           <p className="text-2xl font-bold text-white">#1</p>
-                       </div>
-                       <div className="h-8 w-px bg-indigo-700"></div>
-                       <div>
-                           <p className="text-xs text-indigo-300 uppercase font-bold mb-1">Date</p>
-                           <p className="text-lg font-medium text-white">{data.issueDateFormatted}</p>
-                       </div>
-                  </div>
-             </div>
-         </div>
+                    {/* Custom Fields */}
+                    {customFields.length > 0 && (
+                        <div
+                            style={{
+                                display: 'flex',
+                                flexWrap: 'wrap',
+                                gap: '20px 40px',
+                                borderTop: '1px solid rgba(255, 255, 255, 0.14)',
+                                paddingTop: '16px',
+                                marginTop: '16px'
+                            }}
+                        >
+                            {customFields.map((field, index) => (
+                                <div key={index}>
+                                    <p style={{ fontSize: '11px', color: '#a5b4fc', textTransform: 'uppercase', fontWeight: 700, margin: '0 0 4px 0' }}>
+                                        {field.key}
+                                    </p>
+                                    <p style={{ fontSize: '15px', fontWeight: 600, color: '#ffffff', margin: 0 }}>
+                                        {field.value}
+                                    </p>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: '36px' }}>
+                    <div>
+                        <p style={{ fontSize: '11px', color: '#a5b4fc', textTransform: 'uppercase', fontWeight: 700, margin: '0 0 4px 0' }}>
+                            Total Points
+                        </p>
+                        <p style={{ fontSize: '24px', fontWeight: 700, color: '#ffffff', margin: 0 }}>2,500 XP</p>
+                    </div>
+                    <div style={{ height: '36px', width: '1px', backgroundColor: '#4338ca' }}></div>
+                    <div>
+                        <p style={{ fontSize: '11px', color: '#a5b4fc', textTransform: 'uppercase', fontWeight: 700, margin: '0 0 4px 0' }}>
+                            Rank
+                        </p>
+                        <p style={{ fontSize: '24px', fontWeight: 700, color: '#ffffff', margin: 0 }}>#1</p>
+                    </div>
+                    <div style={{ height: '36px', width: '1px', backgroundColor: '#4338ca' }}></div>
+                    <div>
+                        <p style={{ fontSize: '11px', color: '#a5b4fc', textTransform: 'uppercase', fontWeight: 700, margin: '0 0 4px 0' }}>
+                            Date
+                        </p>
+                        <p style={{ fontSize: '18px', fontWeight: 600, color: '#ffffff', margin: 0 }}>
+                            {data.issueDateFormatted}
+                        </p>
+                    </div>
+
+                    {(data.signature_image || data.signature) && (
+                        <>
+                            <div style={{ height: '36px', width: '1px', backgroundColor: '#4338ca' }}></div>
+                            <div>
+                                <p style={{ fontSize: '11px', color: '#a5b4fc', textTransform: 'uppercase', fontWeight: 700, margin: '0 0 4px 0' }}>
+                                    {data.signature_title || 'Authorized Signature'}
+                                </p>
+                                {data.signature_image ? (
+                                    <img
+                                        src={data.signature_image}
+                                        alt="Signature"
+                                        style={{ height: '34px', objectFit: 'contain', backgroundColor: 'rgba(255,255,255,0.9)', padding: '2px 8px', borderRadius: '4px' }}
+                                    />
+                                ) : (
+                                    <p className="font-signature" style={{ fontSize: '22px', color: '#facc15', margin: 0 }}>
+                                        {data.signature}
+                                    </p>
+                                )}
+                            </div>
+                        </>
+                    )}
+                </div>
+            </div>
+        </div>
     );
 };
+
 export default AchievementStar;

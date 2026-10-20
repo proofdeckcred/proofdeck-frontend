@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import KonvaPreview from '../KonvaPreview'; // Adjust path as needed
 import { LayoutTemplate } from 'lucide-react';
 import { SERVER_BASE_URL } from '../../config';
@@ -19,10 +19,34 @@ import AwardGold from './styles/AwardGold';
 import DiplomaClassic from './styles/DiplomaClassic';
 import AchievementStar from './styles/AchievementStar';
 
+const BASE_WIDTH = 1122;
+const BASE_HEIGHT = 794;
 
 const TemplateRenderer = ({ template, formData = {}, isFullscreen = false }) => {
     const userCtx = useUser();
     const currentUser = userCtx?.user;
+    const wrapperRef = useRef(null);
+    const [scale, setScale] = useState(0.5);
+
+    useEffect(() => {
+        const updateScale = () => {
+            if (wrapperRef.current) {
+                const w = wrapperRef.current.offsetWidth || 561;
+                setScale(w / BASE_WIDTH);
+            }
+        };
+        updateScale();
+        let observer;
+        if (typeof ResizeObserver !== 'undefined' && wrapperRef.current) {
+            observer = new ResizeObserver(updateScale);
+            observer.observe(wrapperRef.current);
+        }
+        window.addEventListener('resize', updateScale);
+        return () => {
+            window.removeEventListener('resize', updateScale);
+            if (observer) observer.disconnect();
+        };
+    }, [template?.layout_style, isFullscreen]);
 
     if (!template) {
         return (
@@ -34,7 +58,6 @@ const TemplateRenderer = ({ template, formData = {}, isFullscreen = false }) => 
     }
 
     // Merge template and form data for easy access
-    // Note: formData usually overrides template defaults
     const combinedData = {
         ...template,
         ...formData,
@@ -47,15 +70,16 @@ const TemplateRenderer = ({ template, formData = {}, isFullscreen = false }) => 
         custom_text: template.custom_text || {},
     };
 
-    // Specific field mappings
-    combinedData.certificateTitle = combinedData.custom_text?.title || "Certificate of Completion";
-    combinedData.certificateBody = combinedData.custom_text?.body || "has successfully completed the course";
+    // Specific field mappings (use undefined when empty so per-template defaults apply identically to backend Jinja2 `or`)
+    combinedData.certificateTitle = combinedData.custom_text?.title?.trim() ? combinedData.custom_text.title : undefined;
+    combinedData.certificateBody = combinedData.custom_text?.body?.trim() ? combinedData.custom_text.body : undefined;
+    combinedData.signature_title = combinedData.custom_text?.signature_title?.trim() ? combinedData.custom_text.signature_title : undefined;
     combinedData.recipient_name = combinedData.recipient_name || "Recipient Name";
     combinedData.course_title = combinedData.course_title || "Course Title";
     combinedData.issue_date = combinedData.issue_date || new Date().toISOString().split('T')[0];
-    combinedData.signature = combinedData.signature || "Signature";
+    combinedData.signature = combinedData.signature || "";
     combinedData.issuer_name = combinedData.issuer_name || "Issuer Name";
-    combinedData.verification_id = combinedData.verification_id || "pending-id";
+    combinedData.verification_id = combinedData.verification_id || "PENDING";
     combinedData.verification_url = combinedData.verification_url || (typeof window !== "undefined" ? `${window.location.origin}/verify/${combinedData.verification_id}` : `https://www.proofdeck.app/verify/${combinedData.verification_id}`);
     combinedData.extra_fields = combinedData.extra_fields || {};
 
@@ -89,14 +113,13 @@ const TemplateRenderer = ({ template, formData = {}, isFullscreen = false }) => 
 
     combinedData.amount = combinedData.amount || combinedData.extra_fields.amount;
 
-
     // Prepared styles
     combinedData.textStyle = { color: combinedData.body_font_color };
-    if(combinedData.font_family) combinedData.textStyle.fontFamily = combinedData.font_family;
+    if (combinedData.font_family) combinedData.textStyle.fontFamily = combinedData.font_family;
 
     combinedData.backgroundStyle = {
         backgroundImage: combinedData.background_url
-            ? `url(${combinedData.background_url.startsWith("blob:") ? combinedData.background_url : `${SERVER_BASE_URL}${combinedData.background_url}`})`
+            ? `url(${combinedData.background_url.startsWith("blob:") || combinedData.background_url.startsWith("http") || combinedData.background_url.startsWith("data:") ? combinedData.background_url : `${SERVER_BASE_URL}${combinedData.background_url}`})`
             : "none",
         backgroundSize: "cover",
         backgroundPosition: "center",
@@ -108,17 +131,6 @@ const TemplateRenderer = ({ template, formData = {}, isFullscreen = false }) => 
         year: "numeric",
     });
 
-    // Container style for scaling (dynamic orientation)
-    const isPortrait = template.layout_style === 'receipt' || template.layout_style === 'badge_cert';
-    const containerStyle = {
-        aspectRatio: isPortrait ? "1 / 1.414" : "1.414 / 1",
-        width: "100%",
-        transform: isFullscreen ? "scale(1)" : "scale(1)",
-        transition: "transform 0.3s ease",
-        position: "relative",
-        overflow: "hidden",
-    };
-
     // --- VISUAL LAYOUT (CANVA-LIKE) ---
     if (template.layout_style === "visual") {
          return (
@@ -128,33 +140,47 @@ const TemplateRenderer = ({ template, formData = {}, isFullscreen = false }) => 
          );
     }
 
-    // --- RENDERER SWITCH ---
+    // --- RENDERER SWITCH (1122x794 Fixed Coordinate Stage for 100% WYSIWYG Parity) ---
     const renderContent = () => {
         switch (template.layout_style) {
-            case 'modern': return <Modern data={combinedData} isFullscreen={isFullscreen} />;
-            case 'receipt': return <Receipt data={combinedData} isFullscreen={isFullscreen} />;
-            case 'modern_landscape': return <ModernLandscape data={combinedData} />;
-            case 'elegant_serif': return <ElegantSerif data={combinedData} />;
-            case 'minimalist_bold': return <MinimalistBold data={combinedData} />;
-            case 'corporate_blue': return <CorporateBlue data={combinedData} />;
-            case 'tech_dark': return <TechDark data={combinedData} />;
-            case 'creative_art': return <CreativeArt data={combinedData} />;
-            case 'badge_cert': return <BadgeCert data={combinedData} />;
-            case 'award_gold': return <AwardGold data={combinedData} />;
-            case 'diploma_classic': return <DiplomaClassic data={combinedData} />;
-            case 'achievement_star': return <AchievementStar data={combinedData} />;
-            case 'classic': default: return <Classic data={combinedData} isFullscreen={isFullscreen} />;
+            case 'modern': return <Modern data={combinedData} isFullscreen={true} />;
+            case 'receipt': return <Receipt data={combinedData} isFullscreen={true} />;
+            case 'modern_landscape': return <ModernLandscape data={combinedData} isFullscreen={true} />;
+            case 'elegant_serif': return <ElegantSerif data={combinedData} isFullscreen={true} />;
+            case 'minimalist_bold': return <MinimalistBold data={combinedData} isFullscreen={true} />;
+            case 'corporate_blue': return <CorporateBlue data={combinedData} isFullscreen={true} />;
+            case 'tech_dark': return <TechDark data={combinedData} isFullscreen={true} />;
+            case 'creative_art': return <CreativeArt data={combinedData} isFullscreen={true} />;
+            case 'badge_cert': return <BadgeCert data={combinedData} isFullscreen={true} />;
+            case 'award_gold': return <AwardGold data={combinedData} isFullscreen={true} />;
+            case 'diploma_classic': return <DiplomaClassic data={combinedData} isFullscreen={true} />;
+            case 'achievement_star': return <AchievementStar data={combinedData} isFullscreen={true} />;
+            case 'classic': default: return <Classic data={combinedData} isFullscreen={true} />;
         }
     };
 
-    if (template.layout_style === 'receipt' || template.layout_style === 'elegant_serif') {
-         // Some templates manage their own container or aspect ratio
-         return renderContent();
-    }
-
     return (
-        <div style={containerStyle} className="shadow-lg">
-            {renderContent()}
+        <div
+            ref={wrapperRef}
+            className="shadow-lg w-full relative overflow-hidden bg-white"
+            style={{
+                aspectRatio: `${BASE_WIDTH} / ${BASE_HEIGHT}`,
+                height: wrapperRef.current ? `${wrapperRef.current.offsetWidth * (BASE_HEIGHT / BASE_WIDTH)}px` : undefined,
+            }}
+        >
+            <div
+                style={{
+                    width: `${BASE_WIDTH}px`,
+                    height: `${BASE_HEIGHT}px`,
+                    transform: `scale(${scale})`,
+                    transformOrigin: 'top left',
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                }}
+            >
+                {renderContent()}
+            </div>
         </div>
     );
 };
