@@ -52,7 +52,10 @@ import toast, { Toaster } from "react-hot-toast";
 import { useUser } from "../context/UserContext";
 import TemplateSelector from "../components/TemplateSelector";
 import HelpGuide from "../components/HelpGuide";
-import SpreadsheetGrid from "../components/bulk/SpreadsheetGrid";
+import SpreadsheetGrid, {
+  ensureMinimumRows,
+  MIN_STARTER_ROWS,
+} from "../components/bulk/SpreadsheetGrid";
 import ColumnMappingModal from "../components/bulk/ColumnMappingModal";
 import BulkLockedState from "../components/bulk/BulkLockedState";
 import {
@@ -118,15 +121,28 @@ const CreateCertificatePage = () => {
   const [bulkFile, setBulkFile] = useState(null);
   const [bulkSubmitting, setBulkSubmitting] = useState(false);
 
-  // In-Page Spreadsheet Rows (Starts strictly EMPTY with zero rows)
-  const [spreadsheetRows, setSpreadsheetRows] = useState([]);
-
   // Batch Defaults applied across the whole batch
   const [batchDefaults, setBatchDefaults] = useState({
+    course_title: "",
     issuer_name: "",
     issue_date: new Date().toLocaleDateString("en-CA"),
     signature: "",
   });
+
+  // In-Page Spreadsheet Rows (Initialized with starter rows like a real spreadsheet)
+  const [spreadsheetRows, setSpreadsheetRows] = useState(() =>
+    ensureMinimumRows([], MIN_STARTER_ROWS, {
+      course_title: "",
+      issuer_name: "",
+      issue_date: new Date().toLocaleDateString("en-CA"),
+      signature: "",
+    })
+  );
+  const [sheetName, setSheetName] = useState("Untitled Sheet");
+  const [userCustomColumns, setUserCustomColumns] = useState([]);
+  const [savedSheets, setSavedSheets] = useState([]);
+  const [lastAutoSavedAt, setLastAutoSavedAt] = useState(null);
+  const hasRestoredDraftRef = React.useRef(false);
 
   // Column Mapping Modal State
   const [isMappingModalOpen, setIsMappingModalOpen] = useState(false);
@@ -195,6 +211,59 @@ const CreateCertificatePage = () => {
   const [showFullscreen, setShowFullscreen] = useState(false);
   
   const { user, workspace } = useUser();
+  const sheetStorageScope = `${user?.id || "anon"}_${workspace || "personal"}`;
+  const activeDraftKey = `pd_active_sheet_${sheetStorageScope}`;
+  const savedSheetsKey = `pd_saved_sheets_${sheetStorageScope}`;
+
+  // Restore active spreadsheet draft & saved sheets list on load / workspace switch
+  useEffect(() => {
+    try {
+      const rawList = localStorage.getItem(savedSheetsKey);
+      if (rawList) {
+        const parsedList = JSON.parse(rawList);
+        if (Array.isArray(parsedList)) setSavedSheets(parsedList);
+      } else {
+        setSavedSheets([]);
+      }
+
+      const rawDraft = localStorage.getItem(activeDraftKey);
+      if (rawDraft) {
+        const draft = JSON.parse(rawDraft);
+        if (draft && Array.isArray(draft.rows)) {
+          setSpreadsheetRows(
+            ensureMinimumRows(draft.rows, MIN_STARTER_ROWS, draft.batchDefaults || {})
+          );
+          if (draft.batchDefaults && typeof draft.batchDefaults === "object") {
+            setBatchDefaults((prev) => ({ ...prev, ...draft.batchDefaults }));
+          }
+          if (draft.sheetName) setSheetName(draft.sheetName);
+          if (Array.isArray(draft.userCustomColumns)) {
+            setUserCustomColumns(draft.userCustomColumns);
+          }
+          setLastAutoSavedAt(draft.updatedAt || new Date().toISOString());
+        }
+      }
+    } catch (e) {}
+    hasRestoredDraftRef.current = true;
+  }, [activeDraftKey, savedSheetsKey]);
+
+  // Auto-save working spreadsheet draft whenever rows, batchDefaults, sheetName, or custom columns change
+  useEffect(() => {
+    if (!hasRestoredDraftRef.current) return;
+    try {
+      const nowIso = new Date().toISOString();
+      const payload = {
+        sheetName,
+        rows: spreadsheetRows,
+        batchDefaults,
+        userCustomColumns,
+        updatedAt: nowIso,
+      };
+      localStorage.setItem(activeDraftKey, JSON.stringify(payload));
+      setLastAutoSavedAt(nowIso);
+    } catch (e) {}
+  }, [spreadsheetRows, batchDefaults, sheetName, userCustomColumns, activeDraftKey]);
+
   const effectiveRole = user?.effective_role || user?.role || "free";
   const isBulkAllowed = true; // Bulk issuance is available on all plans (including Free)
   const isSpreadsheetAllowed = ["growth", "pro", "enterprise"].includes(effectiveRole);
@@ -448,6 +517,14 @@ const CreateCertificatePage = () => {
     });
   };
 
+  const allCustomColumnKeys = useMemo(
+    () => [
+      ...templateCustomPlaceholders.map((cf) => cf.key),
+      ...userCustomColumns.map((uc) => uc.key),
+    ],
+    [templateCustomPlaceholders, userCustomColumns]
+  );
+
   // Single Source of Truth for Spreadsheet Row Validation & Counts
   const {
     nonEmptyRows,
@@ -457,14 +534,13 @@ const CreateCertificatePage = () => {
     invalidRowsCount,
     nonEmptyRowsCount,
   } = useMemo(() => {
-    const customKeys = templateCustomPlaceholders.map((cf) => cf.key);
     const nonEmpty = [];
     const ready = [];
     const invalid = [];
 
     const emailCounts = new Map();
     spreadsheetRows.forEach((r) => {
-      if (isRowNonEmpty(r, customKeys)) {
+      if (isRowNonEmpty(r, allCustomColumnKeys)) {
         const email = String(r.recipient_email || "").trim().toLowerCase();
         if (email && looksLikeEmail(email)) {
           emailCounts.set(email, (emailCounts.get(email) || 0) + 1);
@@ -473,7 +549,7 @@ const CreateCertificatePage = () => {
     });
 
     spreadsheetRows.forEach((r, idx) => {
-      if (isRowNonEmpty(r, customKeys)) {
+      if (isRowNonEmpty(r, allCustomColumnKeys)) {
         nonEmpty.push({ row: r, index: idx });
         const { isValid, cellErrors } = validateRow(r, emailCounts);
         if (isValid) {
@@ -492,12 +568,88 @@ const CreateCertificatePage = () => {
       invalidRowsCount: invalid.length,
       nonEmptyRowsCount: nonEmpty.length,
     };
-  }, [spreadsheetRows, templateCustomPlaceholders]);
+  }, [spreadsheetRows, allCustomColumnKeys]);
+
+  // Save current spreadsheet to named Saved Sheets list in localStorage
+  const handleSaveSheet = useCallback(
+    (customName) => {
+      const targetName = (customName || sheetName || "Untitled Sheet").trim();
+      setSheetName(targetName);
+      const nonEmpty = spreadsheetRows.filter((r) =>
+        isRowNonEmpty(r, allCustomColumnKeys)
+      );
+      const nowIso = new Date().toISOString();
+
+      setSavedSheets((prev) => {
+        const existingIdx = prev.findIndex(
+          (s) => s.name.toLowerCase() === targetName.toLowerCase()
+        );
+        const entry = {
+          id: existingIdx !== -1 ? prev[existingIdx].id : `sheet_${Date.now()}`,
+          name: targetName,
+          rows: spreadsheetRows,
+          batchDefaults,
+          userCustomColumns,
+          rowCount: nonEmpty.length,
+          updatedAt: nowIso,
+        };
+        const updated =
+          existingIdx !== -1
+            ? prev.map((s, i) => (i === existingIdx ? entry : s))
+            : [entry, ...prev];
+        try {
+          localStorage.setItem(savedSheetsKey, JSON.stringify(updated));
+        } catch (e) {}
+        return updated;
+      });
+
+      toast.success(`Saved "${targetName}" (${nonEmpty.length} rows)`);
+    },
+    [sheetName, spreadsheetRows, allCustomColumnKeys, batchDefaults, userCustomColumns, savedSheetsKey]
+  );
+
+  const handleLoadSavedSheet = useCallback((sheetObj) => {
+    if (!sheetObj) return;
+    setSheetName(sheetObj.name || "Untitled Sheet");
+    if (sheetObj.batchDefaults) {
+      setBatchDefaults((prev) => ({ ...prev, ...sheetObj.batchDefaults }));
+    }
+    if (Array.isArray(sheetObj.userCustomColumns)) {
+      setUserCustomColumns(sheetObj.userCustomColumns);
+    }
+    setSpreadsheetRows(
+      ensureMinimumRows(
+        sheetObj.rows || [],
+        MIN_STARTER_ROWS,
+        sheetObj.batchDefaults || {}
+      )
+    );
+    toast.success(`Loaded "${sheetObj.name}"`);
+  }, []);
+
+  const handleDeleteSavedSheet = useCallback(
+    (sheetId) => {
+      setSavedSheets((prev) => {
+        const updated = prev.filter((s) => s.id !== sheetId);
+        try {
+          localStorage.setItem(savedSheetsKey, JSON.stringify(updated));
+        } catch (e) {}
+        return updated;
+      });
+      toast.success("Removed saved spreadsheet");
+    },
+    [savedSheetsKey]
+  );
+
+  const handleNewSheet = useCallback(() => {
+    setSheetName("Untitled Sheet");
+    setSpreadsheetRows(ensureMinimumRows([], MIN_STARTER_ROWS, batchDefaults));
+    toast.success("Started new blank spreadsheet");
+  }, [batchDefaults]);
 
   // Apply Mappings to convert raw 2D sheet rows into standardized ProofDeck row objects
   const applyMappingsToRows = useCallback(
     (headers, rows, mapping, splitNames, currentDefaults) => {
-      const customKeys = templateCustomPlaceholders.map((cf) => cf.key);
       return rows
         .map((r) => {
           const rowObj = {
@@ -537,8 +689,8 @@ const CreateCertificatePage = () => {
             }
           });
 
-          // 3. Custom Template Placeholders
-          templateCustomPlaceholders.forEach((cf) => {
+          // 3. Custom Template Placeholders & User Custom Columns
+          [...templateCustomPlaceholders, ...userCustomColumns].forEach((cf) => {
             const srcCol = mapping[cf.key]?.sourceColumn;
             if (srcCol) {
               const idx = headers.indexOf(srcCol);
@@ -551,9 +703,9 @@ const CreateCertificatePage = () => {
 
           return rowObj;
         })
-        .filter((rowObj) => isRowNonEmpty(rowObj, customKeys));
+        .filter((rowObj) => isRowNonEmpty(rowObj, allCustomColumnKeys));
     },
-    [templateCustomPlaceholders]
+    [templateCustomPlaceholders, userCustomColumns, allCustomColumnKeys]
   );
 
   // Proceed with parsed import (mode = "replace" or "append")
@@ -567,6 +719,10 @@ const CreateCertificatePage = () => {
 
       setDetectedHeaders(cleanedHeaders);
       setRawUploadedRows(cleanedRows);
+      if (fileName) {
+        const cleanTitle = fileName.replace(/\.(csv|xlsx|xls|ods)$/i, "");
+        if (cleanTitle) setSheetName(cleanTitle);
+      }
 
       // Check saved mapping memory in localStorage for 1-click repeat uploads
       const savedMapping = getSavedMapping(cleanedHeaders);
@@ -594,11 +750,16 @@ const CreateCertificatePage = () => {
 
         setSpreadsheetRows((prev) => {
           if (mode === "append") {
-            const customKeys = templateCustomPlaceholders.map((cf) => cf.key);
-            const existingNonEmpty = prev.filter((r) => isRowNonEmpty(r, customKeys));
-            return [...existingNonEmpty, ...converted];
+            const existingNonEmpty = prev.filter((r) =>
+              isRowNonEmpty(r, allCustomColumnKeys)
+            );
+            return ensureMinimumRows(
+              [...existingNonEmpty, ...converted],
+              MIN_STARTER_ROWS,
+              batchDefaults
+            );
           }
-          return converted;
+          return ensureMinimumRows(converted, MIN_STARTER_ROWS, batchDefaults);
         });
 
         // Sync first row into WYSIWYG preview
@@ -626,7 +787,7 @@ const CreateCertificatePage = () => {
         toast("Please review the column mappings for your sheet.", { icon: "ℹ️" });
       }
     },
-    [applyMappingsToRows, batchDefaults, templateCustomPlaceholders]
+    [applyMappingsToRows, batchDefaults, allCustomColumnKeys]
   );
 
   // Process raw matrix (array of rows) through Scattered Cleaner & Layer A Rules
@@ -708,7 +869,9 @@ const CreateCertificatePage = () => {
           splitNames !== undefined ? splitNames : splitNamesInfo,
           newDefaults || batchDefaults
         );
-        setSpreadsheetRows(converted);
+        setSpreadsheetRows(
+          ensureMinimumRows(converted, MIN_STARTER_ROWS, newDefaults || batchDefaults)
+        );
 
         if (converted.length > 0) {
           const first = converted[0];
@@ -738,18 +901,24 @@ const CreateCertificatePage = () => {
   // Sync spreadsheet first row into WYSIWYG Live Preview when rows change
   useEffect(() => {
     if (creationMode === "bulk" && spreadsheetRows.length > 0) {
-      const firstRow = spreadsheetRows[0];
+      const firstRow =
+        spreadsheetRows.find((r) => isRowNonEmpty(r, allCustomColumnKeys)) ||
+        spreadsheetRows[0];
       setFormData((prev) => ({
         ...prev,
         recipient_name: firstRow.recipient_name || "Recipient Name",
         recipient_email: firstRow.recipient_email || "",
-        course_title: firstRow.course_title || prev.course_title || "Course Title",
+        course_title:
+          firstRow.course_title ||
+          batchDefaults.course_title ||
+          prev.course_title ||
+          "Course Title",
         issuer_name: firstRow.issuer_name || batchDefaults.issuer_name || prev.issuer_name || "",
         issue_date: firstRow.issue_date || batchDefaults.issue_date || prev.issue_date,
         signature: firstRow.signature || batchDefaults.signature || prev.signature || "",
       }));
     }
-  }, [spreadsheetRows, creationMode, batchDefaults]);
+  }, [spreadsheetRows, creationMode, batchDefaults, allCustomColumnKeys]);
 
   // Create group inline
   const handleCreateGroup = async () => {
@@ -826,15 +995,29 @@ const CreateCertificatePage = () => {
     setBulkSubmitting(true);
 
     try {
-      // Build clean CSV array from canonical readyRows with batch defaults applied
-      const cleanRowsToSubmit = readyRows.map(({ row: r }) => ({
-        recipient_name: String(r.recipient_name).trim(),
-        recipient_email: String(r.recipient_email).trim().toLowerCase(),
-        course_title: String(r.course_title).trim(),
-        issuer_name: (r.issuer_name || batchDefaults.issuer_name || "").trim(),
-        issue_date: (r.issue_date || batchDefaults.issue_date || new Date().toLocaleDateString("en-CA")).trim(),
-        signature: (r.signature || batchDefaults.signature || "").trim(),
-      }));
+      // Build clean CSV array from canonical readyRows with batch defaults and custom columns applied
+      const cleanRowsToSubmit = readyRows.map(({ row: r }) => {
+        const rowData = {
+          recipient_name: String(r.recipient_name || "").trim(),
+          recipient_email: r.recipient_email
+            ? String(r.recipient_email).trim().toLowerCase()
+            : "",
+          course_title: String(r.course_title || batchDefaults.course_title || "").trim(),
+          issuer_name: (r.issuer_name || batchDefaults.issuer_name || "").trim(),
+          issue_date: (
+            r.issue_date ||
+            batchDefaults.issue_date ||
+            new Date().toLocaleDateString("en-CA")
+          ).trim(),
+          signature: (r.signature || batchDefaults.signature || "").trim(),
+        };
+        allCustomColumnKeys.forEach((ck) => {
+          if (r[ck] !== undefined && r[ck] !== null && String(r[ck]).trim() !== "") {
+            rowData[ck] = String(r[ck]).trim();
+          }
+        });
+        return rowData;
+      });
 
       const csvContent = Papa.unparse(cleanRowsToSubmit);
       const csvBlob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
@@ -992,10 +1175,9 @@ const CreateCertificatePage = () => {
 
                 <FormInput
                   name="course_title"
-                  label={isInvitation ? "Event Title" : isReceipt ? "Payment Description" : "Course / Event Title"}
+                  label={isInvitation ? "Event Title (Optional)" : isReceipt ? "Payment Description (Optional)" : "Course / Event Title (Optional)"}
                   icon={FileText}
                   placeholder={isInvitation ? "e.g. Annual Gala" : isReceipt ? "e.g. Web Dev Course" : "e.g., Advanced React Workshop"}
-                  required
                   value={formData.course_title}
                   onChange={handleChange}
                 />
@@ -1017,13 +1199,12 @@ const CreateCertificatePage = () => {
                     label={isInvitation ? "Event Date" : isReceipt ? "Payment Date" : "Issue Date"}
                     icon={Calendar}
                     type="date"
-                    required
                     value={formData.issue_date}
                     onChange={handleChange}
                   />
                   <FormInput
                     name="issuer_name"
-                    label="Issuer Name"
+                    label="Issuer Name (Optional)"
                     icon={User}
                     placeholder="e.g. Acme Inc"
                     value={formData.issuer_name}
@@ -1285,13 +1466,13 @@ const CreateCertificatePage = () => {
                     <div className="text-left">
                       <span className="block text-xs font-bold text-slate-800">In-Page Spreadsheet</span>
                       <span className="block text-[10px] text-slate-400">
-                        Type or paste directly from Excel/Sheets
+                        Type, paste from Excel, or save draft for later
                       </span>
                     </div>
                   </div>
                   {isSpreadsheetAllowed ? (
                     <span className="text-[10px] font-mono font-semibold bg-white text-indigo-700 px-2.5 py-1 rounded-full border border-indigo-200 shadow-2xs">
-                      {nonEmptyRowsCount === 0 ? "0 rows" : `${readyRowsCount} ready`} &rarr;
+                      {nonEmptyRowsCount === 0 ? "Open Grid" : `${readyRowsCount} ready`} &rarr;
                     </span>
                   ) : (
                     <span className="text-[10px] font-semibold bg-amber-50 text-amber-800 px-2.5 py-1 rounded-full border border-amber-200 shadow-2xs flex items-center gap-1">
@@ -1309,6 +1490,17 @@ const CreateCertificatePage = () => {
                   >
                     <Download size={12} /> Download Sample Spreadsheet
                   </button>
+
+                  {isSpreadsheetAllowed && (
+                    <button
+                      type="button"
+                      onClick={() => handleSaveSheet(sheetName)}
+                      className="text-emerald-700 font-bold hover:underline flex items-center gap-1 cursor-pointer"
+                      title="Save current spreadsheet draft"
+                    >
+                      <Save size={11} /> Save Sheet Draft
+                    </button>
+                  )}
                 </div>
 
                 {/* Batch Defaults */}
@@ -1317,9 +1509,18 @@ const CreateCertificatePage = () => {
                     Batch Defaults (Optional)
                   </label>
                   <p className="text-[10px] text-slate-400 mb-2">
-                    Applied automatically to all rows that have empty cells
+                    Only Recipient Name is compulsory. These optional defaults apply to rows with blank cells.
                   </p>
                   <div className="space-y-2">
+                    <input
+                      type="text"
+                      placeholder="Batch Course / Event Title (Optional)"
+                      value={batchDefaults.course_title || ""}
+                      onChange={(e) =>
+                        setBatchDefaults((prev) => ({ ...prev, course_title: e.target.value }))
+                      }
+                      className="w-full px-2.5 py-1.5 border border-slate-200 bg-white rounded-lg text-xs focus:outline-none focus:border-indigo-500 shadow-2xs"
+                    />
                     <input
                       type="text"
                       placeholder="Batch Issuer Name (e.g. Acme Inc)"
@@ -1550,7 +1751,7 @@ const CreateCertificatePage = () => {
         onConfirmMapping={handleConfirmMappingFromModal}
         onLiveMappingChange={handleLiveMappingUpdate}
         isProOrEnterprise={isProOrEnterprise}
-        templateCustomFields={templateCustomPlaceholders}
+        templateCustomFields={[...templateCustomPlaceholders, ...userCustomColumns]}
       />
 
       {/* Floating Action Button for In-Page Spreadsheet Editor (Offset from SupportWidget at bottom-6 right-6) */}
@@ -1649,7 +1850,7 @@ const CreateCertificatePage = () => {
                   </span>
                 </div>
                 <p className="text-[10px] text-slate-400 mb-0 truncate hidden sm:block">
-                  Type cells or paste from Excel (Ctrl+V) &bull; Live updates preview
+                  Type cells or paste from Excel (Ctrl+V) &bull; Auto-saves your draft
                 </p>
               </div>
             </div>
@@ -1713,6 +1914,16 @@ const CreateCertificatePage = () => {
               onChangeBatchDefaults={setBatchDefaults}
               onOpenMappingModal={() => setIsMappingModalOpen(true)}
               templateCustomFields={templateCustomPlaceholders}
+              userCustomColumns={userCustomColumns}
+              onChangeUserCustomColumns={setUserCustomColumns}
+              sheetName={sheetName}
+              onChangeSheetName={setSheetName}
+              savedSheets={savedSheets}
+              onSaveSheet={handleSaveSheet}
+              onLoadSavedSheet={handleLoadSavedSheet}
+              onDeleteSavedSheet={handleDeleteSavedSheet}
+              onNewSheet={handleNewSheet}
+              lastAutoSavedAt={lastAutoSavedAt}
               isProOrEnterprise={isProOrEnterprise}
             />
           </div>

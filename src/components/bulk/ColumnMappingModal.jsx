@@ -59,6 +59,7 @@ const ColumnMappingModal = ({
 
   // Batch defaults for optional fields
   const [defaults, setDefaults] = useState(() => ({
+    course_title: batchDefaults.course_title || "",
     issuer_name: batchDefaults.issuer_name || "",
     issue_date: batchDefaults.issue_date || new Date().toISOString().split("T")[0],
     signature: batchDefaults.signature || "",
@@ -217,13 +218,11 @@ const ColumnMappingModal = ({
     }
   };
 
-  // Check mandatory requirements
+  // Check mandatory requirements (Only Recipient Name is compulsory)
   const hasRecipientName = isSplitNameMode
     ? !!(splitFirstCol && splitLastCol)
     : !!currentMapping.recipient_name?.sourceColumn;
-  const hasRecipientEmail = !!currentMapping.recipient_email?.sourceColumn;
-  const hasCourseTitle = !!currentMapping.course_title?.sourceColumn;
-  const canConfirm = hasRecipientName && hasRecipientEmail && hasCourseTitle;
+  const canConfirm = hasRecipientName;
 
   // Real-time preview of mapped rows
   const previewMappedRows = useMemo(() => {
@@ -256,7 +255,7 @@ const ColumnMappingModal = ({
   // Submit and confirm
   const handleConfirm = () => {
     if (!canConfirm) {
-      toast.error("Please map all mandatory fields: Recipient Name, Email, and Course Title.");
+      toast.error("Please map the compulsory Recipient Name column.");
       return;
     }
 
@@ -471,7 +470,11 @@ const ColumnMappingModal = ({
                               className="flex-1 text-xs py-1.5 px-2.5 rounded-lg border border-slate-200 bg-white text-slate-800 focus:outline-none focus:border-indigo-500 shadow-2xs"
                             >
                               <option value="__none__">
-                                {field.required ? "-- Choose column * --" : "-- Use batch default / None --"}
+                                {field.required
+                                  ? "-- Choose column * --"
+                                  : field.key === "recipient_email"
+                                  ? "-- None / Skip Email --"
+                                  : "-- Use batch default / None --"}
                               </option>
                               {headers.map((h) => (
                                 <option key={h} value={h}>
@@ -480,8 +483,8 @@ const ColumnMappingModal = ({
                               ))}
                             </select>
 
-                            {/* Batch default input for optional fields */}
-                            {!field.required && (
+                            {/* Batch default input for optional fields (except email) */}
+                            {!field.required && field.key !== "recipient_email" && (
                               <input
                                 type={field.key === "issue_date" ? "date" : "text"}
                                 placeholder={`Batch default...`}

@@ -2,6 +2,8 @@
 
 import React, { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { Modal } from "react-bootstrap";
+import Papa from "papaparse";
+import * as XLSX from "xlsx";
 import {
   Plus,
   Trash2,
@@ -11,7 +13,6 @@ import {
   Filter,
   Copy,
   Download,
-  Info,
   Calendar,
   User,
   Mail,
@@ -21,19 +22,46 @@ import {
   ChevronRight,
   SlidersHorizontal,
   Tag,
-  Columns3,
-  Zap
+  Zap,
+  Save,
+  FolderOpen,
+  FileSpreadsheet,
+  Undo2,
+  Redo2,
+  ArrowDownToLine,
+  FilePlus2,
+  Check,
+  X
 } from "lucide-react";
 import {
   PROOFDECK_CORE_FIELDS,
   looksLikeEmail,
-  looksLikeDate,
   isRowNonEmpty,
   validateRow
 } from "../../utils/columnMapping";
 import toast from "react-hot-toast";
 
 const PAGE_SIZE_OPTIONS = [25, 50, 100];
+export const MIN_STARTER_ROWS = 15;
+
+export function createEmptySpreadsheetRow(batchDefaults = {}) {
+  return {
+    recipient_name: "",
+    recipient_email: "",
+    course_title: batchDefaults.course_title || "",
+    issuer_name: batchDefaults.issuer_name || "",
+    issue_date: batchDefaults.issue_date || new Date().toISOString().split("T")[0],
+    signature: batchDefaults.signature || ""
+  };
+}
+
+export function ensureMinimumRows(rows = [], minCount = MIN_STARTER_ROWS, batchDefaults = {}) {
+  const result = Array.isArray(rows) ? [...rows] : [];
+  while (result.length < minCount) {
+    result.push(createEmptySpreadsheetRow(batchDefaults));
+  }
+  return result;
+}
 
 const SpreadsheetGrid = ({
   rows = [],
@@ -43,16 +71,80 @@ const SpreadsheetGrid = ({
   onChangeBatchDefaults,
   onOpenMappingModal,
   templateCustomFields = [],
+  userCustomColumns = [],
+  onChangeUserCustomColumns,
+  sheetName = "Untitled Sheet",
+  onChangeSheetName,
+  savedSheets = [],
+  onSaveSheet,
+  onLoadSavedSheet,
+  onDeleteSavedSheet,
+  onNewSheet,
+  lastAutoSavedAt = null,
   isProOrEnterprise = false
 }) => {
-  // Columns definition (Core 6 + custom template placeholders)
+  // Ensure we always have at least MIN_STARTER_ROWS so it looks & works like a real spreadsheet
+  useEffect(() => {
+    if (!rows || rows.length < MIN_STARTER_ROWS) {
+      onChangeRows(ensureMinimumRows(rows, MIN_STARTER_ROWS, batchDefaults));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rows.length]);
+
+  // Undo / Redo history stack
+  const [history, setHistory] = useState([]);
+  const [future, setFuture] = useState([]);
+
+  const updateRowsWithHistory = useCallback(
+    (nextRowsOrUpdater) => {
+      onChangeRows((prevRows) => {
+        const nextRows =
+          typeof nextRowsOrUpdater === "function"
+            ? nextRowsOrUpdater(prevRows)
+            : nextRowsOrUpdater;
+        setHistory((h) => [...h.slice(-29), prevRows]);
+        setFuture([]);
+        return ensureMinimumRows(nextRows, MIN_STARTER_ROWS, batchDefaults);
+      });
+    },
+    [onChangeRows, batchDefaults]
+  );
+
+  const handleUndo = useCallback(() => {
+    if (history.length === 0) return;
+    const previous = history[history.length - 1];
+    setHistory((h) => h.slice(0, -1));
+    setFuture((f) => [rows, ...f.slice(0, 29)]);
+    onChangeRows(previous);
+  }, [history, rows, onChangeRows]);
+
+  const handleRedo = useCallback(() => {
+    if (future.length === 0) return;
+    const next = future[0];
+    setFuture((f) => f.slice(1));
+    setHistory((h) => [...h.slice(-29), rows]);
+    onChangeRows(next);
+  }, [future, rows, onChangeRows]);
+
+  // Columns definition (Core 6 + template placeholders + user-added custom columns)
   const columns = useMemo(() => {
     const cols = PROOFDECK_CORE_FIELDS.map((f) => ({
       key: f.key,
       label: f.label,
       required: f.required,
+      placeholder: f.placeholder || "",
       type: f.key === "issue_date" ? "date" : f.key === "recipient_email" ? "email" : "text",
-      icon: f.key === "recipient_name" ? User : f.key === "recipient_email" ? Mail : f.key === "course_title" ? FileText : f.key === "issue_date" ? Calendar : PenTool
+      icon:
+        f.key === "recipient_name"
+          ? User
+          : f.key === "recipient_email"
+          ? Mail
+          : f.key === "course_title"
+          ? FileText
+          : f.key === "issue_date"
+          ? Calendar
+          : PenTool,
+      isCustom: false
     }));
 
     templateCustomFields.forEach((cf) => {
@@ -61,20 +153,50 @@ const SpreadsheetGrid = ({
           key: cf.key,
           label: cf.label,
           required: false,
+          placeholder: "",
           type: "text",
-          icon: Tag
+          icon: Tag,
+          isCustom: false
+        });
+      }
+    });
+
+    userCustomColumns.forEach((uc) => {
+      if (!cols.some((c) => c.key === uc.key)) {
+        cols.push({
+          key: uc.key,
+          label: uc.label,
+          required: false,
+          placeholder: "",
+          type: "text",
+          icon: Tag,
+          isCustom: true
         });
       }
     });
 
     return cols;
-  }, [templateCustomFields]);
+  }, [templateCustomFields, userCustomColumns]);
 
   // Active cell selection & edit state
   const [activeCell, setActiveCell] = useState({ rowIdx: 0, colKey: "recipient_name" });
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState("");
   const inputRef = useRef(null);
+  const gridContainerRef = useRef(null);
+
+  // Add Custom Column Modal / Popover state
+  const [showAddColModal, setShowAddColModal] = useState(false);
+  const [newColName, setNewColName] = useState("");
+
+  // Save / Load Sheet UI state
+  const [showSavedSheetsModal, setShowSavedSheetsModal] = useState(false);
+  const [showSaveAsModal, setShowSaveAsModal] = useState(false);
+  const [saveAsName, setSaveAsName] = useState(sheetName || "Untitled Sheet");
+
+  useEffect(() => {
+    setSaveAsName(sheetName || "Untitled Sheet");
+  }, [sheetName]);
 
   // Filter state: show only rows needing attention
   const [filterNeedsAttention, setFilterNeedsAttention] = useState(false);
@@ -84,8 +206,11 @@ const SpreadsheetGrid = ({
   const [pageSize, setPageSize] = useState(25);
 
   const customKeys = useMemo(
-    () => templateCustomFields.map((cf) => cf.key),
-    [templateCustomFields]
+    () => [
+      ...templateCustomFields.map((cf) => cf.key),
+      ...userCustomColumns.map((uc) => uc.key)
+    ],
+    [templateCustomFields, userCustomColumns]
   );
 
   // Validate all rows using single source of truth
@@ -110,7 +235,6 @@ const SpreadsheetGrid = ({
     rows.forEach((r, idx) => {
       const isNonEmpty = isRowNonEmpty(r, customKeys);
       if (!isNonEmpty) {
-        // Completely empty row: ignore in counts and warnings
         map.set(idx, { cellErrors: {}, hasErrors: false, isEmpty: true });
         return;
       }
@@ -166,15 +290,14 @@ const SpreadsheetGrid = ({
   useEffect(() => {
     if (isEditing && inputRef.current) {
       inputRef.current.focus();
-      inputRef.current.select();
     }
-  }, [isEditing]);
+  }, [isEditing, activeCell]);
 
   // Start editing a cell
   const startEditing = useCallback(
-    (rowIdx, colKey) => {
+    (rowIdx, colKey, initialVal = undefined) => {
       setActiveCell({ rowIdx, colKey });
-      setEditValue(rows[rowIdx]?.[colKey] ?? "");
+      setEditValue(initialVal !== undefined ? initialVal : rows[rowIdx]?.[colKey] ?? "");
       setIsEditing(true);
     },
     [rows]
@@ -184,73 +307,222 @@ const SpreadsheetGrid = ({
   const commitEdit = useCallback(() => {
     if (!isEditing) return;
     const { rowIdx, colKey } = activeCell;
-    const newRows = [...rows];
-    if (newRows[rowIdx]) {
-      newRows[rowIdx] = {
-        ...newRows[rowIdx],
-        [colKey]: editValue.trim()
-      };
-      onChangeRows(newRows);
+    const currentVal = rows[rowIdx]?.[colKey] ?? "";
+    const trimmed = editValue.trim();
+    if (String(currentVal) !== trimmed) {
+      updateRowsWithHistory((prev) => {
+        const next = [...prev];
+        if (next[rowIdx]) {
+          next[rowIdx] = {
+            ...next[rowIdx],
+            [colKey]: trimmed
+          };
+        }
+        return next;
+      });
     }
     setIsEditing(false);
-  }, [isEditing, activeCell, editValue, rows, onChangeRows]);
+  }, [isEditing, activeCell, editValue, rows, updateRowsWithHistory]);
 
-  // Add empty row
-  const handleAddRow = () => {
-    const newRow = {
-      recipient_name: "",
-      recipient_email: "",
-      course_title: batchDefaults.course_title || "",
-      issuer_name: batchDefaults.issuer_name || "",
-      issue_date: batchDefaults.issue_date || new Date().toISOString().split("T")[0],
-      signature: batchDefaults.signature || ""
-    };
-    onChangeRows([...rows, newRow]);
-    // Move to new row
-    setActiveCell({ rowIdx: rows.length, colKey: "recipient_name" });
+  // Add 1 or N empty rows
+  const handleAddRows = useCallback(
+    (count = 1) => {
+      const targetRowIdx = rows.length;
+      updateRowsWithHistory((prev) => {
+        const added = Array.from({ length: count }, () =>
+          createEmptySpreadsheetRow(batchDefaults)
+        );
+        return [...prev, ...added];
+      });
+      setActiveCell({ rowIdx: targetRowIdx, colKey: "recipient_name" });
+    },
+    [rows.length, batchDefaults, updateRowsWithHistory]
+  );
+
+  // Insert a row below a given row index
+  const handleInsertRowBelow = (rowIdx) => {
+    updateRowsWithHistory((prev) => {
+      const next = [...prev];
+      next.splice(rowIdx + 1, 0, createEmptySpreadsheetRow(batchDefaults));
+      return next;
+    });
+    setActiveCell({ rowIdx: rowIdx + 1, colKey: "recipient_name" });
   };
 
-  // Delete specific row
+  // Duplicate a specific row
+  const handleDuplicateRow = (rowIdx) => {
+    updateRowsWithHistory((prev) => {
+      const next = [...prev];
+      const source = prev[rowIdx] || createEmptySpreadsheetRow(batchDefaults);
+      next.splice(rowIdx + 1, 0, { ...source });
+      return next;
+    });
+    toast.success(`Row ${rowIdx + 1} duplicated`);
+  };
+
+  // Delete specific row (or clear it if at minimum rows)
   const handleDeleteRow = (rowIdx) => {
-    const newRows = rows.filter((_, idx) => idx !== rowIdx);
-    onChangeRows(newRows);
-    if (activeCell.rowIdx >= newRows.length) {
-      setActiveCell((prev) => ({ ...prev, rowIdx: Math.max(0, newRows.length - 1) }));
+    updateRowsWithHistory((prev) => {
+      const next = prev.filter((_, idx) => idx !== rowIdx);
+      return ensureMinimumRows(next, MIN_STARTER_ROWS, batchDefaults);
+    });
+    if (activeCell.rowIdx >= rows.length - 1) {
+      setActiveCell((prev) => ({ ...prev, rowIdx: Math.max(0, rows.length - 2) }));
+    }
+  };
+
+  // Fill Down: Copy active cell's value down to all non-empty rows below (or next 10 rows if empty)
+  const handleFillDown = useCallback(() => {
+    const { rowIdx, colKey } = activeCell;
+    const sourceVal = isEditing ? editValue.trim() : String(rows[rowIdx]?.[colKey] ?? "");
+    if (isEditing) setIsEditing(false);
+
+    updateRowsWithHistory((prev) => {
+      const next = [...prev];
+      // Find last non-empty row index
+      let lastNonEmptyIdx = -1;
+      next.forEach((r, idx) => {
+        if (isRowNonEmpty(r, customKeys)) lastNonEmptyIdx = idx;
+      });
+      const endIdx = lastNonEmptyIdx > rowIdx ? lastNonEmptyIdx : Math.min(next.length - 1, rowIdx + 5);
+      for (let i = rowIdx + 1; i <= endIdx; i += 1) {
+        next[i] = { ...next[i], [colKey]: sourceVal };
+      }
+      return next;
+    });
+
+    const colLabel = columns.find((c) => c.key === colKey)?.label || colKey;
+    toast.success(`Filled "${colLabel}" down from row ${rowIdx + 1}`);
+  }, [activeCell, isEditing, editValue, rows, customKeys, columns, updateRowsWithHistory]);
+
+  // Add Custom Column
+  const handleAddCustomColumn = (e) => {
+    e.preventDefault();
+    const raw = newColName.trim();
+    if (!raw) return;
+    const key = raw
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "_")
+      .replace(/^_+|_+$/g, "");
+    if (!key) return toast.error("Please enter a valid column name.");
+    if (columns.some((c) => c.key === key)) {
+      return toast.error("A column with that name already exists.");
+    }
+    if (onChangeUserCustomColumns) {
+      onChangeUserCustomColumns((prev) => [...prev, { key, label: raw }]);
+    }
+    setNewColName("");
+    setShowAddColModal(false);
+    toast.success(`Added column "${raw}"`);
+  };
+
+  const handleRemoveCustomColumn = (colKey) => {
+    if (onChangeUserCustomColumns) {
+      onChangeUserCustomColumns((prev) => prev.filter((c) => c.key !== colKey));
+    }
+    if (activeCell.colKey === colKey) {
+      setActiveCell((prev) => ({ ...prev, colKey: "recipient_name" }));
     }
   };
 
   const [showClearModal, setShowClearModal] = useState(false);
 
-  // Clear all rows
-  const handleClearAll = () => {
-    setShowClearModal(true);
-  };
-
   const handleConfirmClearAll = () => {
-    onChangeRows([]);
+    updateRowsWithHistory(ensureMinimumRows([], MIN_STARTER_ROWS, batchDefaults));
     setActiveCell({ rowIdx: 0, colKey: "recipient_name" });
     setShowClearModal(false);
-    toast.success("Spreadsheet rows cleared");
+    toast.success("Spreadsheet cleared");
   };
 
-  // Apply batch defaults to all empty cells in the batch
+  // Apply batch defaults to all non-empty rows (or empty cells in non-empty rows)
   const handleApplyDefaultsToBatch = () => {
-    const updated = rows.map((r) => ({
-      ...r,
-      issuer_name: r.issuer_name || batchDefaults.issuer_name || "",
-      issue_date: r.issue_date || batchDefaults.issue_date || "",
-      signature: r.signature || batchDefaults.signature || ""
-    }));
-    onChangeRows(updated);
+    updateRowsWithHistory((prev) =>
+      prev.map((r) => {
+        if (!isRowNonEmpty(r, customKeys)) {
+          return {
+            ...r,
+            course_title: r.course_title || batchDefaults.course_title || "",
+            issuer_name: r.issuer_name || batchDefaults.issuer_name || "",
+            issue_date: r.issue_date || batchDefaults.issue_date || "",
+            signature: r.signature || batchDefaults.signature || ""
+          };
+        }
+        return {
+          ...r,
+          course_title: r.course_title || batchDefaults.course_title || "",
+          issuer_name: r.issuer_name || batchDefaults.issuer_name || "",
+          issue_date: r.issue_date || batchDefaults.issue_date || "",
+          signature: r.signature || batchDefaults.signature || ""
+        };
+      })
+    );
     toast.success("Batch defaults applied to all rows!");
   };
+
+  // Export current spreadsheet to CSV or Excel (.xlsx)
+  const handleExportFile = (format = "xlsx") => {
+    const nonEmpty = rows.filter((r) => isRowNonEmpty(r, customKeys));
+    const sourceRows = nonEmpty.length > 0 ? nonEmpty : rows.slice(0, 5);
+
+    const exportData = sourceRows.map((r) => {
+      const obj = {};
+      columns.forEach((col) => {
+        obj[col.label] = r[col.key] ?? "";
+      });
+      return obj;
+    });
+
+    const safeFileBase =
+      (sheetName || "proofdeck_spreadsheet")
+        .trim()
+        .toLowerCase()
+        .replace(/[^a-z0-9-_]+/g, "_") || "proofdeck_spreadsheet";
+
+    if (format === "csv") {
+      const csvStr = Papa.unparse(exportData);
+      const blob = new Blob([csvStr], { type: "text/csv;charset=utf-8;" });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("download", `${safeFileBase}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+      toast.success(`Downloaded ${safeFileBase}.csv`);
+    } else {
+      const ws = XLSX.utils.json_to_sheet(exportData);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Recipients");
+      XLSX.writeFile(wb, `${safeFileBase}.xlsx`);
+      toast.success(`Downloaded ${safeFileBase}.xlsx`);
+    }
+  };
+
+  // Copy active cell value to clipboard
+  const handleCopy = useCallback(
+    (e) => {
+      if (isEditing) return; // let native input selection copy work
+      const { rowIdx, colKey } = activeCell;
+      const val = rows[rowIdx]?.[colKey] ?? "";
+      if (e.clipboardData) {
+        e.clipboardData.setData("text/plain", String(val));
+        e.preventDefault();
+        toast.success("Copied cell", { duration: 1200 });
+      }
+    },
+    [isEditing, activeCell, rows]
+  );
 
   // Multi-row, multi-column paste handler (Excel / Google Sheets)
   const handlePaste = useCallback(
     (e) => {
       const text = e.clipboardData.getData("text");
-      if (!text || (!text.includes("\t") && !text.includes("\n"))) {
-        // Normal single cell paste, let input handle it if editing
+      if (!text) return;
+
+      const isMultiCell = text.includes("\t") || text.includes("\n") || text.includes("\r");
+      if (!isMultiCell && isEditing) {
+        // Normal single-cell paste while editing input: let browser handle it
         return;
       }
 
@@ -265,43 +537,86 @@ const SpreadsheetGrid = ({
       const startColIdx = columns.findIndex((c) => c.key === activeCell.colKey);
       const validColIdx = startColIdx === -1 ? 0 : startColIdx;
 
-      const newRows = [...rows];
-      const targetRowCount = Math.max(newRows.length, startRowIdx + pasteMatrix.length);
+      updateRowsWithHistory((prev) => {
+        const newRows = [...prev];
+        const targetRowCount = Math.max(
+          MIN_STARTER_ROWS,
+          newRows.length,
+          startRowIdx + pasteMatrix.length + 2
+        );
 
-      // Ensure enough rows exist
-      while (newRows.length < targetRowCount) {
-        newRows.push({
-          recipient_name: "",
-          recipient_email: "",
-          course_title: "",
-          issuer_name: batchDefaults.issuer_name || "",
-          issue_date: batchDefaults.issue_date || new Date().toISOString().split("T")[0],
-          signature: batchDefaults.signature || ""
-        });
-      }
+        while (newRows.length < targetRowCount) {
+          newRows.push(createEmptySpreadsheetRow(batchDefaults));
+        }
 
-      // Fill cells
-      pasteMatrix.forEach((pRow, rOffset) => {
-        const destRowIdx = startRowIdx + rOffset;
-        pRow.forEach((cellVal, cOffset) => {
-          const destColIdx = validColIdx + cOffset;
-          if (destColIdx < columns.length) {
-            const colKey = columns[destColIdx].key;
-            newRows[destRowIdx][colKey] = cellVal.trim();
-          }
+        pasteMatrix.forEach((pRow, rOffset) => {
+          const destRowIdx = startRowIdx + rOffset;
+          newRows[destRowIdx] = { ...newRows[destRowIdx] };
+          pRow.forEach((cellVal, cOffset) => {
+            const destColIdx = validColIdx + cOffset;
+            if (destColIdx < columns.length) {
+              const colKey = columns[destColIdx].key;
+              newRows[destRowIdx][colKey] = cellVal.trim();
+            }
+          });
         });
+
+        return newRows;
       });
 
-      onChangeRows(newRows);
       setIsEditing(false);
-      toast.success(`Pasted ${pasteMatrix.length} rows of data!`);
+      if (pasteMatrix.length > 1 || pasteMatrix[0].length > 1) {
+        toast.success(`Pasted ${pasteMatrix.length} ${pasteMatrix.length === 1 ? "row" : "rows"} of data!`);
+      }
     },
-    [activeCell, columns, rows, batchDefaults, onChangeRows]
+    [activeCell, columns, isEditing, batchDefaults, updateRowsWithHistory]
   );
 
-  // Spreadsheet keyboard navigation
+  // Ensure active row is visible on current page when navigating with keyboard
+  const ensureRowPageVisible = useCallback(
+    (targetRowIdx) => {
+      const pos = displayedRowIndices.indexOf(targetRowIdx);
+      if (pos !== -1) {
+        const targetPage = Math.floor(pos / pageSize) + 1;
+        if (targetPage !== currentPage) {
+          setCurrentPage(targetPage);
+        }
+      }
+    },
+    [displayedRowIndices, pageSize, currentPage]
+  );
+
+  // Spreadsheet keyboard navigation & shortcuts
   const handleKeyDown = useCallback(
     (e) => {
+      // Undo / Redo shortcuts
+      if ((e.ctrlKey || e.metaKey) && !isEditing) {
+        if (e.key.toLowerCase() === "z") {
+          e.preventDefault();
+          if (e.shiftKey) {
+            handleRedo();
+          } else {
+            handleUndo();
+          }
+          return;
+        }
+        if (e.key.toLowerCase() === "y") {
+          e.preventDefault();
+          handleRedo();
+          return;
+        }
+        if (e.key.toLowerCase() === "d") {
+          e.preventDefault();
+          handleFillDown();
+          return;
+        }
+        if (e.key.toLowerCase() === "s") {
+          e.preventDefault();
+          setShowSaveAsModal(true);
+          return;
+        }
+      }
+
       const { rowIdx, colKey } = activeCell;
       const colIdx = columns.findIndex((c) => c.key === colKey);
 
@@ -309,69 +624,123 @@ const SpreadsheetGrid = ({
         if (e.key === "Enter") {
           e.preventDefault();
           commitEdit();
-          // Move down
-          if (rowIdx < rows.length - 1) {
-            setActiveCell({ rowIdx: rowIdx + 1, colKey });
+          if (e.shiftKey) {
+            const prevRow = Math.max(0, rowIdx - 1);
+            setActiveCell({ rowIdx: prevRow, colKey });
+            ensureRowPageVisible(prevRow);
+          } else if (rowIdx < rows.length - 1) {
+            const nextRow = rowIdx + 1;
+            setActiveCell({ rowIdx: nextRow, colKey });
+            ensureRowPageVisible(nextRow);
           } else {
-            // Append row on Enter at bottom
-            handleAddRow();
+            handleAddRows(1);
           }
         } else if (e.key === "Tab") {
           e.preventDefault();
           commitEdit();
           if (e.shiftKey) {
-            // Move left
             if (colIdx > 0) {
               setActiveCell({ rowIdx, colKey: columns[colIdx - 1].key });
             } else if (rowIdx > 0) {
-              setActiveCell({ rowIdx: rowIdx - 1, colKey: columns[columns.length - 1].key });
+              const prevRow = rowIdx - 1;
+              setActiveCell({ rowIdx: prevRow, colKey: columns[columns.length - 1].key });
+              ensureRowPageVisible(prevRow);
             }
           } else {
-            // Move right
             if (colIdx < columns.length - 1) {
               setActiveCell({ rowIdx, colKey: columns[colIdx + 1].key });
             } else if (rowIdx < rows.length - 1) {
-              setActiveCell({ rowIdx: rowIdx + 1, colKey: columns[0].key });
+              const nextRow = rowIdx + 1;
+              setActiveCell({ rowIdx: nextRow, colKey: columns[0].key });
+              ensureRowPageVisible(nextRow);
+            } else {
+              handleAddRows(1);
             }
           }
         } else if (e.key === "Escape") {
           e.preventDefault();
           setIsEditing(false);
+          gridContainerRef.current?.focus();
         }
         return;
       }
 
-      // Not editing: Navigation mode
+      // Not editing: Grid navigation mode
       if (e.key === "ArrowUp") {
         e.preventDefault();
-        if (rowIdx > 0) setActiveCell({ rowIdx: rowIdx - 1, colKey });
+        if (rowIdx > 0) {
+          const prevRow = rowIdx - 1;
+          setActiveCell({ rowIdx: prevRow, colKey });
+          ensureRowPageVisible(prevRow);
+        }
       } else if (e.key === "ArrowDown") {
         e.preventDefault();
-        if (rowIdx < rows.length - 1) setActiveCell({ rowIdx: rowIdx + 1, colKey });
+        if (rowIdx < rows.length - 1) {
+          const nextRow = rowIdx + 1;
+          setActiveCell({ rowIdx: nextRow, colKey });
+          ensureRowPageVisible(nextRow);
+        } else {
+          handleAddRows(1);
+        }
       } else if (e.key === "ArrowLeft") {
         e.preventDefault();
         if (colIdx > 0) setActiveCell({ rowIdx, colKey: columns[colIdx - 1].key });
       } else if (e.key === "ArrowRight") {
         e.preventDefault();
         if (colIdx < columns.length - 1) setActiveCell({ rowIdx, colKey: columns[colIdx + 1].key });
+      } else if (e.key === "Tab") {
+        e.preventDefault();
+        if (e.shiftKey) {
+          if (colIdx > 0) {
+            setActiveCell({ rowIdx, colKey: columns[colIdx - 1].key });
+          } else if (rowIdx > 0) {
+            const prevRow = rowIdx - 1;
+            setActiveCell({ rowIdx: prevRow, colKey: columns[columns.length - 1].key });
+            ensureRowPageVisible(prevRow);
+          }
+        } else {
+          if (colIdx < columns.length - 1) {
+            setActiveCell({ rowIdx, colKey: columns[colIdx + 1].key });
+          } else if (rowIdx < rows.length - 1) {
+            const nextRow = rowIdx + 1;
+            setActiveCell({ rowIdx: nextRow, colKey: columns[0].key });
+            ensureRowPageVisible(nextRow);
+          }
+        }
       } else if (e.key === "Enter" || e.key === "F2") {
         e.preventDefault();
         startEditing(rowIdx, colKey);
       } else if (e.key === "Delete" || e.key === "Backspace") {
         e.preventDefault();
-        const newRows = [...rows];
-        if (newRows[rowIdx]) {
-          newRows[rowIdx] = { ...newRows[rowIdx], [colKey]: "" };
-          onChangeRows(newRows);
+        if (rows[rowIdx]?.[colKey]) {
+          updateRowsWithHistory((prev) => {
+            const next = [...prev];
+            if (next[rowIdx]) {
+              next[rowIdx] = { ...next[rowIdx], [colKey]: "" };
+            }
+            return next;
+          });
         }
       } else if (e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) {
-        // Typing enters edit mode immediately
-        setActiveCell({ rowIdx, colKey });
-        setEditValue(e.key);
-        setIsEditing(true);
+        // Typing any character overwrites cell immediately like Excel / Google Sheets
+        e.preventDefault();
+        startEditing(rowIdx, colKey, e.key);
       }
     },
-    [isEditing, activeCell, columns, rows, commitEdit, startEditing, handleAddRow, onChangeRows]
+    [
+      isEditing,
+      activeCell,
+      columns,
+      rows,
+      commitEdit,
+      startEditing,
+      handleAddRows,
+      handleUndo,
+      handleRedo,
+      handleFillDown,
+      ensureRowPageVisible,
+      updateRowsWithHistory
+    ]
   );
 
   // Credit calculation (strictly based on valid ready rows)
@@ -380,19 +749,142 @@ const SpreadsheetGrid = ({
 
   return (
     <div
-      className="space-y-3.5 outline-none select-none"
+      ref={gridContainerRef}
+      className="space-y-3 outline-none select-none"
       onKeyDown={handleKeyDown}
       onPaste={handlePaste}
+      onCopy={handleCopy}
       tabIndex={0}
     >
-      {/* 1. TOP STATUS & VALIDATION METRIC BAR */}
-      <div className="bg-white p-3.5 rounded-xl border border-slate-200/90 shadow-2xs flex flex-wrap items-center justify-between gap-3">
+      {/* 1. SPREADSHEET WORKBOOK TOOLBAR (Sheet Name, Auto-Save Status, Save/Load/Export, Undo/Redo) */}
+      <div className="bg-white p-2.5 sm:p-3 rounded-xl border border-slate-200/90 shadow-2xs flex flex-wrap items-center justify-between gap-2.5">
+        {/* Left: Sheet Name + Auto-Save Badge */}
+        <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1">
+            <FileSpreadsheet size={14} className="text-emerald-600 shrink-0" />
+            <input
+              type="text"
+              value={sheetName}
+              onChange={(e) => onChangeSheetName && onChangeSheetName(e.target.value)}
+              onKeyDown={(e) => e.stopPropagation()}
+              placeholder="Sheet name..."
+              className="text-xs font-bold text-slate-800 bg-transparent border-none focus:outline-none w-32 sm:w-40 truncate"
+              title="Click to rename spreadsheet"
+            />
+          </div>
+
+          {lastAutoSavedAt && (
+            <span
+              className="inline-flex items-center gap-1 text-[10px] font-medium text-emerald-700 bg-emerald-50/80 border border-emerald-200/70 px-2 py-0.5 rounded-full"
+              title="Your spreadsheet is automatically saved in this browser so you can close and continue anytime"
+            >
+              <Check size={10} className="text-emerald-600" />
+              <span>Auto-saved</span>
+            </span>
+          )}
+
+          {/* Undo / Redo / Fill Down */}
+          <div className="flex items-center gap-1 border-l border-slate-200 pl-2">
+            <button
+              type="button"
+              onClick={handleUndo}
+              disabled={history.length === 0}
+              className="p-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 disabled:opacity-35 transition-colors cursor-pointer"
+              title="Undo (Ctrl+Z)"
+            >
+              <Undo2 size={13} />
+            </button>
+            <button
+              type="button"
+              onClick={handleRedo}
+              disabled={future.length === 0}
+              className="p-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 disabled:opacity-35 transition-colors cursor-pointer"
+              title="Redo (Ctrl+Y)"
+            >
+              <Redo2 size={13} />
+            </button>
+            <button
+              type="button"
+              onClick={handleFillDown}
+              className="px-2 py-1 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-[11px] font-semibold flex items-center gap-1 transition-colors cursor-pointer"
+              title="Copy active cell value down to rows below (Ctrl+D)"
+            >
+              <ArrowDownToLine size={12} className="text-indigo-600" />
+              <span className="hidden sm:inline">Fill Down</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Right: Save Sheet, Saved Sheets, Export Excel/CSV, New Sheet */}
+        <div className="flex items-center gap-1.5 flex-wrap">
+          <button
+            type="button"
+            onClick={() => {
+              setSaveAsName(sheetName || "Untitled Sheet");
+              setShowSaveAsModal(true);
+            }}
+            className="px-2.5 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold flex items-center gap-1.5 shadow-2xs transition-all cursor-pointer"
+            title="Save this spreadsheet to your Saved Sheets list (Ctrl+S)"
+          >
+            <Save size={13} />
+            <span>Save Sheet</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setShowSavedSheetsModal(true)}
+            className="px-2.5 py-1.5 rounded-lg bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 text-xs font-semibold flex items-center gap-1.5 shadow-2xs transition-all cursor-pointer"
+            title="Open a previously saved spreadsheet"
+          >
+            <FolderOpen size={13} className="text-indigo-600" />
+            <span>Saved Sheets</span>
+            {savedSheets.length > 0 && (
+              <span className="px-1.5 py-0.2 rounded-full bg-indigo-50 text-indigo-700 text-[10px] font-bold">
+                {savedSheets.length}
+              </span>
+            )}
+          </button>
+
+          <button
+            type="button"
+            onClick={() => handleExportFile("xlsx")}
+            className="px-2.5 py-1.5 rounded-lg bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 text-xs font-semibold flex items-center gap-1 shadow-2xs transition-all cursor-pointer"
+            title="Download as Excel (.xlsx) file"
+          >
+            <Download size={13} className="text-emerald-600" />
+            <span>Excel</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => handleExportFile("csv")}
+            className="px-2 py-1.5 rounded-lg bg-white hover:bg-slate-50 border border-slate-200 text-slate-600 text-xs font-semibold flex items-center gap-1 shadow-2xs transition-all cursor-pointer"
+            title="Download as CSV (.csv) file"
+          >
+            <span>CSV</span>
+          </button>
+
+          {onNewSheet && (
+            <button
+              type="button"
+              onClick={onNewSheet}
+              className="p-1.5 rounded-lg bg-white hover:bg-slate-50 border border-slate-200 text-slate-600 hover:text-slate-900 transition-colors cursor-pointer"
+              title="Start a new blank spreadsheet"
+            >
+              <FilePlus2 size={14} />
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* 2. VALIDATION METRICS & CREDIT STATUS BAR */}
+      <div className="bg-white p-3 rounded-xl border border-slate-200/90 shadow-2xs flex flex-wrap items-center justify-between gap-3">
         {/* Left: Validation Counts & Filter */}
         <div className="flex items-center gap-2.5 flex-wrap">
           {nonEmptyRowsCount === 0 ? (
-            <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-100 border border-slate-200 text-slate-500 text-xs font-semibold shadow-2xs">
+            <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-100 border border-slate-200 text-slate-600 text-xs font-semibold shadow-2xs">
               <CheckCircle2 size={13} className="text-slate-400" />
-              <span>0 rows</span>
+              <span>Ready — Only Recipient Name is compulsory</span>
             </div>
           ) : (
             <>
@@ -405,7 +897,7 @@ const SpreadsheetGrid = ({
                 <button
                   type="button"
                   onClick={() => setFilterNeedsAttention(!filterNeedsAttention)}
-                  className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold transition-all border shadow-2xs ${
+                  className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold transition-all border shadow-2xs cursor-pointer ${
                     filterNeedsAttention
                       ? "bg-amber-500 text-white border-amber-600"
                       : "bg-amber-50 text-amber-800 border-amber-200 hover:bg-amber-100"
@@ -416,8 +908,8 @@ const SpreadsheetGrid = ({
                   {filterNeedsAttention && <span className="text-[10px] ml-1">(Filtering)</span>}
                 </button>
               ) : (
-                <span className="text-xs text-slate-400 font-medium">
-                  All rows valid
+                <span className="text-xs text-slate-500 font-medium">
+                  All {readyRowsCount} {readyRowsCount === 1 ? "row" : "rows"} valid (Email &amp; other fields are optional)
                 </span>
               )}
 
@@ -425,10 +917,10 @@ const SpreadsheetGrid = ({
                 <button
                   type="button"
                   onClick={onOpenMappingModal}
-                  className="text-indigo-650 hover:text-indigo-800 text-xs font-bold flex items-center gap-1 ml-2 transition-colors cursor-pointer"
+                  className="text-indigo-650 hover:text-indigo-800 text-xs font-bold flex items-center gap-1 ml-1 transition-colors cursor-pointer"
                 >
                   <Filter size={12} />
-                  <span>Review Column Mapping</span>
+                  <span>Map Columns</span>
                 </button>
               )}
             </>
@@ -436,7 +928,7 @@ const SpreadsheetGrid = ({
         </div>
 
         {/* Right: Credit Quota Status */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2.5">
           <div
             className={`px-3 py-1 rounded-lg text-xs font-bold border flex items-center gap-1.5 ${
               hasSufficientCredits
@@ -446,18 +938,18 @@ const SpreadsheetGrid = ({
           >
             <Zap size={13} className={hasSufficientCredits ? "text-indigo-500" : "text-red-500"} />
             <span>
-              Batch requires <strong className="font-extrabold">{creditsNeeded}</strong> credits
+              Requires <strong className="font-extrabold">{creditsNeeded}</strong> credits
             </span>
             <span className="text-slate-400 font-normal">|</span>
             <span className="text-slate-500 font-normal">
-              You have <strong className="font-bold text-slate-800">{userQuota}</strong> available
+              <strong className="font-bold text-slate-800">{userQuota}</strong> available
             </span>
           </div>
 
-          {rows.length > 0 && (
+          {nonEmptyRowsCount > 0 && (
             <button
               type="button"
-              onClick={handleClearAll}
+              onClick={() => setShowClearModal(true)}
               className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
               title="Clear all rows"
             >
@@ -473,7 +965,7 @@ const SpreadsheetGrid = ({
           <div className="flex items-center gap-2">
             <AlertCircle size={16} className="text-red-600 shrink-0" />
             <span>
-              <strong>Insufficient credits:</strong> This batch requires {creditsNeeded} credits, but you only have {userQuota} credits remaining.
+              <strong>Insufficient credits:</strong> This batch requires {creditsNeeded} credits, but you have {userQuota} remaining. You can still save or export your spreadsheet now and issue later.
             </span>
           </div>
           <a
@@ -487,17 +979,25 @@ const SpreadsheetGrid = ({
         </div>
       )}
 
-      {/* 2. BATCH DEFAULTS BAR (Fill once for the whole batch) */}
-      <div className="bg-slate-50/80 p-3 rounded-xl border border-slate-200/80 flex flex-wrap items-center justify-between gap-3 text-xs">
-        <div className="flex items-center gap-2 text-slate-700 font-bold">
-          <SlidersHorizontal size={14} className="text-indigo-600" />
-          <span>Batch Defaults:</span>
-          <span className="text-[11px] font-normal text-slate-400">
-            Apply to empty optional cells across all rows
-          </span>
+      {/* 3. BATCH DEFAULTS BAR (Fill once for the whole batch) */}
+      <div className="bg-slate-50/80 p-2.5 sm:p-3 rounded-xl border border-slate-200/80 flex flex-wrap items-center justify-between gap-2.5 text-xs">
+        <div className="flex items-center gap-1.5 text-slate-700 font-bold">
+          <SlidersHorizontal size={13} className="text-indigo-600 shrink-0" />
+          <span>Batch Defaults (Optional):</span>
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
+          <input
+            type="text"
+            placeholder="Batch Course / Event..."
+            value={batchDefaults.course_title || ""}
+            onChange={(e) =>
+              onChangeBatchDefaults((prev) => ({ ...prev, course_title: e.target.value }))
+            }
+            onKeyDown={(e) => e.stopPropagation()}
+            className="px-2.5 py-1 text-xs rounded-lg border border-slate-200 bg-white focus:outline-none focus:border-indigo-500 w-36 shadow-2xs"
+          />
+
           <input
             type="text"
             placeholder="Batch Issuer..."
@@ -505,6 +1005,7 @@ const SpreadsheetGrid = ({
             onChange={(e) =>
               onChangeBatchDefaults((prev) => ({ ...prev, issuer_name: e.target.value }))
             }
+            onKeyDown={(e) => e.stopPropagation()}
             className="px-2.5 py-1 text-xs rounded-lg border border-slate-200 bg-white focus:outline-none focus:border-indigo-500 w-32 shadow-2xs"
           />
 
@@ -514,6 +1015,7 @@ const SpreadsheetGrid = ({
             onChange={(e) =>
               onChangeBatchDefaults((prev) => ({ ...prev, issue_date: e.target.value }))
             }
+            onKeyDown={(e) => e.stopPropagation()}
             className="px-2 py-1 text-xs rounded-lg border border-slate-200 bg-white focus:outline-none focus:border-indigo-500 shadow-2xs"
           />
 
@@ -524,85 +1026,134 @@ const SpreadsheetGrid = ({
             onChange={(e) =>
               onChangeBatchDefaults((prev) => ({ ...prev, signature: e.target.value }))
             }
+            onKeyDown={(e) => e.stopPropagation()}
             className="px-2.5 py-1 text-xs rounded-lg border border-slate-200 bg-white focus:outline-none focus:border-indigo-500 w-32 shadow-2xs"
           />
 
           <button
             type="button"
             onClick={handleApplyDefaultsToBatch}
-            className="px-2.5 py-1 text-xs font-semibold bg-white border border-slate-200 hover:bg-slate-100 rounded-lg text-slate-700 transition-colors shadow-2xs"
+            className="px-2.5 py-1 text-xs font-semibold bg-white border border-slate-200 hover:bg-slate-100 rounded-lg text-slate-700 transition-colors shadow-2xs cursor-pointer"
           >
-            Apply to all
+            Apply to all rows
           </button>
         </div>
       </div>
 
-      {/* 3. INTERACTIVE SPREADSHEET TABLE */}
+      {/* 4. INTERACTIVE SPREADSHEET TABLE */}
       <div className="bg-white rounded-xl border border-slate-200 shadow-xs overflow-hidden">
-        <div className="overflow-x-auto max-h-[500px] overflow-y-auto scrollbar-thin">
-          <table className="min-w-full divide-y divide-slate-150 border-collapse text-xs">
+        <div className="overflow-x-auto max-h-[480px] overflow-y-auto scrollbar-thin">
+          <table className="min-w-full divide-y divide-slate-200 border-collapse text-xs">
             {/* SPREADSHEET HEADER */}
-            <thead className="bg-slate-50 sticky top-0 z-10 select-none">
+            <thead className="bg-slate-100 sticky top-0 z-10 select-none">
               <tr>
-                <th className="w-10 px-2 py-2 text-center font-bold text-slate-400 border-r border-slate-200 bg-slate-100/80">
+                <th className="w-10 px-2 py-2 text-center font-bold text-slate-500 border-r border-b border-slate-200 bg-slate-100">
                   #
                 </th>
-                {columns.map((col) => {
+                {columns.map((col, cIdx) => {
                   const Icon = col.icon;
+                  const colLetter = String.fromCharCode(65 + (cIdx % 26));
+                  const isActiveCol = activeCell.colKey === col.key;
                   return (
                     <th
                       key={col.key}
-                      className="px-3 py-2 text-left font-bold text-slate-700 border-r border-slate-200 min-w-[160px]"
+                      className={`px-3 py-2 text-left font-bold border-r border-b border-slate-200 min-w-[165px] transition-colors ${
+                        isActiveCol ? "bg-indigo-50/70 text-indigo-900" : "bg-slate-100 text-slate-700"
+                      }`}
                     >
-                      <div className="flex items-center gap-1.5">
-                        <Icon size={12} className="text-slate-400 shrink-0" />
-                        <span className="truncate">{col.label}</span>
-                        {col.required && <span className="text-red-500 font-bold">*</span>}
+                      <div className="flex items-center justify-between gap-1.5">
+                        <div className="flex items-center gap-1.5 min-w-0">
+                          <span className="text-[10px] font-mono text-slate-400 bg-white/80 px-1 rounded border border-slate-200/80">
+                            {colLetter}
+                          </span>
+                          <Icon size={12} className="text-slate-400 shrink-0" />
+                          <span className="truncate">{col.label}</span>
+                          {col.required ? (
+                            <span
+                              className="text-red-500 font-bold"
+                              title="Compulsory column"
+                            >
+                              *
+                            </span>
+                          ) : (
+                            <span className="text-[9px] font-normal text-slate-400">
+                              (optional)
+                            </span>
+                          )}
+                        </div>
+                        {col.isCustom && (
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveCustomColumn(col.key)}
+                            className="text-slate-400 hover:text-red-600 p-0.5 rounded"
+                            title={`Remove custom column "${col.label}"`}
+                          >
+                            <X size={11} />
+                          </button>
+                        )}
                       </div>
                     </th>
                   );
                 })}
-                <th className="w-10 px-2 py-2 text-center text-slate-400"></th>
+                {/* Add Custom Column Header Button */}
+                <th className="w-24 px-2 py-1.5 text-center border-b border-slate-200 bg-slate-100">
+                  <button
+                    type="button"
+                    onClick={() => setShowAddColModal(true)}
+                    className="inline-flex items-center gap-1 px-2 py-1 rounded bg-white hover:bg-indigo-50 text-slate-600 hover:text-indigo-700 border border-slate-200 text-[10px] font-bold transition-colors cursor-pointer"
+                    title="Add a custom column (e.g. Grade, Matric No, Department)"
+                  >
+                    <Plus size={11} />
+                    <span>Column</span>
+                  </button>
+                </th>
               </tr>
             </thead>
 
             {/* SPREADSHEET BODY */}
-            <tbody className="divide-y divide-slate-100 bg-white">
+            <tbody className="divide-y divide-slate-200/70 bg-white">
               {currentIndices.length === 0 ? (
                 <tr>
                   <td
                     colSpan={columns.length + 2}
-                    className="py-12 text-center text-slate-400"
+                    className="py-10 text-center text-slate-400"
                   >
-                    <p className="text-xs font-semibold mb-1">Spreadsheet is empty</p>
-                    <p className="text-[11px] text-slate-400 mb-3">
-                      Type rows manually, paste from Excel/Sheets (Ctrl+V), or upload a file.
-                    </p>
+                    <p className="text-xs font-semibold mb-2">No rows match the current filter</p>
                     <button
                       type="button"
-                      onClick={handleAddRow}
+                      onClick={() => setFilterNeedsAttention(false)}
                       className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-900 text-white text-xs font-bold hover:bg-black transition-all"
                     >
-                      <Plus size={13} />
-                      <span>Add First Row</span>
+                      <span>Show All Rows</span>
                     </button>
                   </td>
                 </tr>
               ) : (
-                currentIndices.map((realRowIdx, pageOffset) => {
+                currentIndices.map((realRowIdx) => {
                   const row = rows[realRowIdx];
                   const rowValidation = validationMap.get(realRowIdx);
                   const isRowInvalid = rowValidation?.hasErrors && !rowValidation?.isEmpty;
+                  const isActiveRow = activeCell.rowIdx === realRowIdx;
 
                   return (
                     <tr
                       key={realRowIdx}
-                      className={`hover:bg-slate-50/70 transition-colors ${
-                        isRowInvalid ? "bg-red-50/20" : ""
+                      className={`transition-colors ${
+                        isRowInvalid
+                          ? "bg-red-50/25"
+                          : isActiveRow
+                          ? "bg-indigo-50/15"
+                          : "hover:bg-slate-50/60"
                       }`}
                     >
-                      {/* Row Index Indicator */}
-                      <td className="px-2 py-1.5 text-center text-[10px] font-mono text-slate-400 bg-slate-50/60 border-r border-slate-200">
+                      {/* Row Number Indicator */}
+                      <td
+                        className={`px-2 py-1.5 text-center text-[10px] font-mono border-r border-slate-200 select-none ${
+                          isActiveRow
+                            ? "bg-indigo-100/80 text-indigo-800 font-bold"
+                            : "bg-slate-50 text-slate-400"
+                        }`}
+                      >
                         {realRowIdx + 1}
                       </td>
 
@@ -611,22 +1162,33 @@ const SpreadsheetGrid = ({
                         const cellValue = row?.[col.key] ?? "";
                         const isCellSelected =
                           activeCell.rowIdx === realRowIdx && activeCell.colKey === col.key;
-                        const cellError = !rowValidation?.isEmpty ? rowValidation?.cellErrors?.[col.key] : null;
+                        const cellError = !rowValidation?.isEmpty
+                          ? rowValidation?.cellErrors?.[col.key]
+                          : null;
 
                         return (
                           <td
                             key={col.key}
                             onClick={() => {
+                              if (
+                                isEditing &&
+                                (activeCell.rowIdx !== realRowIdx || activeCell.colKey !== col.key)
+                              ) {
+                                commitEdit();
+                              }
                               setActiveCell({ rowIdx: realRowIdx, colKey: col.key });
-                              setIsEditing(false);
                             }}
                             onDoubleClick={() => startEditing(realRowIdx, col.key)}
-                            className={`px-2.5 py-1.5 border-r border-slate-200 relative truncate cursor-pointer transition-all ${
+                            className={`px-2.5 py-1.5 border-r border-slate-200 relative truncate cursor-cell transition-all h-8 ${
                               isCellSelected
-                                ? "outline-2 outline-indigo-500 bg-indigo-50/30 z-2"
+                                ? "outline-2 -outline-offset-2 outline-indigo-600 bg-indigo-50/40 z-2"
                                 : ""
-                            } ${cellError ? "bg-red-50/60" : ""}`}
-                            title={cellError || cellValue}
+                            } ${cellError ? "bg-red-50/70" : ""}`}
+                            title={
+                              cellError ||
+                              cellValue ||
+                              "Click to select, start typing or double-click to edit"
+                            }
                           >
                             {isEditing && isCellSelected ? (
                               <input
@@ -635,18 +1197,21 @@ const SpreadsheetGrid = ({
                                 value={editValue}
                                 onChange={(e) => setEditValue(e.target.value)}
                                 onBlur={commitEdit}
-                                className="w-full text-xs p-0 border-none bg-transparent focus:outline-none text-slate-900"
+                                className="w-full text-xs p-0 border-none bg-transparent focus:outline-none text-slate-900 font-medium"
                               />
                             ) : (
-                              <div className="flex items-center justify-between gap-1">
+                              <div className="flex items-center justify-between gap-1 min-h-[18px]">
                                 <span
                                   className={`truncate ${
                                     !cellValue
-                                      ? "text-slate-300 italic text-[11px]"
+                                      ? "text-slate-300 text-[11px]"
+                                      : col.key === "recipient_name"
+                                      ? "text-slate-900 font-medium"
                                       : "text-slate-800"
                                   }`}
                                 >
-                                  {cellValue || (col.required ? "Required" : "-")}
+                                  {cellValue ||
+                                    (!rowValidation?.isEmpty && col.required ? "Required *" : "")}
                                 </span>
 
                                 {cellError && (
@@ -662,16 +1227,34 @@ const SpreadsheetGrid = ({
                         );
                       })}
 
-                      {/* Row Delete Action */}
-                      <td className="px-2 py-1 text-center">
-                        <button
-                          type="button"
-                          onClick={() => handleDeleteRow(realRowIdx)}
-                          className="text-slate-300 hover:text-red-600 transition-colors p-1"
-                          title="Delete row"
-                        >
-                          <Trash2 size={13} />
-                        </button>
+                      {/* Row Actions (Insert Below, Duplicate, Delete) */}
+                      <td className="px-1.5 py-1 text-center whitespace-nowrap">
+                        <div className="inline-flex items-center gap-0.5">
+                          <button
+                            type="button"
+                            onClick={() => handleInsertRowBelow(realRowIdx)}
+                            className="text-slate-300 hover:text-indigo-600 transition-colors p-1 rounded"
+                            title="Insert row below"
+                          >
+                            <Plus size={12} />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDuplicateRow(realRowIdx)}
+                            className="text-slate-300 hover:text-indigo-600 transition-colors p-1 rounded"
+                            title="Duplicate row"
+                          >
+                            <Copy size={11} />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteRow(realRowIdx)}
+                            className="text-slate-300 hover:text-red-600 transition-colors p-1 rounded"
+                            title="Delete / clear row"
+                          >
+                            <Trash2 size={12} />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   );
@@ -681,20 +1264,29 @@ const SpreadsheetGrid = ({
           </table>
         </div>
 
-        {/* 4. SPREADSHEET FOOTER BAR */}
-        <div className="bg-slate-50 px-4 py-2 border-t border-slate-200 flex flex-wrap items-center justify-between gap-3 text-xs">
-          <div className="flex items-center gap-2">
+        {/* 5. SPREADSHEET FOOTER BAR */}
+        <div className="bg-slate-50 px-3.5 py-2 border-t border-slate-200 flex flex-wrap items-center justify-between gap-3 text-xs">
+          <div className="flex items-center gap-2 flex-wrap">
             <button
               type="button"
-              onClick={handleAddRow}
-              className="inline-flex items-center gap-1 px-3 py-1 bg-white hover:bg-slate-100 border border-slate-200 text-slate-700 rounded-lg text-xs font-bold transition-all shadow-2xs"
+              onClick={() => handleAddRows(1)}
+              className="inline-flex items-center gap-1 px-2.5 py-1 bg-white hover:bg-slate-100 border border-slate-200 text-slate-700 rounded-lg text-xs font-bold transition-all shadow-2xs cursor-pointer"
             >
-              <Plus size={13} />
-              <span>Add Row</span>
+              <Plus size={12} />
+              <span>+1 Row</span>
             </button>
 
-            <span className="text-[11px] text-slate-400">
-              Tip: Paste directly from Excel or Google Sheets (Ctrl+V)
+            <button
+              type="button"
+              onClick={() => handleAddRows(10)}
+              className="inline-flex items-center gap-1 px-2.5 py-1 bg-white hover:bg-slate-100 border border-slate-200 text-slate-600 rounded-lg text-xs font-semibold transition-all shadow-2xs cursor-pointer"
+            >
+              <Plus size={12} />
+              <span>+10 Rows</span>
+            </button>
+
+            <span className="text-[11px] text-slate-400 hidden md:inline">
+              Shortcuts: Type directly to edit &bull; <kbd className="px-1 py-0.5 bg-white border border-slate-200 rounded text-[10px]">Ctrl+V</kbd> Paste from Excel &bull; <kbd className="px-1 py-0.5 bg-white border border-slate-200 rounded text-[10px]">Ctrl+Z</kbd> Undo &bull; <kbd className="px-1 py-0.5 bg-white border border-slate-200 rounded text-[10px]">Ctrl+D</kbd> Fill Down
             </span>
           </div>
 
@@ -738,6 +1330,198 @@ const SpreadsheetGrid = ({
         </div>
       </div>
 
+      {/* SAVE SHEET MODAL */}
+      <Modal
+        show={showSaveAsModal}
+        onHide={() => setShowSaveAsModal(false)}
+        centered
+        contentClassName="rounded-xl border border-slate-200 shadow-xl overflow-hidden bg-white"
+      >
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            const finalName = saveAsName.trim() || "Untitled Sheet";
+            if (onChangeSheetName) onChangeSheetName(finalName);
+            if (onSaveSheet) onSaveSheet(finalName);
+            setShowSaveAsModal(false);
+          }}
+        >
+          <Modal.Body className="p-5 space-y-3">
+            <div className="flex items-center gap-2.5">
+              <div className="w-9 h-9 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0">
+                <Save size={18} />
+              </div>
+              <div>
+                <h3 className="font-bold text-sm text-slate-800 mb-0">
+                  Save Spreadsheet Draft
+                </h3>
+                <p className="text-xs text-slate-500 mb-0">
+                  Save your work to resume anytime, even if you&apos;re not issuing certificates right now.
+                </p>
+              </div>
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">
+                Spreadsheet Name
+              </label>
+              <input
+                type="text"
+                value={saveAsName}
+                onChange={(e) => setSaveAsName(e.target.value)}
+                onKeyDown={(e) => e.stopPropagation()}
+                placeholder="e.g. Cohort 4 Graduating List"
+                className="w-full px-3 py-2 text-xs rounded-lg border border-slate-200 focus:outline-none focus:border-indigo-500"
+                autoFocus
+              />
+            </div>
+          </Modal.Body>
+          <Modal.Footer className="border-0 pt-0 bg-slate-50/70 p-3.5 flex justify-end gap-2">
+            <button
+              type="button"
+              onClick={() => setShowSaveAsModal(false)}
+              className="px-3.5 py-1.5 text-xs font-semibold text-slate-600 bg-white border border-slate-200 rounded-lg hover:bg-slate-50"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className="px-4 py-1.5 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg shadow-2xs"
+            >
+              Save Spreadsheet
+            </button>
+          </Modal.Footer>
+        </form>
+      </Modal>
+
+      {/* SAVED SHEETS MANAGER MODAL */}
+      <Modal
+        show={showSavedSheetsModal}
+        onHide={() => setShowSavedSheetsModal(false)}
+        centered
+        contentClassName="rounded-xl border border-slate-200 shadow-xl overflow-hidden bg-white"
+      >
+        <Modal.Body className="p-5">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2.5">
+              <div className="w-9 h-9 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0">
+                <FolderOpen size={18} />
+              </div>
+              <div>
+                <h3 className="font-bold text-sm text-slate-800 mb-0">
+                  Saved Spreadsheets
+                </h3>
+                <p className="text-xs text-slate-500 mb-0">
+                  Load a saved spreadsheet draft or export it to Excel/CSV
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => setShowSavedSheetsModal(false)}
+              className="p-1 text-slate-400 hover:text-slate-600 rounded"
+            >
+              <X size={16} />
+            </button>
+          </div>
+
+          {savedSheets.length === 0 ? (
+            <div className="text-center py-8 bg-slate-50 rounded-xl border border-slate-200/70">
+              <FileSpreadsheet size={24} className="mx-auto text-slate-400 mb-2" />
+              <p className="text-xs font-semibold text-slate-700 mb-1">
+                No named spreadsheets saved yet
+              </p>
+              <p className="text-[11px] text-slate-400 mb-0 px-4">
+                Your active spreadsheet is auto-saved automatically. Click <strong>&ldquo;Save Sheet&rdquo;</strong> in the toolbar to save named snapshots you can switch between.
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
+              {savedSheets.map((item) => (
+                <div
+                  key={item.id}
+                  className="p-3 rounded-xl border border-slate-200 hover:border-indigo-200 bg-slate-50/60 flex items-center justify-between gap-2"
+                >
+                  <div className="min-w-0">
+                    <div className="text-xs font-bold text-slate-800 truncate">
+                      {item.name}
+                    </div>
+                    <div className="text-[10px] text-slate-400">
+                      {item.rowCount || 0} recipient {item.rowCount === 1 ? "row" : "rows"} &bull; Saved{" "}
+                      {item.updatedAt
+                        ? new Date(item.updatedAt).toLocaleString()
+                        : "recently"}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (onLoadSavedSheet) onLoadSavedSheet(item);
+                        setShowSavedSheetsModal(false);
+                      }}
+                      className="px-3 py-1 rounded-lg bg-slate-900 hover:bg-black text-white text-xs font-bold transition-colors cursor-pointer"
+                    >
+                      Open
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => onDeleteSavedSheet && onDeleteSavedSheet(item.id)}
+                      className="p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 transition-colors cursor-pointer"
+                      title="Delete saved sheet"
+                    >
+                      <Trash2 size={13} />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </Modal.Body>
+      </Modal>
+
+      {/* ADD CUSTOM COLUMN MODAL */}
+      <Modal
+        show={showAddColModal}
+        onHide={() => setShowAddColModal(false)}
+        centered
+        contentClassName="rounded-xl border border-slate-200 shadow-xl overflow-hidden bg-white"
+      >
+        <form onSubmit={handleAddCustomColumn}>
+          <Modal.Body className="p-5 space-y-3">
+            <h3 className="font-bold text-sm text-slate-800 mb-1">
+              Add Custom Column
+            </h3>
+            <p className="text-xs text-slate-500 mb-2">
+              Add an extra column to your spreadsheet (e.g., Grade, Department, Score, Matric Number). If your template has a matching <code className="text-indigo-600">{"{{column_name}}"}</code> placeholder, it will populate automatically.
+            </p>
+            <input
+              type="text"
+              value={newColName}
+              onChange={(e) => setNewColName(e.target.value)}
+              onKeyDown={(e) => e.stopPropagation()}
+              placeholder="e.g. Grade or Department"
+              className="w-full px-3 py-2 text-xs rounded-lg border border-slate-200 focus:outline-none focus:border-indigo-500"
+              autoFocus
+            />
+          </Modal.Body>
+          <Modal.Footer className="border-0 pt-0 bg-slate-50/70 p-3.5 flex justify-end gap-2">
+            <button
+              type="button"
+              onClick={() => setShowAddColModal(false)}
+              className="px-3 py-1.5 text-xs font-semibold text-slate-600 bg-white border border-slate-200 rounded-lg"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className="px-4 py-1.5 text-xs font-bold text-white bg-slate-900 hover:bg-black rounded-lg"
+            >
+              Add Column
+            </button>
+          </Modal.Footer>
+        </form>
+      </Modal>
+
       {/* CLEAR ALL ROWS CONFIRMATION MODAL */}
       <Modal
         show={showClearModal}
@@ -756,8 +1540,8 @@ const SpreadsheetGrid = ({
               </h3>
               <p className="text-xs text-slate-500 dark:text-zinc-400 leading-relaxed mb-0">
                 Are you sure you want to clear all{" "}
-                <strong className="text-slate-700 dark:text-zinc-200">{rows.length} rows</strong> from the
-                spreadsheet? All entered recipient and batch data will be removed. This action cannot be undone.
+                <strong className="text-slate-700 dark:text-zinc-200">{nonEmptyRowsCount} entered rows</strong> from the
+                spreadsheet?
               </p>
             </div>
           </div>

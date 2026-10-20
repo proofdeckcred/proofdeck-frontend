@@ -20,8 +20,8 @@ export const PROOFDECK_CORE_FIELDS = [
   {
     key: "recipient_email",
     label: "Recipient Email",
-    required: true,
-    description: "Email address for credential delivery and verification",
+    required: false,
+    description: "Email address for credential delivery and verification (optional)",
     placeholder: "jane@example.com",
     synonyms: [
       "email", "e-mail", "email address", "mail", "contact email", "user email",
@@ -32,8 +32,8 @@ export const PROOFDECK_CORE_FIELDS = [
   {
     key: "course_title",
     label: "Course / Event Title",
-    required: true,
-    description: "Title of the completed course, webinar, or achievement",
+    required: false,
+    description: "Title of the completed course, webinar, or achievement (optional)",
     placeholder: "Advanced React Workshop",
     synonyms: [
       "course", "programme", "program", "training", "workshop", "certificate title",
@@ -193,45 +193,39 @@ export function isRowNonEmpty(row, customFieldKeys = []) {
 
 /**
  * Validates a single non-empty row.
+ * Only recipient_name is compulsory; all other fields are optional.
  */
 export function validateRow(row, emailFrequencies = new Map()) {
   const cellErrors = {};
   let isValid = true;
 
-  // 1. Recipient Name (Required)
+  // 1. Recipient Name (Strictly Required)
   if (!row.recipient_name || !String(row.recipient_name).trim()) {
     cellErrors.recipient_name = "Recipient Name is required";
     isValid = false;
   }
 
-  // 2. Recipient Email (Required + Format + Duplicate)
-  if (!row.recipient_email || !String(row.recipient_email).trim()) {
-    cellErrors.recipient_email = "Email is required";
-    isValid = false;
-  } else if (!looksLikeEmail(row.recipient_email)) {
-    cellErrors.recipient_email = "Invalid email format";
-    isValid = false;
-  } else {
-    const cleanEmail = String(row.recipient_email).trim().toLowerCase();
-    const freq =
-      emailFrequencies instanceof Map
-        ? emailFrequencies.get(cleanEmail) || 0
-        : emailFrequencies && typeof emailFrequencies === "object"
-        ? emailFrequencies[cleanEmail] || 0
-        : 0;
-    if (freq > 1) {
-      cellErrors.recipient_email = "Duplicate email in batch";
+  // 2. Recipient Email (Optional; if provided, validate format + duplicate)
+  if (row.recipient_email && String(row.recipient_email).trim()) {
+    if (!looksLikeEmail(row.recipient_email)) {
+      cellErrors.recipient_email = "Invalid email format";
       isValid = false;
+    } else {
+      const cleanEmail = String(row.recipient_email).trim().toLowerCase();
+      const freq =
+        emailFrequencies instanceof Map
+          ? emailFrequencies.get(cleanEmail) || 0
+          : emailFrequencies && typeof emailFrequencies === "object"
+          ? emailFrequencies[cleanEmail] || 0
+          : 0;
+      if (freq > 1) {
+        cellErrors.recipient_email = "Duplicate email in batch";
+        isValid = false;
+      }
     }
   }
 
-  // 3. Course Title (Required)
-  if (!row.course_title || !String(row.course_title).trim()) {
-    cellErrors.course_title = "Course Title is required";
-    isValid = false;
-  }
-
-  // 4. Issue Date (Optional, but if present must be valid)
+  // 3. Issue Date (Optional, but if present must be valid)
   if (row.issue_date && String(row.issue_date).trim() && !looksLikeDate(row.issue_date)) {
     cellErrors.issue_date = "Unparseable date";
     isValid = false;
@@ -440,8 +434,8 @@ export function inferMappingLayerA(headers, sampleRows = []) {
     }
   });
 
-  // 3. Confidence determination (Mandatory fields must be confidently mapped)
-  const mandatoryKeys = ["recipient_name", "recipient_email", "course_title"];
+  // 3. Confidence determination (Only recipient_name is strictly compulsory)
+  const mandatoryKeys = ["recipient_name"];
   result.isConfident = mandatoryKeys.every((k) => {
     const m = result.mappings[k];
     return m && m.sourceColumn && m.confidence >= 0.75;
