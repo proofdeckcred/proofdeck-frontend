@@ -379,6 +379,7 @@ const UploadTemplatePage = () => {
   const [isLeftSidebarOpen, setIsLeftSidebarOpen] = useState(true);
   const [isRightSidebarOpen, setIsRightSidebarOpen] = useState(true);
   const [previewMode, setPreviewMode] = useState(false);
+  const [isDraggingTemplate, setIsDraggingTemplate] = useState(false);
   const [sampleData, setSampleData] = useState({
     recipient_name: "Alabi Ezekiel",
     course_title: "Build in Public for 30 Days Program",
@@ -601,114 +602,6 @@ const UploadTemplatePage = () => {
     setSelectedId(newEl.id);
     setPreviewMode(false);
     setIsRightSidebarOpen(true);
-  };
-
-  // --- Add Smart Combination Blocks (Signature Block / Verification Block) ---
-  const handleAddComboBlock = (comboType) => {
-    const cx = Math.round(canvasSize.width / 2);
-    const cy = Math.round(canvasSize.height / 2);
-    const suffix = Math.random().toString(36).substring(2, 8);
-
-    if (comboType === "signature_block") {
-      const baseX = Math.max(40, cx - 90);
-      const baseY = Math.min(canvasSize.height - 110, cy + 80);
-      const sigEl = {
-        id: `el_sig_${suffix}`,
-        type: "placeholder",
-        text: "{{signature}}",
-        x: baseX,
-        y: baseY,
-        width: 180,
-        height: 28,
-        fontSize: 20,
-        fontFamily: "Great Vibes",
-        fill: "#1e293b",
-        align: "center",
-        fontStyle: "normal",
-        verticalAlign: "bottom",
-        rotation: 0,
-        visible: true,
-        locked: false,
-      };
-      const lineEl = {
-        id: `el_sig_line_${suffix}`,
-        type: "line",
-        x: baseX,
-        y: baseY + 30,
-        width: 180,
-        height: 8,
-        stroke: "#475569",
-        strokeWidth: 1.5,
-        rotation: 0,
-        visible: true,
-        locked: false,
-      };
-      const labelEl = {
-        id: `el_sig_lbl_${suffix}`,
-        type: "text",
-        text: "Authorized Signature",
-        x: baseX,
-        y: baseY + 38,
-        width: 180,
-        height: 18,
-        fontSize: 10,
-        fontFamily: "Inter",
-        fill: "#64748b",
-        align: "center",
-        fontStyle: "bold",
-        verticalAlign: "middle",
-        rotation: 0,
-        visible: true,
-        locked: false,
-      };
-      setElements((prev) => [...prev, sigEl, lineEl, labelEl]);
-      setSelectedId(sigEl.id);
-      setPreviewMode(false);
-      setIsRightSidebarOpen(true);
-      toast.success("Added Signature Block!");
-    } else if (comboType === "verification_block") {
-      const baseX = Math.max(40, canvasSize.width - 170);
-      const baseY = Math.max(40, canvasSize.height - 125);
-      const qrEl = {
-        id: `el_qr_${suffix}`,
-        type: "qr",
-        text: "{{qr_code}}",
-        x: baseX + 35,
-        y: baseY,
-        width: 60,
-        height: 60,
-        align: "center",
-        fontStyle: "normal",
-        rotation: 0,
-        verticalAlign: "middle",
-        isQr: true,
-        visible: true,
-        locked: false,
-      };
-      const idEl = {
-        id: `el_vid_${suffix}`,
-        type: "placeholder",
-        text: "ID: {{verification_id}}",
-        x: baseX - 15,
-        y: baseY + 64,
-        width: 160,
-        height: 18,
-        fontSize: 9,
-        fontFamily: "Inter",
-        fill: "#475569",
-        align: "center",
-        fontStyle: "bold",
-        verticalAlign: "middle",
-        rotation: 0,
-        visible: true,
-        locked: false,
-      };
-      setElements((prev) => [...prev, qrEl, idEl]);
-      setSelectedId(qrEl.id);
-      setPreviewMode(false);
-      setIsRightSidebarOpen(true);
-      toast.success("Added QR & Verification ID Block!");
-    }
   };
 
   // --- Add Shape Elements ---
@@ -1447,7 +1340,7 @@ const UploadTemplatePage = () => {
       <div className="flex-grow flex overflow-hidden">
         {/* 1. LEFT SIDEBAR: Canva-Style Tools */}
         {isLeftSidebarOpen && (
-          <aside className="w-68 bg-white border-r border-gray-200 flex flex-col shrink-0 animate-in slide-in-from-left duration-200 shadow-sm">
+          <aside className="w-64 bg-white border-r border-gray-200 flex flex-col shrink-0 overflow-hidden animate-in slide-in-from-left duration-200 shadow-sm">
             {/* Canva Tab Strip */}
             <div className="grid grid-cols-5 border-b border-gray-100 p-1 bg-gray-50/70 text-center">
               <button
@@ -1470,7 +1363,7 @@ const UploadTemplatePage = () => {
                     ? "bg-white text-indigo-600 shadow-xs font-bold"
                     : "text-gray-500 hover:text-gray-800"
                 }`}
-                title="Add Shapes & Smart Blocks"
+                title="Add Shapes & Elements"
               >
                 <Shapes size={14} />
                 <span className="text-[9px] mt-0.5">Shapes</span>
@@ -1558,41 +1451,6 @@ const UploadTemplatePage = () => {
                           Add body descriptive text
                         </span>
                         <Plus size={14} className="text-gray-400 group-hover:text-indigo-600" />
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Smart Combo Blocks */}
-                  <div className="pt-3 border-t border-gray-100">
-                    <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-2">
-                      Smart Combo Blocks
-                    </p>
-                    <div className="grid grid-cols-2 gap-1.5">
-                      <button
-                        type="button"
-                        onClick={() => handleAddComboBlock("signature")}
-                        className="p-2 rounded-lg border border-gray-200 hover:border-indigo-500 hover:bg-indigo-50/30 text-left transition-all cursor-pointer group"
-                      >
-                        <PenTool size={14} className="text-indigo-600 mb-1" />
-                        <span className="text-[10px] font-bold text-gray-700 group-hover:text-indigo-700 block">
-                          + Signature Block
-                        </span>
-                        <span className="text-[8px] text-gray-400 block">
-                          Sign + Line + Title
-                        </span>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleAddComboBlock("verification")}
-                        className="p-2 rounded-lg border border-gray-200 hover:border-indigo-500 hover:bg-indigo-50/30 text-left transition-all cursor-pointer group"
-                      >
-                        <QrCode size={14} className="text-indigo-600 mb-1" />
-                        <span className="text-[10px] font-bold text-gray-700 group-hover:text-indigo-700 block">
-                          + Verify QR Block
-                        </span>
-                        <span className="text-[8px] text-gray-400 block">
-                          QR + ID + Date
-                        </span>
                       </button>
                     </div>
                   </div>
@@ -1781,50 +1639,6 @@ const UploadTemplatePage = () => {
                       >
                         <Layout size={24} className="text-indigo-700 group-hover:scale-110 transition-transform" />
                         <span className="text-[10px] font-bold text-gray-700">Border Frame</span>
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Smart Combo Blocks */}
-                  <div className="pt-3 border-t border-gray-100">
-                    <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-2">
-                      Ready-to-Use Blocks
-                    </p>
-                    <div className="space-y-1.5">
-                      <button
-                        type="button"
-                        onClick={() => handleAddComboBlock("signature")}
-                        className="w-full p-2.5 rounded-xl border border-gray-200 hover:border-indigo-500 hover:bg-indigo-50/20 transition-all flex items-center gap-2.5 cursor-pointer group text-left"
-                      >
-                        <div className="p-2 rounded-lg bg-indigo-50 text-indigo-600">
-                          <PenTool size={16} />
-                        </div>
-                        <div>
-                          <span className="text-[11px] font-bold text-gray-700 group-hover:text-indigo-600 block">
-                            Authorized Signature Block
-                          </span>
-                          <span className="text-[9px] text-gray-400 block">
-                            Signature variable + divider line + title
-                          </span>
-                        </div>
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => handleAddComboBlock("verification")}
-                        className="w-full p-2.5 rounded-xl border border-gray-200 hover:border-indigo-500 hover:bg-indigo-50/20 transition-all flex items-center gap-2.5 cursor-pointer group text-left"
-                      >
-                        <div className="p-2 rounded-lg bg-amber-50 text-amber-600">
-                          <QrCode size={16} />
-                        </div>
-                        <div>
-                          <span className="text-[11px] font-bold text-gray-700 group-hover:text-indigo-600 block">
-                            Verification QR & ID Block
-                          </span>
-                          <span className="text-[9px] text-gray-400 block">
-                            QR code + Verification ID + Issue Date
-                          </span>
-                        </div>
                       </button>
                     </div>
                   </div>
@@ -2665,62 +2479,12 @@ const UploadTemplatePage = () => {
                 />
               ) : (
                 <div className="space-y-4">
-                  {/* Dedicated Quick Import Card in Right Inspector */}
-                  <div className="p-3 bg-indigo-50/50 rounded-xl border border-indigo-100 space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span className="text-[10px] font-extrabold text-indigo-700 uppercase tracking-wider flex items-center gap-1">
-                        <FileUp size={12} /> Own Certificate Design?
-                      </span>
-                      {templateImageUrl && (
-                        <span className="text-[8px] font-bold bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded-full">
-                          Imported
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-[10px] text-gray-500 leading-relaxed mb-0">
-                      {templateImageUrl
-                        ? "Your custom certificate design is active on the canvas. Add dynamic variables like {{recipient_name}} and position them over your blank fields."
-                        : "Import your pre-made certificate image (PNG/JPG) and drop dynamic variables like {{recipient_name}} on top."}
+                  <div className="p-3 bg-gray-50 rounded-xl border border-gray-100 text-center">
+                    <Shapes size={24} className="mx-auto text-indigo-500 mb-1.5 opacity-80" />
+                    <p className="text-xs font-bold text-gray-700">Canvas Selected</p>
+                    <p className="text-[10px] text-gray-400 mt-0.5">
+                      Click any element to inspect its properties, or use the controls below to style the canvas background.
                     </p>
-                    <div className="flex gap-1.5 pt-1">
-                      <button
-                        type="button"
-                        onClick={() => fileInputRef.current?.click()}
-                        className="flex-1 py-1.5 px-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-[10px] font-bold flex items-center justify-center gap-1 cursor-pointer transition-colors shadow-2xs"
-                      >
-                        <FileUp size={11} />
-                        {templateImageUrl ? "Replace Cert Design" : "Import Cert Design"}
-                      </button>
-                      {templateImageUrl && (
-                        <button
-                          type="button"
-                          onClick={handleRemoveImportedTemplate}
-                          className="py-1.5 px-2 bg-white hover:bg-red-50 text-red-600 border border-red-200 rounded-lg text-[10px] font-bold cursor-pointer transition-colors"
-                          title="Remove Imported Template"
-                        >
-                          <Trash2 size={11} />
-                        </button>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Quick Add Dynamic Variables */}
-                  <div>
-                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mb-1.5">
-                      Quick Add Variables
-                    </span>
-                    <div className="grid grid-cols-2 gap-1.5">
-                      {CERTIFICATE_PLACEHOLDERS.slice(0, 6).map((p) => (
-                        <button
-                          key={p.value}
-                          type="button"
-                          onClick={() => handleAddPlaceholder(p)}
-                          className="p-2 bg-white border border-gray-200 hover:border-indigo-500 rounded-lg text-[10px] font-semibold text-gray-700 hover:text-indigo-600 transition-all text-left cursor-pointer truncate"
-                        >
-                          + {p.name}
-                        </button>
-                      ))}
-                    </div>
                   </div>
 
                   {/* Canvas Quick Palette */}
@@ -2772,7 +2536,7 @@ const UploadTemplatePage = () => {
                   {/* Add Elements Shortcut */}
                   <div>
                     <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mb-1.5">
-                      Quick Add Elements
+                      Quick Add
                     </span>
                     <div className="grid grid-cols-2 gap-1.5">
                       <button
@@ -2782,10 +2546,10 @@ const UploadTemplatePage = () => {
                         + Heading
                       </button>
                       <button
-                        onClick={() => handleAddComboBlock("signature")}
+                        onClick={() => handleAddShape("rect")}
                         className="p-2 bg-white border border-gray-200 hover:border-indigo-500 rounded-lg text-xs font-semibold text-gray-700 hover:text-indigo-600 transition-all text-left cursor-pointer"
                       >
-                        + Signature Block
+                        + Rectangle
                       </button>
                       <button
                         onClick={() => handleAddShape("line")}
