@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useLocation } from "react-router-dom";
 import toast, { Toaster } from "react-hot-toast";
 import {
   ArrowLeft,
@@ -35,6 +35,19 @@ import {
   Layout,
   RefreshCw,
   Shapes,
+  Eye,
+  EyeOff,
+  Lock,
+  Unlock,
+  Download,
+  FileUp,
+  AlignHorizontalSpaceAround,
+  AlignVerticalSpaceAround,
+  ArrowUp,
+  ArrowDown,
+  PenTool,
+  QrCode,
+  X,
 } from "lucide-react";
 import { Spinner } from "react-bootstrap";
 import {
@@ -332,10 +345,13 @@ const DEFAULT_CERTIFICATE_ELEMENTS = [
 const UploadTemplatePage = () => {
   const { templateId } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const [templateTitle, setTemplateTitle] = useState(templateId ? "" : "Untitled Certificate");
   const [templateType, setTemplateType] = useState("certificate");
   const [templateImageFile, setTemplateImageFile] = useState(null);
   const [templateImageUrl, setTemplateImageUrl] = useState(null);
+  const [importedTemplateMeta, setImportedTemplateMeta] = useState(null);
+  const [isDraggingOverImport, setIsDraggingOverImport] = useState(false);
   const [backgroundConfig, setBackgroundConfig] = useState({
     fill: "#ffffff",
     border: true,
@@ -357,9 +373,20 @@ const UploadTemplatePage = () => {
   const [isLoading, setIsLoading] = useState(!!templateId);
   const [showGrid, setShowGrid] = useState(true);
   const [zoomScale, setZoomScale] = useState(0.75);
-  const [leftTab, setLeftTab] = useState("text"); // 'text', 'elements', 'background', 'uploads', 'layers'
+  const [leftTab, setLeftTab] = useState(
+    location.search.includes("mode=import") ? "background" : "text"
+  ); // 'text', 'elements', 'background', 'uploads', 'layers'
   const [isLeftSidebarOpen, setIsLeftSidebarOpen] = useState(true);
   const [isRightSidebarOpen, setIsRightSidebarOpen] = useState(true);
+  const [previewMode, setPreviewMode] = useState(false);
+  const [sampleData, setSampleData] = useState({
+    recipient_name: "Alabi Ezekiel",
+    course_title: "Build in Public for 30 Days Program",
+    issue_date: "20th October, 2026",
+    issuer_name: "ProofDeck Academy",
+    verification_id: "PD-2026-84920",
+    signature: "Ezekiel Alabi",
+  });
   const [confirmModal, setConfirmModal] = useState({
     isOpen: false,
     title: "",
@@ -442,6 +469,8 @@ const UploadTemplatePage = () => {
             id: el.id || `el_${Math.random().toString(36).substring(2, 11)}_${index}`,
             verticalAlign: el.verticalAlign || "middle",
             align: el.align || (el.isQr ? "center" : "left"),
+            visible: el.visible !== false,
+            locked: !!el.locked,
           }));
           setElements(loadedElements);
 
@@ -458,6 +487,12 @@ const UploadTemplatePage = () => {
               fullBgUrl = `${cleanBase}${cleanPath}`;
             }
             setTemplateImageUrl(fullBgUrl);
+            setImportedTemplateMeta({
+              name: rawBg.split("/").pop() || "Imported Certificate Template",
+              width: layoutData.canvas?.width || 842,
+              height: layoutData.canvas?.height || 595,
+              aspectRatio: (layoutData.canvas?.width || 842) / (layoutData.canvas?.height || 595),
+            });
           }
 
           setHistory([loadedElements]);
@@ -486,25 +521,25 @@ const UploadTemplatePage = () => {
     }
   }, [elements]);
 
-  const handleUndo = () => {
+  const handleUndo = useCallback(() => {
     if (currentStep > 0) {
       setIsLoadingHistory(true);
       const prevStep = currentStep - 1;
       setCurrentStep(prevStep);
       setElements(history[prevStep]);
     }
-  };
+  }, [currentStep, history]);
 
-  const handleRedo = () => {
+  const handleRedo = useCallback(() => {
     if (currentStep < history.length - 1) {
       setIsLoadingHistory(true);
       const nextStep = currentStep + 1;
       setCurrentStep(nextStep);
       setElements(history[nextStep]);
     }
-  };
+  }, [currentStep, history]);
 
-  // --- Add Text Elements (Heading, Subheading, Body, Variable) ---
+  // --- Add Text Elements (Heading, Subheading, Body) ---
   const handleAddText = (kind) => {
     const cx = Math.round(canvasSize.width / 2);
     const cy = Math.round(canvasSize.height / 2);
@@ -514,6 +549,8 @@ const UploadTemplatePage = () => {
       type: "text",
       rotation: 0,
       opacity: 1,
+      visible: true,
+      locked: false,
     };
 
     if (kind === "heading") {
@@ -562,7 +599,116 @@ const UploadTemplatePage = () => {
 
     setElements((prev) => [...prev, newEl]);
     setSelectedId(newEl.id);
+    setPreviewMode(false);
     setIsRightSidebarOpen(true);
+  };
+
+  // --- Add Smart Combination Blocks (Signature Block / Verification Block) ---
+  const handleAddComboBlock = (comboType) => {
+    const cx = Math.round(canvasSize.width / 2);
+    const cy = Math.round(canvasSize.height / 2);
+    const suffix = Math.random().toString(36).substring(2, 8);
+
+    if (comboType === "signature_block") {
+      const baseX = Math.max(40, cx - 90);
+      const baseY = Math.min(canvasSize.height - 110, cy + 80);
+      const sigEl = {
+        id: `el_sig_${suffix}`,
+        type: "placeholder",
+        text: "{{signature}}",
+        x: baseX,
+        y: baseY,
+        width: 180,
+        height: 28,
+        fontSize: 20,
+        fontFamily: "Great Vibes",
+        fill: "#1e293b",
+        align: "center",
+        fontStyle: "normal",
+        verticalAlign: "bottom",
+        rotation: 0,
+        visible: true,
+        locked: false,
+      };
+      const lineEl = {
+        id: `el_sig_line_${suffix}`,
+        type: "line",
+        x: baseX,
+        y: baseY + 30,
+        width: 180,
+        height: 8,
+        stroke: "#475569",
+        strokeWidth: 1.5,
+        rotation: 0,
+        visible: true,
+        locked: false,
+      };
+      const labelEl = {
+        id: `el_sig_lbl_${suffix}`,
+        type: "text",
+        text: "Authorized Signature",
+        x: baseX,
+        y: baseY + 38,
+        width: 180,
+        height: 18,
+        fontSize: 10,
+        fontFamily: "Inter",
+        fill: "#64748b",
+        align: "center",
+        fontStyle: "bold",
+        verticalAlign: "middle",
+        rotation: 0,
+        visible: true,
+        locked: false,
+      };
+      setElements((prev) => [...prev, sigEl, lineEl, labelEl]);
+      setSelectedId(sigEl.id);
+      setPreviewMode(false);
+      setIsRightSidebarOpen(true);
+      toast.success("Added Signature Block!");
+    } else if (comboType === "verification_block") {
+      const baseX = Math.max(40, canvasSize.width - 170);
+      const baseY = Math.max(40, canvasSize.height - 125);
+      const qrEl = {
+        id: `el_qr_${suffix}`,
+        type: "qr",
+        text: "{{qr_code}}",
+        x: baseX + 35,
+        y: baseY,
+        width: 60,
+        height: 60,
+        align: "center",
+        fontStyle: "normal",
+        rotation: 0,
+        verticalAlign: "middle",
+        isQr: true,
+        visible: true,
+        locked: false,
+      };
+      const idEl = {
+        id: `el_vid_${suffix}`,
+        type: "placeholder",
+        text: "ID: {{verification_id}}",
+        x: baseX - 15,
+        y: baseY + 64,
+        width: 160,
+        height: 18,
+        fontSize: 9,
+        fontFamily: "Inter",
+        fill: "#475569",
+        align: "center",
+        fontStyle: "bold",
+        verticalAlign: "middle",
+        rotation: 0,
+        visible: true,
+        locked: false,
+      };
+      setElements((prev) => [...prev, qrEl, idEl]);
+      setSelectedId(qrEl.id);
+      setPreviewMode(false);
+      setIsRightSidebarOpen(true);
+      toast.success("Added QR & Verification ID Block!");
+    }
   };
 
   // --- Add Shape Elements ---
@@ -580,6 +726,8 @@ const UploadTemplatePage = () => {
       height: 120,
       rotation: 0,
       opacity: 1,
+      visible: true,
+      locked: false,
     };
 
     if (shapeType === "rect") {
@@ -648,6 +796,7 @@ const UploadTemplatePage = () => {
 
     setElements((prev) => [...prev, newEl]);
     setSelectedId(newEl.id);
+    setPreviewMode(false);
     setIsRightSidebarOpen(true);
   };
 
@@ -662,113 +811,295 @@ const UploadTemplatePage = () => {
       id: `el_var_${Math.random().toString(36).substring(2, 9)}`,
       type: isQr ? "qr" : "placeholder",
       text: placeholder.value,
-      x: isQr ? cx - 35 : Math.max(20, cx - defaultWidth / 2),
-      y: isQr ? cy - 35 : Math.max(20, cy - 15),
+      x: isQr ? cx - 35 : Math.max(20, Math.round(cx - defaultWidth / 2)),
+      y: isQr ? cy - 35 : Math.max(20, cy - 18),
       width: isQr ? 70 : defaultWidth,
-      height: isQr ? 70 : 32,
-      fontSize: 20,
-      fontFamily: "Georgia",
+      height: isQr ? 70 : 36,
+      fontSize: placeholder.value === "{{recipient_name}}" ? 28 : 18,
+      fontFamily: "Inter",
       fill: "#111827",
-      align: isQr ? "center" : "left",
+      align: "center",
       fontStyle: isQr ? "normal" : "bold",
       rotation: 0,
       verticalAlign: "middle",
       isQr,
+      visible: true,
+      locked: false,
     };
 
     setElements((prev) => [...prev, newElement]);
     setSelectedId(newElement.id);
+    setPreviewMode(false);
     setIsRightSidebarOpen(true);
+    toast.success(`Added ${placeholder.name} to canvas`);
   };
 
   // --- Add Custom Uploaded Image to Canvas ---
-  const handleAddImageToCanvas = (imgSrc) => {
+  const handleAddImageToCanvas = (imgSrc, naturalW = 120, naturalH = 120) => {
     const cx = Math.round(canvasSize.width / 2);
     const cy = Math.round(canvasSize.height / 2);
+    const ratio = naturalW && naturalH ? naturalW / naturalH : 1;
+    const targetW = 130;
+    const targetH = Math.max(40, Math.round(targetW / ratio));
     const newEl = {
       id: `el_img_${Math.random().toString(36).substring(2, 9)}`,
       type: "image",
       src: imgSrc,
-      x: cx - 60,
-      y: cy - 60,
-      width: 120,
-      height: 120,
+      x: Math.round(cx - targetW / 2),
+      y: Math.round(cy - targetH / 2),
+      width: targetW,
+      height: targetH,
       rotation: 0,
       opacity: 1,
+      visible: true,
+      locked: false,
     };
     setElements((prev) => [...prev, newEl]);
     setSelectedId(newEl.id);
+    setPreviewMode(false);
     setIsRightSidebarOpen(true);
   };
 
   // Handle uploading logo / graphic / seal
   const handleAssetUpload = (e) => {
-    const file = e.target.files[0];
-    if (file && (file.type === "image/png" || file.type === "image/jpeg" || file.type === "image/webp")) {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        const img = new Image();
-        img.onload = () => {
-          // Optimize/downscale large logos (max 1200px) so canvas rendering and API saving are lightning fast
-          const MAX_DIM = 1200;
-          let w = img.width;
-          let h = img.height;
-          if (w > MAX_DIM || h > MAX_DIM) {
-            if (w > h) {
-              h = Math.round((h * MAX_DIM) / w);
-              w = MAX_DIM;
-            } else {
-              w = Math.round((w * MAX_DIM) / h);
-              h = MAX_DIM;
-            }
-          }
-          const canvas = document.createElement("canvas");
-          canvas.width = w;
-          canvas.height = h;
-          const ctx = canvas.getContext("2d");
-          ctx.drawImage(img, 0, 0, w, h);
-          const mimeType = file.type === "image/png" ? "image/png" : "image/jpeg";
-          const optimizedDataUrl = canvas.toDataURL(mimeType, 0.92);
-          setUploadedAssets((prev) => [...prev, { name: file.name, src: optimizedDataUrl }]);
-          handleAddImageToCanvas(optimizedDataUrl);
-          toast.success(`Added "${file.name}" to canvas!`);
-        };
-        img.src = event.target.result;
-      };
-      reader.readAsDataURL(file);
-    } else {
-      toast.error("Please upload a PNG, JPG, or WEBP image.");
-    }
+    const file = e.target.files?.[0];
     e.target.value = "";
+    if (!file) return;
+
+    const ext = file.name.split(".").pop()?.toLowerCase() || "";
+    const isValidImage =
+      file.type.startsWith("image/") ||
+      ["png", "jpg", "jpeg", "webp", "svg"].includes(ext);
+
+    if (!isValidImage) {
+      toast.error("Please upload a PNG, JPG, WEBP, or SVG image.");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const img = new Image();
+      img.onload = () => {
+        const MAX_DIM = 1000;
+        let w = img.width || 300;
+        let h = img.height || 300;
+        if (w > MAX_DIM || h > MAX_DIM) {
+          if (w > h) {
+            h = Math.round((h * MAX_DIM) / w);
+            w = MAX_DIM;
+          } else {
+            w = Math.round((w * MAX_DIM) / h);
+            h = MAX_DIM;
+          }
+        }
+        const canvas = document.createElement("canvas");
+        canvas.width = w;
+        canvas.height = h;
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(img, 0, 0, w, h);
+        const mimeType =
+          file.type === "image/jpeg" || ext === "jpg" || ext === "jpeg"
+            ? "image/jpeg"
+            : "image/png";
+        const optimizedDataUrl = canvas.toDataURL(mimeType, 0.9);
+        setUploadedAssets((prev) => [...prev, { name: file.name, src: optimizedDataUrl, width: w, height: h }]);
+        handleAddImageToCanvas(optimizedDataUrl, w, h);
+        toast.success(`Added "${file.name}" to canvas!`);
+      };
+      img.onerror = () => {
+        toast.error("Could not read image file. Please try another PNG or JPG.");
+      };
+      img.src = event.target.result;
+    };
+    reader.readAsDataURL(file);
   };
 
-  // Handle uploading full background
-  const handleBackgroundUpload = (e) => {
-    const file = e.target.files[0];
-    if (file && (file.type === "image/png" || file.type === "image/jpeg" || file.type === "image/webp")) {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        const img = new Image();
-        img.onload = () => {
-          const aspectRatio = img.width / img.height;
-          const canvasWidth = 842;
-          const canvasHeight = Math.round(canvasWidth / aspectRatio);
-          setCanvasSize({ width: canvasWidth, height: canvasHeight });
-          setTemplateImageUrl(event.target.result);
-          setTemplateImageFile(file);
-          // Clear initial sample placeholders so user can place their own elements cleanly
-          setElements([]);
-          setSelectedId(null);
-          setBackgroundConfig((prev) => ({ ...prev, border: false }));
-          toast.success("Background uploaded! Canvas cleared for your custom placeholders.");
-        };
-        img.src = event.target.result;
-      };
-      reader.readAsDataURL(file);
-    } else {
-      toast.error("Please upload a PNG or JPG image.");
+  // --- Process & Optimize Imported Certificate Template Image ---
+  const processCertTemplateFile = (file) => {
+    if (!file) return;
+    const ext = file.name.split(".").pop()?.toLowerCase() || "";
+    const isValid =
+      file.type.startsWith("image/") ||
+      ["png", "jpg", "jpeg", "webp", "svg"].includes(ext);
+
+    if (!isValid) {
+      toast.error("Please upload a valid certificate image (PNG, JPG, WEBP, or SVG).");
+      return;
     }
+
+    const loadingToast = toast.loading("Importing & optimizing your certificate template...");
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const img = new Image();
+      img.onload = () => {
+        const naturalW = img.width || 842;
+        const naturalH = img.height || 595;
+        const aspectRatio = naturalW / naturalH;
+        const canvasWidth = 842;
+        const canvasHeight = Math.max(300, Math.min(1400, Math.round(canvasWidth / aspectRatio)));
+
+        // Compress high-res certificate design (up to 2200px) so upload never hits 413 Request Entity Too Large
+        const MAX_CERT_DIM = 2200;
+        let outW = naturalW;
+        let outH = naturalH;
+        if (outW > MAX_CERT_DIM || outH > MAX_CERT_DIM) {
+          if (outW > outH) {
+            outH = Math.round((outH * MAX_CERT_DIM) / outW);
+            outW = MAX_CERT_DIM;
+          } else {
+            outW = Math.round((outW * MAX_CERT_DIM) / outH);
+            outH = MAX_CERT_DIM;
+          }
+        }
+
+        const offCanvas = document.createElement("canvas");
+        offCanvas.width = outW;
+        offCanvas.height = outH;
+        const ctx = offCanvas.getContext("2d");
+        // Fill white base in case transparent certificate image is exported to JPEG
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(0, 0, outW, outH);
+        ctx.drawImage(img, 0, 0, outW, outH);
+
+        // Use high-quality JPEG (0.90) to guarantee compact payload (< 600KB) even for 4K Canva exports
+        const previewDataUrl = offCanvas.toDataURL("image/jpeg", 0.90);
+        offCanvas.toBlob(
+          (blob) => {
+            toast.dismiss(loadingToast);
+            const cleanBaseName = file.name.replace(/\.[^/.]+$/, "") || "certificate_template";
+            const optimizedFile = blob
+              ? new File([blob], `${cleanBaseName}.jpg`, { type: "image/jpeg" })
+              : file;
+
+            setCanvasSize({ width: canvasWidth, height: canvasHeight });
+            setTemplateImageUrl(previewDataUrl);
+            setTemplateImageFile(optimizedFile);
+            setImportedTemplateMeta({
+              name: file.name,
+              width: naturalW,
+              height: naturalH,
+              aspectRatio,
+            });
+            setBackgroundConfig((prev) => ({ ...prev, border: false }));
+
+            // Check if current elements are still the untouched starter elements
+            const isStillDefaultStarter =
+              elements.length === DEFAULT_CERTIFICATE_ELEMENTS.length &&
+              elements.every((el, i) => el.id === DEFAULT_CERTIFICATE_ELEMENTS[i]?.id);
+
+            if (isStillDefaultStarter) {
+              // First-time import over starter template: clear starter clutter and place {{recipient_name}} ready to position
+              const starterRecipient = {
+                id: `el_recipient_${Math.random().toString(36).substring(2, 8)}`,
+                type: "placeholder",
+                text: "{{recipient_name}}",
+                x: Math.round((canvasWidth - 380) / 2),
+                y: Math.round(canvasHeight * 0.48),
+                width: 380,
+                height: 44,
+                fontSize: 32,
+                fontFamily: "Inter",
+                fill: "#111827",
+                align: "center",
+                fontStyle: "bold",
+                rotation: 0,
+                verticalAlign: "middle",
+                isQr: false,
+                visible: true,
+                locked: false,
+              };
+              setElements([starterRecipient]);
+              setSelectedId(starterRecipient.id);
+              toast.success("Certificate template imported! Drag {{recipient_name}} into position or add more variables.");
+            } else {
+              // Replacing existing template or user already customized elements -> preserve their elements!
+              toast.success("Certificate template updated! Your placed elements were preserved.");
+            }
+          },
+          "image/jpeg",
+          0.90
+        );
+      };
+      img.onerror = () => {
+        toast.dismiss(loadingToast);
+        toast.error("Failed to load certificate image. Please try another PNG or JPG file.");
+      };
+      img.src = event.target.result;
+    };
+    reader.onerror = () => {
+      toast.dismiss(loadingToast);
+      toast.error("Failed to read file.");
+    };
+    reader.readAsDataURL(file);
+  };
+
+  // Handle file input change for importing certificate template
+  const handleBackgroundUpload = (e) => {
+    const file = e.target.files?.[0];
     e.target.value = "";
+    if (file) {
+      processCertTemplateFile(file);
+    }
+  };
+
+  // Convert an uploaded logo/image element on canvas into the Full Certificate Template
+  const handleConvertElementToTemplate = (imgElement) => {
+    if (!imgElement?.src) return;
+    const img = new Image();
+    img.onload = () => {
+      const aspectRatio = (img.width || 842) / (img.height || 595);
+      const canvasWidth = 842;
+      const canvasHeight = Math.max(300, Math.min(1400, Math.round(canvasWidth / aspectRatio)));
+      setCanvasSize({ width: canvasWidth, height: canvasHeight });
+      setTemplateImageUrl(imgElement.src);
+      setTemplateImageFile(null);
+      setImportedTemplateMeta({
+        name: "Converted Certificate Design",
+        width: img.width || 842,
+        height: img.height || 595,
+        aspectRatio,
+      });
+      setBackgroundConfig((prev) => ({ ...prev, border: false }));
+      setElements((prev) => prev.filter((el) => el.id !== imgElement.id));
+      setSelectedId(null);
+      toast.success("Set image as your full Certificate Template!");
+    };
+    img.src = imgElement.src;
+  };
+
+  const handleRemoveImportedTemplate = () => {
+    setTemplateImageUrl(null);
+    setTemplateImageFile(null);
+    setImportedTemplateMeta(null);
+    toast.success("Removed imported certificate template.");
+  };
+
+  // Export Studio Canvas as High-Res PNG
+  const handleExportPng = () => {
+    if (!stageRef.current) return;
+    const prevSelected = selectedId;
+    setSelectedId(null);
+    setTimeout(() => {
+      try {
+        const stage = stageRef.current;
+        const dataUrl = stage.toDataURL({
+          pixelRatio: 2 / zoomScale,
+          mimeType: "image/png",
+        });
+        const link = document.createElement("a");
+        link.download = `${(templateTitle || "certificate-design").replace(/\s+/g, "-").toLowerCase()}.png`;
+        link.href = dataUrl;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        toast.success("Downloaded high-res PNG preview!");
+      } catch (err) {
+        console.error("Export PNG error:", err);
+        toast.error("Could not export PNG preview.");
+      } finally {
+        if (prevSelected) setSelectedId(prevSelected);
+      }
+    }, 100);
   };
 
   const handleClearAllLayers = () => {
@@ -776,8 +1107,8 @@ const UploadTemplatePage = () => {
     setConfirmModal({
       isOpen: true,
       title: "Clear All Layers?",
-      message: "Are you sure you want to clear all layers from the canvas? This action cannot be undone.",
-      confirmButtonText: "Clear All",
+      message: "Are you sure you want to clear all layers from the canvas? Your imported certificate template background will remain.",
+      confirmButtonText: "Clear Layers",
       onConfirm: () => {
         setElements([]);
         setSelectedId(null);
@@ -801,6 +1132,7 @@ const UploadTemplatePage = () => {
   const handleSelectPreset = (preset) => {
     setTemplateImageUrl(preset.url);
     setTemplateImageFile(null);
+    setImportedTemplateMeta(null);
     if (preset.canvasSize) {
       setCanvasSize(preset.canvasSize);
     }
@@ -811,13 +1143,14 @@ const UploadTemplatePage = () => {
     setConfirmModal({
       isOpen: true,
       title: "Reset Canvas Blank?",
-      message: "Are you sure you want to clear all elements and background to start completely blank?",
+      message: "Are you sure you want to clear all elements and imported template to start completely blank?",
       confirmButtonText: "Reset Blank",
       onConfirm: () => {
         setElements([]);
         setSelectedId(null);
         setTemplateImageUrl(null);
         setTemplateImageFile(null);
+        setImportedTemplateMeta(null);
         setBackgroundConfig({
           fill: "#ffffff",
           border: false,
@@ -864,10 +1197,27 @@ const UploadTemplatePage = () => {
       return toast.error("Please provide a name for your certificate.");
     }
     if (elements.length === 0) {
-      return toast.error("Please add at least one element to your design.");
+      return toast.error("Please add at least one variable or text element (e.g. Recipient Name) to your design.");
     }
 
     setIsSubmitting(true);
+
+    // IMPORTANT: Do NOT embed huge base64 data URL inside layout_data when templateImageFile is being uploaded as a file!
+    let bgImageForJson = null;
+    if (!templateImageFile && templateImageUrl) {
+      let relativePath = templateImageUrl;
+      if (!relativePath.startsWith("data:") && !relativePath.startsWith("blob:")) {
+        try {
+          const urlObj = new URL(relativePath);
+          relativePath = urlObj.pathname;
+        } catch (e) {
+          const cleanServer = SERVER_BASE_URL.replace(/\/+$/, "");
+          relativePath = relativePath.replace(cleanServer, "");
+        }
+      }
+      bgImageForJson = relativePath;
+    }
+
     const layoutData = {
       type: templateType,
       canvas: canvasSize,
@@ -878,7 +1228,7 @@ const UploadTemplatePage = () => {
         borderColor: backgroundConfig.borderColor || "#1e3a8a",
         borderAccent: backgroundConfig.borderAccent || "#d97706",
         borderWidth: backgroundConfig.borderWidth || 4,
-        image: templateImageUrl || null,
+        image: bgImageForJson,
       },
       elements: elements.map((el) => ({
         id: el.id,
@@ -906,22 +1256,10 @@ const UploadTemplatePage = () => {
         rotation: Math.round(el.rotation || 0),
         verticalAlign: el.verticalAlign || "middle",
         isQr: !!el.isQr,
+        visible: el.visible !== false,
+        locked: !!el.locked,
       })),
     };
-
-    if (!templateImageFile && templateImageUrl) {
-      let relativePath = templateImageUrl;
-      if (!relativePath.startsWith("data:") && !relativePath.startsWith("blob:")) {
-        try {
-          const urlObj = new URL(relativePath);
-          relativePath = urlObj.pathname;
-        } catch (e) {
-          const cleanServer = SERVER_BASE_URL.replace(/\/+$/, "");
-          relativePath = relativePath.replace(cleanServer, "");
-        }
-      }
-      layoutData.background.image = relativePath;
-    }
 
     const formData = new FormData();
     formData.append("title", templateTitle);
@@ -957,6 +1295,22 @@ const UploadTemplatePage = () => {
     <div className="h-full flex flex-col font-sans bg-slate-100 text-gray-800 select-none">
       <Toaster position="top-center" />
 
+      {/* Root-Mounted File Inputs (Always in DOM regardless of active tab so uploads work every time) */}
+      <input
+        type="file"
+        ref={fileInputRef}
+        className="hidden"
+        accept="image/png, image/jpeg, image/jpg, image/webp, image/svg+xml"
+        onChange={handleBackgroundUpload}
+      />
+      <input
+        type="file"
+        ref={assetInputRef}
+        className="hidden"
+        accept="image/png, image/jpeg, image/jpg, image/webp, image/svg+xml"
+        onChange={handleAssetUpload}
+      />
+
       {/* --- STUDIO TOP HEADER --- */}
       <header className="bg-white border-b border-gray-200 px-4 py-2 flex items-center justify-between sticky top-0 z-50 h-12 shadow-xs">
         <div className="flex items-center gap-3">
@@ -977,44 +1331,45 @@ const UploadTemplatePage = () => {
               value={templateTitle}
               onChange={(e) => setTemplateTitle(e.target.value)}
               placeholder="Untitled Certificate"
-              className="text-sm font-bold text-gray-800 border-none focus:ring-0 placeholder-gray-400 bg-transparent w-64 hover:bg-gray-50 px-1.5 py-0.5 rounded transition-colors"
+              className="text-sm font-bold text-gray-800 border-none focus:ring-0 placeholder-gray-400 bg-transparent w-48 lg:w-64 hover:bg-gray-50 px-1.5 py-0.5 rounded transition-colors"
             />
           </div>
         </div>
 
         {/* Studio Toolbar */}
-        <div className="flex items-center gap-2">
-          {/* Document Type Selector */}
-          <div className="bg-gray-100 p-0.5 rounded-lg flex text-xs font-semibold mr-1 border border-gray-200/60">
-            <button
-              onClick={() => setTemplateType("certificate")}
-              className="px-2.5 py-1 rounded-md flex items-center gap-1.5 transition-all cursor-default bg-white text-indigo-600 shadow-xs font-medium"
-            >
-              <FileBadge size={13} /> Certificate
-            </button>
-            {/* Commented out for now - will be updated later:
-            <button
-              onClick={() => setTemplateType("receipt")}
-              className={`px-2.5 py-1 rounded-md flex items-center gap-1.5 transition-all cursor-pointer ${
-                templateType === "receipt"
-                  ? "bg-white text-indigo-600 shadow-xs"
-                  : "text-gray-500 hover:text-gray-700"
-              }`}
-            >
-              <Receipt size={13} /> Receipt
-            </button>
-            <button
-              onClick={() => setTemplateType("invitation")}
-              className={`px-2.5 py-1 rounded-md flex items-center gap-1.5 transition-all cursor-pointer ${
-                templateType === "invitation"
-                  ? "bg-white text-indigo-600 shadow-xs"
-                  : "text-gray-500 hover:text-gray-700"
-              }`}
-            >
-              <Mail size={13} /> Invitation
-            </button>
-            */}
-          </div>
+        <div className="flex items-center gap-1.5">
+          {/* Prominent Import Cert Template CTA */}
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            className="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 font-semibold py-1.5 px-2.5 rounded-lg flex items-center gap-1.5 text-xs transition-all cursor-pointer shadow-2xs"
+            title="Import your own pre-designed certificate template (Canva, Photoshop, Figma, etc.)"
+          >
+            <FileUp size={13} />
+            <span className="hidden md:inline">
+              {templateImageUrl ? "Replace Cert Template" : "Import Cert Template"}
+            </span>
+          </button>
+
+          {/* Live Sample Data Preview Toggle */}
+          <button
+            type="button"
+            onClick={() => {
+              setPreviewMode((prev) => !prev);
+              if (!previewMode) setSelectedId(null);
+            }}
+            className={`py-1.5 px-2.5 rounded-lg flex items-center gap-1.5 text-xs font-semibold border transition-all cursor-pointer ${
+              previewMode
+                ? "bg-emerald-600 text-white border-emerald-600 shadow-xs"
+                : "bg-white text-gray-700 border-gray-200 hover:bg-gray-50"
+            }`}
+            title="Preview certificate with real sample recipient names and dates instead of {{placeholders}}"
+          >
+            {previewMode ? <EyeOff size={13} /> : <Eye size={13} />}
+            <span className="hidden sm:inline">
+              {previewMode ? "Exit Preview" : "Live Preview"}
+            </span>
+          </button>
 
           {/* Grid Toggle */}
           <button
@@ -1051,6 +1406,17 @@ const UploadTemplatePage = () => {
 
           <div className="h-5 w-px bg-gray-200 mx-0.5" />
 
+          {/* Export PNG */}
+          <button
+            type="button"
+            onClick={handleExportPng}
+            className="text-gray-600 hover:text-indigo-600 p-1.5 rounded-md hover:bg-indigo-50 text-xs font-semibold flex items-center gap-1 cursor-pointer transition-colors"
+            title="Download high-resolution PNG preview"
+          >
+            <Download size={13} />
+            <span className="hidden xl:inline">Export PNG</span>
+          </button>
+
           {/* Clear / Blank Button */}
           <button
             onClick={handleClearCanvas}
@@ -1058,7 +1424,7 @@ const UploadTemplatePage = () => {
             title="Clear all elements and start blank"
           >
             <RefreshCw size={13} />
-            <span className="hidden sm:inline">Reset Blank</span>
+            <span className="hidden xl:inline">Reset Blank</span>
           </button>
 
           {/* Save Button */}
@@ -1079,10 +1445,9 @@ const UploadTemplatePage = () => {
 
       {/* --- STUDIO BODY: 3 COLUMNS --- */}
       <div className="flex-grow flex overflow-hidden">
-        
         {/* 1. LEFT SIDEBAR: Canva-Style Tools */}
         {isLeftSidebarOpen && (
-          <aside className="w-64 bg-white border-r border-gray-200 flex flex-col shrink-0 animate-in slide-in-from-left duration-200 shadow-sm">
+          <aside className="w-68 bg-white border-r border-gray-200 flex flex-col shrink-0 animate-in slide-in-from-left duration-200 shadow-sm">
             {/* Canva Tab Strip */}
             <div className="grid grid-cols-5 border-b border-gray-100 p-1 bg-gray-50/70 text-center">
               <button
@@ -1092,7 +1457,7 @@ const UploadTemplatePage = () => {
                     ? "bg-white text-indigo-600 shadow-xs font-bold"
                     : "text-gray-500 hover:text-gray-800"
                 }`}
-                title="Add Text"
+                title="Add Text & Variables"
               >
                 <Type size={14} />
                 <span className="text-[9px] mt-0.5">Text</span>
@@ -1105,7 +1470,7 @@ const UploadTemplatePage = () => {
                     ? "bg-white text-indigo-600 shadow-xs font-bold"
                     : "text-gray-500 hover:text-gray-800"
                 }`}
-                title="Add Shapes & Elements"
+                title="Add Shapes & Smart Blocks"
               >
                 <Shapes size={14} />
                 <span className="text-[9px] mt-0.5">Shapes</span>
@@ -1118,7 +1483,7 @@ const UploadTemplatePage = () => {
                     ? "bg-white text-indigo-600 shadow-xs font-bold"
                     : "text-gray-500 hover:text-gray-800"
                 }`}
-                title="Canvas & Background"
+                title="Import Cert Template & Canvas Setup"
               >
                 <Palette size={14} />
                 <span className="text-[9px] mt-0.5">Canvas</span>
@@ -1131,7 +1496,7 @@ const UploadTemplatePage = () => {
                     ? "bg-white text-indigo-600 shadow-xs font-bold"
                     : "text-gray-500 hover:text-gray-800"
                 }`}
-                title="Upload Logo & Graphics"
+                title="Import Cert Template & Upload Logos"
               >
                 <UploadCloud size={14} />
                 <span className="text-[9px] mt-0.5">Uploads</span>
@@ -1158,7 +1523,7 @@ const UploadTemplatePage = () => {
                   <Spinner variant="primary" size="sm" />
                 </div>
               ) : leftTab === "text" ? (
-                /* TAB 1: TEXT */
+                /* TAB 1: TEXT & VARIABLES */
                 <div className="space-y-4">
                   <div>
                     <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-2">
@@ -1193,6 +1558,41 @@ const UploadTemplatePage = () => {
                           Add body descriptive text
                         </span>
                         <Plus size={14} className="text-gray-400 group-hover:text-indigo-600" />
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Smart Combo Blocks */}
+                  <div className="pt-3 border-t border-gray-100">
+                    <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-2">
+                      Smart Combo Blocks
+                    </p>
+                    <div className="grid grid-cols-2 gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() => handleAddComboBlock("signature")}
+                        className="p-2 rounded-lg border border-gray-200 hover:border-indigo-500 hover:bg-indigo-50/30 text-left transition-all cursor-pointer group"
+                      >
+                        <PenTool size={14} className="text-indigo-600 mb-1" />
+                        <span className="text-[10px] font-bold text-gray-700 group-hover:text-indigo-700 block">
+                          + Signature Block
+                        </span>
+                        <span className="text-[8px] text-gray-400 block">
+                          Sign + Line + Title
+                        </span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleAddComboBlock("verification")}
+                        className="p-2 rounded-lg border border-gray-200 hover:border-indigo-500 hover:bg-indigo-50/30 text-left transition-all cursor-pointer group"
+                      >
+                        <QrCode size={14} className="text-indigo-600 mb-1" />
+                        <span className="text-[10px] font-bold text-gray-700 group-hover:text-indigo-700 block">
+                          + Verify QR Block
+                        </span>
+                        <span className="text-[8px] text-gray-400 block">
+                          QR + ID + Date
+                        </span>
                       </button>
                     </div>
                   </div>
@@ -1385,15 +1785,182 @@ const UploadTemplatePage = () => {
                     </div>
                   </div>
 
+                  {/* Smart Combo Blocks */}
+                  <div className="pt-3 border-t border-gray-100">
+                    <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-2">
+                      Ready-to-Use Blocks
+                    </p>
+                    <div className="space-y-1.5">
+                      <button
+                        type="button"
+                        onClick={() => handleAddComboBlock("signature")}
+                        className="w-full p-2.5 rounded-xl border border-gray-200 hover:border-indigo-500 hover:bg-indigo-50/20 transition-all flex items-center gap-2.5 cursor-pointer group text-left"
+                      >
+                        <div className="p-2 rounded-lg bg-indigo-50 text-indigo-600">
+                          <PenTool size={16} />
+                        </div>
+                        <div>
+                          <span className="text-[11px] font-bold text-gray-700 group-hover:text-indigo-600 block">
+                            Authorized Signature Block
+                          </span>
+                          <span className="text-[9px] text-gray-400 block">
+                            Signature variable + divider line + title
+                          </span>
+                        </div>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => handleAddComboBlock("verification")}
+                        className="w-full p-2.5 rounded-xl border border-gray-200 hover:border-indigo-500 hover:bg-indigo-50/20 transition-all flex items-center gap-2.5 cursor-pointer group text-left"
+                      >
+                        <div className="p-2 rounded-lg bg-amber-50 text-amber-600">
+                          <QrCode size={16} />
+                        </div>
+                        <div>
+                          <span className="text-[11px] font-bold text-gray-700 group-hover:text-indigo-600 block">
+                            Verification QR & ID Block
+                          </span>
+                          <span className="text-[9px] text-gray-400 block">
+                            QR code + Verification ID + Issue Date
+                          </span>
+                        </div>
+                      </button>
+                    </div>
+                  </div>
+
                   <p className="text-[9px] text-gray-400 leading-normal bg-gray-50 p-2.5 rounded-lg border border-gray-100">
                     Click any element to customize fill colors, border outlines, corner curves, and layer ordering.
                   </p>
                 </div>
               ) : leftTab === "background" ? (
-                /* TAB 3: CANVAS & BACKGROUND */
+                /* TAB 3: CANVAS & IMPORT CERT TEMPLATE */
                 <div className="space-y-4">
+                  {/* Dedicated Import Your Own Cert Template Card */}
+                  <div className="p-3 rounded-xl border-2 border-indigo-100 bg-gradient-to-b from-indigo-50/60 to-white space-y-2.5">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-extrabold text-indigo-700 uppercase tracking-wider flex items-center gap-1">
+                        <FileUp size={12} /> Import Your Cert Template
+                      </span>
+                      {templateImageUrl && (
+                        <span className="text-[8px] font-bold bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded-full">
+                          Active
+                        </span>
+                      )}
+                    </div>
+
+                    {templateImageUrl ? (
+                      <div className="space-y-2">
+                        <div className="relative rounded-lg overflow-hidden border border-gray-200 bg-white shadow-2xs">
+                          <img
+                            src={templateImageUrl}
+                            alt="Imported Certificate Template"
+                            className="w-full h-24 object-contain bg-slate-50"
+                          />
+                        </div>
+                        {importedTemplateMeta && (
+                          <p className="text-[9px] text-gray-500 truncate mb-0">
+                            <strong className="text-gray-700">{importedTemplateMeta.name}</strong> ({importedTemplateMeta.width}×{importedTemplateMeta.height}px)
+                          </p>
+                        )}
+                        <div className="grid grid-cols-2 gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => fileInputRef.current?.click()}
+                            className="py-1.5 px-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-[10px] font-bold flex items-center justify-center gap-1 cursor-pointer transition-colors"
+                          >
+                            <UploadCloud size={11} /> Replace
+                          </button>
+                          <button
+                            type="button"
+                            onClick={handleRemoveImportedTemplate}
+                            className="py-1.5 px-2 bg-white hover:bg-red-50 text-red-600 border border-red-200 rounded-lg text-[10px] font-bold flex items-center justify-center gap-1 cursor-pointer transition-colors"
+                          >
+                            <Trash2 size={11} /> Remove
+                          </button>
+                        </div>
+
+                        {importedTemplateMeta?.aspectRatio && (
+                          <div className="grid grid-cols-2 gap-1 pt-1">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const h = Math.max(300, Math.min(1400, Math.round(842 / importedTemplateMeta.aspectRatio)));
+                                setCanvasSize({ width: 842, height: h });
+                                toast.success("Matched canvas to your template's exact aspect ratio!");
+                              }}
+                              className="py-1 px-1.5 bg-gray-100 hover:bg-indigo-50 text-gray-700 hover:text-indigo-700 rounded text-[9px] font-semibold cursor-pointer transition-colors"
+                            >
+                              Fit Image Ratio
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setCanvasSize({ width: 842, height: 595 });
+                                toast.success("Set canvas to standard A4 Landscape (842×595)");
+                              }}
+                              className="py-1 px-1.5 bg-gray-100 hover:bg-indigo-50 text-gray-700 hover:text-indigo-700 rounded text-[9px] font-semibold cursor-pointer transition-colors"
+                            >
+                              Fit A4 Landscape
+                            </button>
+                          </div>
+                        )}
+
+                        {/* Quick-Drop Variables for Imported Certs */}
+                        <div className="pt-2 border-t border-indigo-100">
+                          <span className="text-[9px] font-bold text-indigo-700 block mb-1.5">
+                            Quick-Drop Variables onto Template:
+                          </span>
+                          <div className="flex flex-wrap gap-1">
+                            {CERTIFICATE_PLACEHOLDERS.map((p) => (
+                              <button
+                                key={p.value}
+                                type="button"
+                                onClick={() => handleAddPlaceholder(p)}
+                                className="text-[9px] bg-white hover:bg-indigo-600 text-indigo-700 hover:text-white border border-indigo-200 px-1.5 py-0.5 rounded font-semibold transition-colors cursor-pointer"
+                              >
+                                + {p.name}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <div
+                        onDragOver={(e) => {
+                          e.preventDefault();
+                          setIsDraggingTemplate(true);
+                        }}
+                        onDragLeave={() => setIsDraggingTemplate(false)}
+                        onDrop={(e) => {
+                          e.preventDefault();
+                          setIsDraggingTemplate(false);
+                          const droppedFile = e.dataTransfer.files?.[0];
+                          if (droppedFile) processCertTemplateFile(droppedFile);
+                        }}
+                        onClick={() => fileInputRef.current?.click()}
+                        className={`p-3.5 border-2 border-dashed rounded-xl text-center cursor-pointer transition-all group ${
+                          isDraggingTemplate
+                            ? "border-indigo-600 bg-indigo-50"
+                            : "border-indigo-300 hover:border-indigo-600 bg-white hover:bg-indigo-50/30"
+                        }`}
+                      >
+                        <FileUp size={20} className="text-indigo-500 group-hover:scale-110 transition-transform mx-auto mb-1" />
+                        <span className="text-[11px] font-bold text-gray-800 block">
+                          Import Your Own Cert Design
+                        </span>
+                        <span className="text-[9px] text-gray-500 block mt-0.5">
+                          Drag & drop or click to upload PNG, JPG, WEBP
+                        </span>
+                        <span className="text-[8px] text-indigo-600 font-semibold block mt-1">
+                          Auto-fits canvas & keeps your dynamic variables
+                        </span>
+                      </div>
+                    )}
+                  </div>
+
                   {/* Canvas Format Presets */}
-                  <div>
+                  <div className="pt-2 border-t border-gray-100">
                     <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-2">
                       Canvas Format & Size
                     </p>
@@ -1420,21 +1987,6 @@ const UploadTemplatePage = () => {
                           </button>
                         );
                       })}
-                    </div>
-                  </div>
-
-                  {/* Upload Custom Background File */}
-                  <div className="pt-3 border-t border-gray-100">
-                    <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-2">
-                      Upload Custom Background
-                    </p>
-                    <div
-                      onClick={() => fileInputRef.current?.click()}
-                      className="p-3 border border-dashed border-gray-300 hover:border-indigo-500 rounded-lg text-center cursor-pointer hover:bg-indigo-50/20 transition-all group bg-gray-50/50"
-                    >
-                      <UploadCloud size={18} className="text-gray-400 group-hover:text-indigo-600 mx-auto mb-1" />
-                      <span className="text-[11px] font-bold text-gray-700 block">Upload Background Image</span>
-                      <span className="text-[8px] text-gray-400">PNG, JPG, or WEBP (auto-clears placeholders)</span>
                     </div>
                   </div>
 
@@ -1509,7 +2061,7 @@ const UploadTemplatePage = () => {
                   {/* Preset Background Library */}
                   <div className="pt-3 border-t border-gray-100">
                     <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-2">
-                      Graphic Presets
+                      Built-in Frame Presets
                     </p>
                     <div className="grid grid-cols-2 gap-2">
                       {PRESET_TEMPLATES.map((preset) => (
@@ -1531,11 +2083,71 @@ const UploadTemplatePage = () => {
                   </div>
                 </div>
               ) : leftTab === "uploads" ? (
-                /* TAB 4: UPLOADS */
+                /* TAB 4: UPLOADS (CERT TEMPLATES & LOGOS) */
                 <div className="space-y-4">
-                  <div>
-                    <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-2">
-                      Upload Logos & Graphics
+                  {/* 1. Dedicated Import Your Cert Template Section */}
+                  <div className="p-3 rounded-xl border-2 border-indigo-100 bg-indigo-50/40 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <p className="text-[10px] text-indigo-700 font-extrabold uppercase tracking-wider mb-0 flex items-center gap-1">
+                        <FileUp size={12} /> 1. Import Cert Template
+                      </p>
+                      {templateImageUrl && (
+                        <span className="text-[8px] font-bold bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded-full">
+                          Loaded
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-[9px] text-gray-500 leading-relaxed mb-1">
+                      Have a ready-made certificate design from Canva, Figma, or Photoshop? Import it here as your full certificate base.
+                    </p>
+
+                    {templateImageUrl ? (
+                      <div className="space-y-2">
+                        <img
+                          src={templateImageUrl}
+                          alt="Current Certificate Template"
+                          className="w-full h-20 object-contain bg-white rounded-lg border border-gray-200 p-1"
+                        />
+                        <div className="grid grid-cols-2 gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => fileInputRef.current?.click()}
+                            className="py-1.5 px-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-[10px] font-bold cursor-pointer transition-colors"
+                          >
+                            Replace Template
+                          </button>
+                          <button
+                            type="button"
+                            onClick={handleRemoveImportedTemplate}
+                            className="py-1.5 px-2 bg-white hover:bg-red-50 text-red-600 border border-red-200 rounded-lg text-[10px] font-bold cursor-pointer transition-colors"
+                          >
+                            Remove
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div
+                        onClick={() => fileInputRef.current?.click()}
+                        className="p-3.5 border-2 border-dashed border-indigo-300 hover:border-indigo-600 bg-white rounded-xl text-center cursor-pointer hover:bg-indigo-50/30 transition-all group"
+                      >
+                        <FileUp size={20} className="text-indigo-500 group-hover:scale-110 transition-transform mx-auto mb-1" />
+                        <span className="text-[11px] font-bold text-gray-800 block">
+                          Upload Full Cert Template
+                        </span>
+                        <span className="text-[8px] text-gray-400">
+                          PNG, JPG, WEBP (Auto-optimizes & prevents 413 errors)
+                        </span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* 2. Upload Logos, Stamps & Signatures */}
+                  <div className="pt-2 border-t border-gray-100">
+                    <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider mb-1">
+                      2. Logos, Seals & Signatures
+                    </p>
+                    <p className="text-[9px] text-gray-400 mb-2">
+                      Add movable overlay graphics (company logo, stamp, signature PNG) on top of your certificate.
                     </p>
                     <div
                       onClick={() => assetInputRef.current?.click()}
@@ -1543,27 +2155,20 @@ const UploadTemplatePage = () => {
                     >
                       <ImageIcon size={22} className="text-gray-400 group-hover:text-indigo-600 mx-auto mb-1.5" />
                       <span className="text-[11px] font-bold text-gray-700 block">Upload Logo / Stamp</span>
-                      <span className="text-[8px] text-gray-400">PNG, JPG, or WEBP (Transparent PNG recommended)</span>
-                      <input
-                        type="file"
-                        ref={assetInputRef}
-                        className="hidden"
-                        accept="image/png, image/jpeg, image/webp"
-                        onChange={handleAssetUpload}
-                      />
+                      <span className="text-[8px] text-gray-400">PNG, JPG, WEBP, or SVG (Transparent PNG recommended)</span>
                     </div>
                   </div>
 
                   {uploadedAssets.length > 0 && (
                     <div>
                       <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-2">
-                        Uploaded Assets
+                        Uploaded Overlay Assets
                       </p>
                       <div className="grid grid-cols-2 gap-2">
                         {uploadedAssets.map((asset, idx) => (
                           <div
                             key={idx}
-                            onClick={() => handleAddImageToCanvas(asset.src)}
+                            onClick={() => handleAddImageToCanvas(asset.src, asset.width, asset.height)}
                             className="p-2 border border-gray-200 hover:border-indigo-500 rounded-lg bg-gray-50 hover:bg-white cursor-pointer transition-all text-center group"
                             title="Click to insert on canvas"
                           >
@@ -1576,27 +2181,6 @@ const UploadTemplatePage = () => {
                       </div>
                     </div>
                   )}
-
-                  {/* Upload Full Background */}
-                  <div className="pt-3 border-t border-gray-100">
-                    <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-2">
-                      Full Background Graphic
-                    </p>
-                    <div
-                      onClick={() => fileInputRef.current?.click()}
-                      className="p-3 border border-gray-200 hover:border-indigo-500 rounded-lg text-center cursor-pointer hover:bg-indigo-50/20 transition-all group"
-                    >
-                      <UploadCloud size={16} className="text-gray-400 group-hover:text-indigo-600 mx-auto mb-1" />
-                      <span className="text-[10px] font-bold text-gray-600 block">Replace Background</span>
-                      <input
-                        type="file"
-                        ref={fileInputRef}
-                        className="hidden"
-                        accept="image/png, image/jpeg"
-                        onChange={handleBackgroundUpload}
-                      />
-                    </div>
-                  </div>
                 </div>
               ) : (
                 /* TAB 5: LAYERS */
@@ -1620,12 +2204,14 @@ const UploadTemplatePage = () => {
                     <div className="text-center py-8 border border-dashed border-gray-200 rounded-lg p-3">
                       <Layers size={22} className="text-gray-300 mx-auto mb-1.5" />
                       <p className="text-[11px] font-medium text-gray-500 mb-0.5">No layers on canvas</p>
-                      <p className="text-[9px] text-gray-400 mb-0">Add text or shapes from the left tools</p>
+                      <p className="text-[9px] text-gray-400 mb-0">Add text or variables from the left tools</p>
                     </div>
                   ) : (
                     <div className="space-y-1">
                       {[...elements].reverse().map((el) => {
                         const isSelected = selectedId === el.id;
+                        const isHidden = el.visible === false;
+                        const isLocked = !!el.locked;
                         const label = el.isQr
                           ? "QR Code"
                           : el.text
@@ -1644,23 +2230,97 @@ const UploadTemplatePage = () => {
                             className={`flex items-center justify-between p-2 rounded-lg border text-[11px] cursor-pointer transition-all ${
                               isSelected
                                 ? "bg-indigo-50 border-indigo-300 text-indigo-700 font-semibold shadow-xs"
+                                : isHidden
+                                ? "bg-gray-50 border-gray-200 text-gray-400 opacity-60"
                                 : "bg-white border-gray-200 hover:bg-gray-50 text-gray-700"
                             }`}
                           >
-                            <span className="truncate flex-1 pr-2 select-none">
-                              {label}
+                            <span className="truncate flex-1 pr-2 select-none flex items-center gap-1.5">
+                              {isLocked && <Lock size={10} className="text-amber-600 shrink-0" />}
+                              <span className="truncate">{label}</span>
                             </span>
-                            <div className="flex items-center gap-1">
+                            <div className="flex items-center gap-0.5 shrink-0">
                               <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  const idx = elements.findIndex((item) => item.id === el.id);
+                                  if (idx < elements.length - 1) {
+                                    const copy = [...elements];
+                                    const [item] = copy.splice(idx, 1);
+                                    copy.splice(idx + 1, 0, item);
+                                    setElements(copy);
+                                  }
+                                }}
+                                className="text-gray-400 hover:text-indigo-600 p-0.5 cursor-pointer"
+                                title="Move Forward"
+                              >
+                                <ArrowUp size={11} />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  const idx = elements.findIndex((item) => item.id === el.id);
+                                  if (idx > 0) {
+                                    const copy = [...elements];
+                                    const [item] = copy.splice(idx, 1);
+                                    copy.splice(idx - 1, 0, item);
+                                    setElements(copy);
+                                  }
+                                }}
+                                className="text-gray-400 hover:text-indigo-600 p-0.5 cursor-pointer"
+                                title="Move Backward"
+                              >
+                                <ArrowDown size={11} />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setElements(
+                                    elements.map((item) =>
+                                      item.id === el.id ? { ...item, locked: !item.locked } : item
+                                    )
+                                  );
+                                }}
+                                className={`p-0.5 cursor-pointer ${
+                                  isLocked ? "text-amber-600" : "text-gray-400 hover:text-gray-700"
+                                }`}
+                                title={isLocked ? "Unlock Layer" : "Lock Layer"}
+                              >
+                                {isLocked ? <Lock size={11} /> : <Unlock size={11} />}
+                              </button>
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setElements(
+                                    elements.map((item) =>
+                                      item.id === el.id
+                                        ? { ...item, visible: item.visible === false ? true : false }
+                                        : item
+                                    )
+                                  );
+                                }}
+                                className={`p-0.5 cursor-pointer ${
+                                  isHidden ? "text-gray-400" : "text-gray-400 hover:text-gray-700"
+                                }`}
+                                title={isHidden ? "Show Layer" : "Hide Layer"}
+                              >
+                                {isHidden ? <EyeOff size={11} /> : <Eye size={11} />}
+                              </button>
+                              <button
+                                type="button"
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   setElements(elements.filter((item) => item.id !== el.id));
                                   if (selectedId === el.id) setSelectedId(null);
                                 }}
-                                className="text-gray-400 hover:text-red-600 transition-colors p-0.5"
+                                className="text-gray-400 hover:text-red-600 transition-colors p-0.5 cursor-pointer"
                                 title="Delete"
                               >
-                                <Trash2 size={12} />
+                                <Trash2 size={11} />
                               </button>
                             </div>
                           </div>
@@ -1692,34 +2352,94 @@ const UploadTemplatePage = () => {
               <span className="text-[10px] font-semibold text-gray-500">
                 Canvas: {canvasSize.width} × {canvasSize.height} px
               </span>
+              {templateImageUrl && (
+                <span className="text-[9px] font-semibold bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded-full border border-indigo-200 hidden sm:inline-flex items-center gap-1">
+                  <Check size={10} /> Custom Cert Template Active
+                </span>
+              )}
             </div>
 
             {/* Quick Actions if element selected */}
             {selectedElement && (
-              <div className="flex items-center gap-1.5 bg-indigo-50/70 px-2.5 py-0.5 rounded-full border border-indigo-100 text-[10px] text-indigo-700 font-semibold animate-in fade-in duration-150">
-                <span>Selected: {selectedElement.type || "Element"}</span>
+              <div className="flex items-center gap-1 bg-indigo-50/80 px-2.5 py-0.5 rounded-full border border-indigo-200 text-[10px] text-indigo-700 font-semibold animate-in fade-in duration-150">
+                <span className="mr-1">Selected: {selectedElement.type || "Element"}</span>
                 <button
+                  type="button"
+                  onClick={() => {
+                    const elW = selectedElement.width || 100;
+                    setElements((prev) =>
+                      prev.map((el) =>
+                        el.id === selectedId
+                          ? { ...el, x: Math.round((canvasSize.width - elW) / 2) }
+                          : el
+                      )
+                    );
+                  }}
+                  className="hover:bg-indigo-100 hover:text-indigo-900 p-1 rounded cursor-pointer"
+                  title="Center Horizontally on Canvas"
+                >
+                  <AlignHorizontalSpaceAround size={12} />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const elH = selectedElement.height || 36;
+                    setElements((prev) =>
+                      prev.map((el) =>
+                        el.id === selectedId
+                          ? { ...el, y: Math.round((canvasSize.height - elH) / 2) }
+                          : el
+                      )
+                    );
+                  }}
+                  className="hover:bg-indigo-100 hover:text-indigo-900 p-1 rounded cursor-pointer"
+                  title="Center Vertically on Canvas"
+                >
+                  <AlignVerticalSpaceAround size={12} />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setElements((prev) =>
+                      prev.map((el) =>
+                        el.id === selectedId ? { ...el, locked: !el.locked } : el
+                      )
+                    );
+                  }}
+                  className={`p-1 rounded cursor-pointer ${
+                    selectedElement.locked
+                      ? "bg-amber-100 text-amber-700"
+                      : "hover:bg-indigo-100 hover:text-indigo-900"
+                  }`}
+                  title={selectedElement.locked ? "Unlock Element" : "Lock Element"}
+                >
+                  {selectedElement.locked ? <Lock size={11} /> : <Unlock size={11} />}
+                </button>
+                <button
+                  type="button"
                   onClick={() => {
                     const clone = {
                       ...selectedElement,
                       id: `el_${Math.random().toString(36).substring(2, 9)}`,
                       x: selectedElement.x + 20,
                       y: selectedElement.y + 20,
+                      locked: false,
                     };
                     setElements((prev) => [...prev, clone]);
                     setSelectedId(clone.id);
                   }}
-                  className="hover:text-indigo-900 p-0.5 ml-1 cursor-pointer"
+                  className="hover:bg-indigo-100 hover:text-indigo-900 p-1 rounded cursor-pointer"
                   title="Duplicate (Ctrl+D)"
                 >
                   <Copy size={11} />
                 </button>
                 <button
+                  type="button"
                   onClick={() => {
                     setElements((prev) => prev.filter((el) => el.id !== selectedId));
                     setSelectedId(null);
                   }}
-                  className="hover:text-red-600 p-0.5 cursor-pointer"
+                  className="hover:bg-red-100 hover:text-red-600 p-1 rounded cursor-pointer"
                   title="Delete (Del)"
                 >
                   <Trash2 size={11} />
@@ -1809,6 +2529,51 @@ const UploadTemplatePage = () => {
             </div>
           </div>
 
+          {/* Live Sample Data Preview Bar (when previewMode is active) */}
+          {previewMode && (
+            <div className="bg-emerald-50 border-b border-emerald-200 px-4 py-1.5 flex flex-wrap items-center justify-between gap-2 z-10 text-xs">
+              <div className="flex items-center gap-1.5 text-emerald-800 font-bold">
+                <Eye size={13} />
+                <span>Live Sample Data Preview:</span>
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                <label className="flex items-center gap-1 text-[10px] text-emerald-700 font-semibold">
+                  Recipient:
+                  <input
+                    type="text"
+                    value={sampleData.recipient_name}
+                    onChange={(e) =>
+                      setSampleData((prev) => ({ ...prev, recipient_name: e.target.value }))
+                    }
+                    className="px-2 py-0.5 bg-white border border-emerald-300 rounded text-[11px] text-gray-800 w-36 focus:outline-none focus:border-emerald-600"
+                  />
+                </label>
+                <label className="flex items-center gap-1 text-[10px] text-emerald-700 font-semibold">
+                  Course:
+                  <input
+                    type="text"
+                    value={sampleData.course_title}
+                    onChange={(e) =>
+                      setSampleData((prev) => ({ ...prev, course_title: e.target.value }))
+                    }
+                    className="px-2 py-0.5 bg-white border border-emerald-300 rounded text-[11px] text-gray-800 w-44 focus:outline-none focus:border-emerald-600"
+                  />
+                </label>
+                <label className="flex items-center gap-1 text-[10px] text-emerald-700 font-semibold">
+                  Date:
+                  <input
+                    type="text"
+                    value={sampleData.issue_date}
+                    onChange={(e) =>
+                      setSampleData((prev) => ({ ...prev, issue_date: e.target.value }))
+                    }
+                    className="px-2 py-0.5 bg-white border border-emerald-300 rounded text-[11px] text-gray-800 w-28 focus:outline-none focus:border-emerald-600"
+                  />
+                </label>
+              </div>
+            </div>
+          )}
+
           {/* Interactive Workspace Area */}
           <div
             ref={workspaceRef}
@@ -1828,6 +2593,10 @@ const UploadTemplatePage = () => {
               canvasSize={canvasSize}
               showGrid={showGrid}
               zoomScale={zoomScale}
+              previewMode={previewMode}
+              sampleData={sampleData}
+              onUndo={handleUndo}
+              onRedo={handleRedo}
             />
           </div>
         </main>
@@ -1838,7 +2607,7 @@ const UploadTemplatePage = () => {
             <div className="p-3 border-b border-gray-100 dark:border-[#28282d] flex items-center gap-1.5 bg-gray-50/70 dark:bg-[#141417]">
               <Settings size={14} className="text-gray-500 dark:text-zinc-400" />
               <h4 className="text-xs font-bold text-gray-800 dark:text-white uppercase tracking-wider">
-                {selectedElement ? "Element Inspector" : "Canvas Properties"}
+                {selectedElement ? "Element Inspector" : "Studio Inspector"}
               </h4>
             </div>
 
@@ -1846,6 +2615,7 @@ const UploadTemplatePage = () => {
               {selectedElement ? (
                 <TextElementControls
                   element={selectedElement}
+                  canvasSize={canvasSize}
                   onUpdate={(updatedAttrs) => {
                     if (updatedAttrs.arrange) {
                       const action = updatedAttrs.arrange;
@@ -1874,6 +2644,19 @@ const UploadTemplatePage = () => {
                     );
                     setElements(updatedElements);
                   }}
+                  onDuplicate={() => {
+                    const clone = {
+                      ...selectedElement,
+                      id: `el_${Math.random().toString(36).substring(2, 9)}`,
+                      x: (selectedElement.x || 0) + 20,
+                      y: (selectedElement.y || 0) + 20,
+                      locked: false,
+                    };
+                    setElements((prev) => [...prev, clone]);
+                    setSelectedId(clone.id);
+                    toast.success("Duplicated element");
+                  }}
+                  onConvertToTemplate={handleConvertElementToTemplate}
                   onDelete={() => {
                     setElements(elements.filter((el) => el.id !== selectedId));
                     setSelectedId(null);
@@ -1882,12 +2665,62 @@ const UploadTemplatePage = () => {
                 />
               ) : (
                 <div className="space-y-4">
-                  <div className="p-3 bg-gray-50 rounded-xl border border-gray-100 text-center">
-                    <Shapes size={24} className="mx-auto text-indigo-500 mb-1.5 opacity-80" />
-                    <p className="text-xs font-bold text-gray-700">Canvas Selected</p>
-                    <p className="text-[10px] text-gray-400 mt-0.5">
-                      Click any element to inspect its properties, or use the controls below to style the canvas background.
+                  {/* Dedicated Quick Import Card in Right Inspector */}
+                  <div className="p-3 bg-indigo-50/50 rounded-xl border border-indigo-100 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-extrabold text-indigo-700 uppercase tracking-wider flex items-center gap-1">
+                        <FileUp size={12} /> Own Certificate Design?
+                      </span>
+                      {templateImageUrl && (
+                        <span className="text-[8px] font-bold bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded-full">
+                          Imported
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-[10px] text-gray-500 leading-relaxed mb-0">
+                      {templateImageUrl
+                        ? "Your custom certificate design is active on the canvas. Add dynamic variables like {{recipient_name}} and position them over your blank fields."
+                        : "Import your pre-made certificate image (PNG/JPG) and drop dynamic variables like {{recipient_name}} on top."}
                     </p>
+                    <div className="flex gap-1.5 pt-1">
+                      <button
+                        type="button"
+                        onClick={() => fileInputRef.current?.click()}
+                        className="flex-1 py-1.5 px-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-[10px] font-bold flex items-center justify-center gap-1 cursor-pointer transition-colors shadow-2xs"
+                      >
+                        <FileUp size={11} />
+                        {templateImageUrl ? "Replace Cert Design" : "Import Cert Design"}
+                      </button>
+                      {templateImageUrl && (
+                        <button
+                          type="button"
+                          onClick={handleRemoveImportedTemplate}
+                          className="py-1.5 px-2 bg-white hover:bg-red-50 text-red-600 border border-red-200 rounded-lg text-[10px] font-bold cursor-pointer transition-colors"
+                          title="Remove Imported Template"
+                        >
+                          <Trash2 size={11} />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Quick Add Dynamic Variables */}
+                  <div>
+                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mb-1.5">
+                      Quick Add Variables
+                    </span>
+                    <div className="grid grid-cols-2 gap-1.5">
+                      {CERTIFICATE_PLACEHOLDERS.slice(0, 6).map((p) => (
+                        <button
+                          key={p.value}
+                          type="button"
+                          onClick={() => handleAddPlaceholder(p)}
+                          className="p-2 bg-white border border-gray-200 hover:border-indigo-500 rounded-lg text-[10px] font-semibold text-gray-700 hover:text-indigo-600 transition-all text-left cursor-pointer truncate"
+                        >
+                          + {p.name}
+                        </button>
+                      ))}
+                    </div>
                   </div>
 
                   {/* Canvas Quick Palette */}
@@ -1939,7 +2772,7 @@ const UploadTemplatePage = () => {
                   {/* Add Elements Shortcut */}
                   <div>
                     <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mb-1.5">
-                      Quick Add
+                      Quick Add Elements
                     </span>
                     <div className="grid grid-cols-2 gap-1.5">
                       <button
@@ -1949,22 +2782,22 @@ const UploadTemplatePage = () => {
                         + Heading
                       </button>
                       <button
-                        onClick={() => handleAddShape("rect")}
+                        onClick={() => handleAddComboBlock("signature")}
                         className="p-2 bg-white border border-gray-200 hover:border-indigo-500 rounded-lg text-xs font-semibold text-gray-700 hover:text-indigo-600 transition-all text-left cursor-pointer"
                       >
-                        + Rectangle
+                        + Signature Block
                       </button>
                       <button
                         onClick={() => handleAddShape("line")}
                         className="p-2 bg-white border border-gray-200 hover:border-indigo-500 rounded-lg text-xs font-semibold text-gray-700 hover:text-indigo-600 transition-all text-left cursor-pointer"
                       >
-                        + Line
+                        + Divider Line
                       </button>
                       <button
                         onClick={() => handleAddShape("badge")}
                         className="p-2 bg-white border border-gray-200 hover:border-indigo-500 rounded-lg text-xs font-semibold text-gray-700 hover:text-indigo-600 transition-all text-left cursor-pointer"
                       >
-                        + Rosette
+                        + Rosette Seal
                       </button>
                     </div>
                   </div>
@@ -2015,5 +2848,3 @@ const UploadTemplatePage = () => {
 };
 
 export default UploadTemplatePage;
-
-

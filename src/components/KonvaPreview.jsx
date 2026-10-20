@@ -158,6 +158,31 @@ const KonvaPreview = ({ layoutData, dynamicData }) => {
             fill={bgFill}
           />
 
+          {/* Optional Certificate Border Frame on canvas */}
+          {data?.background?.border && (
+            <>
+              <Rect
+                x={20 * scaleX}
+                y={20 * scaleY}
+                width={(baseWidth - 40) * scaleX}
+                height={(baseHeight - 40) * scaleY}
+                stroke={data.background.borderColor || "#1e3a8a"}
+                strokeWidth={(data.background.borderWidth || 4) * scaleMin}
+                listening={false}
+              />
+              <Rect
+                x={28 * scaleX}
+                y={28 * scaleY}
+                width={(baseWidth - 56) * scaleX}
+                height={(baseHeight - 56) * scaleY}
+                stroke={data.background.borderAccent || "#d97706"}
+                strokeWidth={1.5 * scaleMin}
+                dash={[6 * scaleMin, 3 * scaleMin]}
+                listening={false}
+              />
+            </>
+          )}
+
           {backgroundImageSrc && (
             <KonvaLoadedImage
               src={backgroundImageSrc}
@@ -166,7 +191,7 @@ const KonvaPreview = ({ layoutData, dynamicData }) => {
             />
           )}
 
-          {elements.map((el, index) => {
+          {elements.filter((el) => el.visible !== false).map((el, index) => {
             const isQr = el.isQr || el.type === "qr";
             const elType = el.type;
 

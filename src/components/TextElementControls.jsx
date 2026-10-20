@@ -11,6 +11,8 @@ import {
   AlignVerticalJustifyStart,
   AlignVerticalJustifyCenter,
   AlignVerticalJustifyEnd,
+  AlignHorizontalSpaceAround,
+  AlignVerticalSpaceAround,
   ArrowUpToLine,
   ArrowDownToLine,
   ChevronUp,
@@ -18,6 +20,8 @@ import {
   Check,
   RotateCw,
   Copy,
+  Lock,
+  Unlock,
   Square,
   Circle as CircleIcon,
   Minus,
@@ -26,6 +30,7 @@ import {
   Box,
   Image as ImageIcon,
   Type,
+  Maximize2,
 } from "lucide-react";
 
 const FONT_FAMILIES = [
@@ -58,7 +63,15 @@ const COLOR_PRESETS = [
   "#dc2626", "#be123c", "#7c3aed", "#4f46e5", "#c026d3",
 ];
 
-const TextElementControls = ({ element, onUpdate, onDelete, onDone }) => {
+const TextElementControls = ({
+  element,
+  canvasSize = { width: 842, height: 595 },
+  onUpdate,
+  onDelete,
+  onDuplicate,
+  onConvertToTemplate,
+  onDone,
+}) => {
   const [showColorGrid, setShowColorGrid] = useState(false);
   const [showStrokeGrid, setShowStrokeGrid] = useState(false);
 
@@ -67,7 +80,7 @@ const TextElementControls = ({ element, onUpdate, onDelete, onDone }) => {
   const isQr = element.isQr || element.type === "qr";
   const isImage = element.type === "image";
   const isShape = ["rect", "circle", "line", "star", "badge", "border"].includes(element.type);
-  const isText = !isQr && !isImage && !isShape;
+  const isLocked = !!element.locked;
 
   const handleStyleToggle = (style) => {
     const currentStyle = element.fontStyle || "normal";
@@ -94,6 +107,28 @@ const TextElementControls = ({ element, onUpdate, onDelete, onDone }) => {
     }
   };
 
+  const handleAlignToCanvas = (mode) => {
+    const w = element.width || 100;
+    const h = element.height || 30;
+    const cw = canvasSize?.width || 842;
+    const ch = canvasSize?.height || 595;
+    const margin = 40;
+
+    if (mode === "center-h") {
+      onUpdate({ x: Math.round((cw - w) / 2) });
+    } else if (mode === "center-v") {
+      onUpdate({ y: Math.round((ch - h) / 2) });
+    } else if (mode === "left") {
+      onUpdate({ x: margin });
+    } else if (mode === "right") {
+      onUpdate({ x: Math.max(0, Math.round(cw - w - margin)) });
+    } else if (mode === "top") {
+      onUpdate({ y: margin });
+    } else if (mode === "bottom") {
+      onUpdate({ y: Math.max(0, Math.round(ch - h - margin)) });
+    }
+  };
+
   const commonHeader = (title, icon = null) => (
     <div className="flex justify-between items-center pb-2 border-b border-gray-100 mb-3">
       <div className="flex items-center gap-1.5 min-w-0">
@@ -102,18 +137,104 @@ const TextElementControls = ({ element, onUpdate, onDelete, onDone }) => {
       </div>
       <div className="flex gap-1 shrink-0">
         <button
+          type="button"
+          onClick={() => onUpdate({ locked: !isLocked })}
+          className={`p-1 rounded transition-colors cursor-pointer ${
+            isLocked
+              ? "text-amber-600 bg-amber-50 hover:bg-amber-100"
+              : "text-gray-400 hover:text-gray-700 hover:bg-gray-100"
+          }`}
+          title={isLocked ? "Unlock Element" : "Lock Element Position"}
+        >
+          {isLocked ? <Lock size={13} /> : <Unlock size={13} />}
+        </button>
+        {onDuplicate && (
+          <button
+            type="button"
+            onClick={onDuplicate}
+            className="text-indigo-600 hover:text-indigo-800 p-1 rounded hover:bg-indigo-50 transition-colors cursor-pointer"
+            title="Duplicate Element (Ctrl+D)"
+          >
+            <Copy size={13} />
+          </button>
+        )}
+        <button
+          type="button"
           onClick={onDone}
-          className="text-emerald-600 hover:text-emerald-800 p-1 rounded hover:bg-emerald-50 transition-colors"
+          className="text-emerald-600 hover:text-emerald-800 p-1 rounded hover:bg-emerald-50 transition-colors cursor-pointer"
           title="Done Editing"
         >
           <Check size={14} />
         </button>
         <button
+          type="button"
           onClick={onDelete}
-          className="text-red-500 hover:text-red-700 p-1 rounded hover:bg-red-50 transition-colors"
+          className="text-red-500 hover:text-red-700 p-1 rounded hover:bg-red-50 transition-colors cursor-pointer"
           title="Delete Element"
         >
           <Trash2 size={14} />
+        </button>
+      </div>
+    </div>
+  );
+
+  const canvasAlignSection = (
+    <div className="space-y-1.5 pt-2.5 border-t border-gray-100 mt-2.5">
+      <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">
+        Snap to Canvas
+      </span>
+      <div className="grid grid-cols-2 gap-1.5">
+        <button
+          type="button"
+          onClick={() => handleAlignToCanvas("center-h")}
+          className="flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-md border border-indigo-200 bg-indigo-50/60 hover:bg-indigo-100/80 text-indigo-700 transition-all text-[10px] font-bold cursor-pointer"
+          title="Center Horizontally on Certificate"
+        >
+          <AlignHorizontalSpaceAround size={12} />
+          <span>Center Horiz</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => handleAlignToCanvas("center-v")}
+          className="flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-md border border-indigo-200 bg-indigo-50/60 hover:bg-indigo-100/80 text-indigo-700 transition-all text-[10px] font-bold cursor-pointer"
+          title="Center Vertically on Certificate"
+        >
+          <AlignVerticalSpaceAround size={12} />
+          <span>Center Vert</span>
+        </button>
+      </div>
+      <div className="grid grid-cols-4 gap-1">
+        <button
+          type="button"
+          onClick={() => handleAlignToCanvas("left")}
+          className="py-1 px-1.5 rounded border border-gray-200 hover:bg-gray-50 text-[9px] font-semibold text-gray-600 cursor-pointer"
+          title="Align to Left Margin"
+        >
+          Left
+        </button>
+        <button
+          type="button"
+          onClick={() => handleAlignToCanvas("right")}
+          className="py-1 px-1.5 rounded border border-gray-200 hover:bg-gray-50 text-[9px] font-semibold text-gray-600 cursor-pointer"
+          title="Align to Right Margin"
+        >
+          Right
+        </button>
+        <button
+          type="button"
+          onClick={() => handleAlignToCanvas("top")}
+          className="py-1 px-1.5 rounded border border-gray-200 hover:bg-gray-50 text-[9px] font-semibold text-gray-600 cursor-pointer"
+          title="Align to Top Margin"
+        >
+          Top
+        </button>
+        <button
+          type="button"
+          onClick={() => handleAlignToCanvas("bottom")}
+          className="py-1 px-1.5 rounded border border-gray-200 hover:bg-gray-50 text-[9px] font-semibold text-gray-600 cursor-pointer"
+          title="Align to Bottom Margin"
+        >
+          Bottom
         </button>
       </div>
     </div>
@@ -124,6 +245,7 @@ const TextElementControls = ({ element, onUpdate, onDelete, onDone }) => {
       <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">Layer Depth</span>
       <div className="grid grid-cols-4 gap-1">
         <button
+          type="button"
           onClick={() => onUpdate({ arrange: "front" })}
           className="flex flex-col items-center justify-center p-1 rounded border border-gray-200 hover:bg-indigo-50 hover:text-indigo-600 hover:border-indigo-200 text-gray-600 transition-all text-center cursor-pointer"
           title="Bring to Front"
@@ -132,6 +254,7 @@ const TextElementControls = ({ element, onUpdate, onDelete, onDone }) => {
           <span className="text-[8px] mt-0.5 font-semibold">Front</span>
         </button>
         <button
+          type="button"
           onClick={() => onUpdate({ arrange: "forward" })}
           className="flex flex-col items-center justify-center p-1 rounded border border-gray-200 hover:bg-indigo-50 hover:text-indigo-600 hover:border-indigo-200 text-gray-600 transition-all text-center cursor-pointer"
           title="Move Forward"
@@ -140,6 +263,7 @@ const TextElementControls = ({ element, onUpdate, onDelete, onDone }) => {
           <span className="text-[8px] mt-0.5 font-semibold">Forward</span>
         </button>
         <button
+          type="button"
           onClick={() => onUpdate({ arrange: "backward" })}
           className="flex flex-col items-center justify-center p-1 rounded border border-gray-200 hover:bg-indigo-50 hover:text-indigo-600 hover:border-indigo-200 text-gray-600 transition-all text-center cursor-pointer"
           title="Move Backward"
@@ -148,6 +272,7 @@ const TextElementControls = ({ element, onUpdate, onDelete, onDone }) => {
           <span className="text-[8px] mt-0.5 font-semibold">Backward</span>
         </button>
         <button
+          type="button"
           onClick={() => onUpdate({ arrange: "back" })}
           className="flex flex-col items-center justify-center p-1 rounded border border-gray-200 hover:bg-indigo-50 hover:text-indigo-600 hover:border-indigo-200 text-gray-600 transition-all text-center cursor-pointer"
           title="Send to Back"
@@ -206,7 +331,18 @@ const TextElementControls = ({ element, onUpdate, onDelete, onDone }) => {
 
   const rotationSection = (
     <div className="space-y-1 pt-2.5 border-t border-gray-100 mt-2.5">
-      <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">Rotation</span>
+      <div className="flex items-center justify-between">
+        <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">Rotation</span>
+        {element.rotation ? (
+          <button
+            type="button"
+            onClick={() => onUpdate({ rotation: 0 })}
+            className="text-[9px] text-indigo-600 hover:underline cursor-pointer"
+          >
+            Reset 0°
+          </button>
+        ) : null}
+      </div>
       <div className="flex items-center gap-2">
         <input
           type="range"
@@ -280,6 +416,7 @@ const TextElementControls = ({ element, onUpdate, onDelete, onDone }) => {
           </div>
         </div>
 
+        {canvasAlignSection}
         {rotationSection}
         {opacitySection}
         {coordinatesSection}
@@ -304,6 +441,19 @@ const TextElementControls = ({ element, onUpdate, onDelete, onDone }) => {
           </div>
         )}
 
+        {onConvertToTemplate && element.src && (
+          <button
+            type="button"
+            onClick={() => onConvertToTemplate(element)}
+            className="w-full py-1.5 px-2.5 rounded-lg border border-indigo-200 bg-indigo-50/70 hover:bg-indigo-100 text-indigo-700 font-bold text-[10px] flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+            title="Convert this uploaded image into the full-bleed Certificate Template background"
+          >
+            <Maximize2 size={12} />
+            <span>Set as Full Certificate Template</span>
+          </button>
+        )}
+
+        {canvasAlignSection}
         {opacitySection}
         {rotationSection}
         {coordinatesSection}
@@ -495,6 +645,7 @@ const TextElementControls = ({ element, onUpdate, onDelete, onDone }) => {
           </div>
         )}
 
+        {canvasAlignSection}
         {opacitySection}
         {rotationSection}
         {coordinatesSection}
@@ -622,7 +773,7 @@ const TextElementControls = ({ element, onUpdate, onDelete, onDone }) => {
 
       {/* Formatting & Alignment */}
       <div className="space-y-2 pt-1 border-t border-gray-100">
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-3 gap-1.5">
           {/* Styles */}
           <div>
             <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mb-1">Styles</label>
@@ -657,22 +808,12 @@ const TextElementControls = ({ element, onUpdate, onDelete, onDone }) => {
               >
                 <Underline size={11} />
               </button>
-              <button
-                type="button"
-                onClick={() => handleDecorationToggle("line-through")}
-                className={`p-1.5 rounded transition-all cursor-pointer ${
-                  element.textDecoration?.includes("line-through") ? "bg-indigo-600 text-white" : "text-gray-500 hover:text-gray-800"
-                }`}
-                title="Strikethrough"
-              >
-                <Strikethrough size={11} />
-              </button>
             </div>
           </div>
 
-          {/* Alignment */}
+          {/* Horizontal Alignment */}
           <div>
-            <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mb-1">Alignment</label>
+            <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mb-1">Horiz</label>
             <div className="flex rounded-md border border-gray-200 p-0.5 w-max bg-gray-50 gap-0.5">
               <button
                 type="button"
@@ -703,6 +844,43 @@ const TextElementControls = ({ element, onUpdate, onDelete, onDone }) => {
                 title="Align Right"
               >
                 <AlignRight size={11} />
+              </button>
+            </div>
+          </div>
+
+          {/* Vertical Alignment */}
+          <div>
+            <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mb-1">Vert</label>
+            <div className="flex rounded-md border border-gray-200 p-0.5 w-max bg-gray-50 gap-0.5">
+              <button
+                type="button"
+                onClick={() => onUpdate({ verticalAlign: "top" })}
+                className={`p-1.5 rounded transition-all cursor-pointer ${
+                  element.verticalAlign === "top" ? "bg-indigo-600 text-white" : "text-gray-500 hover:text-gray-800"
+                }`}
+                title="Align Top"
+              >
+                <AlignVerticalJustifyStart size={11} />
+              </button>
+              <button
+                type="button"
+                onClick={() => onUpdate({ verticalAlign: "middle" })}
+                className={`p-1.5 rounded transition-all cursor-pointer ${
+                  (!element.verticalAlign || element.verticalAlign === "middle") ? "bg-indigo-600 text-white" : "text-gray-500 hover:text-gray-800"
+                }`}
+                title="Align Middle"
+              >
+                <AlignVerticalJustifyCenter size={11} />
+              </button>
+              <button
+                type="button"
+                onClick={() => onUpdate({ verticalAlign: "bottom" })}
+                className={`p-1.5 rounded transition-all cursor-pointer ${
+                  element.verticalAlign === "bottom" ? "bg-indigo-600 text-white" : "text-gray-500 hover:text-gray-800"
+                }`}
+                title="Align Bottom (Great for resting on signature/recipient lines)"
+              >
+                <AlignVerticalJustifyEnd size={11} />
               </button>
             </div>
           </div>
@@ -741,6 +919,7 @@ const TextElementControls = ({ element, onUpdate, onDelete, onDone }) => {
         </div>
       </div>
 
+      {canvasAlignSection}
       {opacitySection}
       {rotationSection}
       {coordinatesSection}
@@ -750,7 +929,7 @@ const TextElementControls = ({ element, onUpdate, onDelete, onDone }) => {
       <div className="text-[9px] text-gray-400 mt-2 leading-relaxed bg-gray-50 p-2 rounded border border-gray-100">
         <span className="font-bold text-gray-500 block mb-0.5">Shortcuts</span>
         <span className="block">Arrow keys: move 1px · Shift+Arrow: 10px</span>
-        <span className="block">Ctrl+D: duplicate · Del: delete · Esc: deselect</span>
+        <span className="block">Ctrl+Z / Ctrl+Y: undo/redo · Ctrl+D: duplicate · Del: delete</span>
       </div>
     </div>
   );

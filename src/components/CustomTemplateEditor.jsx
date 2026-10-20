@@ -130,6 +130,8 @@ const KonvaLoadedImage = ({ src, width, height }) => {
 // ─── DraggableText ──────────────────────────────────────────
 const DraggableText = ({
   shapeProps,
+  displayText,
+  previewMode,
   isSelected,
   isEditing,
   onSelect,
@@ -141,6 +143,7 @@ const DraggableText = ({
   const groupRef = useRef();
   const width = shapeProps.width || 200;
   const height = shapeProps.height || 30;
+  const isLocked = !!shapeProps.locked;
 
   return (
     <Group
@@ -149,7 +152,7 @@ const DraggableText = ({
       x={shapeProps.x}
       y={shapeProps.y}
       rotation={shapeProps.rotation || 0}
-      draggable={!isEditing}
+      draggable={!isEditing && !isLocked && !previewMode}
       visible={!isEditing}
       onClick={(e) => {
         e.cancelBubble = true;
@@ -161,11 +164,11 @@ const DraggableText = ({
       }}
       onDblClick={(e) => {
         e.cancelBubble = true;
-        onStartEdit();
+        if (!isLocked && !previewMode) onStartEdit();
       }}
       onDblTap={(e) => {
         e.cancelBubble = true;
-        onStartEdit();
+        if (!isLocked && !previewMode) onStartEdit();
       }}
       onDragMove={(e) => {
         if (onDragMoveSnap) {
@@ -183,7 +186,7 @@ const DraggableText = ({
       }}
       onMouseEnter={(e) => {
         const stage = e.target.getStage();
-        if (stage) stage.container().style.cursor = "move";
+        if (stage) stage.container().style.cursor = isLocked ? "default" : "move";
       }}
       onMouseLeave={(e) => {
         const stage = e.target.getStage();
@@ -212,9 +215,17 @@ const DraggableText = ({
         width={width}
         height={height}
         fill="rgba(255,255,255,0.01)"
-        stroke={isSelected ? "transparent" : "rgba(99, 102, 241, 0.45)"}
+        stroke={
+          previewMode
+            ? "transparent"
+            : isSelected
+            ? isLocked
+              ? "#f59e0b"
+              : "transparent"
+            : "rgba(99, 102, 241, 0.45)"
+        }
         strokeWidth={1}
-        dash={isSelected ? undefined : [4, 4]}
+        dash={isSelected && !isLocked ? undefined : [4, 4]}
         strokeScaleEnabled={false}
         cornerRadius={2}
         listening={true}
@@ -225,7 +236,7 @@ const DraggableText = ({
         y={0}
         width={width}
         height={height}
-        text={shapeProps.text}
+        text={displayText != null ? displayText : shapeProps.text}
         fontSize={shapeProps.fontSize || 20}
         fontFamily={shapeProps.fontFamily || "Arial"}
         fill={shapeProps.fill || "#000000"}
@@ -245,6 +256,7 @@ const DraggableText = ({
 // ─── DraggableShape (Rect, Circle, Line, Star, Badge, Border) ──
 const DraggableShape = ({
   shapeProps,
+  previewMode,
   isSelected,
   onSelect,
   onChange,
@@ -255,6 +267,7 @@ const DraggableShape = ({
   const width = shapeProps.width || 100;
   const height = shapeProps.height || 100;
   const type = shapeProps.type;
+  const isLocked = !!shapeProps.locked;
 
   const handleDragEnd = (e) => {
     if (onDragEndSnap) onDragEndSnap();
@@ -290,7 +303,7 @@ const DraggableShape = ({
       x={shapeProps.x}
       y={shapeProps.y}
       rotation={shapeProps.rotation || 0}
-      draggable
+      draggable={!isLocked && !previewMode}
       onClick={(e) => {
         e.cancelBubble = true;
         onSelect();
@@ -308,7 +321,7 @@ const DraggableShape = ({
       onTransformEnd={handleTransformEnd}
       onMouseEnter={(e) => {
         const stage = e.target.getStage();
-        if (stage) stage.container().style.cursor = "move";
+        if (stage) stage.container().style.cursor = isLocked ? "default" : "move";
       }}
       onMouseLeave={(e) => {
         const stage = e.target.getStage();
@@ -460,6 +473,7 @@ const DraggableShape = ({
 // ─── DraggableQR ────────────────────────────────────────────
 const DraggableQR = ({
   shapeProps,
+  previewMode,
   isSelected,
   onSelect,
   onChange,
@@ -469,6 +483,7 @@ const DraggableQR = ({
   const groupRef = useRef();
   const width = shapeProps.width || 100;
   const height = shapeProps.height || 100;
+  const isLocked = !!shapeProps.locked;
 
   return (
     <Group
@@ -477,7 +492,7 @@ const DraggableQR = ({
       x={shapeProps.x}
       y={shapeProps.y}
       rotation={shapeProps.rotation || 0}
-      draggable
+      draggable={!isLocked && !previewMode}
       onClick={(e) => {
         e.cancelBubble = true;
         onSelect();
@@ -502,7 +517,7 @@ const DraggableQR = ({
       }}
       onMouseEnter={(e) => {
         const stage = e.target.getStage();
-        if (stage) stage.container().style.cursor = "move";
+        if (stage) stage.container().style.cursor = isLocked ? "default" : "move";
       }}
       onMouseLeave={(e) => {
         const stage = e.target.getStage();
@@ -597,6 +612,10 @@ const CustomTemplateEditor = ({
   canvasSize,
   showGrid = true,
   zoomScale = 1,
+  previewMode = false,
+  sampleData = {},
+  onUndo,
+  onRedo,
 }) => {
   const resolvedBg = resolveImageUrl(backgroundImageUrl);
   const isBgData = resolvedBg.startsWith("data:") || resolvedBg.startsWith("blob:");
@@ -605,6 +624,7 @@ const CustomTemplateEditor = ({
   const image = bgImage || bgFallback;
   const guidesLayerRef = useRef(null);
   const trRef = useRef();
+  const clipboardRef = useRef(null);
 
   // ── Inline Canvas Text Editing State ──
   const [editingId, setEditingId] = useState(null);
@@ -612,6 +632,36 @@ const CustomTemplateEditor = ({
   const editTextareaRef = useRef(null);
 
   const activeEditingElement = elements.find((el) => el.id === editingId);
+  const selectedElement = elements.find((el) => el.id === selectedId);
+
+  const resolvePreviewText = useCallback(
+    (rawText) => {
+      if (!previewMode || !rawText) return rawText;
+      let text = String(rawText);
+      const replacements = {
+        "{{recipient_name}}": sampleData.recipient_name || "Alabi Ezekiel",
+        "{{course_title}}": sampleData.course_title || "Build in Public for 30 Days Program",
+        "{{issue_date}}": sampleData.issue_date || "20th October, 2026",
+        "{{issuer_name}}": sampleData.issuer_name || "ProofDeck Academy",
+        "{{verification_id}}": sampleData.verification_id || "PD-2026-84920",
+        "{{signature}}": sampleData.signature || "Ezekiel Alabi",
+        "{{amount}}": sampleData.amount || "$250.00",
+        ...(sampleData.custom || {}),
+      };
+      Object.entries(replacements).forEach(([tag, val]) => {
+        const escaped = tag.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        text = text.replace(new RegExp(escaped, "gi"), val);
+      });
+      // Replace any remaining {{custom_var}} tags with readable sample title case
+      text = text.replace(/\{\{([^}]+)\}\}/g, (_, inner) =>
+        inner
+          .replace(/_/g, " ")
+          .replace(/\b\w/g, (c) => c.toUpperCase())
+      );
+      return text;
+    },
+    [previewMode, sampleData]
+  );
 
   // Focus and select textarea on start edit
   useEffect(() => {
@@ -624,7 +674,8 @@ const CustomTemplateEditor = ({
   // Connect transformer to selected element
   useEffect(() => {
     if (!trRef.current || !stageRef?.current) return;
-    if (selectedId && !editingId) {
+    const isLocked = !!selectedElement?.locked;
+    if (selectedId && !editingId && !previewMode && !isLocked && selectedElement?.visible !== false) {
       const node = stageRef.current.findOne("#" + selectedId);
       if (node) {
         trRef.current.nodes([node]);
@@ -634,14 +685,30 @@ const CustomTemplateEditor = ({
       trRef.current.nodes([]);
       trRef.current.getLayer()?.batchDraw();
     }
-  }, [selectedId, editingId, stageRef]);
+  }, [selectedId, editingId, previewMode, selectedElement, stageRef]);
 
-  // ── Keyboard: Shortcuts (Nudge, Duplicate, Delete, Deselect) ──
+  // ── Keyboard: Shortcuts (Undo, Redo, Copy, Paste, Nudge, Duplicate, Delete, Deselect) ──
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (editingId) return;
       const activeTag = document.activeElement?.tagName?.toLowerCase();
       if (activeTag === "input" || activeTag === "textarea" || activeTag === "select") {
+        return;
+      }
+
+      // Undo / Redo
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "z") {
+        e.preventDefault();
+        if (e.shiftKey) {
+          if (onRedo) onRedo();
+        } else {
+          if (onUndo) onUndo();
+        }
+        return;
+      }
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "y") {
+        e.preventDefault();
+        if (onRedo) onRedo();
         return;
       }
 
@@ -651,16 +718,35 @@ const CustomTemplateEditor = ({
         return;
       }
 
-      if (!selectedId) return;
-
-      if (e.key === "Delete" || e.key === "Backspace") {
+      // Paste
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "v" && clipboardRef.current) {
         e.preventDefault();
-        setElements((prev) => prev.filter((el) => el.id !== selectedId));
-        setSelectedId(null);
+        const source = clipboardRef.current;
+        const clone = {
+          ...source,
+          id: `el_${Math.random().toString(36).substring(2, 11)}`,
+          x: Math.min(canvasSize.width - 50, (source.x || 0) + 20),
+          y: Math.min(canvasSize.height - 50, (source.y || 0) + 20),
+          locked: false,
+        };
+        setElements((prev) => [...prev, clone]);
+        setSelectedId(clone.id);
         return;
       }
 
-      if ((e.ctrlKey || e.metaKey) && e.key === "d") {
+      if (!selectedId) return;
+
+      // Copy
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "c") {
+        e.preventDefault();
+        const source = elements.find((el) => el.id === selectedId);
+        if (source) {
+          clipboardRef.current = { ...source };
+        }
+        return;
+      }
+
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "d") {
         e.preventDefault();
         setElements((prev) => {
           const source = prev.find((el) => el.id === selectedId);
@@ -670,10 +756,21 @@ const CustomTemplateEditor = ({
             id: `el_${Math.random().toString(36).substring(2, 11)}`,
             x: Math.min(canvasSize.width - 50, source.x + 20),
             y: Math.min(canvasSize.height - 50, source.y + 20),
+            locked: false,
           };
           setSelectedId(clone.id);
           return [...prev, clone];
         });
+        return;
+      }
+
+      const currentEl = elements.find((el) => el.id === selectedId);
+      if (currentEl?.locked) return;
+
+      if (e.key === "Delete" || e.key === "Backspace") {
+        e.preventDefault();
+        setElements((prev) => prev.filter((el) => el.id !== selectedId));
+        setSelectedId(null);
         return;
       }
 
@@ -701,7 +798,7 @@ const CustomTemplateEditor = ({
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [selectedId, editingId, setElements, setSelectedId, canvasSize]);
+  }, [selectedId, editingId, elements, setElements, setSelectedId, canvasSize, onUndo, onRedo]);
 
   // Click empty space -> deselect
   const checkDeselect = useCallback(
@@ -776,7 +873,7 @@ const CustomTemplateEditor = ({
   // Grid lines
   const gridSize = 50;
   const gridLines = [];
-  if (showGrid) {
+  if (showGrid && !previewMode) {
     for (let i = 0; i < canvasSize.width / gridSize; i++) {
       gridLines.push(
         <Line
@@ -887,19 +984,23 @@ const CustomTemplateEditor = ({
             />
           )}
 
-          {showGrid && gridLines}
+          {showGrid && !previewMode && gridLines}
 
           {/* Dynamic Elements: Text, Shapes, Images, QR */}
           {elements.map((el) => {
-            const isSelected = el.id === selectedId;
+            if (el.visible === false) return null;
+            const isSelected = el.id === selectedId && !previewMode;
             const isQr = el.isQr || el.type === "qr";
             const isText = el.type === "text" || el.type === "placeholder" || !el.type;
 
             const commonProps = {
               key: el.id,
               shapeProps: el,
+              previewMode,
               isSelected,
-              onSelect: () => setSelectedId(el.id),
+              onSelect: () => {
+                if (!previewMode) setSelectedId(el.id);
+              },
               onChange: (newAttrs) => {
                 const updatedElements = elements.map((elem) =>
                   elem.id === el.id ? { ...elem, ...newAttrs } : elem
@@ -918,6 +1019,7 @@ const CustomTemplateEditor = ({
               return (
                 <DraggableText
                   {...commonProps}
+                  displayText={resolvePreviewText(el.text)}
                   isEditing={el.id === editingId}
                   onStartEdit={() => handleStartEdit(el)}
                 />
