@@ -45,7 +45,11 @@ const AwardGold = ({ data }) => {
              </div>
              <div className="text-center">
                  <p className="text-sm font-bold text-gray-800">Signature</p>
-                 <p className="font-script text-gray-500">{data.signature || 'Authorized'}</p>
+                 {data.signature_image ? (
+                     <img src={data.signature_image} alt="Signature" className="h-8 object-contain mx-auto mt-0.5" />
+                 ) : (
+                     <p className="font-script text-gray-500">{data.signature || 'Authorized'}</p>
+                 )}
              </div>
         </div>
     </div>

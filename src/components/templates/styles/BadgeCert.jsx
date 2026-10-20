@@ -50,7 +50,11 @@ const BadgeCert = ({ data }) => {
                    </div>
                    <div className="text-right">
                        <p className="text-xs text-slate-400 font-bold uppercase">Signature</p>
-                       <p className="font-script text-lg text-slate-700">{data.signature || 'Manager'}</p>
+                       {data.signature_image ? (
+                           <img src={data.signature_image} alt="Signature" className="h-8 object-contain ml-auto mt-0.5" />
+                       ) : (
+                           <p className="font-script text-lg text-slate-700">{data.signature || 'Manager'}</p>
+                       )}
                    </div>
                </div>
            </div>

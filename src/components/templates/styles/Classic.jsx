@@ -109,12 +109,18 @@ const Classic = ({ data, isFullscreen }) => {
 
             <div className="w-full flex justify-between items-end px-12 sm:px-16 mt-auto pb-4 pt-2">
               <div className="text-center w-1/3">
-                <p
-                  className="font-semibold border-b border-gray-400 pb-0.5 mb-0.5 text-xs sm:text-sm"
-                  style={textStyle}
-                >
-                  {signature || issuer_name}
-                </p>
+                {data.signature_image ? (
+                  <div className="border-b border-gray-400 pb-1 mb-0.5 flex justify-center">
+                    <img src={data.signature_image} alt="Signature" className="h-8 sm:h-10 object-contain" />
+                  </div>
+                ) : (
+                  <p
+                    className="font-semibold border-b border-gray-400 pb-0.5 mb-0.5 text-xs sm:text-sm"
+                    style={textStyle}
+                  >
+                    {signature || issuer_name}
+                  </p>
+                )}
                 <span className="text-gray-500 text-[10px]">Signature</span>
               </div>
               <div className="text-center w-1/3">

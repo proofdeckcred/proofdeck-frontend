@@ -49,7 +49,13 @@ const ModernLandscape = ({ data }) => {
                   <p>Verified Securely</p>
               </div>
                <div className="text-center">
-                  <div className="w-32 border-b border-gray-300 mb-1 font-signature text-xl">{data.signature || 'Signature'}</div>
+                  <div className="w-32 border-b border-gray-300 mb-1 font-signature text-xl flex justify-center pb-1">
+                      {data.signature_image ? (
+                          <img src={data.signature_image} alt="Signature" className="h-8 object-contain" />
+                      ) : (
+                          data.signature || 'Signature'
+                      )}
+                  </div>
                   <p className="text-xs font-bold uppercase text-gray-500">Authorized Signature</p>
               </div>
           </div>

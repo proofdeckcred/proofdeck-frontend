@@ -200,6 +200,15 @@ const CreateCertificatePage = () => {
   const isSpreadsheetAllowed = ["growth", "pro", "enterprise"].includes(effectiveRole);
   const isProOrEnterprise = ["pro", "enterprise"].includes(effectiveRole);
   const isPro = isProOrEnterprise;
+  const hasUploadedSignature = Boolean(user?.signature_image_url);
+  const [useUploadedSignature, setUseUploadedSignature] = useState(true);
+  const uploadedSignatureFullUrl = useMemo(() => {
+    const raw = user?.signature_image_url;
+    if (!raw) return null;
+    if (raw.startsWith("http") || raw.startsWith("blob:") || raw.startsWith("data:")) return raw;
+    const cleanBase = (SERVER_BASE_URL || "").replace(/\/+$/, "");
+    return `${cleanBase}${raw.startsWith("/") ? raw : `/${raw}`}`;
+  }, [user?.signature_image_url]);
 
   const [isSpreadsheetUpgradeModalOpen, setIsSpreadsheetUpgradeModalOpen] = useState(false);
 
@@ -253,6 +262,13 @@ const CreateCertificatePage = () => {
         if (isEditMode) {
           const certResponse = await getCertificate(certId);
           const cert = certResponse.data.certificate;
+          const certUseUploadedSig =
+            cert.use_uploaded_signature !== undefined
+              ? Boolean(cert.use_uploaded_signature)
+              : cert.extra_fields?.use_uploaded_signature !== undefined
+              ? Boolean(cert.extra_fields.use_uploaded_signature)
+              : true;
+          setUseUploadedSignature(certUseUploadedSig);
           setFormData({
             template_id: certResponse.data.template.id,
             recipient_name: cert.recipient_name,
@@ -260,7 +276,8 @@ const CreateCertificatePage = () => {
             course_title: cert.course_title,
             issuer_name: cert.issuer_name,
             issue_date: new Date(cert.issue_date).toLocaleDateString("en-CA"),
-            signature: cert.signature,
+            signature: cert.signature || "",
+            use_uploaded_signature: certUseUploadedSig,
             extra_fields: cert.extra_fields || {},
           });
           setSelectedTemplate(certResponse.data.template);
@@ -268,7 +285,7 @@ const CreateCertificatePage = () => {
           if (cert.extra_fields?.amount) setAmount(cert.extra_fields.amount);
 
           const fields = Object.entries(cert.extra_fields || {})
-            .filter(([key]) => key !== "amount")
+            .filter(([key]) => key !== "amount" && key !== "use_uploaded_signature")
             .map(([key, value]) => ({ key, value }));
           setCustomFields(fields);
         }
@@ -356,10 +373,31 @@ const CreateCertificatePage = () => {
     return detected;
   }, [selectedTemplate]);
 
-  // Sync custom fields & amount
+  // Detect whether the selected template actually has a signature field/placeholder
+  // (Some users import custom certificate templates that already have the signature baked into the design)
+  const templateHasSignatureField = useMemo(() => {
+    if (!selectedTemplate) return true;
+    if (selectedTemplate.layout_style !== "visual") return true;
+    let layoutData = selectedTemplate.layout_data;
+    if (typeof layoutData === "string") {
+      try {
+        layoutData = JSON.parse(layoutData);
+      } catch (e) {
+        layoutData = {};
+      }
+    }
+    return (layoutData?.elements || []).some(
+      (el) => el.visible !== false && typeof el.text === "string" && /\{\{\s*signature\s*\}\}/i.test(el.text)
+    );
+  }, [selectedTemplate]);
+
+  // Sync custom fields, amount & uploaded signature preference
   useEffect(() => {
     const extras = { ...(formData.extra_fields || {}) };
     if (amount) extras.amount = amount;
+    if (hasUploadedSignature) {
+      extras.use_uploaded_signature = Boolean(useUploadedSignature);
+    }
 
     customFields.forEach((field) => {
       if (field.key.trim()) {
@@ -367,8 +405,16 @@ const CreateCertificatePage = () => {
       }
     });
 
-    setFormData((prev) => ({ ...prev, extra_fields: extras }));
-  }, [amount, customFields]);
+    setFormData((prev) => ({
+      ...prev,
+      use_uploaded_signature: hasUploadedSignature ? Boolean(useUploadedSignature) : false,
+      extra_fields: extras,
+    }));
+    setBatchDefaults((prev) => ({
+      ...prev,
+      use_uploaded_signature: hasUploadedSignature ? Boolean(useUploadedSignature) : false,
+    }));
+  }, [amount, customFields, useUploadedSignature, hasUploadedSignature]);
 
   // Single Form submission
   const handleSubmit = async (e) => {
@@ -376,9 +422,18 @@ const CreateCertificatePage = () => {
     setSubmitting(true);
     setError("");
 
+    const payload = {
+      ...formData,
+      use_uploaded_signature: hasUploadedSignature ? Boolean(useUploadedSignature) : false,
+      extra_fields: {
+        ...(formData.extra_fields || {}),
+        ...(hasUploadedSignature ? { use_uploaded_signature: Boolean(useUploadedSignature) } : {}),
+      },
+    };
+
     const promise = isEditMode
-      ? updateCertificate(certId, formData)
-      : createCertificate(formData);
+      ? updateCertificate(certId, payload)
+      : createCertificate(payload);
 
     toast.promise(promise, {
       loading: isEditMode ? "Updating..." : "Issuing...",
@@ -976,14 +1031,60 @@ const CreateCertificatePage = () => {
                   />
                 </div>
 
-                <FormInput
-                  name="signature"
-                  label="Signature Text (Optional)"
-                  icon={PenTool}
-                  placeholder="e.g., Dr. John Smith"
-                  value={formData.signature}
-                  onChange={handleChange}
-                />
+                {!templateHasSignatureField ? (
+                  <div className="bg-slate-50 border border-slate-200/80 rounded-lg p-2.5 text-[11px] text-slate-600 flex items-start gap-2">
+                    <PenTool size={13} className="text-slate-400 mt-0.5 shrink-0" />
+                    <div>
+                      <span className="font-semibold text-slate-700 block">Signature included in template design</span>
+                      <span className="text-[10px] text-slate-500">
+                        This custom template does not use a <code className="text-indigo-600">{"{{signature}}"}</code> field, so your template&apos;s built-in signature graphic will be preserved as-is.
+                      </span>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {hasUploadedSignature && (
+                      <label className="flex items-center justify-between gap-2 p-2.5 rounded-lg border border-indigo-100 bg-indigo-50/40 cursor-pointer hover:bg-indigo-50/70 transition-colors">
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="checkbox"
+                            checked={useUploadedSignature}
+                            onChange={(e) => setUseUploadedSignature(e.target.checked)}
+                            className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 h-3.5 w-3.5 cursor-pointer"
+                          />
+                          <div>
+                            <span className="block text-xs font-bold text-slate-800">
+                              Use uploaded signature
+                            </span>
+                            <span className="block text-[10px] text-slate-500">
+                              Automatically applies your saved digital signature
+                            </span>
+                          </div>
+                        </div>
+                        {uploadedSignatureFullUrl && (
+                          <div className="h-7 px-2 bg-white border border-slate-200 rounded flex items-center justify-center shrink-0">
+                            <img
+                              src={uploadedSignatureFullUrl}
+                              alt="Uploaded signature"
+                              className="max-h-5 max-w-[70px] object-contain"
+                            />
+                          </div>
+                        )}
+                      </label>
+                    )}
+
+                    {(!hasUploadedSignature || !useUploadedSignature) && (
+                      <FormInput
+                        name="signature"
+                        label="Signature Text (Optional)"
+                        icon={PenTool}
+                        placeholder="e.g., Dr. John Smith"
+                        value={formData.signature}
+                        onChange={handleChange}
+                      />
+                    )}
+                  </div>
+                )}
 
                 {/* TEMPLATE CUSTOM PLACEHOLDERS (Auto-mapped) */}
                 {templateCustomPlaceholders.length > 0 && (
@@ -1236,15 +1337,55 @@ const CreateCertificatePage = () => {
                       }
                       className="w-full px-2.5 py-1.5 border border-slate-200 bg-white rounded-lg text-xs focus:outline-none focus:border-indigo-500 shadow-2xs"
                     />
-                    <input
-                      type="text"
-                      placeholder="Batch Signatory (e.g. Dr. John Smith)"
-                      value={batchDefaults.signature || ""}
-                      onChange={(e) =>
-                        setBatchDefaults((prev) => ({ ...prev, signature: e.target.value }))
-                      }
-                      className="w-full px-2.5 py-1.5 border border-slate-200 bg-white rounded-lg text-xs focus:outline-none focus:border-indigo-500 shadow-2xs"
-                    />
+                    {!templateHasSignatureField ? (
+                      <div className="bg-slate-50 border border-slate-200/80 rounded-lg p-2 text-[10px] text-slate-500 flex items-center gap-1.5">
+                        <PenTool size={12} className="text-slate-400 shrink-0" />
+                        <span>Signature is already part of this template&apos;s background design.</span>
+                      </div>
+                    ) : (
+                      <>
+                        {hasUploadedSignature && (
+                          <label className="flex items-center justify-between gap-2 p-2.5 rounded-lg border border-indigo-100 bg-indigo-50/40 cursor-pointer hover:bg-indigo-50/70 transition-colors">
+                            <div className="flex items-center gap-2">
+                              <input
+                                type="checkbox"
+                                checked={useUploadedSignature}
+                                onChange={(e) => setUseUploadedSignature(e.target.checked)}
+                                className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 h-3.5 w-3.5 cursor-pointer"
+                              />
+                              <div>
+                                <span className="block text-xs font-bold text-slate-800">
+                                  Use uploaded signature
+                                </span>
+                                <span className="block text-[10px] text-slate-500">
+                                  Applied to all certificates in this batch
+                                </span>
+                              </div>
+                            </div>
+                            {uploadedSignatureFullUrl && (
+                              <div className="h-7 px-2 bg-white border border-slate-200 rounded flex items-center justify-center shrink-0">
+                                <img
+                                  src={uploadedSignatureFullUrl}
+                                  alt="Uploaded signature"
+                                  className="max-h-5 max-w-[70px] object-contain"
+                                />
+                              </div>
+                            )}
+                          </label>
+                        )}
+                        {(!hasUploadedSignature || !useUploadedSignature) && (
+                          <input
+                            type="text"
+                            placeholder="Batch Signatory (e.g. Dr. John Smith)"
+                            value={batchDefaults.signature || ""}
+                            onChange={(e) =>
+                              setBatchDefaults((prev) => ({ ...prev, signature: e.target.value }))
+                            }
+                            className="w-full px-2.5 py-1.5 border border-slate-200 bg-white rounded-lg text-xs focus:outline-none focus:border-indigo-500 shadow-2xs"
+                          />
+                        )}
+                      </>
+                    )}
                   </div>
                 </div>
 

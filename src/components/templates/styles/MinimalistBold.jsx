@@ -41,7 +41,13 @@ const MinimalistBold = ({ data }) => {
                 
                 <div className="flex gap-12">
                     <div>
-                        <div className="h-12 w-32 border-b border-gray-300 mb-2 flex items-end font-signature text-lg">{data.signature || 'Sign'}</div>
+                        <div className="h-12 w-32 border-b border-gray-300 mb-2 flex items-end font-signature text-lg pb-1">
+                            {data.signature_image ? (
+                                <img src={data.signature_image} alt="Signature" className="h-9 object-contain" />
+                            ) : (
+                                data.signature || 'Sign'
+                            )}
+                        </div>
                         <p className="text-xs font-bold text-gray-900">Signature</p>
                     </div>
                     <div>

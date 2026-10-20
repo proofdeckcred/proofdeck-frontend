@@ -35,6 +35,32 @@ const KonvaLoadedImage = ({ src, width, height }) => {
   ) : null;
 };
 
+const KonvaSignatureImage = ({ src, boxWidth, boxHeight, align = "center", verticalAlign = "middle" }) => {
+  const resolvedSrc = resolveImageUrl(src);
+  const isDataOrBlob = resolvedSrc.startsWith("data:") || resolvedSrc.startsWith("blob:");
+  const [image, status] = useImage(resolvedSrc, isDataOrBlob ? undefined : "anonymous");
+  const [fallbackImage] = useImage(status === "failed" && !isDataOrBlob ? resolvedSrc : null);
+  const finalImage = image || fallbackImage;
+
+  if (!finalImage) return null;
+
+  const naturalW = finalImage.naturalWidth || finalImage.width || boxWidth;
+  const naturalH = finalImage.naturalHeight || finalImage.height || boxHeight;
+  const ratio = Math.min(boxWidth / naturalW, boxHeight / naturalH);
+  const drawW = naturalW * ratio;
+  const drawH = naturalH * ratio;
+
+  let offsetX = 0;
+  if (align === "center") offsetX = (boxWidth - drawW) / 2;
+  else if (align === "right") offsetX = boxWidth - drawW;
+
+  let offsetY = 0;
+  if (verticalAlign === "middle") offsetY = (boxHeight - drawH) / 2;
+  else if (verticalAlign === "bottom") offsetY = boxHeight - drawH;
+
+  return <KonvaImage image={finalImage} x={offsetX} y={offsetY} width={drawW} height={drawH} />;
+};
+
 const KonvaPreview = ({ layoutData, dynamicData }) => {
   const containerRef = useRef(null);
   const [dimensions, setDimensions] = useState({ width: 800, height: 566 });
@@ -87,6 +113,9 @@ const KonvaPreview = ({ layoutData, dynamicData }) => {
 
   const elements = (data?.elements || []).map((el) => {
     let text = el.text || "";
+    const isPureSignaturePlaceholder = /^\{\{\s*signature\s*\}\}$/i.test(text.trim());
+    const isSignatureImage = Boolean(isPureSignaturePlaceholder && dynamicData?.signature_image);
+
     if (dynamicData && text) {
       const recipientName = dynamicData.recipient_name || "Recipient Name";
       const issuerName = dynamicData.issuer_name || "Issuer Name";
@@ -144,7 +173,7 @@ const KonvaPreview = ({ layoutData, dynamicData }) => {
         }
       }
     }
-    return { ...el, text };
+    return { ...el, text, isSignatureImage, signatureSrc: isSignatureImage ? dynamicData.signature_image : null };
   });
 
   return (
@@ -356,6 +385,26 @@ const KonvaPreview = ({ layoutData, dynamicData }) => {
                     src={el.src}
                     width={el.width * scaleX}
                     height={el.height * scaleY}
+                  />
+                </Group>
+              );
+            }
+
+            if (el.isSignatureImage && el.signatureSrc) {
+              return (
+                <Group
+                  key={el.id || index}
+                  x={el.x * scaleX}
+                  y={el.y * scaleY}
+                  rotation={el.rotation || 0}
+                  opacity={el.opacity != null ? el.opacity : 1}
+                >
+                  <KonvaSignatureImage
+                    src={el.signatureSrc}
+                    boxWidth={(el.width || 180) * scaleX}
+                    boxHeight={(el.height || 50) * scaleY}
+                    align={el.align || "center"}
+                    verticalAlign={el.verticalAlign || "middle"}
                   />
                 </Group>
               );

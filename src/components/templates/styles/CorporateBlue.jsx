@@ -39,7 +39,11 @@ const CorporateBlue = ({ data }) => {
 
                   <div className="mt-auto flex gap-12 text-gray-900 w-full justify-between items-end px-12 pb-4">
                       <div className="text-center">
-                          <p className="font-script text-2xl mb-1">{data.signature || 'Jane Doe'}</p>
+                          {data.signature_image ? (
+                              <img src={data.signature_image} alt="Signature" className="h-8 object-contain mx-auto mb-1" />
+                          ) : (
+                              <p className="font-script text-2xl mb-1">{data.signature || 'Jane Doe'}</p>
+                          )}
                           <div className="h-px w-32 bg-gray-300"></div>
                           <p className="text-xs uppercase mt-1 text-gray-400">Instructor</p>
                       </div>

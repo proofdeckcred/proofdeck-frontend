@@ -2,6 +2,7 @@ import React from 'react';
 import KonvaPreview from '../KonvaPreview'; // Adjust path as needed
 import { LayoutTemplate } from 'lucide-react';
 import { SERVER_BASE_URL } from '../../config';
+import { useUser } from '../../context/UserContext';
 
 // Import Styles
 import Classic from './styles/Classic';
@@ -20,6 +21,9 @@ import AchievementStar from './styles/AchievementStar';
 
 
 const TemplateRenderer = ({ template, formData = {}, isFullscreen = false }) => {
+    const userCtx = useUser();
+    const currentUser = userCtx?.user;
+
     if (!template) {
         return (
             <div className="flex flex-col items-center justify-center h-full bg-gray-50/50 rounded-xl border-2 border-dashed border-gray-200 p-12 text-center text-gray-400">
@@ -54,9 +58,34 @@ const TemplateRenderer = ({ template, formData = {}, isFullscreen = false }) => 
     combinedData.verification_id = combinedData.verification_id || "pending-id";
     combinedData.verification_url = combinedData.verification_url || (typeof window !== "undefined" ? `${window.location.origin}/verify/${combinedData.verification_id}` : `https://www.proofdeck.app/verify/${combinedData.verification_id}`);
     combinedData.extra_fields = combinedData.extra_fields || {};
+
+    // Determine whether uploaded signature image should be used (default: true if user has one)
+    const useUploadedSig =
+        combinedData.use_uploaded_signature !== undefined
+            ? Boolean(combinedData.use_uploaded_signature)
+            : combinedData.extra_fields?.use_uploaded_signature !== undefined
+            ? Boolean(combinedData.extra_fields.use_uploaded_signature)
+            : true;
+
+    const rawSigUrl =
+        combinedData.signature_image_url !== undefined
+            ? combinedData.signature_image_url
+            : combinedData.signature_image || currentUser?.signature_image_url;
+
+    if (useUploadedSig && rawSigUrl) {
+        const cleanBase = (SERVER_BASE_URL || "").replace(/\/+$/, "");
+        combinedData.signature_image =
+            rawSigUrl.startsWith("http") || rawSigUrl.startsWith("blob:") || rawSigUrl.startsWith("data:")
+                ? rawSigUrl
+                : `${cleanBase}${rawSigUrl.startsWith("/") ? rawSigUrl : `/${rawSigUrl}`}`;
+    } else {
+        combinedData.signature_image = null;
+    }
     
-    // Convert key-value pairs to array for iteration if needed
-    combinedData.customFieldsArray = Object.entries(combinedData.extra_fields).map(([key, value]) => ({ key, value }));
+    // Convert key-value pairs to array for iteration if needed (excluding internal flags)
+    combinedData.customFieldsArray = Object.entries(combinedData.extra_fields)
+        .filter(([key]) => key !== "use_uploaded_signature")
+        .map(([key, value]) => ({ key, value }));
 
     combinedData.amount = combinedData.amount || combinedData.extra_fields.amount;
 

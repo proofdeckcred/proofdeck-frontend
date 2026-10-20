@@ -44,7 +44,13 @@ const ElegantSerif = ({ data }) => {
                  </div>
               </div>
               <div className="flex flex-col items-center">
-                  <div className="w-40 border-b border-gray-800 mb-2 text-center text-lg font-signature">{data.signature || 'Director'}</div>
+                  <div className="w-40 border-b border-gray-800 mb-2 text-center text-lg font-signature flex justify-center pb-1">
+                      {data.signature_image ? (
+                          <img src={data.signature_image} alt="Signature" className="h-8 object-contain" />
+                      ) : (
+                          data.signature || 'Director'
+                      )}
+                  </div>
                   <p className="text-xs font-serif italic">Director Signature</p>
               </div>
          </div>

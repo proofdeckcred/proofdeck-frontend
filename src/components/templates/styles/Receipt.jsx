@@ -138,7 +138,13 @@ const Receipt = ({ data, isFullscreen }) => {
 
           <div className="border-t border-gray-200 pt-4 mt-4 text-xs text-gray-400 flex justify-between items-end">
             <div>
-              <p>Auth Signature: {signature || 'Signature'}</p>
+              {data.signature_image ? (
+                <div className="mb-1">
+                  <img src={data.signature_image} alt="Signature" className="h-8 object-contain" />
+                </div>
+              ) : (
+                <p>Auth Signature: {signature || 'Signature'}</p>
+              )}
               <p className="mt-1">Thank you for your business.</p>
             </div>
             <div className="bg-gray-100 flex items-center justify-center text-[10px] p-1">
