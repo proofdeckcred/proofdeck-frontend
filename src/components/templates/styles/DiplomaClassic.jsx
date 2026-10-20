@@ -60,15 +60,15 @@ const DiplomaClassic = ({ data }) => {
                 </p>
                 <h2
                     style={{
+                        ...textStyle,
                         fontSize: '42px',
                         fontFamily: 'Georgia, serif',
                         fontWeight: 700,
-                        color: '#000000',
+                        color: data.body_font_color || '#000000',
                         borderBottom: '1px solid #000000',
                         display: 'inline-block',
                         padding: '0 48px 8px 48px',
-                        margin: '0 0 24px 0',
-                        ...textStyle
+                        margin: '0 0 24px 0'
                     }}
                 >
                     {recipient_name}
@@ -143,7 +143,7 @@ const DiplomaClassic = ({ data }) => {
                                 lineHeight: 1.3
                             }}
                         >
-                            Official<br />Seal
+                            <span>Official<br />Seal</span>
                         </div>
                     </div>
                 </div>

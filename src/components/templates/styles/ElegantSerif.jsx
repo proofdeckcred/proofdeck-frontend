@@ -58,15 +58,15 @@ const ElegantSerif = ({ data }) => {
             </p>
             <h2
                 style={{
+                    ...textStyle,
                     fontSize: '42px',
                     fontFamily: 'Georgia, serif',
                     fontWeight: 700,
-                    color: '#111827',
+                    color: data.body_font_color || '#111827',
                     margin: '0 0 24px 0',
                     borderBottom: `2px solid ${secondary_color}`,
                     padding: '0 32px 12px 32px',
-                    display: 'inline-block',
-                    ...textStyle
+                    display: 'inline-block'
                 }}
             >
                 {recipient_name}
@@ -136,7 +136,7 @@ const ElegantSerif = ({ data }) => {
                                 lineHeight: 1.2
                             }}
                         >
-                            OFFICIAL<br />SEAL
+                            <span>OFFICIAL<br />SEAL</span>
                         </div>
                     </div>
                     {data.issueDateFormatted && (

@@ -68,10 +68,9 @@ const AwardGold = ({ data }) => {
                 className="font-script"
                 style={{
                     fontSize: '54px',
-                    color: '#000000',
+                    color: data.body_font_color || '#000000',
                     margin: '0 0 20px 0',
-                    fontWeight: 400,
-                    ...textStyle
+                    fontWeight: 400
                 }}
             >
                 {recipient_name}
