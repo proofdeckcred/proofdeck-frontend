@@ -48,10 +48,10 @@ export function createEmptySpreadsheetRow(batchDefaults = {}) {
   return {
     recipient_name: "",
     recipient_email: "",
-    course_title: batchDefaults.course_title || "",
-    issuer_name: batchDefaults.issuer_name || "",
-    issue_date: batchDefaults.issue_date || new Date().toISOString().split("T")[0],
-    signature: batchDefaults.signature || ""
+    course_title: "",
+    issuer_name: "",
+    issue_date: batchDefaults?.issue_date || new Date().toISOString().split("T")[0],
+    signature: ""
   };
 }
 
@@ -431,24 +431,31 @@ const SpreadsheetGrid = ({
   const [showClearModal, setShowClearModal] = useState(false);
 
   const handleConfirmClearAll = () => {
-    updateRowsWithHistory(ensureMinimumRows([], MIN_STARTER_ROWS, batchDefaults));
+    const cleanDefaultDate = new Date().toISOString().split("T")[0];
+    updateRowsWithHistory(ensureMinimumRows([], MIN_STARTER_ROWS, { issue_date: cleanDefaultDate }));
+    if (onChangeBatchDefaults) {
+      onChangeBatchDefaults({
+        course_title: "",
+        issuer_name: "",
+        issue_date: cleanDefaultDate,
+        signature: ""
+      });
+    }
+    if (onNewSheet) {
+      onNewSheet();
+    } else {
+      toast.success("Spreadsheet cleared");
+    }
     setActiveCell({ rowIdx: 0, colKey: "recipient_name" });
     setShowClearModal(false);
-    toast.success("Spreadsheet cleared");
   };
 
-  // Apply batch defaults to all non-empty rows (or empty cells in non-empty rows)
+  // Apply batch defaults to all non-empty rows (do not pollute blank starter rows)
   const handleApplyDefaultsToBatch = () => {
     updateRowsWithHistory((prev) =>
       prev.map((r) => {
         if (!isRowNonEmpty(r, customKeys)) {
-          return {
-            ...r,
-            course_title: r.course_title || batchDefaults.course_title || "",
-            issuer_name: r.issuer_name || batchDefaults.issuer_name || "",
-            issue_date: r.issue_date || batchDefaults.issue_date || "",
-            signature: r.signature || batchDefaults.signature || ""
-          };
+          return r;
         }
         return {
           ...r,
@@ -871,10 +878,11 @@ const SpreadsheetGrid = ({
             <button
               type="button"
               onClick={onNewSheet}
-              className="p-1.5 rounded-lg bg-white hover:bg-slate-50 border border-slate-200 text-slate-600 hover:text-slate-900 transition-colors cursor-pointer"
-              title="Start a new blank spreadsheet"
+              className="px-2.5 py-1.5 rounded-lg bg-white hover:bg-red-50 border border-slate-200 hover:border-red-200 text-slate-700 hover:text-red-700 text-xs font-semibold flex items-center gap-1 shadow-2xs transition-colors cursor-pointer"
+              title="Clear everything and start a brand new blank spreadsheet"
             >
-              <FilePlus2 size={14} />
+              <FilePlus2 size={13} />
+              <span>Clear / New</span>
             </button>
           )}
         </div>

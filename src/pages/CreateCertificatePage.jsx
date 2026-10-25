@@ -249,8 +249,14 @@ const CreateCertificatePage = () => {
         if (rawDraft) {
           const draft = JSON.parse(rawDraft);
           if (draft && Array.isArray(draft.rows)) {
+            // Strip any ghost starter rows that have no recipient_name and no recipient_email
+            const sanitizedRows = draft.rows.filter(
+              (r) =>
+                (r?.recipient_name && String(r.recipient_name).trim()) ||
+                (r?.recipient_email && String(r.recipient_email).trim())
+            );
             setSpreadsheetRows(
-              ensureMinimumRows(draft.rows, MIN_STARTER_ROWS, draft.batchDefaults || {})
+              ensureMinimumRows(sanitizedRows, MIN_STARTER_ROWS, {})
             );
             if (draft.batchDefaults && typeof draft.batchDefaults === "object") {
               setBatchDefaults((prev) => ({ ...prev, ...draft.batchDefaults }));
@@ -265,6 +271,8 @@ const CreateCertificatePage = () => {
             }
             setLastAutoSavedAt(draft.updatedAt || new Date().toISOString());
           }
+        } else {
+          setSpreadsheetRows(ensureMinimumRows([], MIN_STARTER_ROWS, {}));
         }
       }
     } catch (e) {}
@@ -962,10 +970,25 @@ const CreateCertificatePage = () => {
   );
 
   const handleNewSheet = useCallback(() => {
+    const todayStr = new Date().toLocaleDateString("en-CA");
+    const cleanDefaults = {
+      course_title: "",
+      issuer_name: "",
+      issue_date: todayStr,
+      signature: "",
+    };
     setSheetName("Untitled Sheet");
-    setSpreadsheetRows(ensureMinimumRows([], MIN_STARTER_ROWS, batchDefaults));
+    setBatchDefaults(cleanDefaults);
+    setUserCustomColumns([]);
+    setBulkFile(null);
+    setDetectedHeaders([]);
+    setRawUploadedRows([]);
+    setSpreadsheetRows(ensureMinimumRows([], MIN_STARTER_ROWS, cleanDefaults));
+    try {
+      localStorage.removeItem(activeDraftKey);
+    } catch (e) {}
     toast.success("Started new blank spreadsheet");
-  }, [batchDefaults]);
+  }, [activeDraftKey]);
 
   // Apply Mappings to convert raw 2D sheet rows into standardized ProofDeck row objects
   const applyMappingsToRows = useCallback(
@@ -2259,23 +2282,36 @@ const CreateCertificatePage = () => {
                   </span>
                 </button>
 
-                <div className="flex justify-between items-center text-[10px]">
+                <div className="flex flex-wrap justify-between items-center gap-2 text-[10px]">
                   <button
                     type="button"
                     onClick={handleDownloadTemplate}
-                    className="text-indigo-650 font-bold hover:underline flex items-center gap-1"
+                    className="text-indigo-650 font-bold hover:underline flex items-center gap-1 cursor-pointer"
                   >
-                    <Download size={12} /> Download Sample Spreadsheet
+                    <Download size={12} /> Download Sample
                   </button>
 
-                  <button
-                    type="button"
-                    onClick={() => handleSaveSheet(sheetName)}
-                    className="text-emerald-700 font-bold hover:underline flex items-center gap-1 cursor-pointer"
-                    title="Save current spreadsheet as a draft"
-                  >
-                    <Save size={11} /> Save Sheet Draft
-                  </button>
+                  <div className="flex items-center gap-3">
+                    {!isBulkGroupEditMode && (
+                      <button
+                        type="button"
+                        onClick={handleNewSheet}
+                        className="text-red-600 font-bold hover:underline flex items-center gap-1 cursor-pointer"
+                        title="Clear the current spreadsheet and start fresh"
+                      >
+                        <RotateCcw size={11} /> Clear / New Sheet
+                      </button>
+                    )}
+
+                    <button
+                      type="button"
+                      onClick={() => handleSaveSheet(sheetName)}
+                      className="text-emerald-700 font-bold hover:underline flex items-center gap-1 cursor-pointer"
+                      title="Save current spreadsheet as a draft"
+                    >
+                      <Save size={11} /> Save Sheet Draft
+                    </button>
+                  </div>
                 </div>
 
                 {/* Saved Drafts Quick-Load List */}
