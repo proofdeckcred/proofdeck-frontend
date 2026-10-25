@@ -630,6 +630,9 @@ const CreateCertificatePage = () => {
     }));
   }, [amount, customFields, useUploadedSignature, hasUploadedSignature]);
 
+  const isReceipt = selectedTemplate?.layout_style === "receipt";
+  const isInvitation = selectedTemplate?.layout_style === "invitation";
+
   // Per-Certificate Style Override Helpers
   const certStyles = useMemo(() => {
     const raw = formData.extra_fields?.cert_styles;
@@ -1435,9 +1438,6 @@ const CreateCertificatePage = () => {
       toast.error("Failed to prepare batch data.");
     }
   };
-
-  const isReceipt = selectedTemplate?.layout_style === "receipt";
-  const isInvitation = selectedTemplate?.layout_style === "invitation";
 
   if (loading) {
     return (
