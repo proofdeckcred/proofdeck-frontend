@@ -403,24 +403,48 @@ const CreateCertificatePage = () => {
           setCustomFields(fields);
         } else if (editGroupId) {
           const groupDetailRes = await getGroupDetails(editGroupId);
-          const grp = groupDetailRes.data?.group;
-          const grpCerts = groupDetailRes.data?.certificates || [];
-          if (grp) {
+          const rawGroupData = groupDetailRes.data || {};
+          const grp = rawGroupData.group || rawGroupData;
+          const grpCerts = rawGroupData.certificates || grp?.certificates || [];
+          if (grp && (grp.id || grpCerts.length > 0)) {
             setEditingGroupInfo(grp);
             setCreationMode("bulk");
-            setSelectedGroupId(String(grp.id));
+            setSelectedGroupId(String(grp.id || editGroupId));
             setSheetName(grp.name || "Batch Edit");
             setGroups((prev) =>
-              prev.some((g) => String(g.id) === String(grp.id)) ? prev : [grp, ...prev]
+              prev.some((g) => String(g.id) === String(grp.id || editGroupId))
+                ? prev
+                : [{ id: grp.id || editGroupId, name: grp.name || "Selected Batch" }, ...prev]
             );
 
-            const tplId = grp.template_id || grpCerts[0]?.template_id || "";
-            const matchedTpl = filteredTemplates.find(
-              (t) => String(t.id) === String(tplId)
-            );
+            let fallbackCert = null;
+            let fallbackTemplate = null;
+            if (
+              grpCerts.length > 0 &&
+              (!grp.template_id && !grpCerts[0]?.template_id)
+            ) {
+              try {
+                const firstCertRes = await getCertificate(
+                  grpCerts[0].verification_id || grpCerts[0].id
+                );
+                fallbackCert = firstCertRes.data?.certificate || null;
+                fallbackTemplate = firstCertRes.data?.template || null;
+              } catch (e) {}
+            }
+
+            const tplId =
+              grp.template_id ||
+              grpCerts[0]?.template_id ||
+              fallbackTemplate?.id ||
+              fallbackCert?.template_id ||
+              "";
+            const matchedTpl =
+              filteredTemplates.find((t) => String(t.id) === String(tplId)) ||
+              fallbackTemplate ||
+              null;
             if (tplId) {
               setFormData((prev) => ({ ...prev, template_id: tplId }));
-              setSelectedTemplate(matchedTpl || null);
+              setSelectedTemplate(matchedTpl);
             }
 
             // Detect custom columns across certificates in this group
@@ -447,12 +471,16 @@ const CreateCertificatePage = () => {
 
             const firstCert = grpCerts[0];
             const derivedDefaults = {
-              course_title: firstCert?.course_title || "",
-              issuer_name: firstCert?.issuer_name || "",
-              issue_date: firstCert?.issue_date
-                ? new Date(firstCert.issue_date).toLocaleDateString("en-CA")
+              course_title:
+                firstCert?.course_title || fallbackCert?.course_title || "",
+              issuer_name:
+                firstCert?.issuer_name || fallbackCert?.issuer_name || "",
+              issue_date: (firstCert?.issue_date || fallbackCert?.issue_date)
+                ? new Date(
+                    firstCert?.issue_date || fallbackCert?.issue_date
+                  ).toLocaleDateString("en-CA")
                 : new Date().toLocaleDateString("en-CA"),
-              signature: firstCert?.signature || "",
+              signature: firstCert?.signature || fallbackCert?.signature || "",
             };
             setBatchDefaults((prev) => ({ ...prev, ...derivedDefaults }));
 
@@ -476,12 +504,12 @@ const CreateCertificatePage = () => {
                 verification_id: c.verification_id,
                 recipient_name: c.recipient_name || "",
                 recipient_email: c.recipient_email || "",
-                course_title: c.course_title || "",
-                issuer_name: c.issuer_name || "",
+                course_title: c.course_title || derivedDefaults.course_title || "",
+                issuer_name: c.issuer_name || derivedDefaults.issuer_name || "",
                 issue_date: c.issue_date
                   ? new Date(c.issue_date).toLocaleDateString("en-CA")
                   : derivedDefaults.issue_date,
-                signature: c.signature || "",
+                signature: c.signature || derivedDefaults.signature || "",
                 ...customVals,
               };
             });
@@ -1312,6 +1340,7 @@ const CreateCertificatePage = () => {
 
       const promise = bulkUpdateGroupCertificates(editGroupId, {
         template_id: formData.template_id,
+        rows: cleanRowsToSubmit,
         certificates: cleanRowsToSubmit,
         batch_defaults: batchDefaults,
         delete_missing: true,
