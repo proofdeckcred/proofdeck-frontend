@@ -111,10 +111,46 @@ const KonvaPreview = ({ layoutData, dynamicData }) => {
       : `${SERVER_BASE_URL.replace(/\/+$/, "")}${rawBg.startsWith("/") ? rawBg : `/${rawBg}`}`
     : null;
 
-  const elements = (data?.elements || []).map((el) => {
-    let text = el.text || "";
+  // Parse per-certificate style overrides (font size, font family, color, offsets, autoFit)
+  let rawExtra = dynamicData?.extra_fields || {};
+  if (typeof rawExtra === "string") {
+    try {
+      rawExtra = JSON.parse(rawExtra);
+    } catch (e) {
+      rawExtra = {};
+    }
+  }
+  const certStyles =
+    (rawExtra && typeof rawExtra.cert_styles === "object" && rawExtra.cert_styles) ||
+    (dynamicData && typeof dynamicData.cert_styles === "object" && dynamicData.cert_styles) ||
+    {};
+  const autoFitEnabled = certStyles.autoFit !== false;
+  const fieldStyleOverrides =
+    certStyles.fields && typeof certStyles.fields === "object" ? certStyles.fields : {};
+  const elementStyleOverrides =
+    certStyles.elements && typeof certStyles.elements === "object" ? certStyles.elements : {};
+
+  const elements = (data?.elements || []).map((el, idx) => {
+    const rawText = String(el.text || "");
+    let text = rawText;
     const isPureSignaturePlaceholder = /^\{\{\s*signature\s*\}\}$/i.test(text.trim());
     const isSignatureImage = Boolean(isPureSignaturePlaceholder && dynamicData?.signature_image);
+
+    const placeholderMatch = rawText.match(/\{\{\s*([^}]+?)\s*\}\}/);
+    const matchedFieldKey = placeholderMatch
+      ? placeholderMatch[1].trim().toLowerCase().replace(/\s+/g, "_")
+      : null;
+    const elIdStr = el.id != null ? String(el.id) : null;
+    const fieldOvr = matchedFieldKey
+      ? fieldStyleOverrides[matchedFieldKey] ||
+        (placeholderMatch ? fieldStyleOverrides[placeholderMatch[1].trim()] : null) ||
+        {}
+      : {};
+    const elOvr =
+      (elIdStr ? elementStyleOverrides[elIdStr] : null) ||
+      elementStyleOverrides[String(idx)] ||
+      {};
+    const ovr = { ...(fieldOvr || {}), ...(elOvr || {}) };
 
     if (dynamicData && text) {
       const recipientName = dynamicData.recipient_name || "Recipient Name";
@@ -151,29 +187,111 @@ const KonvaPreview = ({ layoutData, dynamicData }) => {
         .replace(/{{amount}}/gi, amount);
 
       // Replace custom fields from extra_fields
-      if (dynamicData.extra_fields) {
-        let extra = dynamicData.extra_fields;
-        if (typeof extra === "string") {
-          try {
-            extra = JSON.parse(extra);
-          } catch (e) {
-            extra = {};
+      if (rawExtra && typeof rawExtra === "object") {
+        Object.entries(rawExtra).forEach(([k, v]) => {
+          if (k === "use_uploaded_signature" || k === "cert_styles") return;
+          if (v !== undefined && v !== null) {
+            const reg1 = new RegExp(`{{${k}}}`, "gi");
+            text = text.replace(reg1, String(v));
+            const cleanK = k.replace(/_/g, " ");
+            const reg2 = new RegExp(`{{${cleanK}}}`, "gi");
+            text = text.replace(reg2, String(v));
           }
+        });
+      }
+    }
+
+    const offsetX = Number(ovr.offsetX) || 0;
+    const offsetY = Number(ovr.offsetY) || 0;
+    const origW = Number(el.width) || 200;
+    let elW = Number(ovr.width) || origW;
+    const elH = Number(el.height) || 30;
+    let elX = (Number(el.x) || 0) + offsetX;
+    const elY = (Number(el.y) || 0) + offsetY;
+    const hAlign = ovr.align || el.align || "left";
+    if (ovr.width && hAlign === "center") {
+      elX -= (elW - origW) / 2;
+    }
+
+    const fontStyleVal = String(ovr.fontStyle || el.fontStyle || "normal");
+    const isBold = fontStyleVal.includes("bold");
+    const letterSpacing = Number(el.letterSpacing) || 0;
+    const lineHeight = Number(el.lineHeight) || 1.2;
+
+    const hasManualFontSize =
+      ovr.fontSize !== undefined &&
+      ovr.fontSize !== null &&
+      String(ovr.fontSize).trim() !== "" &&
+      !Number.isNaN(Number(ovr.fontSize));
+    const baseFontSize = hasManualFontSize
+      ? Number(ovr.fontSize)
+      : Number(el.fontSize) || 16;
+
+    let computedFontSize = baseFontSize;
+    const plainLines = String(text || "").split(/\r?\n/);
+    const maxLineChars = Math.max(
+      1,
+      ...plainLines.map((line) => line.length)
+    );
+    const isDynamicEl = el.type === "placeholder" || rawText.includes("{{");
+    const isSingleLineBox =
+      isDynamicEl &&
+      plainLines.length <= 1 &&
+      elH < (Number(el.fontSize) || 16) * 2.2 &&
+      ovr.wrap !== true;
+
+    if (isDynamicEl && autoFitEnabled && !hasManualFontSize && maxLineChars > 0) {
+      const flatPlain = plainLines.join(" ");
+      let upperCount = 0;
+      for (let i = 0; i < flatPlain.length; i++) {
+        const ch = flatPlain[i];
+        if (ch >= "A" && ch <= "Z") upperCount++;
+      }
+      const upperRatio = upperCount / Math.max(flatPlain.length, 1);
+      const charFactor = upperRatio > 0.6 ? 0.64 : isBold ? 0.59 : 0.54;
+      const estLineWidth =
+        maxLineChars * (baseFontSize * charFactor + letterSpacing);
+      if (isSingleLineBox) {
+        if (estLineWidth > elW * 0.95) {
+          const availW = Math.max(40, elW * 0.95 - maxLineChars * letterSpacing);
+          const fitted = availW / Math.max(maxLineChars * charFactor, 1);
+          computedFontSize = Math.max(
+            9,
+            Math.round(Math.min(baseFontSize, fitted) * 10) / 10
+          );
         }
-        if (typeof extra === "object" && extra !== null) {
-          Object.entries(extra).forEach(([k, v]) => {
-            if (v !== undefined && v !== null) {
-              const reg1 = new RegExp(`{{${k}}}`, "gi");
-              text = text.replace(reg1, String(v));
-              const cleanK = k.replace(/_/g, " ");
-              const reg2 = new RegExp(`{{${cleanK}}}`, "gi");
-              text = text.replace(reg2, String(v));
-            }
-          });
+      } else {
+        const estLines =
+          Math.max(1, Math.ceil(estLineWidth / Math.max(elW * 0.92, 1))) *
+          Math.max(plainLines.length, 1);
+        if (estLines * baseFontSize * lineHeight > elH * 0.96) {
+          const fitted =
+            (elH * 0.96) / Math.max(estLines * lineHeight, 1);
+          computedFontSize = Math.max(
+            9,
+            Math.round(Math.min(baseFontSize, fitted) * 10) / 10
+          );
         }
       }
     }
-    return { ...el, text, isSignatureImage, signatureSrc: isSignatureImage ? dynamicData.signature_image : null };
+
+    return {
+      ...el,
+      x: elX,
+      y: elY,
+      width: elW,
+      height: elH,
+      align: hAlign,
+      fontSize: computedFontSize,
+      fontFamily: ovr.fontFamily || el.fontFamily || "Arial",
+      fill: ovr.color || ovr.fill || el.fill || "#000",
+      fontStyle: fontStyleVal,
+      lineHeight,
+      isSingleLineBox,
+      text,
+      isSignatureImage,
+      signatureSrc: isSignatureImage ? dynamicData.signature_image : null,
+    };
   });
 
   return (
@@ -410,11 +528,19 @@ const KonvaPreview = ({ layoutData, dynamicData }) => {
               );
             }
 
+            const rawBoxH = el.height || 30;
+            const minSafeH = (el.fontSize || 20) * 1.35;
+            const effectiveH = Math.max(rawBoxH, minSafeH);
+            const extraHOffset =
+              effectiveH > rawBoxH && (el.verticalAlign || "middle") === "middle"
+                ? (effectiveH - rawBoxH) / 2
+                : 0;
+
             return (
               <Text
                 key={el.id || index}
                 x={el.x * scaleX}
-                y={el.y * scaleY}
+                y={(el.y - extraHOffset) * scaleY}
                 text={el.text}
                 fontSize={(el.fontSize || 20) * scaleMin}
                 fontFamily={el.fontFamily || "Arial"}
@@ -423,12 +549,13 @@ const KonvaPreview = ({ layoutData, dynamicData }) => {
                 verticalAlign={el.verticalAlign || "middle"}
                 rotation={el.rotation || 0}
                 width={el.width ? el.width * scaleX : undefined}
-                height={el.height ? el.height * scaleY : undefined}
+                height={effectiveH * scaleY}
+                wrap={el.isSingleLineBox ? "none" : "word"}
                 fontStyle={el.fontStyle}
                 textDecoration={el.textDecoration || ""}
                 opacity={el.opacity != null ? el.opacity : 1}
                 letterSpacing={(el.letterSpacing || 0) * scaleMin}
-                lineHeight={el.lineHeight || 1}
+                lineHeight={el.lineHeight || 1.2}
               />
             );
           })}

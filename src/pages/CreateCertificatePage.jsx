@@ -13,6 +13,8 @@ import {
   downloadBulkTemplate,
   getGroups,
   createGroup,
+  getGroupDetails,
+  bulkUpdateGroupCertificates,
 } from "../api";
 import TemplateRenderer from "../components/templates/TemplateRenderer";
 import { SERVER_BASE_URL } from "../config";
@@ -46,6 +48,9 @@ import {
   AlertTriangle,
   Zap,
   Lock,
+  Send,
+  RotateCcw,
+  FolderOpen,
 } from "lucide-react";
 import { Spinner } from "react-bootstrap";
 import toast, { Toaster } from "react-hot-toast";
@@ -209,7 +214,20 @@ const CreateCertificatePage = () => {
   const [submitting, setSubmitting] = useState(false);
   const [loading, setLoading] = useState(true);
   const [showFullscreen, setShowFullscreen] = useState(false);
-  
+
+  // Bulk Group Edit Mode (?edit_group=<id>)
+  const editGroupId = useMemo(
+    () => new URLSearchParams(location.search).get("edit_group"),
+    [location.search]
+  );
+  const isBulkGroupEditMode = Boolean(editGroupId);
+  const [editingGroupInfo, setEditingGroupInfo] = useState(null);
+
+  // Per-Certificate Font Size & Layout Customizer State
+  const [showCertStyleEditor, setShowCertStyleEditor] = useState(isEditMode);
+  const [activeStyleField, setActiveStyleField] = useState("recipient_name");
+  const styleEditorRef = React.useRef(null);
+
   const { user, workspace } = useUser();
   const sheetStorageScope = `${user?.id || "anon"}_${workspace || "personal"}`;
   const activeDraftKey = `pd_active_sheet_${sheetStorageScope}`;
@@ -226,30 +244,36 @@ const CreateCertificatePage = () => {
         setSavedSheets([]);
       }
 
-      const rawDraft = localStorage.getItem(activeDraftKey);
-      if (rawDraft) {
-        const draft = JSON.parse(rawDraft);
-        if (draft && Array.isArray(draft.rows)) {
-          setSpreadsheetRows(
-            ensureMinimumRows(draft.rows, MIN_STARTER_ROWS, draft.batchDefaults || {})
-          );
-          if (draft.batchDefaults && typeof draft.batchDefaults === "object") {
-            setBatchDefaults((prev) => ({ ...prev, ...draft.batchDefaults }));
+      if (!isBulkGroupEditMode) {
+        const rawDraft = localStorage.getItem(activeDraftKey);
+        if (rawDraft) {
+          const draft = JSON.parse(rawDraft);
+          if (draft && Array.isArray(draft.rows)) {
+            setSpreadsheetRows(
+              ensureMinimumRows(draft.rows, MIN_STARTER_ROWS, draft.batchDefaults || {})
+            );
+            if (draft.batchDefaults && typeof draft.batchDefaults === "object") {
+              setBatchDefaults((prev) => ({ ...prev, ...draft.batchDefaults }));
+            }
+            if (draft.sheetName) setSheetName(draft.sheetName);
+            if (Array.isArray(draft.userCustomColumns)) {
+              setUserCustomColumns(draft.userCustomColumns);
+            }
+            if (draft.group_id) setSelectedGroupId(String(draft.group_id));
+            if (draft.template_id) {
+              setFormData((prev) => ({ ...prev, template_id: draft.template_id }));
+            }
+            setLastAutoSavedAt(draft.updatedAt || new Date().toISOString());
           }
-          if (draft.sheetName) setSheetName(draft.sheetName);
-          if (Array.isArray(draft.userCustomColumns)) {
-            setUserCustomColumns(draft.userCustomColumns);
-          }
-          setLastAutoSavedAt(draft.updatedAt || new Date().toISOString());
         }
       }
     } catch (e) {}
     hasRestoredDraftRef.current = true;
-  }, [activeDraftKey, savedSheetsKey]);
+  }, [activeDraftKey, savedSheetsKey, isBulkGroupEditMode]);
 
   // Auto-save working spreadsheet draft whenever rows, batchDefaults, sheetName, or custom columns change
   useEffect(() => {
-    if (!hasRestoredDraftRef.current) return;
+    if (!hasRestoredDraftRef.current || isBulkGroupEditMode) return;
     try {
       const nowIso = new Date().toISOString();
       const payload = {
@@ -257,16 +281,27 @@ const CreateCertificatePage = () => {
         rows: spreadsheetRows,
         batchDefaults,
         userCustomColumns,
+        template_id: formData.template_id,
+        group_id: selectedGroupId,
         updatedAt: nowIso,
       };
       localStorage.setItem(activeDraftKey, JSON.stringify(payload));
       setLastAutoSavedAt(nowIso);
     } catch (e) {}
-  }, [spreadsheetRows, batchDefaults, sheetName, userCustomColumns, activeDraftKey]);
+  }, [
+    spreadsheetRows,
+    batchDefaults,
+    sheetName,
+    userCustomColumns,
+    formData.template_id,
+    selectedGroupId,
+    activeDraftKey,
+    isBulkGroupEditMode,
+  ]);
 
   const effectiveRole = user?.effective_role || user?.role || "free";
   const isBulkAllowed = true; // Bulk issuance is available on all plans (including Free)
-  const isSpreadsheetAllowed = ["growth", "pro", "enterprise"].includes(effectiveRole);
+  const isSpreadsheetAllowed = true; // Spreadsheet & Draft Saving enabled for all users
   const isProOrEnterprise = ["pro", "enterprise"].includes(effectiveRole);
   const isPro = isProOrEnterprise;
   const hasUploadedSignature = Boolean(user?.signature_image_url);
@@ -297,14 +332,18 @@ const CreateCertificatePage = () => {
 
   // Toggle Mode via Query params or Paths
   useEffect(() => {
-    if (location.pathname.includes("bulk-create") || location.search.includes("mode=bulk")) {
+    if (
+      location.pathname.includes("bulk-create") ||
+      location.search.includes("mode=bulk") ||
+      location.search.includes("edit_group=")
+    ) {
       setCreationMode("bulk");
     } else {
       setCreationMode("single");
     }
   }, [location]);
 
-  // Initial Data fetch (Templates and Groups)
+  // Initial Data fetch (Templates, Groups, Single Certificate Edit, or Bulk Group Edit)
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
@@ -354,9 +393,115 @@ const CreateCertificatePage = () => {
           if (cert.extra_fields?.amount) setAmount(cert.extra_fields.amount);
 
           const fields = Object.entries(cert.extra_fields || {})
-            .filter(([key]) => key !== "amount" && key !== "use_uploaded_signature")
+            .filter(
+              ([key]) =>
+                key !== "amount" &&
+                key !== "use_uploaded_signature" &&
+                key !== "cert_styles"
+            )
             .map(([key, value]) => ({ key, value }));
           setCustomFields(fields);
+        } else if (editGroupId) {
+          const groupDetailRes = await getGroupDetails(editGroupId);
+          const grp = groupDetailRes.data?.group;
+          const grpCerts = groupDetailRes.data?.certificates || [];
+          if (grp) {
+            setEditingGroupInfo(grp);
+            setCreationMode("bulk");
+            setSelectedGroupId(String(grp.id));
+            setSheetName(grp.name || "Batch Edit");
+            setGroups((prev) =>
+              prev.some((g) => String(g.id) === String(grp.id)) ? prev : [grp, ...prev]
+            );
+
+            const tplId = grp.template_id || grpCerts[0]?.template_id || "";
+            const matchedTpl = filteredTemplates.find(
+              (t) => String(t.id) === String(tplId)
+            );
+            if (tplId) {
+              setFormData((prev) => ({ ...prev, template_id: tplId }));
+              setSelectedTemplate(matchedTpl || null);
+            }
+
+            // Detect custom columns across certificates in this group
+            const customColSet = new Map();
+            grpCerts.forEach((c) => {
+              const ex = c.extra_fields && typeof c.extra_fields === "object" ? c.extra_fields : {};
+              Object.keys(ex).forEach((k) => {
+                if (
+                  k !== "use_uploaded_signature" &&
+                  k !== "cert_styles" &&
+                  k !== "amount" &&
+                  !customColSet.has(k)
+                ) {
+                  const label = k
+                    .replace(/_/g, " ")
+                    .replace(/\b\w/g, (ch) => ch.toUpperCase());
+                  customColSet.set(k, { key: k, label });
+                }
+              });
+            });
+            if (customColSet.size > 0) {
+              setUserCustomColumns(Array.from(customColSet.values()));
+            }
+
+            const firstCert = grpCerts[0];
+            const derivedDefaults = {
+              course_title: firstCert?.course_title || "",
+              issuer_name: firstCert?.issuer_name || "",
+              issue_date: firstCert?.issue_date
+                ? new Date(firstCert.issue_date).toLocaleDateString("en-CA")
+                : new Date().toLocaleDateString("en-CA"),
+              signature: firstCert?.signature || "",
+            };
+            setBatchDefaults((prev) => ({ ...prev, ...derivedDefaults }));
+
+            const loadedRows = grpCerts.map((c) => {
+              const ex =
+                c.extra_fields && typeof c.extra_fields === "object" ? c.extra_fields : {};
+              const customVals = {};
+              Object.entries(ex).forEach(([k, v]) => {
+                if (
+                  k !== "use_uploaded_signature" &&
+                  k !== "cert_styles" &&
+                  k !== "amount" &&
+                  v !== undefined &&
+                  v !== null
+                ) {
+                  customVals[k] = String(v);
+                }
+              });
+              return {
+                id: c.id,
+                verification_id: c.verification_id,
+                recipient_name: c.recipient_name || "",
+                recipient_email: c.recipient_email || "",
+                course_title: c.course_title || "",
+                issuer_name: c.issuer_name || "",
+                issue_date: c.issue_date
+                  ? new Date(c.issue_date).toLocaleDateString("en-CA")
+                  : derivedDefaults.issue_date,
+                signature: c.signature || "",
+                ...customVals,
+              };
+            });
+
+            setSpreadsheetRows(
+              ensureMinimumRows(loadedRows, MIN_STARTER_ROWS, derivedDefaults)
+            );
+            setIsSpreadsheetOpen(true);
+          }
+        } else {
+          // Restore selectedTemplate if draft had a template_id
+          setFormData((prev) => {
+            if (prev.template_id) {
+              const matched = filteredTemplates.find(
+                (t) => String(t.id) === String(prev.template_id)
+              );
+              if (matched) setSelectedTemplate(matched);
+            }
+            return prev;
+          });
         }
       } catch (err) {
         setError("Could not fetch data.");
@@ -365,7 +510,7 @@ const CreateCertificatePage = () => {
       }
     };
     fetchData();
-  }, [certId, isEditMode]);
+  }, [certId, isEditMode, editGroupId]);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -485,14 +630,130 @@ const CreateCertificatePage = () => {
     }));
   }, [amount, customFields, useUploadedSignature, hasUploadedSignature]);
 
+  // Per-Certificate Style Override Helpers
+  const certStyles = useMemo(() => {
+    const raw = formData.extra_fields?.cert_styles;
+    if (raw && typeof raw === "object") {
+      return {
+        autoFit: raw.autoFit !== false,
+        fields: raw.fields && typeof raw.fields === "object" ? raw.fields : {},
+        elements: raw.elements && typeof raw.elements === "object" ? raw.elements : {},
+      };
+    }
+    return { autoFit: true, fields: {}, elements: {} };
+  }, [formData.extra_fields?.cert_styles]);
+
+  const customizableStyleFields = useMemo(() => {
+    const base = [
+      { key: "recipient_name", label: isInvitation ? "Guest Name" : isReceipt ? "Payer Name" : "Recipient Name", defaultSize: 32 },
+      { key: "course_title", label: isInvitation ? "Event Title" : isReceipt ? "Payment Description" : "Course / Event Title", defaultSize: 22 },
+      { key: "issuer_name", label: "Issuer Name", defaultSize: 16 },
+      { key: "issue_date", label: "Issue Date", defaultSize: 15 },
+      { key: "signature", label: "Signature Text", defaultSize: 24 },
+      { key: "title", label: "Certificate Title", defaultSize: 36 },
+    ];
+    templateCustomPlaceholders.forEach((cp) => {
+      if (!base.some((b) => b.key === cp.key)) {
+        base.push({ key: cp.key, label: cp.label, defaultSize: 18 });
+      }
+    });
+    return base;
+  }, [isInvitation, isReceipt, templateCustomPlaceholders]);
+
+  const handleToggleAutoFit = (checked) => {
+    setFormData((prev) => {
+      const currentStyles =
+        prev.extra_fields?.cert_styles && typeof prev.extra_fields.cert_styles === "object"
+          ? prev.extra_fields.cert_styles
+          : { autoFit: true, fields: {}, elements: {} };
+      return {
+        ...prev,
+        extra_fields: {
+          ...(prev.extra_fields || {}),
+          cert_styles: {
+            ...currentStyles,
+            autoFit: Boolean(checked),
+          },
+        },
+      };
+    });
+  };
+
+  const handleFieldStyleChange = (fieldKey, prop, value) => {
+    setFormData((prev) => {
+      const currentStyles =
+        prev.extra_fields?.cert_styles && typeof prev.extra_fields.cert_styles === "object"
+          ? prev.extra_fields.cert_styles
+          : { autoFit: true, fields: {}, elements: {} };
+      const currentFields =
+        currentStyles.fields && typeof currentStyles.fields === "object"
+          ? currentStyles.fields
+          : {};
+      const fieldObj = { ...(currentFields[fieldKey] || {}) };
+      if (value === "" || value === null || value === undefined) {
+        delete fieldObj[prop];
+      } else {
+        fieldObj[prop] = value;
+      }
+      return {
+        ...prev,
+        extra_fields: {
+          ...(prev.extra_fields || {}),
+          cert_styles: {
+            ...currentStyles,
+            fields: {
+              ...currentFields,
+              [fieldKey]: fieldObj,
+            },
+          },
+        },
+      };
+    });
+  };
+
+  const handleResetFieldStyle = (fieldKey) => {
+    setFormData((prev) => {
+      const currentStyles =
+        prev.extra_fields?.cert_styles && typeof prev.extra_fields.cert_styles === "object"
+          ? prev.extra_fields.cert_styles
+          : { autoFit: true, fields: {}, elements: {} };
+      const nextFields = { ...(currentStyles.fields || {}) };
+      delete nextFields[fieldKey];
+      return {
+        ...prev,
+        extra_fields: {
+          ...(prev.extra_fields || {}),
+          cert_styles: {
+            ...currentStyles,
+            fields: nextFields,
+          },
+        },
+      };
+    });
+    toast.success("Field styling reset to template default");
+  };
+
+  const handleResetAllCertStyles = () => {
+    setFormData((prev) => {
+      const nextExtra = { ...(prev.extra_fields || {}) };
+      delete nextExtra.cert_styles;
+      return {
+        ...prev,
+        extra_fields: nextExtra,
+      };
+    });
+    toast.success("All styling overrides reset to template defaults");
+  };
+
   // Single Form submission
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const handleSubmit = async (e, resendEmail = false) => {
+    if (e && e.preventDefault) e.preventDefault();
     setSubmitting(true);
     setError("");
 
     const payload = {
       ...formData,
+      resend_email: Boolean(resendEmail),
       use_uploaded_signature: hasUploadedSignature ? Boolean(useUploadedSignature) : false,
       extra_fields: {
         ...(formData.extra_fields || {}),
@@ -505,9 +766,13 @@ const CreateCertificatePage = () => {
       : createCertificate(payload);
 
     toast.promise(promise, {
-      loading: isEditMode ? "Updating..." : "Issuing...",
+      loading: isEditMode
+        ? resendEmail
+          ? "Updating & resending email..."
+          : "Updating..."
+        : "Issuing...",
       success: (response) => {
-        setTimeout(() => navigate("/dashboard"), 1500);
+        setTimeout(() => navigate(-1), 1200);
         return response.data.msg;
       },
       error: (err) => {
@@ -590,6 +855,8 @@ const CreateCertificatePage = () => {
           rows: spreadsheetRows,
           batchDefaults,
           userCustomColumns,
+          template_id: formData.template_id,
+          group_id: selectedGroupId,
           rowCount: nonEmpty.length,
           updatedAt: nowIso,
         };
@@ -603,29 +870,51 @@ const CreateCertificatePage = () => {
         return updated;
       });
 
-      toast.success(`Saved "${targetName}" (${nonEmpty.length} rows)`);
+      toast.success(`Saved draft "${targetName}" (${nonEmpty.length} rows)`);
     },
-    [sheetName, spreadsheetRows, allCustomColumnKeys, batchDefaults, userCustomColumns, savedSheetsKey]
+    [
+      sheetName,
+      spreadsheetRows,
+      allCustomColumnKeys,
+      batchDefaults,
+      userCustomColumns,
+      formData.template_id,
+      selectedGroupId,
+      savedSheetsKey,
+    ]
   );
 
-  const handleLoadSavedSheet = useCallback((sheetObj) => {
-    if (!sheetObj) return;
-    setSheetName(sheetObj.name || "Untitled Sheet");
-    if (sheetObj.batchDefaults) {
-      setBatchDefaults((prev) => ({ ...prev, ...sheetObj.batchDefaults }));
-    }
-    if (Array.isArray(sheetObj.userCustomColumns)) {
-      setUserCustomColumns(sheetObj.userCustomColumns);
-    }
-    setSpreadsheetRows(
-      ensureMinimumRows(
-        sheetObj.rows || [],
-        MIN_STARTER_ROWS,
-        sheetObj.batchDefaults || {}
-      )
-    );
-    toast.success(`Loaded "${sheetObj.name}"`);
-  }, []);
+  const handleLoadSavedSheet = useCallback(
+    (sheetObj) => {
+      if (!sheetObj) return;
+      setSheetName(sheetObj.name || "Untitled Sheet");
+      if (sheetObj.batchDefaults) {
+        setBatchDefaults((prev) => ({ ...prev, ...sheetObj.batchDefaults }));
+      }
+      if (Array.isArray(sheetObj.userCustomColumns)) {
+        setUserCustomColumns(sheetObj.userCustomColumns);
+      }
+      if (sheetObj.group_id) {
+        setSelectedGroupId(String(sheetObj.group_id));
+      }
+      if (sheetObj.template_id) {
+        setFormData((prev) => ({ ...prev, template_id: sheetObj.template_id }));
+        const matched = templates.find(
+          (t) => String(t.id) === String(sheetObj.template_id)
+        );
+        if (matched) setSelectedTemplate(matched);
+      }
+      setSpreadsheetRows(
+        ensureMinimumRows(
+          sheetObj.rows || [],
+          MIN_STARTER_ROWS,
+          sheetObj.batchDefaults || {}
+        )
+      );
+      toast.success(`Loaded draft "${sheetObj.name}"`);
+    },
+    [templates]
+  );
 
   const handleDeleteSavedSheet = useCallback(
     (sheetId) => {
@@ -957,9 +1246,102 @@ const CreateCertificatePage = () => {
     }
   };
 
+  // Count how many rows in Bulk Group Edit Mode are newly added (without an existing certificate ID)
+  const newGroupRowsCount = useMemo(
+    () => (isBulkGroupEditMode ? readyRows.filter(({ row }) => !row.id).length : readyRowsCount),
+    [isBulkGroupEditMode, readyRows, readyRowsCount]
+  );
+
+  // Bulk Group Edit Submission (Save or Save & Resend)
+  const handleBulkGroupUpdate = async (resendEmails = false) => {
+    if (!editGroupId) return;
+    if (!formData.template_id) {
+      toast.error("Please select a Template.");
+      return;
+    }
+    if (invalidRowsCount > 0) {
+      toast.error(
+        `${invalidRowsCount} ${
+          invalidRowsCount === 1 ? "row needs" : "rows need"
+        } attention before saving. Please fix the highlighted errors in the spreadsheet.`
+      );
+      return;
+    }
+    if (readyRowsCount === 0) {
+      toast.error("Please keep at least one valid recipient row in the group.");
+      return;
+    }
+    if (newGroupRowsCount > 0 && userCredits < newGroupRowsCount) {
+      toast.error(
+        `Insufficient credits for ${newGroupRowsCount} new ${
+          newGroupRowsCount === 1 ? "row" : "rows"
+        } (you have ${userCredits} credits). Updating existing rows is free.`
+      );
+      return;
+    }
+
+    setBulkSubmitting(true);
+    try {
+      const cleanRowsToSubmit = readyRows.map(({ row: r }) => {
+        const extraMap = {};
+        allCustomColumnKeys.forEach((ck) => {
+          if (r[ck] !== undefined && r[ck] !== null && String(r[ck]).trim() !== "") {
+            extraMap[ck] = String(r[ck]).trim();
+          }
+        });
+        return {
+          id: r.id || undefined,
+          recipient_name: String(r.recipient_name || "").trim(),
+          recipient_email: r.recipient_email
+            ? String(r.recipient_email).trim().toLowerCase()
+            : "",
+          course_title: String(r.course_title || batchDefaults.course_title || "").trim(),
+          issuer_name: (r.issuer_name || batchDefaults.issuer_name || "").trim(),
+          issue_date: (
+            r.issue_date ||
+            batchDefaults.issue_date ||
+            new Date().toLocaleDateString("en-CA")
+          ).trim(),
+          signature: (r.signature || batchDefaults.signature || "").trim(),
+          extra_fields: extraMap,
+        };
+      });
+
+      const promise = bulkUpdateGroupCertificates(editGroupId, {
+        template_id: formData.template_id,
+        certificates: cleanRowsToSubmit,
+        batch_defaults: batchDefaults,
+        delete_missing: true,
+        resend_emails: Boolean(resendEmails),
+      });
+
+      toast.promise(promise, {
+        loading: resendEmails
+          ? "Saving changes & queuing emails..."
+          : "Saving batch changes...",
+        success: (response) => {
+          setBulkSubmitting(false);
+          setTimeout(() => navigate("/dashboard/certificates"), 1200);
+          return response.data?.msg || "Group updated successfully!";
+        },
+        error: (err) => {
+          setBulkSubmitting(false);
+          return err.response?.data?.msg || "Failed to update group.";
+        },
+      });
+    } catch (err) {
+      setBulkSubmitting(false);
+      toast.error("Failed to prepare group update.");
+    }
+  };
+
   // Bulk Form submission (Uses canonical readyRows and credit check)
   const handleBulkSubmit = async (e) => {
     e.preventDefault();
+    if (isBulkGroupEditMode) {
+      await handleBulkGroupUpdate(false);
+      return;
+    }
     if (!formData.template_id || !selectedGroupId) {
       toast.error("Please select a Template and a Group Folder.");
       return;
@@ -1357,6 +1739,335 @@ const CreateCertificatePage = () => {
                   )}
                 </div>
 
+                {/* PER-CERTIFICATE FONT SIZE & LAYOUT CUSTOMIZER */}
+                <div ref={styleEditorRef} className="pt-3.5 border-t border-slate-100">
+                  <button
+                    type="button"
+                    onClick={() => setShowCertStyleEditor((prev) => !prev)}
+                    className="w-full flex items-center justify-between gap-2 px-3 py-2 rounded-xl border border-indigo-200/80 bg-indigo-50/40 hover:bg-indigo-50/80 transition-colors text-left cursor-pointer"
+                  >
+                    <div className="flex items-center gap-2">
+                      <SlidersHorizontal size={14} className="text-indigo-600 shrink-0" />
+                      <div>
+                        <span className="block text-xs font-bold text-slate-800">
+                          Customize Font Size &amp; Layout
+                        </span>
+                        <span className="block text-[10px] text-slate-500">
+                          Adjust text size, font, color &amp; position for this certificate only
+                        </span>
+                      </div>
+                    </div>
+                    <span className="text-[10px] font-bold text-indigo-700 bg-white px-2 py-0.5 rounded-full border border-indigo-200">
+                      {showCertStyleEditor ? "Hide" : "Customize"}
+                    </span>
+                  </button>
+
+                  {showCertStyleEditor && (
+                    <div className="mt-2.5 p-3 rounded-xl border border-slate-200 bg-slate-50/70 space-y-3">
+                      {/* Auto-Fit Long Text Toggle */}
+                      <label className="flex items-center justify-between gap-2 p-2 rounded-lg bg-white border border-slate-200 cursor-pointer">
+                        <div>
+                          <span className="block text-[11px] font-bold text-slate-800">
+                            Auto-fit long names &amp; text
+                          </span>
+                          <span className="block text-[9px] text-slate-500">
+                            Automatically scales down long text so it never overflows the placeholder
+                          </span>
+                        </div>
+                        <input
+                          type="checkbox"
+                          checked={certStyles.autoFit !== false}
+                          onChange={(e) => handleToggleAutoFit(e.target.checked)}
+                          className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 h-4 w-4 cursor-pointer"
+                        />
+                      </label>
+
+                      {/* Field Selector Pills */}
+                      <div>
+                        <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">
+                          Select Field to Adjust
+                        </label>
+                        <div className="flex flex-wrap gap-1">
+                          {customizableStyleFields.map((f) => {
+                            const hasOvr =
+                              certStyles.fields?.[f.key] &&
+                              Object.keys(certStyles.fields[f.key]).length > 0;
+                            const isActive = activeStyleField === f.key;
+                            return (
+                              <button
+                                key={f.key}
+                                type="button"
+                                onClick={() => setActiveStyleField(f.key)}
+                                className={`px-2 py-1 rounded-md text-[10px] font-bold border transition-all cursor-pointer flex items-center gap-1 ${
+                                  isActive
+                                    ? "bg-indigo-600 text-white border-indigo-600 shadow-2xs"
+                                    : hasOvr
+                                    ? "bg-indigo-50 text-indigo-700 border-indigo-200 hover:bg-indigo-100"
+                                    : "bg-white text-slate-600 border-slate-200 hover:bg-slate-100"
+                                }`}
+                              >
+                                <span>{f.label}</span>
+                                {hasOvr && (
+                                  <span
+                                    className={`w-1.5 h-1.5 rounded-full ${
+                                      isActive ? "bg-white" : "bg-indigo-600"
+                                    }`}
+                                  />
+                                )}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+
+                      {/* Active Field Controls */}
+                      {(() => {
+                        const fieldMeta =
+                          customizableStyleFields.find((f) => f.key === activeStyleField) ||
+                          customizableStyleFields[0];
+                        const fKey = fieldMeta.key;
+                        const activeOvr = certStyles.fields?.[fKey] || {};
+                        const currentFontSize =
+                          activeOvr.fontSize !== undefined && activeOvr.fontSize !== ""
+                            ? Number(activeOvr.fontSize)
+                            : "";
+
+                        return (
+                          <div className="bg-white p-2.5 rounded-lg border border-slate-200 space-y-2.5">
+                            <div className="flex items-center justify-between border-b border-slate-100 pb-1.5">
+                              <span className="text-[11px] font-bold text-slate-800">
+                                {fieldMeta.label} Styling
+                              </span>
+                              {Object.keys(activeOvr).length > 0 && (
+                                <button
+                                  type="button"
+                                  onClick={() => handleResetFieldStyle(fKey)}
+                                  className="text-[10px] text-slate-500 hover:text-red-600 font-semibold flex items-center gap-0.5 cursor-pointer"
+                                >
+                                  <RotateCcw size={10} /> Reset Field
+                                </button>
+                              )}
+                            </div>
+
+                            {/* Font Size Slider & Stepper */}
+                            <div>
+                              <div className="flex items-center justify-between mb-1">
+                                <label className="text-[10px] font-semibold text-slate-600">
+                                  Font Size (px)
+                                </label>
+                                <span className="text-[10px] font-mono text-indigo-600 font-bold">
+                                  {currentFontSize ? `${currentFontSize}px` : "Auto / Default"}
+                                </span>
+                              </div>
+                              <div className="flex items-center gap-1.5">
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    const base = currentFontSize || fieldMeta.defaultSize || 28;
+                                    handleFieldStyleChange(fKey, "fontSize", Math.max(8, base - 2));
+                                  }}
+                                  className="px-2 py-1 rounded border border-slate-200 bg-slate-50 hover:bg-slate-100 text-xs font-bold text-slate-700 cursor-pointer"
+                                  title="Decrease Font Size"
+                                >
+                                  -
+                                </button>
+                                <input
+                                  type="range"
+                                  min="8"
+                                  max="80"
+                                  step="1"
+                                  value={currentFontSize || fieldMeta.defaultSize || 28}
+                                  onChange={(e) =>
+                                    handleFieldStyleChange(fKey, "fontSize", Number(e.target.value))
+                                  }
+                                  className="flex-1 accent-indigo-600 cursor-pointer"
+                                />
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    const base = currentFontSize || fieldMeta.defaultSize || 28;
+                                    handleFieldStyleChange(fKey, "fontSize", Math.min(96, base + 2));
+                                  }}
+                                  className="px-2 py-1 rounded border border-slate-200 bg-slate-50 hover:bg-slate-100 text-xs font-bold text-slate-700 cursor-pointer"
+                                  title="Increase Font Size"
+                                >
+                                  +
+                                </button>
+                                <input
+                                  type="number"
+                                  min="8"
+                                  max="120"
+                                  placeholder="Auto"
+                                  value={currentFontSize}
+                                  onChange={(e) =>
+                                    handleFieldStyleChange(
+                                      fKey,
+                                      "fontSize",
+                                      e.target.value === "" ? "" : Number(e.target.value)
+                                    )
+                                  }
+                                  className="w-14 px-1.5 py-1 border border-slate-200 rounded text-xs text-center font-mono focus:outline-none focus:border-indigo-500"
+                                />
+                                {currentFontSize !== "" && (
+                                  <button
+                                    type="button"
+                                    onClick={() => handleFieldStyleChange(fKey, "fontSize", "")}
+                                    className="px-1.5 py-1 rounded bg-slate-100 hover:bg-slate-200 text-[10px] font-semibold text-slate-600 cursor-pointer"
+                                    title="Use Auto-Fit / Template Default"
+                                  >
+                                    Auto
+                                  </button>
+                                )}
+                              </div>
+                            </div>
+
+                            {/* Font Family & Color */}
+                            <div className="grid grid-cols-2 gap-2">
+                              <div>
+                                <label className="block text-[10px] font-semibold text-slate-600 mb-1">
+                                  Font Family
+                                </label>
+                                <select
+                                  value={activeOvr.fontFamily || ""}
+                                  onChange={(e) =>
+                                    handleFieldStyleChange(fKey, "fontFamily", e.target.value)
+                                  }
+                                  className="w-full px-2 py-1 border border-slate-200 rounded text-xs bg-white focus:outline-none focus:border-indigo-500"
+                                >
+                                  <option value="">Template Default</option>
+                                  <option value="Cinzel">Cinzel (Serif Display)</option>
+                                  <option value="Playfair Display">Playfair Display</option>
+                                  <option value="Montserrat">Montserrat</option>
+                                  <option value="Merriweather">Merriweather</option>
+                                  <option value="Lato">Lato</option>
+                                  <option value="Open Sans">Open Sans</option>
+                                  <option value="Roboto">Roboto</option>
+                                  <option value="Georgia">Georgia</option>
+                                  <option value="Times New Roman">Times New Roman</option>
+                                  <option value="Great Vibes">Great Vibes (Script)</option>
+                                  <option value="Arial">Arial</option>
+                                </select>
+                              </div>
+                              <div>
+                                <label className="block text-[10px] font-semibold text-slate-600 mb-1">
+                                  Text Color
+                                </label>
+                                <div className="flex items-center gap-1">
+                                  <input
+                                    type="color"
+                                    value={activeOvr.color || "#1e293b"}
+                                    onChange={(e) =>
+                                      handleFieldStyleChange(fKey, "color", e.target.value)
+                                    }
+                                    className="h-6 w-7 rounded border border-slate-200 cursor-pointer p-0 bg-white"
+                                  />
+                                  <input
+                                    type="text"
+                                    placeholder="Default"
+                                    value={activeOvr.color || ""}
+                                    onChange={(e) =>
+                                      handleFieldStyleChange(fKey, "color", e.target.value)
+                                    }
+                                    className="flex-1 min-w-0 px-1.5 py-1 border border-slate-200 rounded text-[11px] font-mono focus:outline-none focus:border-indigo-500"
+                                  />
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Position Offset (Nudge X / Y) & Box Width */}
+                            <div className="grid grid-cols-3 gap-2 pt-1">
+                              <div>
+                                <label className="block text-[10px] font-semibold text-slate-600 mb-0.5">
+                                  Horizontal (X px)
+                                </label>
+                                <input
+                                  type="number"
+                                  step="2"
+                                  placeholder="0"
+                                  value={activeOvr.offsetX ?? ""}
+                                  onChange={(e) =>
+                                    handleFieldStyleChange(
+                                      fKey,
+                                      "offsetX",
+                                      e.target.value === "" ? "" : Number(e.target.value)
+                                    )
+                                  }
+                                  className="w-full px-2 py-1 border border-slate-200 rounded text-xs font-mono focus:outline-none focus:border-indigo-500"
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-[10px] font-semibold text-slate-600 mb-0.5">
+                                  Vertical (Y px)
+                                </label>
+                                <input
+                                  type="number"
+                                  step="2"
+                                  placeholder="0"
+                                  value={activeOvr.offsetY ?? ""}
+                                  onChange={(e) =>
+                                    handleFieldStyleChange(
+                                      fKey,
+                                      "offsetY",
+                                      e.target.value === "" ? "" : Number(e.target.value)
+                                    )
+                                  }
+                                  className="w-full px-2 py-1 border border-slate-200 rounded text-xs font-mono focus:outline-none focus:border-indigo-500"
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-[10px] font-semibold text-slate-600 mb-0.5">
+                                  Box Width (px)
+                                </label>
+                                <input
+                                  type="number"
+                                  step="10"
+                                  min="50"
+                                  max="1100"
+                                  placeholder="Auto"
+                                  value={activeOvr.width ?? ""}
+                                  onChange={(e) =>
+                                    handleFieldStyleChange(
+                                      fKey,
+                                      "width",
+                                      e.target.value === "" ? "" : Number(e.target.value)
+                                    )
+                                  }
+                                  className="w-full px-2 py-1 border border-slate-200 rounded text-xs font-mono focus:outline-none focus:border-indigo-500"
+                                />
+                              </div>
+                            </div>
+
+                            {/* Multi-line Wrap Toggle */}
+                            <label className="flex items-center justify-between gap-2 pt-1 cursor-pointer">
+                              <span className="text-[10px] text-slate-600 font-medium">
+                                Allow wrapping onto multiple lines
+                              </span>
+                              <input
+                                type="checkbox"
+                                checked={Boolean(activeOvr.wrap)}
+                                onChange={(e) =>
+                                  handleFieldStyleChange(fKey, "wrap", e.target.checked)
+                                }
+                                className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 h-3.5 w-3.5 cursor-pointer"
+                              />
+                            </label>
+                          </div>
+                        );
+                      })()}
+
+                      {Object.keys(certStyles.fields || {}).length > 0 && (
+                        <button
+                          type="button"
+                          onClick={handleResetAllCertStyles}
+                          className="w-full py-1.5 text-[10px] font-bold text-slate-500 hover:text-red-600 border border-slate-200 hover:border-red-200 rounded-lg bg-white transition-colors flex items-center justify-center gap-1 cursor-pointer"
+                        >
+                          <RotateCcw size={11} /> Reset All Custom Styling
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </div>
+
                 {error && (
                   <div className="bg-red-50 text-red-650 p-2 rounded text-xs flex items-start gap-1.5 border border-red-100">
                     <Info size={14} className="mt-0.5 flex-shrink-0" />
@@ -1364,21 +2075,62 @@ const CreateCertificatePage = () => {
                   </div>
                 )}
 
-                <button
-                  type="submit"
-                  disabled={submitting}
-                  className="w-full bg-slate-900 border border-slate-900 hover:bg-black text-white text-xs font-bold py-2 px-4 rounded-lg shadow-sm transition-all flex items-center justify-center gap-1.5 disabled:opacity-75 disabled:cursor-not-allowed mt-3.5"
-                >
-                  {submitting ? (
-                    <Loader2 className="animate-spin" size={14} />
-                  ) : (
-                    <Save size={14} />
+                <div className="space-y-2 mt-3.5">
+                  <button
+                    type="submit"
+                    disabled={submitting}
+                    className="w-full bg-slate-900 border border-slate-900 hover:bg-black text-white text-xs font-bold py-2 px-4 rounded-lg shadow-sm transition-all flex items-center justify-center gap-1.5 disabled:opacity-75 disabled:cursor-not-allowed"
+                  >
+                    {submitting ? (
+                      <Loader2 className="animate-spin" size={14} />
+                    ) : (
+                      <Save size={14} />
+                    )}
+                    <span>{isEditMode ? "Update Document" : "Generate Document"}</span>
+                  </button>
+
+                  {isEditMode && formData.recipient_email && (
+                    <button
+                      type="button"
+                      disabled={submitting}
+                      onClick={(e) => handleSubmit(e, true)}
+                      className="w-full bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold py-2 px-4 rounded-lg shadow-sm transition-all flex items-center justify-center gap-1.5 disabled:opacity-75 disabled:cursor-not-allowed cursor-pointer"
+                    >
+                      {submitting ? (
+                        <Loader2 className="animate-spin" size={14} />
+                      ) : (
+                        <Send size={13} />
+                      )}
+                      <span>Update &amp; Resend Email</span>
+                    </button>
                   )}
-                  <span>{isEditMode ? "Update Document" : "Generate Document"}</span>
-                </button>
+                </div>
               </form>
             ) : (
               <form onSubmit={handleBulkSubmit} className="space-y-4">
+                {isBulkGroupEditMode && (
+                  <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 flex items-start justify-between gap-2">
+                    <div className="flex items-start gap-2">
+                      <Pencil size={14} className="text-amber-700 mt-0.5 shrink-0" />
+                      <div>
+                        <span className="block text-xs font-bold text-amber-900">
+                          Bulk Editing Group: {editingGroupInfo?.name || "Selected Batch"}
+                        </span>
+                        <span className="block text-[10px] text-amber-700 mt-0.5">
+                          All group certificates are loaded in the spreadsheet. Edit any details, then Save or Save &amp; Resend.
+                        </span>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => navigate("/dashboard/certificates")}
+                      className="text-[10px] font-bold text-amber-800 hover:underline shrink-0"
+                    >
+                      Exit
+                    </button>
+                  </div>
+                )}
+
                 <TemplateSelector
                   value={formData.template_id}
                   onChange={(val) => handleTemplateChange({ target: { value: val } })}
@@ -1393,7 +2145,8 @@ const CreateCertificatePage = () => {
                   <select
                     value={selectedGroupId}
                     onChange={(e) => setSelectedGroupId(e.target.value)}
-                    className="block w-full rounded border border-slate-200 bg-white py-1.5 px-2.5 text-slate-850 focus:border-indigo-500 focus:outline-none transition-all duration-200 text-xs shadow-sm"
+                    disabled={isBulkGroupEditMode}
+                    className="block w-full rounded border border-slate-200 bg-white py-1.5 px-2.5 text-slate-850 focus:border-indigo-500 focus:outline-none transition-all duration-200 text-xs shadow-sm disabled:bg-slate-100"
                     required
                   >
                     <option value="">-- Choose Folder --</option>
@@ -1404,25 +2157,27 @@ const CreateCertificatePage = () => {
                 </div>
 
                 {/* Quick group creation inline */}
-                <div className="bg-slate-50 p-3 rounded-xl border border-slate-200/60 space-y-2">
-                  <label className="block text-[9px] font-bold text-slate-405 uppercase tracking-wider">Or Create Folder</label>
-                  <div className="flex gap-2">
-                    <input
-                      type="text"
-                      placeholder="e.g. Python Cohort A"
-                      value={newGroupName}
-                      onChange={(e) => setNewGroupName(e.target.value)}
-                      className="flex-1 px-2.5 py-1.5 border border-slate-200 bg-white rounded-lg text-xs focus:outline-none focus:border-indigo-500"
-                    />
-                    <button
-                      type="button"
-                      onClick={handleCreateGroup}
-                      className="bg-slate-900 hover:bg-black text-white text-xs font-bold px-3 py-1.5 rounded-lg transition-all"
-                    >
-                      Create
-                    </button>
+                {!isBulkGroupEditMode && (
+                  <div className="bg-slate-50 p-3 rounded-xl border border-slate-200/60 space-y-2">
+                    <label className="block text-[9px] font-bold text-slate-405 uppercase tracking-wider">Or Create Folder</label>
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        placeholder="e.g. Python Cohort A"
+                        value={newGroupName}
+                        onChange={(e) => setNewGroupName(e.target.value)}
+                        className="flex-1 px-2.5 py-1.5 border border-slate-200 bg-white rounded-lg text-xs focus:outline-none focus:border-indigo-500"
+                      />
+                      <button
+                        type="button"
+                        onClick={handleCreateGroup}
+                        className="bg-slate-900 hover:bg-black text-white text-xs font-bold px-3 py-1.5 rounded-lg transition-all"
+                      >
+                        Create
+                      </button>
+                    </div>
                   </div>
-                </div>
+                )}
 
                 {/* File Upload Box */}
                 <div className="space-y-1">
@@ -1459,7 +2214,7 @@ const CreateCertificatePage = () => {
                 <button
                   type="button"
                   onClick={handleOpenSpreadsheet}
-                  className="w-full py-2.5 px-3 rounded-xl border border-indigo-200/80 bg-gradient-to-r from-indigo-50/70 to-slate-50 hover:from-indigo-100/80 hover:to-slate-100 text-slate-800 transition-all flex items-center justify-between shadow-2xs group"
+                  className="w-full py-2.5 px-3 rounded-xl border border-indigo-200/80 bg-gradient-to-r from-indigo-50/70 to-slate-50 hover:from-indigo-100/80 hover:to-slate-100 text-slate-800 transition-all flex items-center justify-between shadow-2xs group cursor-pointer"
                 >
                   <div className="flex items-center gap-2">
                     <Table size={16} className="text-indigo-600 group-hover:scale-110 transition-transform" />
@@ -1470,16 +2225,9 @@ const CreateCertificatePage = () => {
                       </span>
                     </div>
                   </div>
-                  {isSpreadsheetAllowed ? (
-                    <span className="text-[10px] font-mono font-semibold bg-white text-indigo-700 px-2.5 py-1 rounded-full border border-indigo-200 shadow-2xs">
-                      {nonEmptyRowsCount === 0 ? "Open Grid" : `${readyRowsCount} ready`} &rarr;
-                    </span>
-                  ) : (
-                    <span className="text-[10px] font-semibold bg-amber-50 text-amber-800 px-2.5 py-1 rounded-full border border-amber-200 shadow-2xs flex items-center gap-1">
-                      <Lock size={10} className="text-amber-600" />
-                      <span>Growth</span>
-                    </span>
-                  )}
+                  <span className="text-[10px] font-mono font-semibold bg-white text-indigo-700 px-2.5 py-1 rounded-full border border-indigo-200 shadow-2xs">
+                    {nonEmptyRowsCount === 0 ? "Open Grid" : `${readyRowsCount} ready`} &rarr;
+                  </span>
                 </button>
 
                 <div className="flex justify-between items-center text-[10px]">
@@ -1491,17 +2239,58 @@ const CreateCertificatePage = () => {
                     <Download size={12} /> Download Sample Spreadsheet
                   </button>
 
-                  {isSpreadsheetAllowed && (
-                    <button
-                      type="button"
-                      onClick={() => handleSaveSheet(sheetName)}
-                      className="text-emerald-700 font-bold hover:underline flex items-center gap-1 cursor-pointer"
-                      title="Save current spreadsheet draft"
-                    >
-                      <Save size={11} /> Save Sheet Draft
-                    </button>
-                  )}
+                  <button
+                    type="button"
+                    onClick={() => handleSaveSheet(sheetName)}
+                    className="text-emerald-700 font-bold hover:underline flex items-center gap-1 cursor-pointer"
+                    title="Save current spreadsheet as a draft"
+                  >
+                    <Save size={11} /> Save Sheet Draft
+                  </button>
                 </div>
+
+                {/* Saved Drafts Quick-Load List */}
+                {!isBulkGroupEditMode && savedSheets.length > 0 && (
+                  <div className="bg-slate-50/90 border border-slate-200/80 rounded-xl p-2.5 space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1">
+                        <FolderOpen size={11} className="text-indigo-600" />
+                        Saved Drafts ({savedSheets.length})
+                      </span>
+                      <span className="text-[9px] text-slate-400">Click to resume</span>
+                    </div>
+                    <div className="max-h-28 overflow-y-auto space-y-1 pr-0.5">
+                      {savedSheets.map((s) => (
+                        <div
+                          key={s.id}
+                          className="flex items-center justify-between gap-2 bg-white px-2.5 py-1.5 rounded-lg border border-slate-200/70 hover:border-indigo-300 transition-all text-xs"
+                        >
+                          <button
+                            type="button"
+                            onClick={() => {
+                              handleLoadSavedSheet(s);
+                              setIsSpreadsheetOpen(true);
+                            }}
+                            className="flex-1 text-left truncate font-semibold text-slate-700 hover:text-indigo-600 cursor-pointer"
+                          >
+                            {s.name}{" "}
+                            <span className="text-[10px] font-normal text-slate-400">
+                              ({s.rowCount || 0} rows)
+                            </span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteSavedSheet(s.id)}
+                            className="text-slate-400 hover:text-red-600 p-0.5 cursor-pointer"
+                            title="Delete saved draft"
+                          >
+                            <Trash2 size={12} />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
                 {/* Batch Defaults */}
                 <div className="pt-3 border-t border-slate-150 space-y-2">
@@ -1590,30 +2379,105 @@ const CreateCertificatePage = () => {
                   </div>
                 </div>
 
-                {/* Submit button with credit check */}
-                <button
-                  type="submit"
-                  disabled={
-                    bulkSubmitting ||
-                    !formData.template_id ||
-                    !selectedGroupId ||
-                    readyRowsCount === 0 ||
-                    invalidRowsCount > 0 ||
-                    userCredits < readyRowsCount
-                  }
-                  className="w-full bg-slate-900 border border-slate-900 hover:bg-black text-white text-xs font-bold py-2.5 px-4 rounded-lg shadow-sm transition-all flex items-center justify-center gap-1.5 disabled:opacity-60 disabled:cursor-not-allowed mt-3"
-                >
-                  {bulkSubmitting ? <Loader2 className="animate-spin" size={14} /> : <Save size={14} />}
-                  <span>
-                    Generate Bulk Documents ({readyRowsCount} {readyRowsCount === 1 ? "document" : "documents"})
-                  </span>
-                </button>
+                {/* Action Buttons: Bulk Group Edit Mode vs Standard Bulk Create + Save Draft */}
+                {isBulkGroupEditMode ? (
+                  <div className="space-y-2 mt-3">
+                    <button
+                      type="button"
+                      onClick={() => handleBulkGroupUpdate(false)}
+                      disabled={
+                        bulkSubmitting ||
+                        !formData.template_id ||
+                        readyRowsCount === 0 ||
+                        invalidRowsCount > 0 ||
+                        (newGroupRowsCount > 0 && userCredits < newGroupRowsCount)
+                      }
+                      className="w-full bg-slate-900 border border-slate-900 hover:bg-black text-white text-xs font-bold py-2.5 px-4 rounded-lg shadow-sm transition-all flex items-center justify-center gap-1.5 disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
+                    >
+                      {bulkSubmitting ? (
+                        <Loader2 className="animate-spin" size={14} />
+                      ) : (
+                        <Save size={14} />
+                      )}
+                      <span>
+                        Save Changes ({readyRowsCount}{" "}
+                        {readyRowsCount === 1 ? "certificate" : "certificates"})
+                      </span>
+                    </button>
 
-                {userCredits < readyRowsCount && readyRowsCount > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => handleBulkGroupUpdate(true)}
+                      disabled={
+                        bulkSubmitting ||
+                        !formData.template_id ||
+                        readyRowsCount === 0 ||
+                        invalidRowsCount > 0 ||
+                        (newGroupRowsCount > 0 && userCredits < newGroupRowsCount)
+                      }
+                      className="w-full bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold py-2.5 px-4 rounded-lg shadow-sm transition-all flex items-center justify-center gap-1.5 disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
+                    >
+                      {bulkSubmitting ? (
+                        <Loader2 className="animate-spin" size={14} />
+                      ) : (
+                        <Send size={13} />
+                      )}
+                      <span>Save &amp; Resend Emails</span>
+                    </button>
+                  </div>
+                ) : (
+                  <div className="space-y-2 mt-3">
+                    <button
+                      type="button"
+                      onClick={() => handleSaveSheet(sheetName)}
+                      disabled={nonEmptyRowsCount === 0}
+                      className="w-full bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 text-xs font-bold py-2 px-4 rounded-lg transition-all flex items-center justify-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                      title="Save your spreadsheet details as a draft without creating certificates yet"
+                    >
+                      <Save size={13} className="text-emerald-700" />
+                      <span>
+                        Save as Draft ({nonEmptyRowsCount}{" "}
+                        {nonEmptyRowsCount === 1 ? "row" : "rows"}) — 0 Credits
+                      </span>
+                    </button>
+
+                    <button
+                      type="submit"
+                      disabled={
+                        bulkSubmitting ||
+                        !formData.template_id ||
+                        !selectedGroupId ||
+                        readyRowsCount === 0 ||
+                        invalidRowsCount > 0 ||
+                        userCredits < readyRowsCount
+                      }
+                      className="w-full bg-slate-900 border border-slate-900 hover:bg-black text-white text-xs font-bold py-2.5 px-4 rounded-lg shadow-sm transition-all flex items-center justify-center gap-1.5 disabled:opacity-60 disabled:cursor-not-allowed"
+                    >
+                      {bulkSubmitting ? (
+                        <Loader2 className="animate-spin" size={14} />
+                      ) : (
+                        <Save size={14} />
+                      )}
+                      <span>
+                        Generate Bulk Documents ({readyRowsCount}{" "}
+                        {readyRowsCount === 1 ? "document" : "documents"})
+                      </span>
+                    </button>
+                  </div>
+                )}
+
+                {!isBulkGroupEditMode && userCredits < readyRowsCount && readyRowsCount > 0 && (
                   <p className="text-[10px] text-red-600 text-center font-semibold mt-1">
-                    You need {readyRowsCount} credits but have {userCredits}. Please purchase more credits.
+                    You need {readyRowsCount} credits but have {userCredits}. You can still click &quot;Save as Draft&quot; above!
                   </p>
                 )}
+                {isBulkGroupEditMode &&
+                  newGroupRowsCount > 0 &&
+                  userCredits < newGroupRowsCount && (
+                    <p className="text-[10px] text-red-600 text-center font-semibold mt-1">
+                      You added {newGroupRowsCount} new rows requiring {newGroupRowsCount} credits (you have {userCredits}).
+                    </p>
+                  )}
                 {invalidRowsCount > 0 && (
                   <p className="text-[10px] text-amber-600 text-center font-semibold mt-1">
                     {invalidRowsCount} {invalidRowsCount === 1 ? "row needs" : "rows need"} attention in the spreadsheet before issuing.
@@ -1633,6 +2497,25 @@ const CreateCertificatePage = () => {
                 <span>WYSIWYG Live Preview</span>
               </h3>
               <div className="flex items-center gap-1.5">
+                {selectedTemplate && creationMode === "single" && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowCertStyleEditor(true);
+                      setTimeout(() => {
+                        styleEditorRef.current?.scrollIntoView({
+                          behavior: "smooth",
+                          block: "center",
+                        });
+                      }, 80);
+                    }}
+                    className="p-1.5 text-emerald-700 hover:text-emerald-900 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded transition-all shadow-xs flex items-center gap-1 text-xs font-semibold cursor-pointer"
+                    title="Adjust Font Size, Font Family & Position for this certificate"
+                  >
+                    <SlidersHorizontal size={12} />
+                    <span>Adjust Font Size</span>
+                  </button>
+                )}
                 {selectedTemplate && selectedTemplate.layout_style === "visual" && !selectedTemplate.is_public && (
                   <button
                     type="button"
@@ -1690,23 +2573,30 @@ const CreateCertificatePage = () => {
                       </span>
                     </span>
                     <span className="block text-[10px] text-slate-400">
-                      Type directly, paste from Excel, or review mapped columns
+                      Type directly, paste from Excel, or save draft for later
                     </span>
                   </div>
                 </div>
-                <button
-                  type="button"
-                  onClick={handleOpenSpreadsheet}
-                  className="px-3 py-1.5 rounded-lg bg-slate-900 hover:bg-black text-white text-xs font-bold transition-all shadow-xs flex items-center gap-1.5"
-                >
-                  <Table size={13} />
-                  <span>Open Spreadsheet Editor</span>
-                  {!isSpreadsheetAllowed && (
-                    <span className="text-[9px] font-semibold bg-amber-500/20 text-amber-300 px-1.5 py-0.5 rounded border border-amber-400/30 flex items-center gap-0.5 ml-1">
-                      <Lock size={9} /> Growth
-                    </span>
+                <div className="flex items-center gap-2">
+                  {!isBulkGroupEditMode && (
+                    <button
+                      type="button"
+                      onClick={() => handleSaveSheet(sheetName)}
+                      className="px-3 py-1.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer"
+                    >
+                      <Save size={12} />
+                      <span>Save Draft</span>
+                    </button>
                   )}
-                </button>
+                  <button
+                    type="button"
+                    onClick={handleOpenSpreadsheet}
+                    className="px-3 py-1.5 rounded-lg bg-slate-900 hover:bg-black text-white text-xs font-bold transition-all shadow-xs flex items-center gap-1.5 cursor-pointer"
+                  >
+                    <Table size={13} />
+                    <span>Open Spreadsheet Editor</span>
+                  </button>
+                </div>
               </div>
             )}
           </div>
@@ -1763,9 +2653,7 @@ const CreateCertificatePage = () => {
             onClick={handleOpenSpreadsheet}
             className="flex items-center gap-2.5 px-3.5 sm:px-4 py-2.5 sm:py-3 bg-slate-900 hover:bg-black text-white rounded-full shadow-xl hover:scale-105 active:scale-95 transition-all text-xs font-bold border border-slate-700/80 group cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
             title={
-              !isSpreadsheetAllowed
-                ? "In-Page Spreadsheet (Growth Plan)"
-                : isSpreadsheetOpen
+              isSpreadsheetOpen
                 ? "Collapse Spreadsheet Editor"
                 : "Open Spreadsheet Editor"
             }
@@ -1774,7 +2662,7 @@ const CreateCertificatePage = () => {
           >
             <div className="relative flex items-center justify-center">
               <FileSpreadsheet size={16} className="text-indigo-400 group-hover:text-indigo-300 transition-colors" />
-              {isSpreadsheetAllowed && nonEmptyRowsCount > 0 && (
+              {nonEmptyRowsCount > 0 && (
                 <span
                   className={`absolute -top-1 -right-1 w-2 h-2 rounded-full ${
                     invalidRowsCount > 0 ? "bg-amber-500 animate-pulse" : "bg-emerald-500 animate-pulse"
@@ -1783,19 +2671,13 @@ const CreateCertificatePage = () => {
               )}
             </div>
             <span className="hidden xs:inline">Spreadsheet</span>
-            {isSpreadsheetAllowed ? (
-              <span className="bg-slate-800 text-slate-300 px-2 py-0.5 rounded-full text-[10px] font-mono border border-slate-700">
-                {nonEmptyRowsCount === 0
-                  ? "0 rows"
-                  : invalidRowsCount > 0
-                  ? `${readyRowsCount}/${nonEmptyRowsCount} ready`
-                  : `${readyRowsCount} ready`}
-              </span>
-            ) : (
-              <span className="bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded-full text-[10px] font-medium border border-amber-400/30 flex items-center gap-1">
-                <Lock size={10} /> Growth
-              </span>
-            )}
+            <span className="bg-slate-800 text-slate-300 px-2 py-0.5 rounded-full text-[10px] font-mono border border-slate-700">
+              {nonEmptyRowsCount === 0
+                ? "0 rows"
+                : invalidRowsCount > 0
+                ? `${readyRowsCount}/${nonEmptyRowsCount} ready`
+                : `${readyRowsCount} ready`}
+            </span>
           </button>
         </div>
       )}
@@ -1824,7 +2706,9 @@ const CreateCertificatePage = () => {
               <div className="min-w-0">
                 <div className="flex items-center gap-2">
                   <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider mb-0 truncate">
-                    Spreadsheet Editor
+                    {isBulkGroupEditMode
+                      ? `Bulk Edit: ${editingGroupInfo?.name || "Group"}`
+                      : "Spreadsheet Editor"}
                   </h3>
                   <span
                     className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border shrink-0 ${
@@ -1850,7 +2734,9 @@ const CreateCertificatePage = () => {
                   </span>
                 </div>
                 <p className="text-[10px] text-slate-400 mb-0 truncate hidden sm:block">
-                  Type cells or paste from Excel (Ctrl+V) &bull; Auto-saves your draft
+                  {isBulkGroupEditMode
+                    ? "Edit group rows below, then click Save Changes or Save & Resend"
+                    : "Type cells or paste from Excel (Ctrl+V) • Save as Draft anytime"}
                 </p>
               </div>
             </div>
@@ -1928,17 +2814,17 @@ const CreateCertificatePage = () => {
             />
           </div>
 
-          {/* Panel Footer: Summary & Done */}
-          <div className="px-4 py-2.5 border-t border-slate-200 dark:border-[#28282d] bg-white dark:bg-[#18181b] flex items-center justify-between gap-2 shrink-0">
+          {/* Panel Footer: Summary, Save Draft / Bulk Update & Done */}
+          <div className="px-4 py-2.5 border-t border-slate-200 dark:border-[#28282d] bg-white dark:bg-[#18181b] flex flex-wrap items-center justify-between gap-2 shrink-0">
             <div className="text-[11px] text-slate-500 truncate flex items-center gap-1.5">
               {invalidRowsCount > 0 ? (
                 <span className="text-amber-600 font-medium flex items-center gap-1">
                   <AlertTriangle size={12} />
-                  <span>Fix {invalidRowsCount} highlighted rows before issuing</span>
+                  <span>Fix {invalidRowsCount} highlighted rows before saving</span>
                 </span>
-              ) : userCredits < readyRowsCount ? (
-                <span className="text-red-600 font-medium">
-                  Needs {readyRowsCount} credits (you have {userCredits})
+              ) : !isBulkGroupEditMode && userCredits < readyRowsCount ? (
+                <span className="text-amber-700 font-medium">
+                  Needs {readyRowsCount} credits to issue (you can still Save Draft for free)
                 </span>
               ) : (
                 <span className="text-slate-400 flex items-center gap-1">
@@ -1947,13 +2833,57 @@ const CreateCertificatePage = () => {
                 </span>
               )}
             </div>
-            <button
-              type="button"
-              onClick={handleClosePanel}
-              className="bg-slate-900 hover:bg-black text-white text-xs font-bold px-3.5 py-1.5 rounded-lg transition-all shadow-xs cursor-pointer shrink-0"
-            >
-              Done & Minimize
-            </button>
+            <div className="flex items-center gap-2 shrink-0">
+              {isBulkGroupEditMode ? (
+                <>
+                  <button
+                    type="button"
+                    disabled={
+                      bulkSubmitting ||
+                      !formData.template_id ||
+                      readyRowsCount === 0 ||
+                      invalidRowsCount > 0
+                    }
+                    onClick={() => handleBulkGroupUpdate(false)}
+                    className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-3 py-1.5 rounded-lg transition-all shadow-xs flex items-center gap-1 disabled:opacity-50 cursor-pointer"
+                  >
+                    <Save size={12} />
+                    <span>Save Changes</span>
+                  </button>
+                  <button
+                    type="button"
+                    disabled={
+                      bulkSubmitting ||
+                      !formData.template_id ||
+                      readyRowsCount === 0 ||
+                      invalidRowsCount > 0
+                    }
+                    onClick={() => handleBulkGroupUpdate(true)}
+                    className="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold px-3 py-1.5 rounded-lg transition-all shadow-xs flex items-center gap-1 disabled:opacity-50 cursor-pointer"
+                  >
+                    <Send size={12} />
+                    <span>Save &amp; Resend</span>
+                  </button>
+                </>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => handleSaveSheet(sheetName)}
+                  className="bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 text-xs font-bold px-3 py-1.5 rounded-lg transition-all flex items-center gap-1 cursor-pointer"
+                  title="Save spreadsheet as a draft without creating certificates yet"
+                >
+                  <Save size={12} />
+                  <span>Save Draft</span>
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={handleClosePanel}
+                className="bg-slate-900 hover:bg-black text-white text-xs font-bold px-3.5 py-1.5 rounded-lg transition-all shadow-xs cursor-pointer shrink-0"
+              >
+                Done &amp; Minimize
+              </button>
+            </div>
           </div>
         </div>
       )}

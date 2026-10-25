@@ -194,8 +194,10 @@ export const createGroup = (name, description = "") => API.post("/groups/", { na
 export const updateGroup = (groupId, data) => API.put(`/groups/${groupId}`, data);
 export const getGroupDetails = (groupId) => API.get(`/groups/${groupId}`);
 export const deleteGroup = (groupId) => API.delete(`/groups/${groupId}`);
-export const sendGroupBulkEmail = (groupId) =>
-  API.post(`/groups/${groupId}/send-bulk-email`);
+export const bulkUpdateGroupCertificates = (groupId, data) =>
+  API.put(`/groups/${groupId}/bulk-update`, data);
+export const sendGroupBulkEmail = (groupId, forceResend = false) =>
+  API.post(`/groups/${groupId}/send-bulk-email`, { force_resend: forceResend });
 export const downloadGroupBulkPDF = (groupId) =>
   API.get(`/groups/${groupId}/download-bulk-pdf`, { responseType: "blob" });
 export const getGroupAnalytics = (groupId) => API.get(`/groups/${groupId}/analytics`);

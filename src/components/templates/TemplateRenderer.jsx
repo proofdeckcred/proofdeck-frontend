@@ -108,14 +108,88 @@ const TemplateRenderer = ({ template, formData = {}, isFullscreen = false }) => 
     
     // Convert key-value pairs to array for iteration if needed (excluding internal flags)
     combinedData.customFieldsArray = Object.entries(combinedData.extra_fields)
-        .filter(([key]) => key !== "use_uploaded_signature")
+        .filter(([key]) => key !== "use_uploaded_signature" && key !== "cert_styles")
         .map(([key, value]) => ({ key, value }));
 
     combinedData.amount = combinedData.amount || combinedData.extra_fields.amount;
 
+    // Parse per-certificate style overrides & auto-fit settings
+    let rawCertStyles = combinedData.extra_fields?.cert_styles || combinedData.cert_styles || {};
+    if (typeof rawCertStyles === "string") {
+        try {
+            rawCertStyles = JSON.parse(rawCertStyles);
+        } catch (e) {
+            rawCertStyles = {};
+        }
+    }
+    const autoFitEnabled = rawCertStyles?.autoFit !== false;
+    const fieldStyleOverrides =
+        rawCertStyles?.fields && typeof rawCertStyles.fields === "object"
+            ? rawCertStyles.fields
+            : {};
+
     // Prepared styles
     combinedData.textStyle = { color: combinedData.body_font_color };
     if (combinedData.font_family) combinedData.textStyle.fontFamily = combinedData.font_family;
+
+    const recOvr = fieldStyleOverrides.recipient_name || {};
+    const recNameStr = String(combinedData.recipient_name || "");
+    if (autoFitEnabled && !recOvr.fontSize && recNameStr.length > 22) {
+        const fittedRecSize = Math.max(20, Math.round(42 * (22 / recNameStr.length) * 10) / 10);
+        combinedData.textStyle.fontSize = `${fittedRecSize}px`;
+        combinedData.textStyle.whiteSpace = "nowrap";
+    }
+    if (recOvr.fontSize) {
+        combinedData.textStyle.fontSize = `${Number(recOvr.fontSize)}px`;
+        if (recOvr.wrap !== true) combinedData.textStyle.whiteSpace = "nowrap";
+    }
+    if (recOvr.fontFamily) combinedData.textStyle.fontFamily = recOvr.fontFamily;
+    if (recOvr.color || recOvr.fill) combinedData.textStyle.color = recOvr.color || recOvr.fill;
+    if (Number(recOvr.offsetX) || Number(recOvr.offsetY)) {
+        combinedData.textStyle.transform = `translate(${Number(recOvr.offsetX) || 0}px, ${Number(recOvr.offsetY) || 0}px)`;
+    }
+
+    // Build scoped CSS rules for all preset HTML template fields (matching backend _generate_html_pdf)
+    const overrideCssRules = [];
+    if (autoFitEnabled && !recOvr.fontSize && recNameStr.length > 22) {
+        const fittedRecSize = Math.max(20, Math.round(42 * (22 / recNameStr.length) * 10) / 10);
+        overrideCssRules.push(
+            `.pd-preset-stage h2, .pd-preset-stage .recipient { font-size: ${fittedRecSize}px !important; white-space: nowrap !important; }`
+        );
+    }
+    const selectorMap = {
+        recipient_name: ".pd-preset-stage h2, .pd-preset-stage .recipient",
+        course_title: ".pd-preset-stage .course, .pd-preset-stage .course-title, .pd-preset-stage p strong, .pd-preset-stage p > span",
+        title: ".pd-preset-stage h1, .pd-preset-stage .title",
+        signature: ".pd-preset-stage .font-signature, .pd-preset-stage .sig-text, .pd-preset-stage .footer-bold",
+        issuer_name: ".pd-preset-stage .issuer-name",
+        issue_date: ".pd-preset-stage .date-line",
+    };
+    Object.entries(selectorMap).forEach(([fKey, cssSel]) => {
+        const fOvr = fieldStyleOverrides[fKey];
+        if (!fOvr || typeof fOvr !== "object") return;
+        const props = [];
+        if (fOvr.fontSize) {
+            props.push(`font-size: ${Number(fOvr.fontSize)}px !important;`);
+            if (fKey === "recipient_name" && fOvr.wrap !== true) {
+                props.push("white-space: nowrap !important;");
+            }
+        }
+        if (fOvr.fontFamily) {
+            props.push(`font-family: '${String(fOvr.fontFamily).trim()}', sans-serif !important;`);
+        }
+        if (fOvr.color || fOvr.fill) {
+            props.push(`color: ${fOvr.color || fOvr.fill} !important;`);
+        }
+        const ox = Number(fOvr.offsetX) || 0;
+        const oy = Number(fOvr.offsetY) || 0;
+        if (ox !== 0 || oy !== 0) {
+            props.push(`transform: translate(${ox}px, ${oy}px) !important;`);
+        }
+        if (props.length > 0) {
+            overrideCssRules.push(`${cssSel} { ${props.join(" ")} }`);
+        }
+    });
 
     combinedData.backgroundStyle = {
         backgroundImage: combinedData.background_url
@@ -169,6 +243,7 @@ const TemplateRenderer = ({ template, formData = {}, isFullscreen = false }) => 
             }}
         >
             <div
+                className="pd-preset-stage"
                 style={{
                     width: `${BASE_WIDTH}px`,
                     height: `${BASE_HEIGHT}px`,
@@ -179,6 +254,9 @@ const TemplateRenderer = ({ template, formData = {}, isFullscreen = false }) => 
                     left: 0,
                 }}
             >
+                {overrideCssRules.length > 0 && (
+                    <style>{overrideCssRules.join("\n")}</style>
+                )}
                 {renderContent()}
             </div>
         </div>

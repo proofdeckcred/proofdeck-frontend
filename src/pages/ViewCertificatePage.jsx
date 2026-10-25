@@ -336,11 +336,12 @@ function ViewCertificatePage() {
               )}
 
               <button
-                onClick={() => navigate(`/dashboard/edit/${certId}`)}
+                onClick={() => navigate(`/dashboard/edit/${certificate?.id || certId}`)}
                 className="flex items-center gap-1.5 px-3 py-1.5 text-slate-700 hover:bg-slate-50 rounded-lg border border-slate-250 transition-all text-xs font-bold bg-white cursor-pointer"
+                title="Edit certificate details, font size, layout, or resend email"
               >
                 <Edit3 size={13} />
-                <span>Edit</span>
+                <span>Edit &amp; Customize</span>
               </button>
 
               <button

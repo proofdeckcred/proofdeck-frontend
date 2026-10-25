@@ -58,7 +58,6 @@ const ElegantSerif = ({ data }) => {
             </p>
             <h2
                 style={{
-                    ...textStyle,
                     fontSize: '42px',
                     fontFamily: 'Georgia, serif',
                     fontWeight: 700,
@@ -66,7 +65,8 @@ const ElegantSerif = ({ data }) => {
                     margin: '0 0 24px 0',
                     borderBottom: `2px solid ${secondary_color}`,
                     padding: '0 32px 12px 32px',
-                    display: 'inline-block'
+                    display: 'inline-block',
+                    ...textStyle
                 }}
             >
                 {recipient_name}

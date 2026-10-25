@@ -354,7 +354,10 @@ const SpreadsheetGrid = ({
     updateRowsWithHistory((prev) => {
       const next = [...prev];
       const source = prev[rowIdx] || createEmptySpreadsheetRow(batchDefaults);
-      next.splice(rowIdx + 1, 0, { ...source });
+      const clone = { ...source };
+      delete clone.id;
+      delete clone.verification_id;
+      next.splice(rowIdx + 1, 0, clone);
       return next;
     });
     toast.success(`Row ${rowIdx + 1} duplicated`);

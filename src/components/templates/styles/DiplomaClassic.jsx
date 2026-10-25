@@ -60,7 +60,6 @@ const DiplomaClassic = ({ data }) => {
                 </p>
                 <h2
                     style={{
-                        ...textStyle,
                         fontSize: '42px',
                         fontFamily: 'Georgia, serif',
                         fontWeight: 700,
@@ -68,7 +67,8 @@ const DiplomaClassic = ({ data }) => {
                         borderBottom: '1px solid #000000',
                         display: 'inline-block',
                         padding: '0 48px 8px 48px',
-                        margin: '0 0 24px 0'
+                        margin: '0 0 24px 0',
+                        ...textStyle
                     }}
                 >
                     {recipient_name}

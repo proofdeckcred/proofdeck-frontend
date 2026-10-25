@@ -913,7 +913,21 @@ function GroupsPage() {
                         onClick={() => handleViewGroup(group)}
                         className="aspect-[1.5/1] bg-white border border-slate-200 hover:border-indigo-400 hover:shadow-md transition-all rounded-xl flex flex-col justify-between p-3 sm:p-4 cursor-pointer relative"
                       >
-                        <Folder className="w-8 h-8 sm:w-10 sm:h-10 text-indigo-500 fill-indigo-100/30 group-hover/folder:fill-indigo-100/60 transition-colors" />
+                        <div className="flex items-start justify-between">
+                          <Folder className="w-8 h-8 sm:w-10 sm:h-10 text-indigo-500 fill-indigo-100/30 group-hover/folder:fill-indigo-100/60 transition-colors" />
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              navigate(`/dashboard/bulk-create?edit_group=${group.id}`);
+                            }}
+                            className="opacity-0 group-hover/folder:opacity-100 transition-opacity inline-flex items-center gap-1 px-2 py-1 rounded-md bg-indigo-50 hover:bg-indigo-600 text-indigo-700 hover:text-white text-[10px] font-bold border border-indigo-200"
+                            title="Bulk Edit Group in Spreadsheet"
+                          >
+                            <Pencil size={10} />
+                            Bulk Edit
+                          </button>
+                        </div>
                         
                         <div className="flex justify-between items-center text-[10px] font-bold text-slate-400">
                           <span className="flex items-center gap-1">
@@ -1089,7 +1103,15 @@ function GroupsPage() {
                   />
 
                   {/* Actions */}
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <button
+                      onClick={() => navigate(`/dashboard/bulk-create?edit_group=${viewingGroup.id}`)}
+                      className="inline-flex items-center justify-center bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-300 rounded-lg py-1.5 px-3 transition-all font-semibold text-xs shadow-xs cursor-pointer"
+                      title="Open all certificates in this group inside the Bulk Create spreadsheet to edit, save, or resend"
+                    >
+                      <Pencil size={13} className="mr-1.5 text-amber-700" />
+                      Bulk Edit
+                    </button>
                     <button
                       onClick={handleOpenAddCertsModal}
                       className="inline-flex items-center justify-center bg-[#5B4CF5] hover:bg-[#4433E0] text-white rounded-lg py-1.5 px-3 transition-all font-semibold text-xs shadow-xs cursor-pointer"
