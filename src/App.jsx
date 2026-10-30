@@ -148,8 +148,9 @@ function DesktopWindowEnhancer() {
   // 1. Keep native desktop window title clean (never show web marketing SEO title)
   useEffect(() => {
     if (!isDesktopMode && !IS_DESKTOP_APP) return;
+    const isActivated = desktopConfig?.is_activated;
     const inst = desktopConfig?.institution_name;
-    const targetTitle = inst ? `${inst} — ProofDeck Enterprise` : "ProofDeck Enterprise";
+    const targetTitle = (isActivated && inst) ? `${inst} — ProofDeck Enterprise` : "ProofDeck Enterprise";
     document.title = targetTitle;
     const timer = setTimeout(() => {
       document.title = targetTitle;
