@@ -287,7 +287,7 @@ const ReferralSection = () => {
 };
 
 function SettingsPage() {
-  const { user, refreshUser, workspace } = useUser();
+  const { user, refreshUser, workspace, isDesktopMode, desktopConfig } = useUser();
   const { theme, setTheme, resolvedTheme } = useTheme();
   const [localUser, setLocalUser] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -314,18 +314,40 @@ function SettingsPage() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const isFreeUser = user && user.role?.toLowerCase() === "free";
-  const hasApiAccess =
-    user && ["pro", "enterprise"].includes(user.role?.toLowerCase());
-  const isEnterprise =
-    Boolean(
+  const isEnterprise = Boolean(
+    isDesktopMode ||
       (user && user.role?.toLowerCase() === "enterprise") ||
       (localUser && localUser.role?.toLowerCase() === "enterprise")
-    );
-  const isCompanyUser = user && user.company;
+  );
+  const isFreeUser = !isEnterprise && user && user.role?.toLowerCase() === "free";
+  const hasApiAccess = Boolean(
+    isDesktopMode ||
+      isEnterprise ||
+      (user && ["pro", "enterprise"].includes(user.role?.toLowerCase()))
+  );
+  const activeCompany =
+    user?.company ||
+    localUser?.company ||
+    (isEnterprise
+      ? {
+          name:
+            desktopConfig?.institution_name ||
+            user?.name ||
+            localUser?.name ||
+            "Enterprise Organization",
+          active_role: "owner",
+        }
+      : null);
+  const isCompanyUser = Boolean(activeCompany || isEnterprise);
   const isCanvaConnected = user && user.canva_access_token;
-  const isCompanyOwner = user && user.company && user.company.active_role === "owner" && workspace !== "personal";
-  const isCompanyAdmin = user && user.company && user.company.active_role === "admin" && workspace !== "personal";
+  const isCompanyOwner = Boolean(
+    isDesktopMode ||
+      isEnterprise ||
+      (activeCompany && activeCompany.active_role === "owner" && workspace !== "personal")
+  );
+  const isCompanyAdmin = Boolean(
+    activeCompany && activeCompany.active_role === "admin" && workspace !== "personal"
+  );
   const isCompanyOwnerOrAdmin = isCompanyOwner || isCompanyAdmin;
 
   const fetchUser = async () => {
@@ -643,7 +665,7 @@ function SettingsPage() {
   const tabs = [
     { id: "profile", label: "Profile", icon: User },
     { id: "appearance", label: "Appearance", icon: Palette },
-    { id: "referrals", label: "Referrals", icon: Gift },
+    ...(!isDesktopMode ? [{ id: "referrals", label: "Referrals", icon: Gift }] : []),
     ...(isCompanyOwnerOrAdmin ? [{ id: "team", label: "Team", icon: Building }] : []),
     ...(isCompanyOwnerOrAdmin
       ? [
@@ -655,7 +677,7 @@ function SettingsPage() {
           },
         ]
       : []),
-    { id: "billing", label: "Billing", icon: CreditCard },
+    ...(!isDesktopMode ? [{ id: "billing", label: "Billing", icon: CreditCard }] : []),
     {
       id: "developer",
       label: "Developer",
@@ -716,7 +738,7 @@ function SettingsPage() {
               <div className="bg-blue-50 text-blue-800 p-3 rounded-lg flex items-start gap-3 mb-6 text-sm">
                 <Building size={18} className="mt-0.5" />
                 <div>
-                  Managed by <strong>{user.company.name}</strong>. Certificates
+                  Managed by <strong>{activeCompany?.name || user?.name}</strong>. Certificates
                   issued under this company name.
                 </div>
               </div>

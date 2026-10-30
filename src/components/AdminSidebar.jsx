@@ -12,6 +12,7 @@ import {
   X,
   Radio,
   BookOpen,
+  KeyRound,
   LogOut,
 } from "lucide-react";
 import { useAdminAuth } from "../context/AdminAuthContext";
@@ -100,6 +101,13 @@ function AdminSidebar({ onClose }) {
           <NavLink to="/admin/companies" className={navItemClass} onClick={onClose}>
             <Building size={18} />
             <span>Companies</span>
+          </NavLink>
+        )}
+
+        {(isSuperAdmin || admin?.permissions?.view_licenses) && (
+          <NavLink to="/admin/licenses" className={navItemClass} onClick={onClose}>
+            <KeyRound size={18} />
+            <span>Enterprise Licenses</span>
           </NavLink>
         )}
 

@@ -16,6 +16,8 @@ import {
   deleteCertificate,
   getGroupAnalytics,
   addCertificatesToGroup,
+  exportGroupToLocalFolder,
+  pickDesktopFolder,
 } from "../api";
 import toast, { Toaster } from "react-hot-toast";
 import { Modal, Form, OverlayTrigger, Tooltip } from "react-bootstrap";
@@ -227,6 +229,33 @@ function GroupsPage() {
   // Individual Actions States
   const [sendingId, setSendingId] = useState(null);
   const [downloadingId, setDownloadingId] = useState(null);
+  const [exportingLocalFolder, setExportingLocalFolder] = useState(false);
+
+  const handleExportToLocalFolder = async (groupId) => {
+    setExportingLocalFolder(true);
+    try {
+      const folderPick = await pickDesktopFolder();
+      if (folderPick.data?.cancelled) {
+        setExportingLocalFolder(false);
+        return;
+      }
+      const targetFolder = folderPick.data?.folder;
+      const promise = exportGroupToLocalFolder(groupId, {
+        folder: targetFolder,
+        format: "pdf",
+        open_folder: true,
+      });
+      await toast.promise(promise, {
+        loading: "Rendering & saving PDFs directly to your PC folder...",
+        success: (res) => res.data?.msg || "Saved PDFs to folder!",
+        error: (err) => err.response?.data?.msg || "Failed to export to local folder.",
+      });
+    } catch (err) {
+      toast.error("Local folder export is available when running ProofDeck Desktop Mode.");
+    } finally {
+      setExportingLocalFolder(false);
+    }
+  };
   const [downloadFormatCert, setDownloadFormatCert] = useState(null);
 
   // Custom Delete Modal State
@@ -1111,6 +1140,15 @@ function GroupsPage() {
                     >
                       <Pencil size={13} className="mr-1.5 text-amber-700" />
                       Bulk Edit
+                    </button>
+                    <button
+                      onClick={() => handleExportToLocalFolder(viewingGroup.id)}
+                      disabled={exportingLocalFolder}
+                      className="inline-flex items-center justify-center bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 rounded-lg py-1.5 px-3 transition-all font-semibold text-xs shadow-xs cursor-pointer disabled:opacity-50"
+                      title="Save all documents in this batch directly to a folder on your PC (Named by Student ID + Name)"
+                    >
+                      <Folder size={13} className="mr-1.5 text-emerald-700" />
+                      {exportingLocalFolder ? "Saving to PC..." : "Save to PC Folder"}
                     </button>
                     <button
                       onClick={handleOpenAddCertsModal}

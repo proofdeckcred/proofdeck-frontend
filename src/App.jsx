@@ -1,11 +1,12 @@
 import React, { useEffect, Suspense, lazy } from "react";
-import { Routes, Route, useLocation } from "react-router-dom";
+import { Routes, Route, useLocation, useNavigate, Navigate } from "react-router-dom";
 import Lenis from "lenis";
 import "lenis/dist/lenis.css";
+import { IS_DESKTOP_APP } from "./config";
 
 // Context providers
 import { ThemeProvider } from "./context/ThemeContext";
-import { UserProvider } from "./context/UserContext";
+import { UserProvider, useUser } from "./context/UserContext";
 import { AdminAuthProvider } from "./context/AdminAuthContext";
 import { WhiteLabelProvider, useWhiteLabel } from "./context/WhiteLabelContext";
 
@@ -78,6 +79,7 @@ const AdminCompanyDetailsPage = lazy(() => import("./pages/AdminCompanyDetailsPa
 const AdminMessagingPage = lazy(() => import("./pages/AdminMessagingPage"));
 const AdminBroadcastsPage = lazy(() => import("./pages/AdminBroadcastsPage"));
 const AdminTeamPage = lazy(() => import("./pages/AdminTeamPage"));
+const AdminLicensesPage = lazy(() => import("./pages/AdminLicensesPage"));
 const AdminBlogPage = lazy(() => import("./pages/AdminBlogPage"));
 const AdminBlogEditorPage = lazy(() => import("./pages/AdminBlogEditorPage"));
 
@@ -102,6 +104,9 @@ const PageLoader = () => (
 
 const RootRoute = () => {
   const { isWhiteLabel, loading } = useWhiteLabel();
+  if (IS_DESKTOP_APP || localStorage.getItem("pd_desktop_mode") === "1") {
+    return <Navigate to="/dashboard" replace />;
+  }
   if (loading) return <PageLoader />;
   if (isWhiteLabel) return <VerifyCertificatePage />;
   return <LandingPage />;
@@ -135,6 +140,108 @@ function ScrollToTop() {
   return null;
 }
 
+function DesktopWindowEnhancer() {
+  const { isDesktopMode, desktopConfig } = useUser();
+  const { pathname } = useLocation();
+  const navigate = useNavigate();
+
+  // 1. Keep native desktop window title clean (never show web marketing SEO title)
+  useEffect(() => {
+    if (!isDesktopMode && !IS_DESKTOP_APP) return;
+    const inst = desktopConfig?.institution_name;
+    const targetTitle = inst ? `${inst} — ProofDeck Enterprise` : "ProofDeck Enterprise";
+    document.title = targetTitle;
+    const timer = setTimeout(() => {
+      document.title = targetTitle;
+    }, 150);
+    return () => clearTimeout(timer);
+  }, [isDesktopMode, desktopConfig, pathname]);
+
+  // 2. Suppress bottom-left '127.0.0.1:5000/...' link preview status bubble in Desktop Mode
+  useEffect(() => {
+    if (!isDesktopMode && !IS_DESKTOP_APP) return;
+
+    const sanitizeAnchor = (anchor) => {
+      if (!anchor || anchor.tagName !== "A") return;
+      if (anchor.hasAttribute("download")) return;
+      const rawHref = anchor.getAttribute("href");
+      if (!rawHref) return;
+      if (
+        rawHref.startsWith("/") ||
+        rawHref.startsWith("http://127.0.0.1:5000") ||
+        rawHref.startsWith("http://localhost:5000")
+      ) {
+        const cleanPath = rawHref
+          .replace(/^https?:\/\/(127\.0\.0\.1|localhost):5000/, "") || "/";
+        anchor.dataset.pdHref = cleanPath;
+        anchor.removeAttribute("href");
+        anchor.style.cursor = "pointer";
+      }
+    };
+
+    const sanitizeAllAnchors = (root = document) => {
+      const anchors = root.querySelectorAll ? root.querySelectorAll("a[href]") : [];
+      anchors.forEach(sanitizeAnchor);
+    };
+
+    sanitizeAllAnchors();
+
+    const observer = new MutationObserver((mutations) => {
+      for (const m of mutations) {
+        if (m.type === "attributes" && m.target?.tagName === "A") {
+          sanitizeAnchor(m.target);
+        } else if (m.addedNodes?.length) {
+          m.addedNodes.forEach((node) => {
+            if (node.nodeType === 1) {
+              if (node.tagName === "A") sanitizeAnchor(node);
+              sanitizeAllAnchors(node);
+            }
+          });
+        }
+      }
+    });
+
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: ["href"],
+    });
+
+    const handlePointerOver = (e) => {
+      const a = e.target?.closest?.("a[href]");
+      if (a) sanitizeAnchor(a);
+    };
+
+    const handleClick = (e) => {
+      const a = e.target?.closest?.("a[data-pd-href]");
+      if (!a) return;
+      const targetPath = a.dataset.pdHref;
+      if (!targetPath) return;
+      // If React Router's <Link> didn't already handle navigation, navigate via router
+      if (!e.defaultPrevented) {
+        e.preventDefault();
+        navigate(targetPath);
+      }
+    };
+
+    document.addEventListener("pointerover", handlePointerOver, true);
+    document.addEventListener("mouseover", handlePointerOver, true);
+    document.addEventListener("focusin", handlePointerOver, true);
+    document.addEventListener("click", handleClick, false);
+
+    return () => {
+      observer.disconnect();
+      document.removeEventListener("pointerover", handlePointerOver, true);
+      document.removeEventListener("mouseover", handlePointerOver, true);
+      document.removeEventListener("focusin", handlePointerOver, true);
+      document.removeEventListener("click", handleClick, false);
+    };
+  }, [isDesktopMode, navigate]);
+
+  return null;
+}
+
 function App() {
   return (
     <ThemeProvider>
@@ -142,6 +249,7 @@ function App() {
         <UserProvider>
           <AdminAuthProvider>
             <ScrollToTop />
+            <DesktopWindowEnhancer />
           <Suspense fallback={<PageLoader />}>
             <Routes>
               {/* Core Public Marketing routes */}
@@ -197,6 +305,7 @@ function App() {
                 <Route path="messaging" element={<AdminMessagingPage />} />
                 <Route path="broadcasts" element={<AdminBroadcastsPage />} />
                 <Route path="team" element={<AdminTeamPage />} />
+                <Route path="licenses" element={<AdminLicensesPage />} />
                 <Route path="blog" element={<AdminBlogPage />} />
                 <Route path="blog/editor" element={<AdminBlogEditorPage />} />
                 <Route path="blog/editor/:id" element={<AdminBlogEditorPage />} />

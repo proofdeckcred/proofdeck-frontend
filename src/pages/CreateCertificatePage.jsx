@@ -15,6 +15,7 @@ import {
   createGroup,
   getGroupDetails,
   bulkUpdateGroupCertificates,
+  pullStudentsFromUniversityDb,
 } from "../api";
 import TemplateRenderer from "../components/templates/TemplateRenderer";
 import { SERVER_BASE_URL } from "../config";
@@ -51,6 +52,7 @@ import {
   Send,
   RotateCcw,
   FolderOpen,
+  Database,
 } from "lucide-react";
 import { Spinner } from "react-bootstrap";
 import toast, { Toaster } from "react-hot-toast";
@@ -323,6 +325,65 @@ const CreateCertificatePage = () => {
   }, [user?.signature_image_url]);
 
   const [isSpreadsheetUpgradeModalOpen, setIsSpreadsheetUpgradeModalOpen] = useState(false);
+
+  // University Database Connector ("Pull by Student ID") Modal State
+  const [showDbPullModal, setShowDbPullModal] = useState(false);
+  const [dbStudentIdsInput, setDbStudentIdsInput] = useState("");
+  const [dbFacultyFilter, setDbFacultyFilter] = useState("");
+  const [dbDepartmentFilter, setDbDepartmentFilter] = useState("");
+  const [pullingFromDb, setPullingFromDb] = useState(false);
+
+  const handlePullFromUniversityDb = async (e) => {
+    if (e && e.preventDefault) e.preventDefault();
+    setPullingFromDb(true);
+    try {
+      const res = await pullStudentsFromUniversityDb({
+        student_ids: dbStudentIdsInput,
+        faculty: dbFacultyFilter,
+        department: dbDepartmentFilter,
+      });
+      const pulledRows = res.data?.rows || [];
+      const customCols = res.data?.custom_columns || [];
+      if (pulledRows.length === 0) {
+        toast.error("No matching student records found for those Student IDs / filters.");
+        setPullingFromDb(false);
+        return;
+      }
+
+      if (customCols.length > 0) {
+        setUserCustomColumns((prev) => {
+          const existingKeys = new Set(prev.map((c) => c.key));
+          const merged = [...prev];
+          customCols.forEach((cc) => {
+            if (!existingKeys.has(cc.key)) {
+              merged.push(cc);
+            }
+          });
+          return merged;
+        });
+      }
+
+      setSpreadsheetRows(ensureMinimumRows(pulledRows, MIN_STARTER_ROWS, batchDefaults));
+      setSheetName(
+        dbDepartmentFilter
+          ? `${dbDepartmentFilter} Batch`
+          : dbFacultyFilter
+          ? `${dbFacultyFilter} Batch`
+          : `SIS Database Pull (${pulledRows.length} Students)`
+      );
+      setShowDbPullModal(false);
+      setIsSpreadsheetOpen(true);
+      toast.success(
+        `Pulled ${pulledRows.length} student ${
+          pulledRows.length === 1 ? "record" : "records"
+        } from University Database!`
+      );
+    } catch (err) {
+      toast.error(err.response?.data?.msg || "Failed to pull records from database.");
+    } finally {
+      setPullingFromDb(false);
+    }
+  };
 
   const handleOpenSpreadsheet = () => {
     if (!isSpreadsheetAllowed) {
@@ -2262,6 +2323,28 @@ const CreateCertificatePage = () => {
                   </div>
                 </div>
 
+                {/* Direct University Database Connector Shortcut (Pull by Student ID) */}
+                <button
+                  type="button"
+                  onClick={() => setShowDbPullModal(true)}
+                  className="w-full py-2.5 px-3 rounded-xl border border-emerald-200/90 bg-gradient-to-r from-emerald-50/80 to-teal-50/50 hover:from-emerald-100/80 hover:to-teal-100/60 text-slate-800 transition-all flex items-center justify-between shadow-2xs group cursor-pointer"
+                >
+                  <div className="flex items-center gap-2">
+                    <Database size={16} className="text-emerald-700 group-hover:scale-110 transition-transform" />
+                    <div className="text-left">
+                      <span className="block text-xs font-bold text-slate-800">
+                        Pull from University DB (Student ID)
+                      </span>
+                      <span className="block text-[10px] text-slate-500">
+                        Fetch student records directly by ID, Faculty, or Department
+                      </span>
+                    </div>
+                  </div>
+                  <span className="text-[10px] font-mono font-semibold bg-white text-emerald-800 px-2.5 py-1 rounded-full border border-emerald-200 shadow-2xs">
+                    Connect &rarr;
+                  </span>
+                </button>
+
                 {/* In-Page Spreadsheet Shortcut Button in Form */}
                 <button
                   type="button"
@@ -3002,6 +3085,124 @@ const CreateCertificatePage = () => {
                 Replace All
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* University Database Pull by Student ID Modal */}
+      {showDbPullModal && (
+        <div
+          className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-50 p-4 animate-in fade-in duration-150"
+          onClick={() => setShowDbPullModal(false)}
+        >
+          <div
+            className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-lg w-full overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="bg-slate-900 text-white px-5 py-3.5 flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <Database size={18} className="text-emerald-400" />
+                <div>
+                  <h3 className="text-xs font-bold mb-0 text-white">
+                    Pull Student Records from University Database
+                  </h3>
+                  <p className="text-[10px] text-slate-400 mb-0">
+                    Query by Student IDs or Department to auto-populate the spreadsheet
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowDbPullModal(false)}
+                className="text-slate-400 hover:text-white p-1 rounded cursor-pointer"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            <form onSubmit={handlePullFromUniversityDb} className="p-5 space-y-3.5">
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-xs font-bold text-slate-700">
+                    Student IDs (Comma or newline separated — leave blank to pull by Faculty/All)
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setDbStudentIdsInput("20220001, 20220002, 20220003, 20220004, 20220005")
+                    }
+                    className="text-[10px] font-bold text-indigo-600 hover:underline cursor-pointer"
+                  >
+                    Insert Sample IDs
+                  </button>
+                </div>
+                <textarea
+                  rows={3}
+                  value={dbStudentIdsInput}
+                  onChange={(e) => setDbStudentIdsInput(e.target.value)}
+                  placeholder="e.g. 20220001, 20220002, 20220003..."
+                  className="w-full px-3 py-2 text-xs font-mono rounded-lg border border-slate-200 focus:outline-none focus:border-indigo-500"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    Filter by Faculty (Optional)
+                  </label>
+                  <select
+                    value={dbFacultyFilter}
+                    onChange={(e) => setDbFacultyFilter(e.target.value)}
+                    className="w-full px-2.5 py-1.5 text-xs rounded-lg border border-slate-200 bg-white focus:outline-none focus:border-indigo-500"
+                  >
+                    <option value="">All Faculties</option>
+                    <option value="Computing Studies">Computing Studies</option>
+                    <option value="Engineering">Engineering</option>
+                    <option value="Management Sciences">Management Sciences</option>
+                    <option value="College of Health Sciences">College of Health Sciences</option>
+                    <option value="Arts & Social Sciences">Arts &amp; Social Sciences</option>
+                    <option value="Law">Law</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    Department Filter (Optional)
+                  </label>
+                  <input
+                    type="text"
+                    value={dbDepartmentFilter}
+                    onChange={(e) => setDbDepartmentFilter(e.target.value)}
+                    placeholder="e.g. Software Engineering"
+                    className="w-full px-2.5 py-1.5 text-xs rounded-lg border border-slate-200 focus:outline-none focus:border-indigo-500"
+                  />
+                </div>
+              </div>
+
+              <div className="bg-slate-50 border border-slate-200/80 rounded-lg p-2.5 text-[11px] text-slate-600">
+                Pulls <strong>student_id</strong>, <strong>recipient_name</strong>, <strong>recipient_email</strong>,{" "}
+                <strong>course_title</strong>, <strong>department</strong>, <strong>cgpa</strong>, and{" "}
+                <strong>degree_class</strong> directly into the Spreadsheet Editor.
+              </div>
+
+              <div className="flex justify-end gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowDbPullModal(false)}
+                  className="px-3.5 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-lg cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={pullingFromDb}
+                  className="px-4 py-1.5 text-xs font-bold text-white bg-emerald-700 hover:bg-emerald-800 rounded-lg shadow-xs flex items-center gap-1.5 cursor-pointer"
+                >
+                  {pullingFromDb ? <Loader2 size={13} className="animate-spin" /> : <Database size={13} />}
+                  <span>{pullingFromDb ? "Querying Database..." : "Pull Records into Spreadsheet"}</span>
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

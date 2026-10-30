@@ -379,3 +379,15 @@ export const verifyCustomDomain = () => API.post("/whitelabel/verify-domain");
 export const updateBranding = (data) => API.put("/whitelabel/branding", data);
 export const removeCustomDomain = () => API.delete("/whitelabel/domain");
 
+// ENTERPRISE DESKTOP EDITION API (Local Vault, Folder Export, University DB Connector)
+export const getDesktopBootstrap = () => API.get("/desktop/bootstrap");
+export const getDesktopSettings = () => API.get("/desktop/settings");
+export const saveDesktopSettings = (data) => API.post("/desktop/settings", data);
+export const pickDesktopFolder = () => API.post("/desktop/pick-folder");
+export const openDesktopFolder = (folder) => API.post("/desktop/open-folder", { folder });
+export const exportGroupToLocalFolder = (groupId, data = {}) =>
+  API.post(`/desktop/export-group-to-folder/${groupId}`, data);
+export const pullStudentsFromUniversityDb = (data = {}) =>
+  API.post("/desktop/db-connector/pull", data);
+
+

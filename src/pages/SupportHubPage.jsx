@@ -5,16 +5,20 @@ import { Link } from "react-router-dom";
 import { helpArticles } from "../data/helpArticles.jsx";
 import { Search, MessageCircle, HelpCircle, ArrowLeft } from "lucide-react";
 import { useSupportStatus } from "../hooks/useSupportStatus";
+import { useUser } from "../context/UserContext";
 
 function SupportHubPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const { isOnline } = useSupportStatus();
+  const { isDesktopMode } = useUser();
 
-  const filteredArticles = helpArticles.filter(
-    (article) =>
-      article.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      article.description.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredArticles = helpArticles
+    .filter((article) => !isDesktopMode || article.slug !== "billing-and-plans")
+    .filter(
+      (article) =>
+        article.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        article.description.toLowerCase().includes(searchTerm.toLowerCase())
+    );
 
   return (
     <div className="w-full pb-20">

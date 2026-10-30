@@ -7,12 +7,18 @@ import { UserProvider } from "../context/UserContext";
 import MobileWarning from "../components/MobileWarning";
 import DashboardTopbar from "../components/DashboardTopbar";
 import BackgroundJobIndicator from "../components/BackgroundJobIndicator";
+import DesktopActivationModal from "../components/DesktopActivationModal";
+import { useUser } from "../context/UserContext";
 
 function DashboardLayout() {
   const { width } = useWindowSize();
   const isMobile = width <= 768;
   const location = useLocation();
   const isEditorPage = location.pathname.includes("/upload-template");
+  const { isDesktopMode, desktopConfig, setDesktopConfig } = useUser();
+
+  // Show activation modal if running in Desktop mode and not yet activated
+  const isDesktopUnactivated = isDesktopMode && (!desktopConfig?.license_key || desktopConfig?.is_activated === false);
 
   // Persistent sidebar collapse state (Bachs style)
   const [isCollapsed, setIsCollapsed] = useState(() => {
@@ -111,6 +117,13 @@ function DashboardLayout() {
 
       {/* GLOBAL BACKGROUND TASK INDICATOR */}
       <BackgroundJobIndicator />
+
+      {/* DESKTOP WORKSTATION ACTIVATION MODAL */}
+      <DesktopActivationModal
+        isOpen={isDesktopUnactivated}
+        currentConfig={desktopConfig}
+        onActivated={(newCfg) => setDesktopConfig(newCfg)}
+      />
     </div>
   );
 

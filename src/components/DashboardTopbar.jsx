@@ -1,18 +1,23 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { PanelLeft, Menu, Sun, Moon } from 'lucide-react';
+import { PanelLeft, Menu, Sun, Moon, HardDrive, ShieldCheck } from 'lucide-react';
 import { OverlayTrigger, Tooltip } from 'react-bootstrap';
 import NotificationBell from './NotificationBell';
 import ProfileDropdown from './ProfileDropdown';
+import DesktopEnterpriseModal from './DesktopEnterpriseModal';
 import { useTheme } from '../context/ThemeContext';
+import { useUser } from '../context/UserContext';
 
 export default function DashboardTopbar({ isCollapsed, toggleSidebar, toggleMobileSidebar }) {
   const { setTheme, resolvedTheme } = useTheme();
+  const { isDesktopMode, desktopConfig } = useUser();
+  const [showDesktopModal, setShowDesktopModal] = useState(false);
 
   const toggleTheme = () => {
     setTheme(resolvedTheme === 'dark' ? 'light' : 'dark');
   };
   return (
+    <>
     <header className="flex bg-white border-b border-slate-200/80 px-4 sm:px-6 md:px-8 py-2.5 items-center justify-between sticky top-0 z-30 shrink-0">
       {/* Mobile Left: Drawer Toggle + Branding */}
       <div className="flex items-center gap-2 md:hidden">
@@ -31,8 +36,8 @@ export default function DashboardTopbar({ isCollapsed, toggleSidebar, toggleMobi
         </Link>
       </div>
 
-      {/* Desktop Left: Sidebar Open/Close Toggle (Bachs Style) */}
-      <div className="hidden md:flex items-center gap-2">
+      {/* Desktop Left: Sidebar Open/Close Toggle + Enterprise Desktop Indicator */}
+      <div className="hidden md:flex items-center gap-3">
         <OverlayTrigger
           placement="bottom"
           delay={{ show: 150, hide: 50 }}
@@ -51,6 +56,22 @@ export default function DashboardTopbar({ isCollapsed, toggleSidebar, toggleMobi
             <PanelLeft size={18} className="text-slate-600 hover:text-slate-900 transition-colors" />
           </button>
         </OverlayTrigger>
+
+        {isDesktopMode && (
+          <button
+            type="button"
+            onClick={() => setShowDesktopModal(true)}
+            className="flex items-center gap-2 px-3 py-1 rounded-full bg-slate-900 hover:bg-black text-white text-xs font-bold shadow-2xs transition-all cursor-pointer border border-slate-700"
+            title="Open Enterprise Desktop Control Center (Database Connector, Local Export Folder, Annual License)"
+          >
+            <HardDrive size={13} className="text-indigo-400" />
+            <span>{desktopConfig?.institution_name || "Enterprise Desktop Edition"}</span>
+            <span className="inline-flex items-center gap-1 px-1.5 py-0.2 rounded-full bg-emerald-500/20 text-emerald-300 text-[10px] font-semibold border border-emerald-400/30">
+              <ShieldCheck size={10} />
+              Local Vault
+            </span>
+          </button>
+        )}
       </div>
 
       {/* Desktop spacer */}
@@ -58,6 +79,16 @@ export default function DashboardTopbar({ isCollapsed, toggleSidebar, toggleMobi
 
       {/* Action items: Theme Toggle + Notifications + User Profile */}
       <div className="flex items-center gap-2 sm:gap-3">
+        {isDesktopMode && (
+          <button
+            type="button"
+            onClick={() => setShowDesktopModal(true)}
+            className="md:hidden px-2.5 py-1 rounded-full bg-slate-900 text-white text-[11px] font-bold flex items-center gap-1"
+          >
+            <HardDrive size={12} className="text-indigo-400" />
+            <span>Desktop Vault</span>
+          </button>
+        )}
         <OverlayTrigger
           placement="bottom"
           delay={{ show: 150, hide: 50 }}
@@ -84,5 +115,10 @@ export default function DashboardTopbar({ isCollapsed, toggleSidebar, toggleMobi
         <ProfileDropdown />
       </div>
     </header>
+    <DesktopEnterpriseModal
+      show={showDesktopModal}
+      onHide={() => setShowDesktopModal(false)}
+    />
+    </>
   );
 }
