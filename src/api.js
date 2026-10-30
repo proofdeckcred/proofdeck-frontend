@@ -390,4 +390,17 @@ export const exportGroupToLocalFolder = (groupId, data = {}) =>
 export const pullStudentsFromUniversityDb = (data = {}) =>
   API.post("/desktop/db-connector/pull", data);
 
+// ENTERPRISE LICENSING API
+export const getAdminLicenses = (params = {}) =>
+  API.get(`/admin/licenses?${new URLSearchParams(params).toString()}`);
+export const createAdminLicense = (data) =>
+  API.post("/admin/licenses", data);
+export const getAdminLicenseDetails = (id) =>
+  API.get(`/admin/licenses/${id}`);
+export const updateAdminLicenseStatus = (id, status) =>
+  API.patch(`/admin/licenses/${id}/status`, { status });
+export const extendAdminLicense = (id, days = 365) =>
+  API.post(`/admin/licenses/${id}/extend`, { days });
+
+
 

@@ -1,5 +1,10 @@
 import React, { useState, useEffect, useCallback } from "react";
-import axios from "axios";
+import {
+  getAdminLicenses,
+  createAdminLicense,
+  updateAdminLicenseStatus,
+  extendAdminLicense
+} from "../api";
 import {
   KeyRound,
   Plus,
@@ -21,8 +26,6 @@ import {
   QrCode
 } from "lucide-react";
 import toast, { Toaster } from "react-hot-toast";
-
-const API_BASE = "/api/admin";
 
 function AdminLicensesPage() {
   const [licenses, setLicenses] = useState([]);
@@ -54,10 +57,11 @@ function AdminLicensesPage() {
   const fetchLicenses = useCallback(async () => {
     setLoading(true);
     try {
-      const token = localStorage.getItem("adminToken") || localStorage.getItem("token");
-      const res = await axios.get(`${API_BASE}/licenses`, {
-        headers: { Authorization: `Bearer ${token}` },
-        params: { page, limit: 12, search, status: statusFilter }
+      const res = await getAdminLicenses({
+        page,
+        limit: 12,
+        search,
+        status: statusFilter
       });
       setLicenses(res.data.licenses || []);
       setTotal(res.data.total || 0);
@@ -86,10 +90,7 @@ function AdminLicensesPage() {
     }
     setIsSubmitting(true);
     try {
-      const token = localStorage.getItem("adminToken") || localStorage.getItem("token");
-      const res = await axios.post(`${API_BASE}/licenses`, formData, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const res = await createAdminLicense(formData);
       toast.success(res.data.msg || "Enterprise license issued!");
       setShowCreateModal(false);
       setFormData({
@@ -115,12 +116,7 @@ function AdminLicensesPage() {
 
   const handleStatusChange = async (licenseId, newStatus) => {
     try {
-      const token = localStorage.getItem("adminToken") || localStorage.getItem("token");
-      await axios.patch(
-        `${API_BASE}/licenses/${licenseId}/status`,
-        { status: newStatus },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      await updateAdminLicenseStatus(licenseId, newStatus);
       toast.success(`License status updated to ${newStatus}`);
       fetchLicenses();
       if (selectedLicense && selectedLicense.id === licenseId) {
@@ -133,12 +129,7 @@ function AdminLicensesPage() {
 
   const handleExtendYear = async (licenseId) => {
     try {
-      const token = localStorage.getItem("adminToken") || localStorage.getItem("token");
-      const res = await axios.post(
-        `${API_BASE}/licenses/${licenseId}/extend`,
-        { days: 365 },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      const res = await extendAdminLicense(licenseId, 365);
       toast.success(res.data.msg || "Extended for 1 year!");
       fetchLicenses();
     } catch (err) {
