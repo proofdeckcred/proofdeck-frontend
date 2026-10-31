@@ -31,7 +31,19 @@ const TemplateSelector = ({ value, onChange, options = [], collapsible = true })
       
       {isOpen && (
       <div className="custom-scrollbar grid grid-cols-2 lg:grid-cols-3 gap-3 p-1 max-h-[520px] overflow-y-auto pr-2 animate-in slide-in-from-top-2 duration-300">
-        {options.map((option) => {
+        {options.filter((option) => {
+          if (!option) return false;
+          if (typeof option === 'object') {
+            if (option.layout_style === 'document') return false;
+            const tLower = (option.title || '').toLowerCase();
+            if (tLower.includes('statement of result') || tLower.includes('senate approved')) return false;
+            if (option.layout_data) {
+              const str = typeof option.layout_data === 'string' ? option.layout_data : JSON.stringify(option.layout_data);
+              if (str.includes('document_html') || str.includes('"type":"invitation"')) return false;
+            }
+          }
+          return true;
+        }).map((option) => {
           const isObject = typeof option === 'object';
           const optionValue = isObject ? option.id : option;
           
@@ -55,7 +67,7 @@ const TemplateSelector = ({ value, onChange, options = [], collapsible = true })
 
           const LEGACY_TITLE_RENAME = {
             "University Degree & Graduation Certificate": "Classic",
-            "Academic Excellence & Senate Honours": "Modern",
+            "Academic Excellence & Senate Honours": "Academic Excellence",
             "Official Statement of Result / Attestation": "Minimalist Bold",
             "Executive Diploma & Post-Graduate Award": "Diploma Classic",
             "Gold Senate Distinction Award": "Award Gold",
@@ -70,8 +82,11 @@ const TemplateSelector = ({ value, onChange, options = [], collapsible = true })
             "Official Student Tuition & Academic Fee Receipt": "Receipt",
           };
 
+          const rawTitle = isObject ? (option.title || "") : "";
+          const cleanedTitle = rawTitle.replace(/\s*\(Senate Approved\)/gi, "").replace(/Senate\s*/gi, "").trim();
+
           let optionLabel = isObject 
-            ? (LEGACY_TITLE_RENAME[option.title] || option.title) 
+            ? (LEGACY_TITLE_RENAME[rawTitle] || LEGACY_TITLE_RENAME[cleanedTitle] || cleanedTitle) 
             : (STANDARD_STYLE_NAMES[option] || option.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase()));
 
           const isSelected = String(value) === String(optionValue);

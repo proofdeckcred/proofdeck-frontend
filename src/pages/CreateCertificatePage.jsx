@@ -424,12 +424,15 @@ const CreateCertificatePage = () => {
         ]);
         
         // Filter out invitation and document templates
-        const filteredTemplates = templateResponse.data.templates.filter((t) => {
+        const filteredTemplates = (templateResponse.data.templates || []).filter((t) => {
+          if (!t) return false;
           if (t.layout_style === "document") return false;
-          if (t.layout_style === "visual" && t.layout_data) {
+          const tLower = (t.title || "").toLowerCase();
+          if (tLower.includes("statement of result") || tLower.includes("senate approved")) return false;
+          if (t.layout_data) {
             try {
               const data = typeof t.layout_data === "string" ? JSON.parse(t.layout_data) : t.layout_data;
-              return data.type !== "invitation";
+              if (data && (data.document_html || data.type === "invitation")) return false;
             } catch (e) {}
           }
           return true;

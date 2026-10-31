@@ -711,7 +711,7 @@ function TemplatesPage() {
 
 const LEGACY_TITLE_RENAME = {
   "University Degree & Graduation Certificate": "Classic",
-  "Academic Excellence & Senate Honours": "Modern",
+  "Academic Excellence & Senate Honours": "Academic Excellence",
   "Official Statement of Result / Attestation": "Minimalist Bold",
   "Executive Diploma & Post-Graduate Award": "Diploma Classic",
   "Gold Senate Distinction Award": "Award Gold",
@@ -732,7 +732,8 @@ const TemplateCard = ({
   onEditClick,
   onDeleteClick,
 }) => {
-  const displayTitle = LEGACY_TITLE_RENAME[template.title] || template.title;
+  const cleanTitle = (template.title || "").replace(/\s*\(Senate Approved\)/gi, "").replace(/Senate\s*/gi, "").trim();
+  const displayTitle = LEGACY_TITLE_RENAME[template.title] || LEGACY_TITLE_RENAME[cleanTitle] || cleanTitle;
   const [isCopied, setIsCopied] = useState(false);
 
   const handleCopyId = () => {

@@ -62,7 +62,7 @@ const OFFICIAL_PRESETS = [
       <div style="text-align: center; margin-bottom: 24px;">
         <h2 style="margin: 0; font-size: 22px; font-weight: 800; letter-spacing: 0.5px; color: #111827;">OFFICE OF THE ACADEMIC REGISTRAR</h2>
         <h3 style="margin: 4px 0 0 0; font-size: 15px; font-weight: 700; color: #374151;">EXAMINATIONS AND ACADEMIC RECORDS DIVISION</h3>
-        <p style="margin: 4px 0 0 0; font-size: 12px; color: #6B7280;">Senate House, University Main Campus</p>
+        <p style="margin: 4px 0 0 0; font-size: 12px; color: #6B7280;">Administrative Complex, University Main Campus</p>
       </div>
       <hr style="border: 0; border-top: 2px solid #111827; margin: 16px 0 24px 0;" />
       
@@ -83,7 +83,7 @@ const OFFICIAL_PRESETS = [
         having completed an approved course of study and passed the prescribed examinations, has on the recommendation of the Board of Studies of the Faculty of 
         <strong><span class="pd-chip" data-var="{{faculty}}">{{faculty}}</span></strong>, Department of 
         <strong><span class="pd-chip" data-var="{{department}}">{{department}}</span></strong>, been admitted on 
-        <strong><span class="pd-chip" data-var="{{senate_date}}">{{senate_date}}</span></strong> to the Degree of:
+        <strong><span class="pd-chip" data-var="{{approval_date}}">{{approval_date}}</span></strong> to the Degree of:
       </p>
 
       <div style="text-align: center; margin: 24px 0; padding: 16px; background-color: #F9FAFB; border: 1px solid #E5E7EB; border-radius: 8px;">
@@ -238,7 +238,7 @@ const MERGE_VARIABLES = [
     category: "Dates & Records",
     vars: [
       { key: "{{issue_date}}", label: "Date of Issuance", icon: CalendarBlank },
-      { key: "{{senate_date}}", label: "Senate Approval Date", icon: CalendarBlank },
+      { key: "{{approval_date}}", label: "Approval Date", icon: CalendarBlank },
       { key: "{{ref_number}}", label: "Official Ref Number", icon: Hash },
     ],
   },
@@ -262,8 +262,8 @@ const SAMPLE_RECORDS = [
     grade_or_honours: "First Class Honours",
     cgpa: "4.82 / 5.00",
     issue_date: "14th October 2026",
-    senate_date: "28th September 2026",
-    ref_number: "SEN/CIT/2026/0491",
+    approval_date: "28th September 2026",
+    ref_number: "ADM/CIT/2026/0491",
     signatory_name: "Prof. Kenneth O. Mensah",
     signatory_title: "Academic Registrar",
     institution_name: "Apex University",
@@ -278,8 +278,8 @@ const SAMPLE_RECORDS = [
     grade_or_honours: "Second Class Honours (Upper Division)",
     cgpa: "4.35 / 5.00",
     issue_date: "14th October 2026",
-    senate_date: "28th September 2026",
-    ref_number: "SEN/ENG/2026/1028",
+    approval_date: "28th September 2026",
+    ref_number: "ADM/ENG/2026/1028",
     signatory_name: "Prof. Kenneth O. Mensah",
     signatory_title: "Academic Registrar",
     institution_name: "Apex University",
@@ -290,23 +290,6 @@ const SAMPLE_RECORDS = [
 export default function DocumentEditorPage() {
   const navigate = useNavigate();
   const location = useLocation();
-
-  useEffect(() => {
-    if (!id) {
-      const searchParams = new URLSearchParams(location.search);
-      const presetId = searchParams.get("preset");
-      if (presetId) {
-        const found = OFFICIAL_PRESETS.find((p) => p.id === presetId);
-        if (found) {
-          setDocTitle(found.title);
-          setDocHtml(found.content);
-          if (editorRef.current) {
-            editorRef.current.innerHTML = found.content;
-          }
-        }
-      }
-    }
-  }, [id, location.search]);
   const { id } = useParams();
   const { user } = useUser();
 
@@ -333,6 +316,23 @@ export default function DocumentEditorPage() {
   const editorRef = useRef(null);
   const fileInputRef = useRef(null);
   const menuContainerRef = useRef(null);
+
+  useEffect(() => {
+    if (!id) {
+      const searchParams = new URLSearchParams(location.search);
+      const presetId = searchParams.get("preset");
+      if (presetId) {
+        const found = OFFICIAL_PRESETS.find((p) => p.id === presetId);
+        if (found) {
+          setDocTitle(found.title);
+          setDocHtml(found.content);
+          if (editorRef.current) {
+            editorRef.current.innerHTML = found.content;
+          }
+        }
+      }
+    }
+  }, [id, location.search]);
 
   // Close menus on outside click
   useEffect(() => {

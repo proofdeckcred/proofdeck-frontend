@@ -117,14 +117,37 @@ export const updateTemplate = (templateId, formData) =>
   });
 export const deleteTemplate = (templateId) =>
   API.delete(`/templates/${templateId}`);
-export const createCustomTemplate = (formData) =>
-  API.post("/templates/upload-custom", formData, {
+export const createCustomTemplate = (formData) => {
+  let body = formData;
+  if (!(formData instanceof FormData)) {
+    body = new FormData();
+    body.append("title", formData.title || "");
+    body.append("layout_style", formData.layout_style || "visual");
+    body.append(
+      "layout_data",
+      JSON.stringify(formData.canvas_data || formData.layout_data || {})
+    );
+  }
+  return API.post("/templates/upload-custom", body, {
     headers: { "Content-Type": "multipart/form-data" },
   });
-export const updateCustomTemplate = (templateId, formData) =>
-  API.put(`/templates/upload-custom/${templateId}`, formData, {
+};
+
+export const updateCustomTemplate = (templateId, formData) => {
+  let body = formData;
+  if (!(formData instanceof FormData)) {
+    body = new FormData();
+    if (formData.title) body.append("title", formData.title);
+    body.append("layout_style", formData.layout_style || "visual");
+    body.append(
+      "layout_data",
+      JSON.stringify(formData.canvas_data || formData.layout_data || {})
+    );
+  }
+  return API.put(`/templates/upload-custom/${templateId}`, body, {
     headers: { "Content-Type": "multipart/form-data" },
   });
+};
 
 // CERTIFICATES
 export const getCertificates = () => API.get("/certificates/");
