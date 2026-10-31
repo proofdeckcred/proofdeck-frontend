@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect, useCallback } from "react";
 import { useNavigate, useParams, Link, useLocation } from "react-router-dom";
 import mammoth from "mammoth";
 import { toast, Toaster } from "react-hot-toast";
+import { Modal } from "react-bootstrap";
 import {
   FileText,
   Star,
@@ -305,6 +306,7 @@ export default function DocumentEditorPage() {
   const [includeQrCode, setIncludeQrCode] = useState(true);
   const [qrPosition, setQrPosition] = useState("bottom-right");
   const [customVarName, setCustomVarName] = useState("");
+  const [presetToLoad, setPresetToLoad] = useState(null);
   const [varSearchQuery, setVarSearchQuery] = useState("");
 
   const [currentFont, setCurrentFont] = useState("Arial");
@@ -499,14 +501,7 @@ export default function DocumentEditorPage() {
   };
 
   const handleSelectPreset = (preset) => {
-    if (window.confirm(`Load "${preset.name}" preset? Any unsaved edits will be replaced.`)) {
-      setDocHtml(preset.content);
-      setDocTitle(preset.title);
-      if (editorRef.current) {
-        editorRef.current.innerHTML = preset.content;
-      }
-      setIsSaved(false);
-    }
+    setPresetToLoad(preset);
   };
 
   const renderMergedPreview = () => {
@@ -1295,6 +1290,50 @@ export default function DocumentEditorPage() {
           </div>
         </main>
       </div>
+
+      {/* Preset confirmation modal */}
+      {presetToLoad && (
+        <Modal
+          show={!!presetToLoad}
+          onHide={() => setPresetToLoad(null)}
+          centered
+          contentClassName="rounded-2xl border border-slate-200/90 shadow-2xl overflow-hidden font-sans"
+        >
+          <Modal.Body className="p-6">
+            <h3 className="text-sm sm:text-base font-black text-slate-900 mb-1">
+              Load Preset?
+            </h3>
+            <p className="text-xs text-slate-500 leading-relaxed">
+              Load <strong>"{presetToLoad.name}"</strong>? Any unsaved edits will be replaced.
+            </p>
+          </Modal.Body>
+          <Modal.Footer className="border-0 pt-0 bg-slate-50/70 px-6 py-4 flex items-center justify-end gap-2.5">
+            <button
+              type="button"
+              onClick={() => setPresetToLoad(null)}
+              className="px-4 py-2 text-xs font-bold text-slate-700 bg-white border border-slate-200 hover:bg-slate-100 rounded-xl transition-colors cursor-pointer"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setDocHtml(presetToLoad.content);
+                setDocTitle(presetToLoad.title);
+                if (editorRef.current) {
+                  editorRef.current.innerHTML = presetToLoad.content;
+                }
+                setIsSaved(false);
+                setPresetToLoad(null);
+                toast.success(`Loaded "${presetToLoad.name}"`);
+              }}
+              className="px-4 py-2 text-xs font-bold text-white bg-slate-900 hover:bg-black rounded-xl shadow-xs transition-colors cursor-pointer"
+            >
+              Load Preset
+            </button>
+          </Modal.Footer>
+        </Modal>
+      )}
     </div>
   );
 }

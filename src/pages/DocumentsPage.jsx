@@ -2,21 +2,21 @@
 
 import React, { useState, useEffect, useMemo } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { Modal } from "react-bootstrap";
 import {
   FileText,
   Plus,
-  Search,
-  Trash2,
+  MagnifyingGlass,
+  Trash,
   Copy,
-  Edit3,
-  Calendar,
-  Sparkles,
+  NotePencil,
+  Sparkle,
   ArrowRight,
   Clock,
-  Loader2,
-  ExternalLink,
-  ChevronRight,
-} from "lucide-react";
+  CircleNotch,
+  CaretRight,
+  X,
+} from "@phosphor-icons/react";
 import toast, { Toaster } from "react-hot-toast";
 import { getDocuments, deleteTemplate, createCustomTemplate, getTemplate } from "../api";
 import HelpGuide from "../components/HelpGuide";
@@ -32,7 +32,6 @@ const ClayGraphicNewDoc = () => (
     
     <svg viewBox="0 0 160 120" className="w-32 h-28 drop-shadow-[0_12px_16px_rgba(79,70,229,0.18)] transition-transform duration-300 group-hover:scale-105 group-hover:-translate-y-1">
       <defs>
-        {/* Soft Clay Shadow & Gradients */}
         <linearGradient id="clayPaperGrad1" x1="0%" y1="0%" x2="100%" y2="100%">
           <stop offset="0%" stopColor="#FFFFFF" />
           <stop offset="70%" stopColor="#F8FAFC" />
@@ -54,15 +53,14 @@ const ClayGraphicNewDoc = () => (
       {/* Background Soft Shadow */}
       <ellipse cx="80" cy="108" rx="46" ry="7" fill="#6366F1" opacity="0.12" />
 
-      {/* Stacked Under-Paper (Puffy 3D Clay Paper Underneath) */}
+      {/* Stacked Under-Paper */}
       <rect x="36" y="24" width="70" height="82" rx="12" fill="#E2E8F0" transform="rotate(-6 71 65)" />
 
       {/* Main Clay Paper */}
       <g>
-        {/* Main Base Card */}
         <rect x="42" y="14" width="68" height="86" rx="14" fill="url(#clayPaperGrad1)" stroke="#FFFFFF" strokeWidth="2.5" />
         
-        {/* Decorative Clay Placeholder Lines */}
+        {/* Placeholder Lines */}
         <rect x="52" y="32" width="40" height="5" rx="2.5" fill="#E2E8F0" />
         <rect x="52" y="42" width="48" height="4" rx="2" fill="#F1F5F9" />
         <rect x="52" y="50" width="38" height="4" rx="2" fill="#F1F5F9" />
@@ -74,14 +72,11 @@ const ClayGraphicNewDoc = () => (
         {/* Floating Tactile 3D Clay Plus Button */}
         <g filter="url(#clayPillShadow)" className="animate-[pulse_3s_ease-in-out_infinite]">
           <circle cx="86" cy="74" r="17" fill="url(#clayPuffPlus)" stroke="#A5B4FC" strokeWidth="2" />
-          {/* Inner Highlight for 3D Clay Reflection */}
           <ellipse cx="82" cy="67" rx="9" ry="5" fill="#FFFFFF" opacity="0.4" />
-          {/* Plus Sign */}
           <path d="M 86 66 L 86 82 M 78 74 L 94 74" stroke="#FFFFFF" strokeWidth="3.5" strokeLinecap="round" />
         </g>
       </g>
 
-      {/* Sparkle Star / Floating Particle */}
       <path d="M 124 38 Q 128 38 128 34 Q 128 38 132 38 Q 128 38 128 42 Q 128 38 124 38 Z" fill="#818CF8" />
       <circle cx="34" cy="46" r="3" fill="#A5B4FC" opacity="0.8" />
     </svg>
@@ -116,17 +111,16 @@ const ClayGraphicStatement = () => (
         </filter>
       </defs>
 
-      {/* Ambient Floor Shadow */}
       <ellipse cx="80" cy="108" rx="46" ry="7" fill="#1E3A8A" opacity="0.12" />
 
-      {/* Main Academic Parchment */}
+      {/* Main Parchment */}
       <rect x="42" y="14" width="76" height="88" rx="14" fill="url(#clayAcadGrad)" stroke="#FFFFFF" strokeWidth="2.5" />
 
-      {/* Top Academic Header Banner */}
+      {/* Top Banner */}
       <rect x="52" y="24" width="56" height="7" rx="3.5" fill="#1E3A8A" />
       <rect x="60" y="34" width="40" height="3.5" rx="1.7" fill="#64748B" />
 
-      {/* Result Table Rows in Clay Style */}
+      {/* Table Rows */}
       <rect x="50" y="44" width="60" height="18" rx="4" fill="#F1F5F9" stroke="#E2E8F0" strokeWidth="1" />
       <rect x="54" y="48" width="30" height="3" rx="1.5" fill="#94A3B8" />
       <rect x="92" y="48" width="14" height="3" rx="1.5" fill="#3B82F6" />
@@ -137,21 +131,16 @@ const ClayGraphicStatement = () => (
       <path d="M 52 74 Q 60 68 68 73 T 80 72" stroke="#475569" strokeWidth="1.5" fill="none" strokeLinecap="round" />
       <line x1="52" y1="76" x2="80" y2="76" stroke="#CBD5E1" strokeWidth="1" />
 
-      {/* 3D Gold Wax Seal with Ribbons */}
+      {/* 3D Gold Wax Seal */}
       <g filter="url(#claySealShadow)">
-        {/* Ribbon tails */}
         <path d="M 98 84 L 92 98 L 98 94 L 104 98 Z" fill="#DC2626" />
         <path d="M 103 84 L 100 98 L 106 94 L 112 98 Z" fill="#B91C1C" />
-
-        {/* Outer Wax Disc */}
         <circle cx="101" cy="78" r="14" fill="url(#clayGoldSeal)" stroke="#FEF08A" strokeWidth="1.8" />
-        {/* Inner Embossed Ring */}
         <circle cx="101" cy="78" r="9.5" fill="none" stroke="#FDE047" strokeWidth="1.2" opacity="0.8" />
-        {/* 3D Highlight Reflection */}
         <ellipse cx="98" cy="72" rx="7" ry="3.5" fill="#FFFFFF" opacity="0.45" />
       </g>
 
-      {/* Floating 3D Mortarboard Cap */}
+      {/* Floating 3D Cap */}
       <g transform="translate(18, 12)">
         <polygon points="18,12 30,7 42,12 30,17" fill="url(#clayBlueCap)" stroke="#93C5FD" strokeWidth="1" />
         <rect x="25" y="15" width="10" height="6" rx="2" fill="#1E40AF" />
@@ -184,38 +173,28 @@ const ClayGraphicProficiency = () => (
         </filter>
       </defs>
 
-      {/* Ambient Floor Shadow */}
       <ellipse cx="80" cy="108" rx="46" ry="7" fill="#065F46" opacity="0.12" />
 
-      {/* Main Certificate Sheet */}
       <rect x="42" y="14" width="76" height="88" rx="14" fill="url(#clayParchGrad)" stroke="#FFFFFF" strokeWidth="2.5" />
       <rect x="46" y="18" width="68" height="80" rx="10" fill="none" stroke="#A7F3D0" strokeWidth="1" strokeDasharray="3 2" />
 
-      {/* Emblem Top Header */}
       <rect x="54" y="26" width="52" height="6" rx="3" fill="#047857" />
       <rect x="62" y="36" width="36" height="3" rx="1.5" fill="#6EE7B7" />
 
-      {/* Proficiency Rows */}
       <rect x="52" y="46" width="40" height="3.5" rx="1.7" fill="#CBD5E1" />
       <rect x="52" y="53" width="46" height="3.5" rx="1.7" fill="#CBD5E1" />
       <rect x="52" y="60" width="34" height="3.5" rx="1.7" fill="#CBD5E1" />
 
-      {/* 3D Clay Emerald Rosette / Medal */}
+      {/* 3D Clay Emerald Rosette */}
       <g filter="url(#clayTealShadow)">
-        {/* Rosette Ribbon */}
         <path d="M 94 72 L 90 92 L 96 88 L 102 92 Z" fill="#059669" />
         <path d="M 101 72 L 98 92 L 104 88 L 110 92 Z" fill="#047857" />
-
-        {/* Rosette Body */}
         <circle cx="100" cy="68" r="15" fill="url(#clayEmeraldBadge)" stroke="#A7F3D0" strokeWidth="1.8" />
         <circle cx="100" cy="68" r="10.5" fill="#065F46" />
-        {/* Checkmark or A+ Text */}
         <path d="M 95 68 L 98 71 L 106 63" stroke="#FFFFFF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none" />
-        {/* 3D Gloss Highlight */}
         <ellipse cx="97" cy="62" rx="7" ry="3.5" fill="#FFFFFF" opacity="0.4" />
       </g>
 
-      {/* Floating Laurel / Leaf */}
       <path d="M 32 30 Q 30 40 36 46 Q 34 38 32 30 Z" fill="#10B981" opacity="0.8" />
       <circle cx="128" cy="46" r="3" fill="#34D399" opacity="0.7" />
     </svg>
@@ -245,27 +224,22 @@ const ClayGraphicAttestation = () => (
         </filter>
       </defs>
 
-      {/* Ambient Floor Shadow */}
       <ellipse cx="80" cy="108" rx="46" ry="7" fill="#4C1D95" opacity="0.12" />
 
-      {/* Main Attestation Parchment */}
       <rect x="42" y="14" width="76" height="88" rx="14" fill="url(#clayPillarsGrad)" stroke="#FFFFFF" strokeWidth="2.5" />
 
-      {/* Neoclassical Institutional Pillars Header */}
+      {/* Pillars Header */}
       <rect x="52" y="22" width="56" height="4" rx="2" fill="#6D28D9" />
-      {/* 3 Small Pillars */}
       <rect x="56" y="27" width="5" height="11" rx="2" fill="#8B5CF6" />
       <rect x="67" y="27" width="5" height="11" rx="2" fill="#8B5CF6" />
       <rect x="78" y="27" width="5" height="11" rx="2" fill="#8B5CF6" />
       <rect x="89" y="27" width="5" height="11" rx="2" fill="#8B5CF6" />
       <rect x="52" y="39" width="56" height="3" rx="1.5" fill="#6D28D9" />
 
-      {/* Attestation Text Blocks */}
       <rect x="52" y="47" width="52" height="3.5" rx="1.7" fill="#C4B5FD" />
       <rect x="52" y="54" width="46" height="3.5" rx="1.7" fill="#E2E8F0" />
       <rect x="52" y="61" width="40" height="3.5" rx="1.7" fill="#E2E8F0" />
 
-      {/* Formal Signature Area */}
       <path d="M 52 74 Q 58 70 66 73 T 78 72" stroke="#6D28D9" strokeWidth="1.5" fill="none" strokeLinecap="round" />
       <line x1="52" y1="77" x2="78" y2="77" stroke="#DDD6FE" strokeWidth="1" />
 
@@ -273,9 +247,7 @@ const ClayGraphicAttestation = () => (
       <g filter="url(#clayPurpleShadow)">
         <circle cx="100" cy="74" r="14" fill="url(#clayPurpleSeal)" stroke="#DDD6FE" strokeWidth="1.8" />
         <circle cx="100" cy="74" r="9.5" fill="none" stroke="#C4B5FD" strokeWidth="1" strokeDasharray="2 1.5" />
-        {/* Shield Icon in Stamp */}
         <path d="M 97 70 L 103 70 L 103 74 Q 103 78 100 80 Q 97 78 97 74 Z" fill="#EDE9FE" />
-        {/* Specular 3D Highlight */}
         <ellipse cx="97" cy="68" rx="7" ry="3.5" fill="#FFFFFF" opacity="0.4" />
       </g>
 
@@ -284,7 +256,7 @@ const ClayGraphicAttestation = () => (
   </div>
 );
 
-// --- PRESET DEFINITIONS WITH 3D CLAY COMPONENTS ---
+// --- PRESET DEFINITIONS ---
 const DOCUMENT_PRESETS = [
   {
     id: "blank",
@@ -329,6 +301,10 @@ const DocumentsPage = () => {
   const [deletingId, setDeletingId] = useState(null);
   const [duplicatingId, setDuplicatingId] = useState(null);
 
+  // Proper Delete Modal State (No window.confirm)
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [docToDelete, setDocToDelete] = useState(null);
+
   const fetchDocs = async () => {
     setLoading(true);
     try {
@@ -353,13 +329,20 @@ const DocumentsPage = () => {
     fetchDocs();
   }, []);
 
-  const handleDelete = async (docId, title) => {
-    if (!window.confirm(`Delete "${title}"? This cannot be undone.`)) return;
-    setDeletingId(docId);
+  const handleDeleteClick = (doc) => {
+    setDocToDelete(doc);
+    setShowDeleteModal(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!docToDelete) return;
+    setDeletingId(docToDelete.id);
     try {
-      await deleteTemplate(docId);
-      setDocuments((prev) => prev.filter((d) => d.id !== docId));
+      await deleteTemplate(docToDelete.id);
+      setDocuments((prev) => prev.filter((d) => d.id !== docToDelete.id));
       toast.success("Document deleted");
+      setShowDeleteModal(false);
+      setDocToDelete(null);
     } catch (err) {
       toast.error(err.response?.data?.msg || "Failed to delete document");
     } finally {
@@ -372,8 +355,13 @@ const DocumentsPage = () => {
     try {
       const full = await getTemplate(doc.id);
       const docData = full.data?.template;
+      const cleanTitle = (doc.title || "Document")
+        .replace(/\s*\(Senate Approved\)/gi, "")
+        .replace(/Senate\s*/gi, "")
+        .trim();
+
       const payload = {
-        title: `Copy of ${doc.title || "Document"}`,
+        title: `Copy of ${cleanTitle}`,
         layout_style: "document",
         canvas_data: docData?.canvas_data || docData?.layout_data || {},
       };
@@ -432,7 +420,7 @@ const DocumentsPage = () => {
               to="/dashboard/documents/editor"
               className="px-4 py-2.5 bg-gradient-to-r from-slate-900 to-indigo-950 hover:from-black hover:to-indigo-900 text-white text-xs font-bold rounded-xl shadow-sm hover:shadow-md flex items-center gap-2 transition-all cursor-pointer transform hover:-translate-y-0.5 active:translate-y-0"
             >
-              <Plus size={15} strokeWidth={2.5} />
+              <Plus size={16} weight="bold" />
               <span>New document</span>
             </Link>
           </div>
@@ -445,7 +433,7 @@ const DocumentsPage = () => {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <div className="w-6 h-6 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center">
-                <Sparkles size={14} />
+                <Sparkle size={15} weight="fill" />
               </div>
               <h2 className="text-xs font-bold text-slate-900 uppercase tracking-wider">
                 Start from a preset
@@ -468,7 +456,7 @@ const DocumentsPage = () => {
                 <Link
                   key={p.id}
                   to={targetUrl}
-                  className="group rounded-2xl border border-slate-200/90 bg-white hover:border-indigo-400/80 hover:shadow-lg transition-all duration-300 flex flex-col justify-between overflow-hidden cursor-pointer"
+                  className="group rounded-2xl border border-slate-200/90 bg-white hover:border-indigo-400/80 hover:shadow-lg transition-all duration-300 flex flex-col justify-between overflow-hidden cursor-pointer no-underline"
                 >
                   {/* Claymorphic 3D Animated Illustration */}
                   <ClayVisual />
@@ -480,8 +468,9 @@ const DocumentsPage = () => {
                         <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full border ${p.badgeColor}`}>
                           {p.badge}
                         </span>
-                        <ChevronRight
+                        <CaretRight
                           size={15}
+                          weight="bold"
                           className="text-slate-400 group-hover:text-indigo-600 group-hover:translate-x-1 transition-all"
                         />
                       </div>
@@ -495,7 +484,7 @@ const DocumentsPage = () => {
 
                     <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-xs font-semibold text-indigo-600 group-hover:text-indigo-700">
                       <span>Use preset</span>
-                      <ArrowRight size={13} className="group-hover:translate-x-0.5 transition-transform" />
+                      <ArrowRight size={14} weight="bold" className="group-hover:translate-x-0.5 transition-transform" />
                     </div>
                   </div>
                 </Link>
@@ -508,8 +497,9 @@ const DocumentsPage = () => {
         <div className="bg-white rounded-xl border border-slate-200 p-3 sm:p-4 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           {/* Search Box */}
           <div className="relative flex-1 max-w-md">
-            <Search
-              size={14}
+            <MagnifyingGlass
+              size={15}
+              weight="bold"
               className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"
             />
             <input
@@ -593,9 +583,9 @@ const DocumentsPage = () => {
               <div className="pt-2">
                 <Link
                   to="/dashboard/documents/editor"
-                  className="inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-slate-900 to-indigo-950 hover:from-black hover:to-indigo-900 text-white text-xs font-bold rounded-xl shadow-xs transition-all cursor-pointer transform hover:-translate-y-0.5 active:translate-y-0"
+                  className="inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-slate-900 to-indigo-950 hover:from-black hover:to-indigo-900 text-white text-xs font-bold rounded-xl shadow-xs transition-all cursor-pointer transform hover:-translate-y-0.5 active:translate-y-0 no-underline"
                 >
-                  <Plus size={15} strokeWidth={2.5} />
+                  <Plus size={16} weight="bold" />
                   <span>Create your first document</span>
                 </Link>
               </div>
@@ -628,7 +618,7 @@ const DocumentsPage = () => {
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex items-center gap-3 min-w-0">
                         <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-50 to-blue-100 border border-indigo-200 flex items-center justify-center text-indigo-700 shrink-0 shadow-2xs">
-                          <FileText size={20} />
+                          <FileText size={22} weight="duotone" />
                         </div>
                         <div className="min-w-0">
                           <h3
@@ -638,7 +628,7 @@ const DocumentsPage = () => {
                             {cleanTitle}
                           </h3>
                           <div className="flex items-center gap-1.5 text-[11px] text-slate-400 mt-0.5">
-                            <Clock size={12} />
+                            <Clock size={13} />
                             <span>{formattedDate}</span>
                           </div>
                         </div>
@@ -649,7 +639,7 @@ const DocumentsPage = () => {
                       </span>
                     </div>
 
-                    {/* Preview Document Box */}
+                    {/* Preview Box */}
                     <div className="h-24 bg-gradient-to-b from-slate-50 to-white rounded-xl border border-slate-100 p-3 flex flex-col justify-between text-[11px] text-slate-500 overflow-hidden relative">
                       <div className="space-y-1.5 opacity-60">
                         <div className="h-2 bg-slate-300 rounded w-3/4" />
@@ -667,9 +657,9 @@ const DocumentsPage = () => {
                   <div className="p-3 bg-slate-50/70 flex items-center justify-between gap-2">
                     <Link
                       to={`/dashboard/documents/editor/${doc.id}`}
-                      className="flex-1 py-1.5 px-3 bg-white hover:bg-slate-100 text-slate-800 text-xs font-bold rounded-lg border border-slate-200 shadow-2xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                      className="flex-1 py-1.5 px-3 bg-white hover:bg-slate-100 text-slate-800 text-xs font-bold rounded-lg border border-slate-200 shadow-2xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer no-underline"
                     >
-                      <Edit3 size={13} />
+                      <NotePencil size={15} weight="bold" />
                       <span>Edit</span>
                     </Link>
 
@@ -677,27 +667,27 @@ const DocumentsPage = () => {
                       type="button"
                       onClick={() => handleDuplicate(doc)}
                       disabled={duplicatingId === doc.id}
-                      className="p-1.5 bg-white hover:bg-slate-100 text-slate-600 hover:text-slate-900 rounded-lg border border-slate-200 shadow-2xs transition-colors cursor-pointer disabled:opacity-50"
+                      className="p-2 bg-white hover:bg-slate-100 text-slate-600 hover:text-slate-900 rounded-lg border border-slate-200 shadow-2xs transition-colors cursor-pointer disabled:opacity-50"
                       title="Duplicate"
                     >
                       {duplicatingId === doc.id ? (
-                        <Loader2 size={14} className="animate-spin text-slate-400" />
+                        <CircleNotch size={15} className="animate-spin text-slate-400" />
                       ) : (
-                        <Copy size={14} />
+                        <Copy size={15} weight="bold" />
                       )}
                     </button>
 
                     <button
                       type="button"
-                      onClick={() => handleDelete(doc.id, cleanTitle)}
+                      onClick={() => handleDeleteClick(doc)}
                       disabled={deletingId === doc.id}
-                      className="p-1.5 bg-white hover:bg-red-50 text-slate-400 hover:text-red-600 rounded-lg border border-slate-200 shadow-2xs transition-colors cursor-pointer disabled:opacity-50"
+                      className="p-2 bg-white hover:bg-red-50 text-slate-400 hover:text-red-600 rounded-lg border border-slate-200 shadow-2xs transition-colors cursor-pointer disabled:opacity-50"
                       title="Delete"
                     >
                       {deletingId === doc.id ? (
-                        <Loader2 size={14} className="animate-spin text-red-500" />
+                        <CircleNotch size={15} className="animate-spin text-red-500" />
                       ) : (
-                        <Trash2 size={14} />
+                        <Trash size={15} weight="bold" />
                       )}
                     </button>
                   </div>
@@ -707,6 +697,66 @@ const DocumentsPage = () => {
           </div>
         )}
       </div>
+
+      {/* --- PROPER DELETE CONFIRMATION MODAL (No window.confirm) --- */}
+      <Modal
+        show={showDeleteModal}
+        onHide={() => {
+          if (!deletingId) {
+            setShowDeleteModal(false);
+            setDocToDelete(null);
+          }
+        }}
+        centered
+        contentClassName="rounded-2xl border border-slate-200/90 shadow-2xl overflow-hidden font-sans"
+      >
+        <Modal.Body className="p-6">
+          <div className="flex items-start gap-4">
+            <div className="w-12 h-12 bg-red-50 text-red-600 rounded-2xl flex items-center justify-center shrink-0 border border-red-100 shadow-2xs">
+              <Trash size={24} weight="bold" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <h3 className="text-sm sm:text-base font-black text-slate-900 mb-1">
+                Delete Document?
+              </h3>
+              <p className="text-xs text-slate-500 leading-relaxed">
+                Are you sure you want to delete{" "}
+                <strong className="text-slate-800 break-words">
+                  "{docToDelete?.title?.replace(/\s*\(Senate Approved\)/gi, "").replace(/Senate\s*/gi, "").trim() || "Untitled document"}"
+                </strong>? This action cannot be undone.
+              </p>
+            </div>
+          </div>
+        </Modal.Body>
+        <Modal.Footer className="border-0 pt-0 bg-slate-50/70 px-6 py-4 flex items-center justify-end gap-2.5">
+          <button
+            type="button"
+            disabled={!!deletingId}
+            onClick={() => {
+              setShowDeleteModal(false);
+              setDocToDelete(null);
+            }}
+            className="px-4 py-2 text-xs font-bold text-slate-700 bg-white border border-slate-200 hover:bg-slate-100 rounded-xl transition-colors cursor-pointer disabled:opacity-50"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            disabled={!!deletingId}
+            onClick={handleConfirmDelete}
+            className="px-4 py-2 text-xs font-bold text-white bg-red-600 hover:bg-red-700 rounded-xl shadow-xs transition-colors flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+          >
+            {deletingId ? (
+              <>
+                <CircleNotch size={14} className="animate-spin" />
+                <span>Deleting...</span>
+              </>
+            ) : (
+              <span>Delete</span>
+            )}
+          </button>
+        </Modal.Footer>
+      </Modal>
     </div>
   );
 };
