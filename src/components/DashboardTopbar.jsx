@@ -61,15 +61,11 @@ export default function DashboardTopbar({ isCollapsed, toggleSidebar, toggleMobi
           <button
             type="button"
             onClick={() => setShowDesktopModal(true)}
-            className="flex items-center gap-2 px-3 py-1 rounded-full bg-slate-900 hover:bg-black text-white text-xs font-bold shadow-2xs transition-all cursor-pointer border border-slate-700"
-            title="Open Enterprise Desktop Control Center (Database Connector, Local Export Folder, Annual License)"
+            className="flex items-center gap-2 px-2.5 py-1 rounded-lg bg-slate-50 hover:bg-slate-100 text-slate-700 text-xs font-semibold transition-colors cursor-pointer border border-slate-200"
+            title="Workstation Settings"
           >
-            <HardDrive size={13} className="text-indigo-400" />
-            <span>{desktopConfig?.institution_name || "Enterprise Desktop Edition"}</span>
-            <span className="inline-flex items-center gap-1 px-1.5 py-0.2 rounded-full bg-emerald-500/20 text-emerald-300 text-[10px] font-semibold border border-emerald-400/30">
-              <ShieldCheck size={10} />
-              Local Vault
-            </span>
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+            <span className="max-w-[200px] truncate">{desktopConfig?.institution_name || "Enterprise Workstation"}</span>
           </button>
         )}
       </div>
@@ -83,10 +79,9 @@ export default function DashboardTopbar({ isCollapsed, toggleSidebar, toggleMobi
           <button
             type="button"
             onClick={() => setShowDesktopModal(true)}
-            className="md:hidden px-2.5 py-1 rounded-full bg-slate-900 text-white text-[11px] font-bold flex items-center gap-1"
+            className="md:hidden px-2 py-1 rounded-lg bg-slate-100 text-slate-700 text-[11px] font-semibold border border-slate-200"
           >
-            <HardDrive size={12} className="text-indigo-400" />
-            <span>Desktop Vault</span>
+            Settings
           </button>
         )}
         <OverlayTrigger

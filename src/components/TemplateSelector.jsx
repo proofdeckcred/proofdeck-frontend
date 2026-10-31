@@ -34,16 +34,59 @@ const TemplateSelector = ({ value, onChange, options = [], collapsible = true })
         {options.map((option) => {
           const isObject = typeof option === 'object';
           const optionValue = isObject ? option.id : option;
-          const optionLabel = isObject ? option.title : option.replace(/_/g, " ");
+          
+          const STANDARD_STYLE_NAMES = {
+            classic: "Classic",
+            modern: "Modern",
+            modern_landscape: "Modern Landscape",
+            elegant_serif: "Elegant Serif",
+            minimalist_bold: "Minimalist Bold",
+            minimal: "Minimalist Bold",
+            corporate_blue: "Corporate Blue",
+            tech_dark: "Tech Dark",
+            creative_art: "Creative Art",
+            badge_cert: "Badge Certificate",
+            award_gold: "Award Gold",
+            diploma_classic: "Diploma Classic",
+            achievement_star: "Achievement Star",
+            receipt: "Receipt",
+            invitation: "Invitation",
+          };
+
+          const LEGACY_TITLE_RENAME = {
+            "University Degree & Graduation Certificate": "Classic",
+            "Academic Excellence & Senate Honours": "Modern",
+            "Official Statement of Result / Attestation": "Minimalist Bold",
+            "Executive Diploma & Post-Graduate Award": "Diploma Classic",
+            "Gold Senate Distinction Award": "Award Gold",
+            "Modern Academic Credential": "Modern Landscape",
+            "Corporate Academic Fellowship": "Corporate Blue",
+            "Elegant Serif Degree Certification": "Elegant Serif",
+            "Faculty of Technology Dark Credential": "Tech Dark",
+            "Department of Arts & Creative Design": "Creative Art",
+            "Academic Badge & Verified Accreditation": "Badge Certificate",
+            "Star of Achievement & Senate Valedictorian": "Achievement Star",
+            "Senate Commendation Star": "Achievement Star",
+            "Official Student Tuition & Academic Fee Receipt": "Receipt",
+          };
+
+          let optionLabel = isObject 
+            ? (LEGACY_TITLE_RENAME[option.title] || option.title) 
+            : (STANDARD_STYLE_NAMES[option] || option.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase()));
+
           const isSelected = String(value) === String(optionValue);
           
           // Create a prepared template object for the renderer
           let mockTemplate;
           if (isObject) {
-             mockTemplate = option;
+             mockTemplate = {
+               ...option,
+               title: optionLabel,
+               layout_style: option.layout_style === 'minimal' ? 'minimalist_bold' : option.layout_style
+             };
           } else {
              mockTemplate = {
-                layout_style: option,
+                layout_style: option === 'minimal' ? 'minimalist_bold' : option,
                 title: optionLabel,
                 primary_color: "#4F46E5",
                 secondary_color: "#E2E8F0",

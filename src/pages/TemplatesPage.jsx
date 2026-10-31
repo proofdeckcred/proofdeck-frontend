@@ -695,12 +695,30 @@ function TemplatesPage() {
   );
 }
 
+const LEGACY_TITLE_RENAME = {
+  "University Degree & Graduation Certificate": "Classic",
+  "Academic Excellence & Senate Honours": "Modern",
+  "Official Statement of Result / Attestation": "Minimalist Bold",
+  "Executive Diploma & Post-Graduate Award": "Diploma Classic",
+  "Gold Senate Distinction Award": "Award Gold",
+  "Modern Academic Credential": "Modern Landscape",
+  "Corporate Academic Fellowship": "Corporate Blue",
+  "Elegant Serif Degree Certification": "Elegant Serif",
+  "Faculty of Technology Dark Credential": "Tech Dark",
+  "Department of Arts & Creative Design": "Creative Art",
+  "Academic Badge & Verified Accreditation": "Badge Certificate",
+  "Star of Achievement & Senate Valedictorian": "Achievement Star",
+  "Senate Commendation Star": "Achievement Star",
+  "Official Student Tuition & Academic Fee Receipt": "Receipt",
+};
+
 const TemplateCard = ({
   template,
   isPro,
   onEditClick,
   onDeleteClick,
 }) => {
+  const displayTitle = LEGACY_TITLE_RENAME[template.title] || template.title;
   const [isCopied, setIsCopied] = useState(false);
 
   const handleCopyId = () => {
@@ -753,8 +771,8 @@ const TemplateCard = ({
       {/* Card Content */}
       <div className="p-3 flex flex-col flex-grow">
         <div className="flex justify-between items-start mb-1.5">
-          <h4 className="font-bold text-slate-800 text-xs truncate pr-2" title={template.title}>
-            {template.title}
+          <h4 className="font-bold text-slate-800 text-xs truncate pr-2" title={displayTitle}>
+            {displayTitle}
           </h4>
           {template.is_public && (
             <span className="text-[9px] items-center bg-blue-50 text-blue-600 px-1 py-0.5 rounded border border-blue-100 hidden sm:flex shrink-0 font-medium">
