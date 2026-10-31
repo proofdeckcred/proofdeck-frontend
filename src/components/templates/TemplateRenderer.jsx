@@ -207,9 +207,10 @@ const TemplateRenderer = ({ template, formData = {}, isFullscreen = false }) => 
 
     // --- VISUAL LAYOUT (CANVA-LIKE) ---
     if (template.layout_style === "visual") {
+         const ld = template.layout_data || combinedData.layout_data;
          return (
-             <div className="shadow-lg rounded-lg overflow-hidden h-full bg-white">
-                 <KonvaPreview layoutData={template.layout_data} dynamicData={combinedData} />
+             <div className="shadow-lg rounded-lg overflow-hidden w-full bg-white">
+                 <KonvaPreview layoutData={ld} dynamicData={combinedData} />
              </div>
          );
     }

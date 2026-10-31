@@ -81,15 +81,19 @@ const KonvaPreview = ({ layoutData, dynamicData }) => {
   useEffect(() => {
     const updateDimensions = () => {
       if (containerRef.current) {
-        const width = containerRef.current.offsetWidth;
+        const width = containerRef.current.offsetWidth || containerRef.current.clientWidth || 800;
         const height = width / aspectRatio;
         setDimensions({ width, height });
       }
     };
     updateDimensions();
+    const timer = setTimeout(updateDimensions, 100);
     window.addEventListener("resize", updateDimensions);
-    return () => window.removeEventListener("resize", updateDimensions);
-  }, [aspectRatio]);
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener("resize", updateDimensions);
+    };
+  }, [aspectRatio, baseWidth, baseHeight]);
 
   if (!data) {
     return (

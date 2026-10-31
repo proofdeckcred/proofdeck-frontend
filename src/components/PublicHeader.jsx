@@ -68,6 +68,12 @@ const PublicHeader = () => {
               >
                 Developers
               </Link>
+              <a
+                href="/#desktop-download"
+                className="text-[13px] font-medium text-[var(--pd-mute)] hover:text-[var(--pd-ink)] transition-colors no-underline"
+              >
+                Desktop App
+              </a>
 
               <div className="h-4 w-px bg-gray-200 mx-1"></div>
 
