@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { PanelLeft, Menu, Sun, Moon, HardDrive, ShieldCheck } from 'lucide-react';
+import { SidebarSimple, List, Sun, Moon, HardDrives, ShieldCheck } from '@phosphor-icons/react';
 import { OverlayTrigger, Tooltip } from 'react-bootstrap';
 import NotificationBell from './NotificationBell';
 import ProfileDropdown from './ProfileDropdown';
@@ -27,7 +27,7 @@ export default function DashboardTopbar({ isCollapsed, toggleSidebar, toggleMobi
             className="p-1.5 -ml-1 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer flex items-center justify-center focus:outline-none"
             aria-label="Open mobile navigation"
           >
-            <Menu size={20} />
+            <List size={20} />
           </button>
         )}
         <Link to="/dashboard" className="flex items-center gap-2 no-underline">
@@ -53,7 +53,7 @@ export default function DashboardTopbar({ isCollapsed, toggleSidebar, toggleMobi
             className="p-1.5 text-slate-500 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer flex items-center justify-center border border-transparent hover:border-slate-200 focus:outline-none"
             aria-label={isCollapsed ? "Open sidebar" : "Close sidebar"}
           >
-            <PanelLeft size={18} className="text-slate-600 hover:text-slate-900 transition-colors" />
+            <SidebarSimple size={18} />
           </button>
         </OverlayTrigger>
 

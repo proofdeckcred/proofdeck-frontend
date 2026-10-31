@@ -4,16 +4,16 @@ import {
   ShieldCheck,
   Database,
   FolderOpen,
-  KeyRound,
-  Building2,
+  Key,
+  Buildings,
   QrCode,
-  CheckCircle2,
-  ExternalLink,
-  HardDrive,
-  RefreshCw,
-  Save,
+  CheckCircle,
+  ArrowSquareOut,
+  HardDrives,
+  ArrowClockwise,
+  FloppyDisk,
   X,
-} from "lucide-react";
+} from "@phosphor-icons/react";
 import toast from "react-hot-toast";
 import {
   saveDesktopSettings,
@@ -423,7 +423,7 @@ export default function DesktopEnterpriseModal({ show, onHide }) {
                   disabled={testingDb}
                   className="px-3.5 py-1.5 rounded-lg bg-slate-900 hover:bg-black text-white text-xs font-semibold flex items-center gap-1.5 cursor-pointer"
                 >
-                  <RefreshCw size={13} className={testingDb ? "animate-spin" : ""} />
+                  <ArrowClockwise size={13} className={testingDb ? "animate-spin" : ""} />
                   <span>{testingDb ? "Testing Connection..." : "Test Database Connection"}</span>
                 </button>
               </div>
@@ -439,7 +439,7 @@ export default function DesktopEnterpriseModal({ show, onHide }) {
                   {dbTestResult.success ? (
                     <div>
                       <div className="font-bold flex items-center gap-1.5 mb-1 text-slate-900">
-                        <CheckCircle2 size={14} className="text-emerald-600" />
+                        <CheckCircle size={14} className="text-emerald-600" />
                         <span>Connection Verified! Sample records preview:</span>
                       </div>
                       <div className="space-y-1 font-mono text-[11px] bg-white p-2 rounded border border-slate-200">
@@ -494,7 +494,7 @@ export default function DesktopEnterpriseModal({ show, onHide }) {
                   onClick={handleOpenExplorer}
                   className="px-3.5 py-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-semibold flex items-center gap-1.5 cursor-pointer"
                 >
-                  <ExternalLink size={13} />
+                  <ArrowSquareOut size={13} />
                   <span>Open Export Folder in Windows File Explorer</span>
                 </button>
               </div>
@@ -519,7 +519,7 @@ export default function DesktopEnterpriseModal({ show, onHide }) {
               disabled={saving}
               className="px-4 py-1.5 rounded-lg bg-slate-900 hover:bg-black text-white text-xs font-bold flex items-center gap-1.5 cursor-pointer"
             >
-              <Save size={13} />
+              <FloppyDisk size={13} />
               <span>{saving ? "Saving..." : "Save Desktop Settings"}</span>
             </button>
           </div>

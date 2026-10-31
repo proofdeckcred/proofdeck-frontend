@@ -4,21 +4,21 @@ import React, { useState } from "react";
 import { Link, NavLink, useNavigate } from "react-router-dom";
 import { useUser } from "../context/UserContext";
 import {
-  LayoutDashboard,
+  SquaresFour,
   FolderOpen,
-  FileBadge,
+  Certificate,
   FileText,
   PlusCircle,
-  UploadCloud,
-  BarChart2,
-  Settings,
-  HelpCircle,
+  CloudArrowUp,
+  ChartBar,
+  Gear,
+  Question,
   Crown,
-  ChevronLeft,
-  ChevronRight,
-  Mail,
+  CaretLeft,
+  CaretRight,
+  EnvelopeSimple,
   X,
-} from "lucide-react";
+} from "@phosphor-icons/react";
 import { OverlayTrigger, Tooltip } from "react-bootstrap";
 import WorkspaceSwitcher from "./WorkspaceSwitcher";
 
@@ -135,10 +135,10 @@ function Sidebar({ isCollapsed: propIsCollapsed, toggleSidebar: propToggleSideba
 
       {/* --- NAVIGATION LINKS --- */}
       <div className={`flex-1 py-4 space-y-1 ${isCollapsed ? "px-1" : "px-3"}`}>
-        {renderNavLink("/dashboard", <LayoutDashboard />, "Overview", true)}
-        {renderNavLink("/dashboard/groups", <FolderOpen />, "Groups")}
-        {renderNavLink("/dashboard/templates", <FileBadge />, "Templates")}
-        {renderNavLink("/dashboard/documents", <FileText />, "Documents")}
+        {renderNavLink("/dashboard", <SquaresFour size={18} />, "Overview", true)}
+        {renderNavLink("/dashboard/groups", <FolderOpen size={18} />, "Groups")}
+        {renderNavLink("/dashboard/templates", <Certificate size={18} />, "Templates")}
+        {renderNavLink("/dashboard/documents", <FileText size={18} />, "Documents")}
 
         {!isCollapsed ? (
           <div className="pt-3 pb-1">
@@ -150,7 +150,7 @@ function Sidebar({ isCollapsed: propIsCollapsed, toggleSidebar: propToggleSideba
           <div className="border-t border-gray-100 my-3 mx-2" />
         )}
 
-        {renderNavLink("/dashboard/create", <PlusCircle />, "Issue credential")}
+        {renderNavLink("/dashboard/create", <PlusCircle size={18} />, "Issue credential")}
         {/* Commented out for now - will be updated later:
         {renderNavLink("/dashboard/send-invitation", <Mail />, "Send Invitations")}
         */}
@@ -167,7 +167,7 @@ function Sidebar({ isCollapsed: propIsCollapsed, toggleSidebar: propToggleSideba
                   isCollapsed ? "justify-center px-0 w-9 h-9 mx-auto" : "px-3"
                 }`}
               >
-                <BarChart2 size={18} />
+                <ChartBar size={18} />
                 {!isCollapsed && (
                   <>
                     <span className="text-xs">Analytics</span>
@@ -179,15 +179,15 @@ function Sidebar({ isCollapsed: propIsCollapsed, toggleSidebar: propToggleSideba
               </div>
             </OverlayTrigger>
           ) : (
-            renderNavLink("/dashboard/analytics", <BarChart2 />, "Analytics")
+            renderNavLink("/dashboard/analytics", <ChartBar size={18} />, "Analytics")
           ))}
       </div>
 
       {/* --- FOOTER SECTION --- */}
       <div className={`border-t border-gray-100 dark:border-[#28282d] bg-gray-50/40 dark:bg-[#141417] ${isCollapsed ? "p-1" : "p-3"}`}>
         <div className="space-y-0.5">
-          {renderNavLink("/dashboard/settings", <Settings />, "Settings")}
-          {renderNavLink("/dashboard/support", <HelpCircle />, "Support")}
+          {renderNavLink("/dashboard/settings", <Gear size={18} />, "Settings")}
+          {renderNavLink("/dashboard/support", <Question size={18} />, "Support")}
         </div>
 
         {/* User Mini Profile */}

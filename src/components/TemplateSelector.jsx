@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Check, LayoutTemplate, Award, ChevronDown, ChevronUp } from "lucide-react";
+import { Check, SquaresFour, Crown, CaretDown, CaretUp } from "@phosphor-icons/react";
 import TemplateRenderer from "./templates/TemplateRenderer";
 
 /**
@@ -21,11 +21,11 @@ const TemplateSelector = ({ value, onChange, options = [], collapsible = true })
         className={`w-full flex items-center justify-between text-gray-700 font-semibold text-sm transition-colors ${collapsible ? 'hover:text-indigo-600 cursor-pointer' : ''}`}
       >
         <span className="flex items-center gap-2">
-            <LayoutTemplate size={16} />
+            <SquaresFour size={16} />
             Choose {options.length > 0 && typeof options[0] === 'object' ? 'Template' : 'Layout'}
         </span>
         {collapsible && (
-            isOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />
+            isOpen ? <CaretUp size={16} /> : <CaretDown size={16} />
         )}
       </button>
       
@@ -154,7 +154,7 @@ const TemplateSelector = ({ value, onChange, options = [], collapsible = true })
               {/* Premium Badge */}
               {isObject && option.is_premium && (
                  <div className="absolute top-2.5 left-2.5 z-10 bg-amber-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded shadow-sm flex items-center gap-1 uppercase tracking-wider">
-                    <Award size={10} /> PRO
+                    <Crown size={10} weight="fill" /> PRO
                  </div>
               )}
 

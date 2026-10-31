@@ -1,17 +1,17 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import {
-  KeyRound,
+  Key,
   ShieldCheck,
-  Building2,
-  Lock,
+  Buildings,
+  LockKey,
   ArrowRight,
-  CheckCircle2,
-  Sparkles,
-  WifiOff,
-  FolderLock,
-  Loader2
-} from "lucide-react";
+  CheckCircle,
+  Sparkle,
+  WifiSlash,
+  FolderSimple,
+  CircleNotch,
+} from "@phosphor-icons/react";
 import toast, { Toaster } from "react-hot-toast";
 
 function DesktopActivationModal({ isOpen, onActivated, currentConfig }) {
@@ -102,7 +102,7 @@ function DesktopActivationModal({ isOpen, onActivated, currentConfig }) {
         {/* Header Icon + Brand */}
         <div className="flex items-center gap-3.5 mb-6">
           <div className="w-11 h-11 rounded-xl bg-slate-900 flex items-center justify-center text-white shrink-0">
-            <KeyRound size={20} />
+            <Key size={20} />
           </div>
           <div>
             <div className="flex items-center gap-2">
@@ -132,12 +132,12 @@ function DesktopActivationModal({ isOpen, onActivated, currentConfig }) {
               <span>Enterprise License Key <span className="text-red-500">*</span></span>
               {isVerifyingKey && (
                 <span className="text-[10px] text-slate-500 font-semibold flex items-center gap-1">
-                  <Loader2 size={11} className="animate-spin" /> Verifying key...
+                  <CircleNotch size={11} className="animate-spin" /> Verifying key...
                 </span>
               )}
               {keyVerified && (
                 <span className="text-[10px] text-emerald-600 font-bold flex items-center gap-1">
-                  <CheckCircle2 size={12} /> Key Verified
+                  <CheckCircle size={12} /> Key Verified
                 </span>
               )}
             </label>
@@ -200,10 +200,10 @@ function DesktopActivationModal({ isOpen, onActivated, currentConfig }) {
         {/* Footer Badges */}
         <div className="mt-6 pt-4 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400">
           <span className="flex items-center gap-1.5">
-            <WifiOff size={13} className="text-slate-400" /> Offline Capable
+            <WifiSlash size={13} className="text-slate-400" /> Offline Capable
           </span>
           <span className="flex items-center gap-1.5">
-            <FolderLock size={13} className="text-slate-400" /> Local Data Vault
+            <FolderSimple size={13} className="text-slate-400" /> Local Data Vault
           </span>
           <span className="font-semibold text-slate-500">v1.0 Desktop</span>
         </div>
