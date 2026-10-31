@@ -58,6 +58,7 @@ const ViewCertificatePage = lazy(() => import("./pages/ViewCertificatePage"));
 const GroupsPage = lazy(() => import("./pages/GroupsPage"));
 const AnalyticsPage = lazy(() => import("./pages/AnalyticsPage"));
 const UploadTemplatePage = lazy(() => import("./pages/UploadTemplatePage"));
+const DocumentsPage = lazy(() => import("./pages/DocumentsPage"));
 const DocumentEditorPage = lazy(() => import("./pages/DocumentEditorPage"));
 const SupportHubPage = lazy(() => import("./pages/SupportHubPage"));
 const HelpArticlePage = lazy(() => import("./pages/HelpArticlePage"));
@@ -338,6 +339,7 @@ function App() {
 
                 <Route path="upload-template" element={<UploadTemplatePage />} />
                 <Route path="upload-template/:templateId" element={<UploadTemplatePage />} />
+                <Route path="documents" element={<DocumentsPage />} />
                 <Route path="documents/editor" element={<DocumentEditorPage />} />
                 <Route path="documents/editor/:templateId" element={<DocumentEditorPage />} />
               </Route>

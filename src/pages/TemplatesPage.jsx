@@ -187,7 +187,7 @@ function TemplatesPage() {
     setLoading(true);
     try {
       const response = await getTemplates();
-      setTemplates(response.data.templates);
+      setTemplates((response.data.templates || []).filter((t) => t.layout_style !== 'document'));
     } catch (err) {
       toast.error("Could not fetch templates.");
     } finally {

@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from "react";
-import { useNavigate, useParams, Link } from "react-router-dom";
+import { useNavigate, useParams, Link, useLocation } from "react-router-dom";
 import mammoth from "mammoth";
 import { toast, Toaster } from "react-hot-toast";
 import {
@@ -289,6 +289,24 @@ const SAMPLE_RECORDS = [
 
 export default function DocumentEditorPage() {
   const navigate = useNavigate();
+  const location = useLocation();
+
+  useEffect(() => {
+    if (!id) {
+      const searchParams = new URLSearchParams(location.search);
+      const presetId = searchParams.get("preset");
+      if (presetId) {
+        const found = OFFICIAL_PRESETS.find((p) => p.id === presetId);
+        if (found) {
+          setDocTitle(found.title);
+          setDocHtml(found.content);
+          if (editorRef.current) {
+            editorRef.current.innerHTML = found.content;
+          }
+        }
+      }
+    }
+  }, [id, location.search]);
   const { id } = useParams();
   const { user } = useUser();
 
@@ -350,7 +368,7 @@ export default function DocumentEditorPage() {
           }
         })
         .catch(() => {
-          toast.error("Could not load template");
+          toast.error("Could not load document");
         });
     }
   }, [id]);
@@ -464,17 +482,17 @@ export default function DocumentEditorPage() {
     try {
       if (id) {
         await updateCustomTemplate(id, payload);
-        toast.success("Template saved");
+        toast.success("Document saved");
       } else {
         const res = await createCustomTemplate(payload);
-        toast.success("Template created");
+        toast.success("Document created");
         if (res.data?.template_id) {
           navigate(`/dashboard/documents/editor/${res.data.template_id}`, { replace: true });
         }
       }
       setIsSaved(true);
     } catch (err) {
-      toast.error(err.response?.data?.msg || "Failed to save template");
+      toast.error(err.response?.data?.msg || "Failed to save document");
     } finally {
       setIsSaving(false);
     }
@@ -562,7 +580,7 @@ export default function DocumentEditorPage() {
           {/* Left Title Section */}
           <div className="flex items-center gap-3 min-w-0">
             <Link
-              to="/dashboard/templates"
+              to="/dashboard/documents"
               className="text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
               title="Templates"
             >

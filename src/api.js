@@ -101,8 +101,11 @@ export const verifyAdmin = (verificationData) =>
   API.post("/admin/auth/verify", verificationData);
 export const getAdminProfile = () => API.get("/admin/users/me");
 
-// TEMPLATES
-export const getTemplates = () => API.get("/templates/");
+// TEMPLATES & DOCUMENTS
+export const getTemplates = (params) =>
+  API.get("/templates/", { params: { type: "certificate", ...params } });
+export const getDocuments = (params) =>
+  API.get("/templates/", { params: { type: "document", ...params } });
 export const getTemplate = (templateId) => API.get(`/templates/${templateId}`);
 export const createTemplate = (formData) =>
   API.post("/templates/", formData, {

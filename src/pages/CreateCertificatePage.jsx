@@ -423,8 +423,9 @@ const CreateCertificatePage = () => {
           getGroups(),
         ]);
         
-        // Filter out invitation templates
+        // Filter out invitation and document templates
         const filteredTemplates = templateResponse.data.templates.filter((t) => {
+          if (t.layout_style === "document") return false;
           if (t.layout_style === "visual" && t.layout_data) {
             try {
               const data = typeof t.layout_data === "string" ? JSON.parse(t.layout_data) : t.layout_data;

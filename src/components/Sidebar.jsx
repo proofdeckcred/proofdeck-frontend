@@ -138,7 +138,7 @@ function Sidebar({ isCollapsed: propIsCollapsed, toggleSidebar: propToggleSideba
         {renderNavLink("/dashboard", <LayoutDashboard />, "Overview", true)}
         {renderNavLink("/dashboard/groups", <FolderOpen />, "Groups")}
         {renderNavLink("/dashboard/templates", <FileBadge />, "Templates")}
-        {renderNavLink("/dashboard/documents/editor", <FileText />, "Documents")}
+        {renderNavLink("/dashboard/documents", <FileText />, "Documents")}
 
         {!isCollapsed ? (
           <div className="pt-3 pb-1">
