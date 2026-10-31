@@ -53,6 +53,7 @@ import {
   RotateCcw,
   FolderOpen,
   Database,
+  LayoutTemplate,
 } from "lucide-react";
 import { Spinner } from "react-bootstrap";
 import toast, { Toaster } from "react-hot-toast";
