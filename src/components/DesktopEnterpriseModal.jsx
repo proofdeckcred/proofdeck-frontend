@@ -148,58 +148,53 @@ export default function DesktopEnterpriseModal({ show, onHide }) {
       onHide={onHide}
       size="lg"
       centered
-      contentClassName="rounded-2xl border border-slate-200 shadow-2xl overflow-hidden bg-white"
+      contentClassName="rounded-2xl border border-slate-200 shadow-xl overflow-hidden bg-white"
     >
-      <div className="bg-slate-900 text-white px-6 py-4 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-indigo-500/20 border border-indigo-400/30 flex items-center justify-center text-indigo-300">
-            <HardDrive size={20} />
+      {/* Header */}
+      <div className="bg-white border-b border-slate-200/90 px-6 py-4 flex items-center justify-between">
+        <div>
+          <div className="flex items-center gap-2.5">
+            <h3 className="text-sm font-bold text-slate-900 tracking-tight mb-0">
+              Enterprise Workstation Settings
+            </h3>
+            <span className="inline-flex items-center gap-1.5 px-2 py-0.5 text-[10px] font-semibold text-slate-600 bg-slate-100 border border-slate-200/80 rounded-md">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+              Local Vault Active
+            </span>
           </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <h3 className="text-sm font-bold tracking-tight mb-0 text-white">
-                ProofDeck Enterprise Desktop Control Center
-              </h3>
-              <span className="px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 rounded-full">
-                Offline Vault Active
-              </span>
-            </div>
-            <p className="text-xs text-slate-400 mb-0">
-              100% On-Premise Student Data Sovereignty &bull; Local Database &amp; Folder Export
-            </p>
-          </div>
+          <p className="text-xs text-slate-500 mb-0 mt-0.5">
+            On-premise configuration &bull; Complete student data sovereignty &bull; Offline engine
+          </p>
         </div>
         <button
           type="button"
           onClick={onHide}
-          className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
+          className="p-1.5 rounded-md text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
         >
-          <X size={18} />
+          <X size={16} />
         </button>
       </div>
 
       {/* Navigation Tabs */}
-      <div className="bg-slate-50 border-b border-slate-200 px-6 flex gap-2 pt-2.5">
+      <div className="bg-slate-50/60 border-b border-slate-200 px-6 flex gap-6">
         {[
-          { id: "overview", label: "Institution & License", icon: KeyRound },
-          { id: "verification", label: "Data Sovereignty & QR", icon: QrCode },
-          { id: "database", label: "University DB Connector", icon: Database },
-          { id: "export", label: "Local PC Folder Export", icon: FolderOpen },
+          { id: "overview", label: "Institution & License" },
+          { id: "verification", label: "Data Sovereignty & QR" },
+          { id: "database", label: "Campus Database Connector" },
+          { id: "export", label: "Local Folder Export" },
         ].map((tab) => {
-          const Icon = tab.icon;
           const active = activeTab === tab.id;
           return (
             <button
               key={tab.id}
               type="button"
               onClick={() => setActiveTab(tab.id)}
-              className={`px-3.5 py-2 text-xs font-bold rounded-t-lg border-b-2 flex items-center gap-1.5 transition-all cursor-pointer ${
+              className={`py-3 text-xs font-semibold border-b-2 transition-all cursor-pointer ${
                 active
-                  ? "bg-white text-indigo-700 border-indigo-600 shadow-2xs"
-                  : "text-slate-600 border-transparent hover:text-slate-900 hover:bg-slate-100/70"
+                  ? "text-slate-900 border-slate-900"
+                  : "text-slate-500 border-transparent hover:text-slate-800"
               }`}
             >
-              <Icon size={14} />
               <span>{tab.label}</span>
             </button>
           );
@@ -210,19 +205,25 @@ export default function DesktopEnterpriseModal({ show, onHide }) {
         <Modal.Body className="p-6 space-y-4 max-h-[68vh] overflow-y-auto">
           {activeTab === "overview" && (
             <div className="space-y-4">
-              <div className="bg-emerald-50/80 border border-emerald-200 rounded-xl p-4 flex items-start justify-between gap-4">
-                <div className="flex items-start gap-3">
-                  <ShieldCheck size={22} className="text-emerald-600 shrink-0 mt-0.5" />
+              <div className="bg-slate-50/70 border border-slate-200 rounded-xl p-4">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+                    <span className="text-xs font-bold text-slate-900">Institutional License Active</span>
+                    <span className="text-[11px] text-slate-500">&bull; Valid until {desktopConfig?.license_expires_at || "2027-10-30"}</span>
+                  </div>
+                  <span className="text-[10px] font-mono font-medium px-2 py-0.5 rounded bg-slate-200/70 text-slate-700">
+                    Air-Gapped Verified
+                  </span>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs text-slate-600 pt-3 border-t border-slate-200/70">
                   <div>
-                    <h4 className="text-xs font-bold text-emerald-950 mb-0.5">
-                      Annual Enterprise License Active (Offline Verified)
-                    </h4>
-                    <p className="text-xs text-emerald-800 mb-1">
-                      Valid until <strong>{desktopConfig?.license_expires_at || "2027-10-30"}</strong> &bull; Unlimited Local Credential &amp; Document Issuance
-                    </p>
-                    <p className="text-[11px] text-emerald-700 mb-0">
-                      Storage Engine: <strong>{desktopStorage?.engine || "Local SQLite Vault (Offline)"}</strong> — Zero student records are transmitted to ProofDeck cloud servers.
-                    </p>
+                    <span className="text-[11px] text-slate-400 block mb-0.5">Local Storage Engine</span>
+                    <span className="font-medium text-slate-800">{desktopStorage?.engine || "Local SQLite Vault (Offline)"}</span>
+                  </div>
+                  <div>
+                    <span className="text-[11px] text-slate-400 block mb-0.5">Privacy &amp; Sovereignty</span>
+                    <span className="font-medium text-slate-800">100% Local PC Issuance — Zero student records sent to cloud</span>
                   </div>
                 </div>
               </div>
@@ -232,18 +233,15 @@ export default function DesktopEnterpriseModal({ show, onHide }) {
                   <label className="block text-xs font-bold text-slate-700 mb-1">
                     Institution / Division Name
                   </label>
-                  <div className="relative">
-                    <Building2 size={14} className="absolute left-3 top-2.5 text-slate-400" />
-                    <input
-                      type="text"
-                      value={formState.institution_name}
-                      onChange={(e) =>
-                        setFormState((p) => ({ ...p, institution_name: e.target.value }))
-                      }
-                      className="w-full pl-8 pr-3 py-2 text-xs rounded-lg border border-slate-200 focus:outline-none focus:border-indigo-500"
-                      placeholder="e.g. Nile University — Academic Division"
-                    />
-                  </div>
+                  <input
+                    type="text"
+                    value={formState.institution_name}
+                    onChange={(e) =>
+                      setFormState((p) => ({ ...p, institution_name: e.target.value }))
+                    }
+                    className="w-full px-3 py-2 text-xs rounded-lg border border-slate-200 focus:outline-none focus:border-slate-400 text-slate-800"
+                    placeholder="e.g. Nile University — Academic Division"
+                  />
                 </div>
 
                 <div>
@@ -256,7 +254,7 @@ export default function DesktopEnterpriseModal({ show, onHide }) {
                     onChange={(e) =>
                       setFormState((p) => ({ ...p, signatory_name: e.target.value }))
                     }
-                    className="w-full px-3 py-2 text-xs rounded-lg border border-slate-200 focus:outline-none focus:border-indigo-500"
+                    className="w-full px-3 py-2 text-xs rounded-lg border border-slate-200 focus:outline-none focus:border-slate-400 text-slate-800"
                     placeholder="e.g. Prof. Academic Registrar"
                   />
                 </div>
@@ -272,7 +270,7 @@ export default function DesktopEnterpriseModal({ show, onHide }) {
                   onChange={(e) =>
                     setFormState((p) => ({ ...p, license_key: e.target.value }))
                   }
-                  className="w-full px-3 py-2 text-xs font-mono rounded-lg border border-slate-200 bg-slate-50 focus:outline-none focus:border-indigo-500"
+                  className="w-full px-3 py-2 text-xs font-mono rounded-lg border border-slate-200 bg-slate-50 focus:outline-none focus:border-slate-400 text-slate-800"
                 />
                 <span className="block text-[10px] text-slate-400 mt-1">
                   Renewed annually. Works 100% offline once activated on this workstation.
@@ -284,27 +282,27 @@ export default function DesktopEnterpriseModal({ show, onHide }) {
           {activeTab === "verification" && (
             <div className="space-y-4">
               <p className="text-xs text-slate-600 mb-2">
-                Choose how documents generated on this workstation handle QR verification so student data remains 100% under your institution&apos;s control:
+                Choose how documents generated on this workstation handle verification:
               </p>
 
               <div className="space-y-2.5">
                 {[
                   {
                     id: "university_portal",
-                    title: "Institution Self-Hosted Verification Portal (Recommended)",
-                    desc: "QR codes point directly to your university's own domain (e.g. verify.nileuniversity.edu.ng) backed by your internal database.",
+                    title: "Institution Self-Hosted Verification Portal",
+                    desc: "QR codes point directly to your university's internal domain (e.g. verify.nileuniversity.edu.ng) backed by your campus database.",
                   },
                   {
                     id: "no_qr",
-                    title: "Internal Document Mode (No External Verification URL)",
-                    desc: "For internal A4 letters, memos, transcripts, or physically stamped documents that do not require external online verification.",
+                    title: "Internal Document Mode (No External Verification QR)",
+                    desc: "For internal A4 letters, transcripts, or physically embossed credentials without online QR lookups.",
                   },
                 ].map((opt) => (
                   <label
                     key={opt.id}
                     className={`block p-3.5 rounded-xl border cursor-pointer transition-all ${
                       formState.verification_mode === opt.id
-                        ? "border-indigo-600 bg-indigo-50/40"
+                        ? "border-slate-900 bg-slate-50"
                         : "border-slate-200 hover:border-slate-300 bg-white"
                     }`}
                   >
@@ -316,7 +314,7 @@ export default function DesktopEnterpriseModal({ show, onHide }) {
                         onChange={() =>
                           setFormState((p) => ({ ...p, verification_mode: opt.id }))
                         }
-                        className="mt-0.5"
+                        className="mt-0.5 text-slate-900"
                       />
                       <div>
                         <span className="block text-xs font-bold text-slate-900">
@@ -342,7 +340,7 @@ export default function DesktopEnterpriseModal({ show, onHide }) {
                     onChange={(e) =>
                       setFormState((p) => ({ ...p, custom_verification_url: e.target.value }))
                     }
-                    className="w-full px-3 py-2 text-xs font-mono rounded-lg border border-slate-200 focus:outline-none focus:border-indigo-500"
+                    className="w-full px-3 py-2 text-xs font-mono rounded-lg border border-slate-200 focus:outline-none focus:border-slate-400 text-slate-800"
                     placeholder="https://verify.nileuniversity.edu.ng/credential"
                   />
                   <span className="block text-[10px] text-slate-400 mt-1">
@@ -355,9 +353,9 @@ export default function DesktopEnterpriseModal({ show, onHide }) {
 
           {activeTab === "database" && (
             <div className="space-y-4">
-              <div className="bg-indigo-50/70 border border-indigo-200 rounded-xl p-3.5 text-xs text-indigo-950">
-                <strong>Direct SIS Database Connector:</strong> Pull student records directly by{" "}
-                <code>student_id</code>, Faculty, or Department into the Bulk Spreadsheet without exporting CSVs manually.
+              <div className="bg-slate-50 border border-slate-200 rounded-xl p-3.5 text-xs text-slate-700">
+                <strong className="text-slate-900">Campus SIS Database Connector:</strong> Pull student records directly by{" "}
+                <code>student_id</code>, Faculty, or Department into batch issuing without manual CSV imports.
               </div>
 
               <div>
@@ -369,7 +367,7 @@ export default function DesktopEnterpriseModal({ show, onHide }) {
                   onChange={(e) =>
                     setFormState((p) => ({ ...p, db_engine: e.target.value }))
                   }
-                  className="w-full px-3 py-2 text-xs rounded-lg border border-slate-200 bg-white focus:outline-none focus:border-indigo-500"
+                  className="w-full px-3 py-2 text-xs rounded-lg border border-slate-200 bg-white focus:outline-none focus:border-slate-400 text-slate-800"
                 >
                   <option value="sqlite_demo">
                     Built-In Demo University SIS Database (20 Sample Nile Students: 20220001–20220020)
@@ -393,7 +391,7 @@ export default function DesktopEnterpriseModal({ show, onHide }) {
                       setFormState((p) => ({ ...p, connection_uri: e.target.value }))
                     }
                     placeholder="e.g. mssql+pyodbc://readonly_user:pass@10.0.1.25/nile_sis_db?driver=ODBC+Driver+17+for+SQL+Server"
-                    className="w-full px-3 py-2 text-xs font-mono rounded-lg border border-slate-200 focus:outline-none focus:border-indigo-500"
+                    className="w-full px-3 py-2 text-xs font-mono rounded-lg border border-slate-200 focus:outline-none focus:border-slate-400 text-slate-800"
                   />
                 </div>
               )}
@@ -409,7 +407,7 @@ export default function DesktopEnterpriseModal({ show, onHide }) {
                     onChange={(e) =>
                       setFormState((p) => ({ ...p, table_or_view: e.target.value }))
                     }
-                    className="w-full px-3 py-1.5 text-xs font-mono rounded-lg border border-slate-200"
+                    className="w-full px-3 py-1.5 text-xs font-mono rounded-lg border border-slate-200 text-slate-800"
                   />
                 </div>
                 <div>
@@ -422,7 +420,7 @@ export default function DesktopEnterpriseModal({ show, onHide }) {
                     onChange={(e) =>
                       setFormState((p) => ({ ...p, id_column: e.target.value }))
                     }
-                    className="w-full px-3 py-1.5 text-xs font-mono rounded-lg border border-slate-200"
+                    className="w-full px-3 py-1.5 text-xs font-mono rounded-lg border border-slate-200 text-slate-800"
                   />
                 </div>
               </div>
@@ -432,7 +430,7 @@ export default function DesktopEnterpriseModal({ show, onHide }) {
                   type="button"
                   onClick={handleTestDatabase}
                   disabled={testingDb}
-                  className="px-3.5 py-1.5 rounded-lg bg-slate-900 hover:bg-black text-white text-xs font-bold flex items-center gap-1.5 cursor-pointer"
+                  className="px-3.5 py-1.5 rounded-lg bg-slate-900 hover:bg-black text-white text-xs font-semibold flex items-center gap-1.5 cursor-pointer"
                 >
                   <RefreshCw size={13} className={testingDb ? "animate-spin" : ""} />
                   <span>{testingDb ? "Testing Connection..." : "Test Database Connection"}</span>
@@ -443,17 +441,17 @@ export default function DesktopEnterpriseModal({ show, onHide }) {
                 <div
                   className={`p-3 rounded-xl border text-xs ${
                     dbTestResult.success
-                      ? "bg-emerald-50 border-emerald-200 text-emerald-900"
+                      ? "bg-slate-50 border-slate-200 text-slate-800"
                       : "bg-red-50 border-red-200 text-red-800"
                   }`}
                 >
                   {dbTestResult.success ? (
                     <div>
-                      <div className="font-bold flex items-center gap-1.5 mb-1">
+                      <div className="font-bold flex items-center gap-1.5 mb-1 text-slate-900">
                         <CheckCircle2 size={14} className="text-emerald-600" />
                         <span>Connection Verified! Sample records preview:</span>
                       </div>
-                      <div className="space-y-1 font-mono text-[11px] bg-white/80 p-2 rounded border border-emerald-200/60">
+                      <div className="space-y-1 font-mono text-[11px] bg-white p-2 rounded border border-slate-200">
                         {dbTestResult.sample.map((s, i) => (
                           <div key={i}>
                             [{s.student_id}] {s.recipient_name} — {s.course_title} (CGPA: {s.cgpa})
@@ -486,12 +484,12 @@ export default function DesktopEnterpriseModal({ show, onHide }) {
                     onChange={(e) =>
                       setFormState((p) => ({ ...p, default_export_folder: e.target.value }))
                     }
-                    className="flex-1 px-3 py-2 text-xs font-mono rounded-lg border border-slate-200 bg-slate-50"
+                    className="flex-1 px-3 py-2 text-xs font-mono rounded-lg border border-slate-200 bg-slate-50 text-slate-800"
                   />
                   <button
                     type="button"
                     onClick={handleBrowseFolder}
-                    className="px-3.5 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold flex items-center gap-1.5 shrink-0 cursor-pointer"
+                    className="px-3.5 py-2 rounded-lg bg-slate-900 hover:bg-black text-white text-xs font-semibold flex items-center gap-1.5 shrink-0 cursor-pointer"
                   >
                     <FolderOpen size={14} />
                     <span>Browse PC...</span>

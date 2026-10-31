@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import {
   getAdminLicenses,
   createAdminLicense,
+  updateAdminLicense,
   updateAdminLicenseStatus,
   extendAdminLicense
 } from "../api";
@@ -124,6 +125,56 @@ function AdminLicensesPage() {
       }
     } catch (err) {
       toast.error(err.response?.data?.msg || "Could not update status");
+    }
+  };
+
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editLicenseId, setEditLicenseId] = useState(null);
+  const [editFormData, setEditFormData] = useState({
+    institution_name: "",
+    contact_person: "",
+    contact_email: "",
+    contact_phone: "",
+    plan_tier: "enterprise_academic",
+    max_workstations: 5,
+    enable_sis_connector: true,
+    enable_custom_qr: true,
+    enable_bulk_documents: true,
+    notes: ""
+  });
+
+  const handleOpenEdit = (lic) => {
+    setEditLicenseId(lic.id);
+    setEditFormData({
+      institution_name: lic.institution_name || "",
+      contact_person: lic.contact_person || "",
+      contact_email: lic.contact_email || "",
+      contact_phone: lic.contact_phone || "",
+      plan_tier: lic.plan_tier || "enterprise_academic",
+      max_workstations: lic.max_workstations || 5,
+      enable_sis_connector: lic.enable_sis_connector !== false,
+      enable_custom_qr: lic.enable_custom_qr !== false,
+      enable_bulk_documents: lic.enable_bulk_documents !== false,
+      notes: lic.notes || ""
+    });
+    setShowEditModal(true);
+  };
+
+  const handleSaveEdit = async (e) => {
+    e.preventDefault();
+    if (!editFormData.institution_name.trim()) {
+      return toast.error("Institution Name is required.");
+    }
+    setIsSubmitting(true);
+    try {
+      const res = await updateAdminLicense(editLicenseId, editFormData);
+      toast.success(res.data.msg || "Enterprise license updated!");
+      setShowEditModal(false);
+      fetchLicenses();
+    } catch (err) {
+      toast.error(err.response?.data?.msg || "Failed to update license");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -305,8 +356,15 @@ function AdminLicensesPage() {
                       <td className="py-3.5 px-4 text-right">
                         <div className="inline-flex items-center gap-1">
                           <button
+                            onClick={() => handleOpenEdit(lic)}
+                            className="px-2.5 py-1 text-[11px] font-semibold text-slate-700 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+                            title="Edit License & Seats"
+                          >
+                            Edit
+                          </button>
+                          <button
                             onClick={() => handleExtendYear(lic.id)}
-                            className="px-2.5 py-1 text-[11px] font-semibold text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
+                            className="px-2.5 py-1 text-[11px] font-semibold text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors cursor-pointer"
                             title="Add 1 Year"
                           >
                             +1 Year
@@ -463,6 +521,142 @@ function AdminLicensesPage() {
                   className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold shadow-sm disabled:opacity-50"
                 >
                   {isSubmitting ? "Generating..." : "Issue License"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+      {/* Modal: Edit License & Seats */}
+      {showEditModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-xs">
+          <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-200">
+            <div className="flex items-center justify-between pb-4 border-b border-slate-100">
+              <div className="flex items-center gap-2">
+                <KeyRound size={20} className="text-indigo-600" />
+                <h3 className="text-base font-bold text-slate-900 mb-0">Edit Enterprise License &amp; Seats</h3>
+              </div>
+              <button
+                onClick={() => setShowEditModal(false)}
+                className="text-slate-400 hover:text-slate-700 text-lg leading-none cursor-pointer"
+              >
+                &times;
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveEdit} className="space-y-4 pt-4 text-xs">
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">
+                  Institution Name <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Nile University — Academic Division"
+                  value={editFormData.institution_name}
+                  onChange={(e) => setEditFormData({ ...editFormData, institution_name: e.target.value })}
+                  className="w-full px-3 py-2 border border-slate-200 rounded-lg outline-none focus:border-indigo-500"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-semibold text-slate-600 mb-1">Contact Officer Name</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Prof. Academic Registrar"
+                    value={editFormData.contact_person}
+                    onChange={(e) => setEditFormData({ ...editFormData, contact_person: e.target.value })}
+                    className="w-full px-3 py-2 border border-slate-200 rounded-lg outline-none focus:border-indigo-500"
+                  />
+                </div>
+                <div>
+                  <label className="block font-semibold text-slate-600 mb-1">Official Email</label>
+                  <input
+                    type="email"
+                    placeholder="registrar@nileuniversity.edu.ng"
+                    value={editFormData.contact_email}
+                    onChange={(e) => setEditFormData({ ...editFormData, contact_email: e.target.value })}
+                    className="w-full px-3 py-2 border border-slate-200 rounded-lg outline-none focus:border-indigo-500"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-semibold text-slate-600 mb-1">
+                    Workstations / Seats
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    max="500"
+                    value={editFormData.max_workstations}
+                    onChange={(e) => setEditFormData({ ...editFormData, max_workstations: parseInt(e.target.value) || 1 })}
+                    className="w-full px-3 py-2 border border-slate-200 rounded-lg outline-none focus:border-indigo-500 font-bold"
+                  />
+                  <span className="text-[10px] text-slate-400 mt-0.5 block">
+                    Campus computers authorized to use this key
+                  </span>
+                </div>
+                <div>
+                  <label className="block font-semibold text-slate-600 mb-1">Contact Phone</label>
+                  <input
+                    type="text"
+                    placeholder="+234..."
+                    value={editFormData.contact_phone}
+                    onChange={(e) => setEditFormData({ ...editFormData, contact_phone: e.target.value })}
+                    className="w-full px-3 py-2 border border-slate-200 rounded-lg outline-none focus:border-indigo-500"
+                  />
+                </div>
+              </div>
+
+              {/* Module Toggles */}
+              <div className="p-3 bg-slate-50 rounded-xl space-y-2 border border-slate-200/60">
+                <span className="block font-bold text-slate-700">Enterprise Modules Enabled</span>
+                <label className="flex items-center gap-2 text-slate-700 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={editFormData.enable_sis_connector}
+                    onChange={(e) => setEditFormData({ ...editFormData, enable_sis_connector: e.target.checked })}
+                    className="rounded text-indigo-600"
+                  />
+                  <span>Campus SIS SQL Database Connector (Live Pull)</span>
+                </label>
+                <label className="flex items-center gap-2 text-slate-700 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={editFormData.enable_custom_qr}
+                    onChange={(e) => setEditFormData({ ...editFormData, enable_custom_qr: e.target.checked })}
+                    className="rounded text-indigo-600"
+                  />
+                  <span>Custom Verification Portal &amp; Air-Gapped No-QR Mode</span>
+                </label>
+                <label className="flex items-center gap-2 text-slate-700 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={editFormData.enable_bulk_documents}
+                    onChange={(e) => setEditFormData({ ...editFormData, enable_bulk_documents: e.target.checked })}
+                    className="rounded text-indigo-600"
+                  />
+                  <span>Bulk Academic Letters &amp; Transcript Issuance (A4 Portrait)</span>
+                </label>
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowEditModal(false)}
+                  className="px-4 py-2 border border-slate-200 rounded-xl text-slate-600 font-semibold hover:bg-slate-50 cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold shadow-sm disabled:opacity-50 cursor-pointer"
+                >
+                  {isSubmitting ? "Saving Changes..." : "Save Changes"}
                 </button>
               </div>
             </form>

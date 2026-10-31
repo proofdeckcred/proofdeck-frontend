@@ -40,8 +40,8 @@ function DesktopActivationModal({ isOpen, onActivated, currentConfig }) {
         if (res.data.institution_name) {
           setInstitutionName(res.data.institution_name);
         }
-        if (res.data.signatory_name) {
-          setSignatoryName(res.data.signatory_name);
+        if (res.data.signatory_name || res.data.contact_person) {
+          setSignatoryName(res.data.signatory_name || res.data.contact_person);
         }
         toast.success(`License recognized: ${res.data.institution_name}`, { id: "key-recognized" });
       }
@@ -95,42 +95,35 @@ function DesktopActivationModal({ isOpen, onActivated, currentConfig }) {
   };
 
   return (
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-950/75 backdrop-blur-md select-none">
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs select-none">
       <Toaster position="top-center" />
 
-      <div className="bg-white rounded-3xl max-w-xl w-full p-8 sm:p-10 shadow-2xl border border-slate-200/90 relative overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-        {/* Glow Accent */}
-        <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
-
+      <div className="bg-white rounded-2xl max-w-lg w-full p-8 shadow-2xl border border-slate-200 relative overflow-hidden animate-in fade-in zoom-in-95 duration-200">
         {/* Header Icon + Brand */}
-        <div className="flex items-center gap-3 mb-6">
-          <div className="w-12 h-12 rounded-2xl bg-indigo-600 flex items-center justify-center text-white shadow-lg shadow-indigo-200 shrink-0">
-            <KeyRound size={22} />
+        <div className="flex items-center gap-3.5 mb-6">
+          <div className="w-11 h-11 rounded-xl bg-slate-900 flex items-center justify-center text-white shrink-0">
+            <KeyRound size={20} />
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h2 className="text-lg font-black text-slate-900 tracking-tight mb-0">
+              <h2 className="text-base font-bold text-slate-900 tracking-tight mb-0">
                 ProofDeck Enterprise
               </h2>
-              <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200">
-                Desktop Edition
+              <span className="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded bg-slate-100 text-slate-700 border border-slate-200">
+                Workstation Edition
               </span>
             </div>
-            <p className="text-xs text-slate-400 mb-0 mt-0.5">
+            <p className="text-xs text-slate-500 mb-0 mt-0.5">
               100% On-Premise Institutional Credential Engine
             </p>
           </div>
         </div>
 
         {/* Notice Card */}
-        <div className="bg-slate-50 border border-slate-200/80 rounded-2xl p-4 mb-6 space-y-2">
-          <div className="flex items-start gap-2.5">
-            <ShieldCheck size={18} className="text-indigo-600 shrink-0 mt-0.5" />
-            <div className="text-xs text-slate-600 leading-relaxed">
-              <strong className="text-slate-900 font-bold block mb-0.5">Enter Enterprise License Key</strong>
-              Paste your institutional key below. The app will automatically identify your institution and unlock your secure local offline vault.
-            </div>
-          </div>
+        <div className="bg-slate-50 border border-slate-200 rounded-xl p-3.5 mb-5">
+          <p className="text-xs text-slate-600 mb-0 leading-relaxed">
+            Enter the Enterprise License Key provided to your university. The workstation will verify authorization and configure your local offline vault.
+          </p>
         </div>
 
         <form onSubmit={handleActivate} className="space-y-4 text-xs">
@@ -138,7 +131,7 @@ function DesktopActivationModal({ isOpen, onActivated, currentConfig }) {
             <label className="block font-bold text-slate-800 mb-1.5 flex items-center justify-between">
               <span>Enterprise License Key <span className="text-red-500">*</span></span>
               {isVerifyingKey && (
-                <span className="text-[10px] text-indigo-600 font-semibold flex items-center gap-1">
+                <span className="text-[10px] text-slate-500 font-semibold flex items-center gap-1">
                   <Loader2 size={11} className="animate-spin" /> Verifying key...
                 </span>
               )}
@@ -149,7 +142,6 @@ function DesktopActivationModal({ isOpen, onActivated, currentConfig }) {
               )}
             </label>
             <div className="relative">
-              <Lock size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
               <input
                 type="text"
                 required
@@ -157,10 +149,10 @@ function DesktopActivationModal({ isOpen, onActivated, currentConfig }) {
                 placeholder="PD-ENT-..."
                 value={licenseKey}
                 onChange={handleKeyChange}
-                className={`w-full pl-10 pr-4 py-2.5 font-mono text-xs font-bold uppercase tracking-wider bg-slate-50 border rounded-xl outline-none focus:bg-white transition-all text-slate-900 placeholder-slate-400 ${
+                className={`w-full px-3.5 py-2.5 font-mono text-xs font-semibold uppercase tracking-wider bg-slate-50 border rounded-xl outline-none focus:bg-white transition-all text-slate-900 placeholder-slate-400 ${
                   keyVerified
-                    ? "border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
-                    : "border-slate-200 focus:border-indigo-600 focus:ring-2 focus:ring-indigo-500/20"
+                    ? "border-emerald-500"
+                    : "border-slate-200 focus:border-slate-900"
                 }`}
               />
             </div>
@@ -170,17 +162,14 @@ function DesktopActivationModal({ isOpen, onActivated, currentConfig }) {
             <label className="block font-bold text-slate-800 mb-1.5">
               Institution / Department Name <span className="text-red-500">*</span>
             </label>
-            <div className="relative">
-              <Building2 size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
-              <input
-                type="text"
-                required
-                placeholder={keyVerified ? "" : "Auto-populates when key is entered..."}
-                value={institutionName}
-                onChange={(e) => setInstitutionName(e.target.value)}
-                className="w-full pl-10 pr-4 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl outline-none focus:bg-white focus:border-indigo-600 focus:ring-2 focus:ring-indigo-500/20 transition-all text-slate-800 placeholder-slate-400"
-              />
-            </div>
+            <input
+              type="text"
+              required
+              placeholder={keyVerified ? "" : "Auto-populates when key is entered..."}
+              value={institutionName}
+              onChange={(e) => setInstitutionName(e.target.value)}
+              className="w-full px-3.5 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl outline-none focus:bg-white focus:border-slate-900 transition-all text-slate-800 placeholder-slate-400"
+            />
           </div>
 
           <div>
@@ -192,7 +181,7 @@ function DesktopActivationModal({ isOpen, onActivated, currentConfig }) {
               placeholder="e.g. Prof. Academic Registrar"
               value={signatoryName}
               onChange={(e) => setSignatoryName(e.target.value)}
-              className="w-full px-3.5 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl outline-none focus:bg-white focus:border-indigo-600 focus:ring-2 focus:ring-indigo-500/20 transition-all text-slate-800 placeholder-slate-400"
+              className="w-full px-3.5 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl outline-none focus:bg-white focus:border-slate-900 transition-all text-slate-800 placeholder-slate-400"
             />
           </div>
 
@@ -200,18 +189,18 @@ function DesktopActivationModal({ isOpen, onActivated, currentConfig }) {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold text-xs flex items-center justify-center gap-2 shadow-lg shadow-indigo-200 disabled:opacity-50 transition-all"
+              className="w-full py-2.5 bg-slate-900 hover:bg-black text-white rounded-xl font-bold text-xs flex items-center justify-center gap-2 shadow-sm disabled:opacity-50 transition-all cursor-pointer"
             >
-              <span>{loading ? "Activating Workstation..." : "Activate Enterprise Workstation"}</span>
-              <ArrowRight size={15} />
+              <span>{loading ? "Activating Workstation..." : "Activate Workstation"}</span>
+              <ArrowRight size={14} />
             </button>
           </div>
         </form>
 
         {/* Footer Badges */}
-        <div className="mt-6 pt-5 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400">
+        <div className="mt-6 pt-4 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400">
           <span className="flex items-center gap-1.5">
-            <WifiOff size={13} className="text-slate-400" /> Works 100% Offline
+            <WifiOff size={13} className="text-slate-400" /> Offline Capable
           </span>
           <span className="flex items-center gap-1.5">
             <FolderLock size={13} className="text-slate-400" /> Local Data Vault

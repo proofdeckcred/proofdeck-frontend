@@ -399,6 +399,8 @@ export const getAdminLicenseDetails = (id) =>
   API.get(`/admin/licenses/${id}`);
 export const updateAdminLicenseStatus = (id, status) =>
   API.patch(`/admin/licenses/${id}/status`, { status });
+export const updateAdminLicense = (id, data) =>
+  API.put(`/admin/licenses/${id}`, data);
 export const extendAdminLicense = (id, days = 365) =>
   API.post(`/admin/licenses/${id}/extend`, { days });
 
