@@ -9,7 +9,6 @@ import { BenefitsSection } from "../components/BenefitsSection";
 import { TestimonialSection } from "../components/TestimonialSection";
 import { TrustedBySection } from "../components/TrustedBySection";
 import { ApiSection } from "../components/ApiSection";
-import DesktopDownloadSection from "../components/DesktopDownloadSection";
 import SEO from "../components/SEO";
 import CustomPricingModal from "../components/CustomPricingModal";
 import Tag from "../components/ui/Tag";
@@ -386,9 +385,6 @@ function LandingPage() {
 
         {/* 6. Pricing (Naira Grid) */}
         <Pricing onOpenCustomModal={() => setOpenCustomModal(true)} />
-
-        {/* 6.5 Desktop Workstation Edition Download */}
-        <DesktopDownloadSection />
 
         {/* 7. FAQ Section */}
         <FAQ />

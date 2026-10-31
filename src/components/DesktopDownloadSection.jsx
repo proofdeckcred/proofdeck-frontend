@@ -191,7 +191,7 @@ export default function DesktopDownloadSection() {
                   University Domain QR Verification
                 </h4>
                 <p className="text-xs text-[#68647A] leading-relaxed mb-0">
-                  Optionally configure QR codes to route to your institution&apos;s own verification domain (e.g. <code>verify.nileuniversity.edu.ng</code>) or disable QRs completely for internal memos.
+                  Optionally configure QR codes to route to your institution&apos;s own verification domain (e.g. <code>verify.youruniversity.edu</code>) or disable QRs completely for internal memos.
                 </p>
               </div>
               <div className="mt-4 pt-3 border-t border-slate-100 flex items-center gap-1.5 text-[11px] font-semibold text-indigo-700">

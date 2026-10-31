@@ -263,7 +263,7 @@ function AdminLicensesPage() {
             <Building2 size={36} className="mx-auto text-slate-300 mb-2" />
             <p className="text-sm font-bold text-slate-700">No Enterprise Licenses Found</p>
             <p className="text-xs text-slate-400 mt-1">
-              Issue your first license to Nile University, Babcock, or other institutions.
+              Issue your first license to universities, polytechnics, or state colleges.
             </p>
           </div>
         ) : (
@@ -420,7 +420,7 @@ function AdminLicensesPage() {
                 <input
                   type="text"
                   required
-                  placeholder="e.g. Nile University — Academic Division"
+                  placeholder="e.g. Apex State University — Academic Division"
                   value={formData.institution_name}
                   onChange={(e) => setFormData({ ...formData, institution_name: e.target.value })}
                   className="w-full px-3 py-2 border border-slate-200 rounded-lg outline-none focus:border-indigo-500"
@@ -442,7 +442,7 @@ function AdminLicensesPage() {
                   <label className="block font-semibold text-slate-600 mb-1">Official Email</label>
                   <input
                     type="email"
-                    placeholder="registrar@nileuniversity.edu.ng"
+                    placeholder="registrar@apex.edu.ng"
                     value={formData.contact_email}
                     onChange={(e) => setFormData({ ...formData, contact_email: e.target.value })}
                     className="w-full px-3 py-2 border border-slate-200 rounded-lg outline-none focus:border-indigo-500"
@@ -552,7 +552,7 @@ function AdminLicensesPage() {
                 <input
                   type="text"
                   required
-                  placeholder="e.g. Nile University — Academic Division"
+                  placeholder="e.g. Apex State University — Academic Division"
                   value={editFormData.institution_name}
                   onChange={(e) => setEditFormData({ ...editFormData, institution_name: e.target.value })}
                   className="w-full px-3 py-2 border border-slate-200 rounded-lg outline-none focus:border-indigo-500"
@@ -574,7 +574,7 @@ function AdminLicensesPage() {
                   <label className="block font-semibold text-slate-600 mb-1">Official Email</label>
                   <input
                     type="email"
-                    placeholder="registrar@nileuniversity.edu.ng"
+                    placeholder="registrar@apex.edu.ng"
                     value={editFormData.contact_email}
                     onChange={(e) => setEditFormData({ ...editFormData, contact_email: e.target.value })}
                     className="w-full px-3 py-2 border border-slate-200 rounded-lg outline-none focus:border-indigo-500"

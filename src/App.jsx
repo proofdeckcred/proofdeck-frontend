@@ -38,6 +38,7 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import AdminProtectedRoute from "./components/AdminProtectedRoute";
 
 // Lazy-loaded routes for performance & Core Web Vitals (prevents bundling Konva, Chart.js, etc. into marketing pages)
+const DesktopDownloadPage = lazy(() => import("./pages/DesktopDownloadPage"));
 const DocsPage = lazy(() => import("./pages/DocsPage"));
 const StyleKitPage = lazy(() => import("./pages/StyleKitPage"));
 const OpenLedgerPage = lazy(() => import("./pages/OpenLedgerPage"));
@@ -255,6 +256,7 @@ function App() {
             <Routes>
               {/* Core Public Marketing routes */}
               <Route path="/" element={<RootRoute />} />
+            <Route path="/desktop" element={<DesktopDownloadPage />} />
             <Route path="/features" element={<FeaturesPage />} />
             <Route path="/pricing" element={<PricingPage />} />
             <Route path="/legal" element={<LegalPage />} />

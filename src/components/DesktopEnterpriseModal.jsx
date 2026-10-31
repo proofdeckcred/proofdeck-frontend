@@ -31,11 +31,11 @@ export default function DesktopEnterpriseModal({ show, onHide }) {
   const [dbTestResult, setDbTestResult] = useState(null);
 
   const [formState, setFormState] = useState({
-    institution_name: "Nile University — Academic Division",
+    institution_name: "Apex State University — Academic Division",
     signatory_name: "Prof. Academic Registrar",
-    license_key: "PD-ENT-NILE-2026-ANNUAL-PRO",
+    license_key: "PD-ENT-APEX-2026-ANNUAL-PRO",
     verification_mode: "university_portal",
-    custom_verification_url: "https://verify.nileuniversity.edu.ng/credential",
+    custom_verification_url: "https://verify.youruniversity.edu/credential",
     default_export_folder: "",
     db_engine: "sqlite_demo",
     connection_uri: "",
@@ -46,12 +46,12 @@ export default function DesktopEnterpriseModal({ show, onHide }) {
   useEffect(() => {
     if (desktopConfig) {
       setFormState({
-        institution_name: desktopConfig.institution_name || "Nile University — Academic Division",
+        institution_name: desktopConfig.institution_name || "Apex State University — Academic Division",
         signatory_name: desktopConfig.signatory_name || "Prof. Academic Registrar",
-        license_key: desktopConfig.license_key || "PD-ENT-NILE-2026-ANNUAL-PRO",
+        license_key: desktopConfig.license_key || "PD-ENT-APEX-2026-ANNUAL-PRO",
         verification_mode: desktopConfig.verification_mode || "university_portal",
         custom_verification_url:
-          desktopConfig.custom_verification_url || "https://verify.nileuniversity.edu.ng/credential",
+          desktopConfig.custom_verification_url || "https://verify.youruniversity.edu/credential",
         default_export_folder: desktopConfig.default_export_folder || "",
         db_engine: desktopConfig.db_connector?.engine || "sqlite_demo",
         connection_uri: desktopConfig.db_connector?.connection_uri || "",
@@ -240,7 +240,7 @@ export default function DesktopEnterpriseModal({ show, onHide }) {
                       setFormState((p) => ({ ...p, institution_name: e.target.value }))
                     }
                     className="w-full px-3 py-2 text-xs rounded-lg border border-slate-200 focus:outline-none focus:border-slate-400 text-slate-800"
-                    placeholder="e.g. Nile University — Academic Division"
+                    placeholder="e.g. Apex State University — Academic Division"
                   />
                 </div>
 
@@ -290,7 +290,7 @@ export default function DesktopEnterpriseModal({ show, onHide }) {
                   {
                     id: "university_portal",
                     title: "Institution Self-Hosted Verification Portal",
-                    desc: "QR codes point directly to your university's internal domain (e.g. verify.nileuniversity.edu.ng) backed by your campus database.",
+                    desc: "QR codes point directly to your university's internal domain (e.g. verify.youruniversity.edu) backed by your campus database.",
                   },
                   {
                     id: "no_qr",
@@ -341,7 +341,7 @@ export default function DesktopEnterpriseModal({ show, onHide }) {
                       setFormState((p) => ({ ...p, custom_verification_url: e.target.value }))
                     }
                     className="w-full px-3 py-2 text-xs font-mono rounded-lg border border-slate-200 focus:outline-none focus:border-slate-400 text-slate-800"
-                    placeholder="https://verify.nileuniversity.edu.ng/credential"
+                    placeholder="https://verify.youruniversity.edu/credential"
                   />
                   <span className="block text-[10px] text-slate-400 mt-1">
                     Generated QR codes will encode: <code>{formState.custom_verification_url}/&lt;document_id&gt;</code>
@@ -370,7 +370,7 @@ export default function DesktopEnterpriseModal({ show, onHide }) {
                   className="w-full px-3 py-2 text-xs rounded-lg border border-slate-200 bg-white focus:outline-none focus:border-slate-400 text-slate-800"
                 >
                   <option value="sqlite_demo">
-                    Built-In Demo University SIS Database (20 Sample Nile Students: 20220001–20220020)
+                    Built-In Demo University SIS Database (20 Sample Campus Students: 20220001–20220020)
                   </option>
                   <option value="mssql">Microsoft SQL Server (Campus Intranet / Active Directory)</option>
                   <option value="postgresql">PostgreSQL Database</option>
@@ -390,7 +390,7 @@ export default function DesktopEnterpriseModal({ show, onHide }) {
                     onChange={(e) =>
                       setFormState((p) => ({ ...p, connection_uri: e.target.value }))
                     }
-                    placeholder="e.g. mssql+pyodbc://readonly_user:pass@10.0.1.25/nile_sis_db?driver=ODBC+Driver+17+for+SQL+Server"
+                    placeholder="e.g. mssql+pyodbc://readonly_user:pass@10.0.1.25/campus_sis_db?driver=ODBC+Driver+17+for+SQL+Server"
                     className="w-full px-3 py-2 text-xs font-mono rounded-lg border border-slate-200 focus:outline-none focus:border-slate-400 text-slate-800"
                   />
                 </div>
