@@ -68,12 +68,12 @@ const PublicHeader = () => {
               >
                 Developers
               </Link>
-              <Link
+              {/* <Link
                 to="/desktop"
                 className="text-[13px] font-medium text-[var(--pd-mute)] hover:text-[var(--pd-ink)] transition-colors no-underline"
               >
                 Desktop App
-              </Link>
+              </Link> */}
 
               <div className="h-4 w-px bg-gray-200 mx-1"></div>
 
@@ -121,7 +121,6 @@ const PublicHeader = () => {
             {[
               { label: "Features", path: "/features" },
               { label: "Pricing", path: "/pricing" },
-              { label: "Desktop App", path: "/desktop" },
               { label: "Blog", path: "https://blog.proofdeck.app", isExternal: true },
               { label: "Developers", path: "/docs" },
             ].map((item) =>

@@ -32,7 +32,7 @@ export function render(url) {
           <Route path="/" element={<LandingPage />} />
           <Route path="/features" element={<FeaturesPage />} />
           <Route path="/pricing" element={<PricingPage />} />
-          <Route path="/desktop" element={<DesktopDownloadPage />} />
+          {/* <Route path="/desktop" element={<DesktopDownloadPage />} /> */}
           <Route path="/contact" element={<ContactPage />} />
           <Route path="/legal" element={<LegalPage />} />
 

@@ -256,7 +256,7 @@ function App() {
             <Routes>
               {/* Core Public Marketing routes */}
               <Route path="/" element={<RootRoute />} />
-            <Route path="/desktop" element={<DesktopDownloadPage />} />
+            {/* <Route path="/desktop" element={<DesktopDownloadPage />} /> */}
             <Route path="/features" element={<FeaturesPage />} />
             <Route path="/pricing" element={<PricingPage />} />
             <Route path="/legal" element={<LegalPage />} />

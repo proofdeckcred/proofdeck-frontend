@@ -12,7 +12,7 @@ const ROUTES_TO_PRERENDER = [
   "/",
   "/features",
   "/pricing",
-  "/desktop",
+  // "/desktop",
   "/solutions/courses-bootcamps",
   "/solutions/ngos",
   "/solutions/professional-bodies",
