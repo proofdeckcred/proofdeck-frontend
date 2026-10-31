@@ -50,6 +50,7 @@ async function prerender() {
   const vite = await createServer({
     root: rootDir,
     server: { middlewareMode: true },
+    optimizeDeps: { noDiscovery: true },
     appType: "custom",
   });
 

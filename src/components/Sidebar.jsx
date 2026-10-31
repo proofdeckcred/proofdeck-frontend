@@ -7,6 +7,7 @@ import {
   LayoutDashboard,
   FolderOpen,
   FileBadge,
+  FileText,
   PlusCircle,
   UploadCloud,
   BarChart2,
@@ -137,6 +138,7 @@ function Sidebar({ isCollapsed: propIsCollapsed, toggleSidebar: propToggleSideba
         {renderNavLink("/dashboard", <LayoutDashboard />, "My Certificates", true)}
         {renderNavLink("/dashboard/groups", <FolderOpen />, "Groups")}
         {renderNavLink("/dashboard/templates", <FileBadge />, "Templates")}
+        {renderNavLink("/dashboard/documents/editor", <FileText />, "Document Studio")}
 
         {!isCollapsed ? (
           <div className="pt-3 pb-1">

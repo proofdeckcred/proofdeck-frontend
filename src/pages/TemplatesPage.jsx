@@ -23,7 +23,8 @@ import {
   BookOpen,
   Eye,
   Brush,
-  Paintbrush
+  Paintbrush,
+  FileText
 } from "lucide-react";
 import { SERVER_BASE_URL } from "../config";
 import {
@@ -252,6 +253,10 @@ function TemplatesPage() {
   };
 
   const handleEditClick = (template) => {
+    if (template.layout_style === "document") {
+      navigate(`/dashboard/documents/editor/${template.id}`);
+      return;
+    }
     if (template.layout_style === "visual") {
       navigate(`/dashboard/upload-template/${template.id}`);
       return;
@@ -345,14 +350,23 @@ function TemplatesPage() {
             <p className="text-[11px] text-slate-500 mb-0">Create from presets or design from scratch in ProofDeck Studio.</p>
           </div>
 
-          {/* Right Action */}
-          <Link
-            to="/dashboard/upload-template"
-            className="inline-flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white rounded-lg py-2 px-3.5 transition-all font-semibold text-xs shadow-sm hover:shadow decoration-none w-full sm:w-auto text-center gap-1.5"
-          >
-            <Paintbrush size={14} className="text-white" />
-            ProofDeck Studio
-          </Link>
+          {/* Right Actions */}
+          <div className="flex items-center gap-2 w-full sm:w-auto">
+            <Link
+              to="/dashboard/documents/editor"
+              className="inline-flex items-center justify-center bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg py-2 px-3.5 transition-all font-semibold text-xs shadow-sm hover:shadow decoration-none w-full sm:w-auto text-center gap-1.5"
+            >
+              <FileText size={14} className="text-white" />
+              Document Studio (Google Docs)
+            </Link>
+            <Link
+              to="/dashboard/upload-template"
+              className="inline-flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white rounded-lg py-2 px-3.5 transition-all font-semibold text-xs shadow-sm hover:shadow decoration-none w-full sm:w-auto text-center gap-1.5"
+            >
+              <Paintbrush size={14} className="text-white" />
+              Certificate Studio
+            </Link>
+          </div>
         </div>
       </div>
 
