@@ -15,7 +15,7 @@ import {
   Clock,
   CircleNotch,
   CaretRight,
-  X,
+  X
 } from "@phosphor-icons/react";
 import toast, { Toaster } from "react-hot-toast";
 import { getDocuments, deleteTemplate, createCustomTemplate, getTemplate } from "../api";

@@ -1,6 +1,9 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { Copy, Check } from "@phosphor-icons/react";
+import {
+  Copy,
+  Check
+} from "@phosphor-icons/react";
 import Tag from "./ui/Tag";
 import { Ring, DotGrid } from "./ui/decor";
 

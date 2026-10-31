@@ -18,13 +18,13 @@ import {
 } from "chart.js";
 import { getUserAnalytics } from "../api";
 import {
-  Award,
-  TrendingUp,
+  Medal as Award,
+  TrendUp as TrendingUp,
   Lock,
   ArrowUpRight,
   ArrowDownRight,
-  Info,
-} from "lucide-react";
+  Info
+} from "@phosphor-icons/react";
 
 ChartJS.register(
   CategoryScale,

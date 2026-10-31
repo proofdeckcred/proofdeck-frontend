@@ -11,29 +11,29 @@ import {
   getTemplates,
 } from "../api";
 import {
-  Edit3,
-  Download,
+  PencilSimple as Edit3,
+  DownloadSimple as Download,
   Image as ImageIcon,
-  Maximize2,
+  CornersOut as Maximize2,
   X,
   CheckCircle,
-  AlertCircle,
-  RefreshCw,
+  WarningCircle as AlertCircle,
+  ArrowClockwise as RefreshCw,
   ArrowLeft,
-  Mail,
+  EnvelopeSimple as Mail,
   Calendar,
-  Award,
+  Medal as Award,
   User,
   Shield,
   Globe,
   MapPin,
   Clock,
-  DollarSign,
+  CurrencyDollar as DollarSign,
   QrCode,
   Lock,
   Copy,
-  Check,
-} from "lucide-react";
+  Check
+} from "@phosphor-icons/react";
 import toast, { Toaster } from "react-hot-toast";
 import TemplateRenderer from "../components/templates/TemplateRenderer";
 import QRCode from "react-qr-code";

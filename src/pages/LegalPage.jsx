@@ -1,5 +1,13 @@
 import React, { useState, useEffect } from "react";
-import { ShieldCheck, LockSimple, FileText, HardDrives, Globe, Key, ArrowLeft } from "@phosphor-icons/react";
+import {
+  ShieldCheck,
+  LockSimple,
+  FileText,
+  HardDrives,
+  Globe,
+  Key,
+  ArrowLeft
+} from "@phosphor-icons/react";
 import { useLocation, Link } from "react-router-dom";
 import SEO from "../components/SEO";
 import IconBadge from "../components/ui/IconBadge";

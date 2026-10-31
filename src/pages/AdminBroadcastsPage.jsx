@@ -1,10 +1,31 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import {
-  Mail, Send, Eye, Plus, Trash2, CheckCircle2, AlertCircle, ShieldAlert,
-  Loader2, RefreshCw, BarChart2, Layers, Check, HelpCircle, Image as ImageIcon,
-  GripVertical, ChevronUp, ChevronDown, Building2, Link as LinkIcon, Video, Play, ExternalLink,
-  Users, UserCheck
-} from 'lucide-react';
+  EnvelopeSimple as Mail,
+  PaperPlaneRight as Send,
+  Eye,
+  Plus,
+  Trash as Trash2,
+  CheckCircle as CheckCircle2,
+  WarningCircle as AlertCircle,
+  ShieldWarning as ShieldAlert,
+  CircleNotch as Loader2,
+  ArrowClockwise as RefreshCw,
+  ChartBar as BarChart2,
+  Stack as Layers,
+  Check,
+  Question as HelpCircle,
+  Image as ImageIcon,
+  DotsSixVertical as GripVertical,
+  CaretUp as ChevronUp,
+  CaretDown as ChevronDown,
+  Buildings as Building2,
+  Link as LinkIcon,
+  Video,
+  Play,
+  ArrowSquareOut as ExternalLink,
+  Users,
+  UserCheck
+} from "@phosphor-icons/react";
 import Select from 'react-select';
 import {
   getAdminBroadcasts,

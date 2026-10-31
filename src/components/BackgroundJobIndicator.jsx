@@ -1,6 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { getJobStatus } from '../api';
-import { Loader2, CheckCircle, XCircle, X, ChevronDown, ChevronUp } from 'lucide-react';
+import {
+  CircleNotch as Loader2,
+  CheckCircle,
+  XCircle,
+  X,
+  CaretDown as ChevronDown,
+  CaretUp as ChevronUp
+} from "@phosphor-icons/react";
 
 export function useBackgroundJob() {
   const [activeJobId, setActiveJobId] = useState(() => {

@@ -1,18 +1,18 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-  HelpCircle,
-  Filter,
+  Question as HelpCircle,
+  Funnel as Filter,
   Eye,
-  AlertCircle,
+  WarningCircle as AlertCircle,
   CheckCircle,
   Clock,
-  ChevronLeft,
-  ChevronRight,
-  MessageSquare,
+  CaretLeft as ChevronLeft,
+  CaretRight as ChevronRight,
+  ChatCenteredText as MessageSquare,
   Ticket,
-  Mail
-} from "lucide-react";
+  EnvelopeSimple as Mail
+} from "@phosphor-icons/react";
 import { getAdminSupportTickets } from "../api";
 import AdminWidgetMessages from "../components/AdminWidgetMessages";
 

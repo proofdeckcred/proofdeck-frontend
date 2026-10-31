@@ -1,19 +1,19 @@
 import React, { useState, useEffect } from "react";
 import {
   FileText,
-  Search,
+  MagnifyingGlass as Search,
   CheckCircle,
   XCircle,
   Calendar,
   User,
-  Award,
-  ChevronLeft,
-  ChevronRight,
-  Filter,
+  Medal as Award,
+  CaretLeft as ChevronLeft,
+  CaretRight as ChevronRight,
+  Funnel as Filter,
   Eye,
-  Trash2,
-  FileCheck,
-} from "lucide-react";
+  Trash as Trash2,
+  FileText as FileCheck
+} from "@phosphor-icons/react";
 import {
   getAdminCertificatesOverview,
   getAdminCertificates,

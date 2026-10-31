@@ -2,30 +2,30 @@ import React, { useState, useEffect, useRef } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Modal, Button, Spinner, Form, Card, Tooltip, OverlayTrigger } from "react-bootstrap";
 import {
-  Trash2,
-  Edit,
+  Trash as Trash2,
+  PencilSimple as Edit,
   Plus,
   Copy,
-  LayoutTemplate,
-  Search,
-  Filter,
+  Layout as LayoutTemplate,
+  MagnifyingGlass as Search,
+  Funnel as Filter,
   Check,
   X,
-  Maximize2,
+  CornersOut as Maximize2,
   ImageIcon,
-  Type,
+  TextT as Type,
   Palette,
-  Save,
-  Loader2,
-  MoreVertical,
+  FloppyDisk as Save,
+  CircleNotch as Loader2,
+  DotsThreeVertical as MoreVertical,
   Briefcase,
-  Award,
+  Medal as Award,
   BookOpen,
   Eye,
-  Brush,
-  Paintbrush,
+  PaintBrush as Brush,
+  PaintBrush as Paintbrush,
   FileText
-} from "lucide-react";
+} from "@phosphor-icons/react";
 import { SERVER_BASE_URL } from "../config";
 import {
   getTemplates,

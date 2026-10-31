@@ -1,6 +1,13 @@
 import React from 'react';
 import * as Popover from '@radix-ui/react-popover';
-import { User, Settings, Users, HelpCircle, LogOut, Palette } from 'lucide-react';
+import {
+  User,
+  Gear,
+  Users,
+  Question,
+  SignOut,
+  Palette
+} from "@phosphor-icons/react";
 import { useNavigate } from 'react-router-dom';
 import { useUser } from '../context/UserContext';
 import { useTheme } from '../context/ThemeContext';
@@ -65,7 +72,7 @@ export default function ProfileDropdown() {
               onClick={() => { setIsOpen(false); navigate('/dashboard/settings'); }}
               className="flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 rounded-lg cursor-pointer transition-colors"
             >
-              <Settings className="w-4 h-4 text-slate-500 shrink-0" />
+              <Gear className="w-4 h-4 text-slate-500 shrink-0" />
               <span>All Settings</span>
             </button>
 
@@ -94,7 +101,7 @@ export default function ProfileDropdown() {
               onClick={() => { setIsOpen(false); navigate('/dashboard/support'); }}
               className="flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 rounded-lg cursor-pointer transition-colors"
             >
-              <HelpCircle className="w-4 h-4 text-slate-500 shrink-0" />
+              <Question className="w-4 h-4 text-slate-500 shrink-0" />
               <span>Support</span>
             </button>
           </div>
@@ -105,7 +112,7 @@ export default function ProfileDropdown() {
               onClick={handleLogout}
               className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-red-600 hover:bg-red-50 rounded-lg cursor-pointer transition-colors"
             >
-              <LogOut className="w-4 h-4 text-red-500 shrink-0" />
+              <SignOut className="w-4 h-4 text-red-500 shrink-0" />
               <span>Log out</span>
             </button>
           </div>

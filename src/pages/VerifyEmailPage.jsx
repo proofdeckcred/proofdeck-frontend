@@ -1,7 +1,14 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useLocation, useNavigate, Link } from "react-router-dom";
 import { verifyEmail, resendVerificationEmail } from "../api";
-import { CheckCircle, AlertCircle, Loader2, ArrowRight, Mail, Edit3 } from "lucide-react";
+import {
+  CheckCircle,
+  WarningCircle as AlertCircle,
+  CircleNotch as Loader2,
+  ArrowRight,
+  EnvelopeSimple as Mail,
+  PencilSimple as Edit3
+} from "@phosphor-icons/react";
 import AuthLayout from "../layouts/AuthLayout";
 
 function VerifyEmailPage() {

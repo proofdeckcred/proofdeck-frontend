@@ -1,5 +1,15 @@
 import React, { useState, useEffect } from "react";
-import { Search, Loader, Trash2, Mail, User, Clock, CheckCircle, AlertCircle, MessageSquare } from "lucide-react";
+import {
+  MagnifyingGlass as Search,
+  CircleNotch as Loader,
+  Trash as Trash2,
+  EnvelopeSimple as Mail,
+  User,
+  Clock,
+  CheckCircle,
+  WarningCircle as AlertCircle,
+  ChatCenteredText as MessageSquare
+} from "@phosphor-icons/react";
 import { getWidgetMessages, deleteWidgetMessage, updateWidgetMessageStatus, replyToWidgetMessage } from "../api";
 import toast from "react-hot-toast";
 

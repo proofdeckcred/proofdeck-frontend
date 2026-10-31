@@ -20,7 +20,7 @@ import {
   ArrowSquareOut as ExternalLink,
   Check,
   DownloadSimple as Download,
-  DeviceMobile as Smartphone,
+  DeviceMobile as Smartphone
 } from "@phosphor-icons/react";
 import BrandIcon from "../components/ui/BrandIcon";
 import IconBadge from "../components/ui/IconBadge";

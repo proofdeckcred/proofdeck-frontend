@@ -1,6 +1,9 @@
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
-import { ShieldCheck, ArrowRight } from "lucide-react";
+import {
+  ShieldCheck,
+  ArrowRight
+} from "@phosphor-icons/react";
 import { APP_NAME } from "../config";
 import MobileWarning from "../components/MobileWarning";
 import { useWhiteLabel } from "../context/WhiteLabelContext";

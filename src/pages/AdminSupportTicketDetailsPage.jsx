@@ -2,18 +2,18 @@ import React, { useState, useEffect, useRef } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import {
   ArrowLeft,
-  Send,
+  PaperPlaneRight as Send,
   User,
   Paperclip,
   CheckCircle,
   Clock,
-  AlertTriangle,
-  Loader2,
+  Warning as AlertTriangle,
+  CircleNotch as Loader2,
   X,
   UserCircle,
   Shield,
-  HelpCircle,
-} from "lucide-react";
+  Question as HelpCircle
+} from "@phosphor-icons/react";
 import {
   getAdminTicketDetails,
   adminReplyToTicket,

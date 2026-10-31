@@ -1,23 +1,23 @@
 import React, { useState, useEffect } from "react";
 import {
   Globe,
-  CheckCircle2,
-  AlertCircle,
-  Loader2,
+  CheckCircle as CheckCircle2,
+  WarningCircle as AlertCircle,
+  CircleNotch as Loader2,
   Copy,
-  ExternalLink,
+  ArrowSquareOut as ExternalLink,
   Palette,
-  RefreshCw,
-  Trash2,
+  ArrowClockwise as RefreshCw,
+  Trash as Trash2,
   Check,
-  Building,
-  Mail,
+  Buildings as Building,
+  EnvelopeSimple as Mail,
   Shield,
-  Layers,
-  Save,
+  Stack as Layers,
+  FloppyDisk as Save,
   Info,
   ArrowRight
-} from "lucide-react";
+} from "@phosphor-icons/react";
 import toast from "react-hot-toast";
 import {
   getWhitelabelSettings,

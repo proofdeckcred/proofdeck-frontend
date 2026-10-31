@@ -1,6 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react';
 import KonvaPreview from '../KonvaPreview'; // Adjust path as needed
-import { LayoutTemplate } from 'lucide-react';
+import {
+  Layout
+} from "@phosphor-icons/react";
 import { SERVER_BASE_URL } from '../../config';
 import { useUser } from '../../context/UserContext';
 import { parseExcelOrStringDate } from '../../utils/columnMapping';
@@ -52,7 +54,7 @@ const TemplateRenderer = ({ template, formData = {}, isFullscreen = false }) => 
     if (!template) {
         return (
             <div className="flex flex-col items-center justify-center h-full bg-gray-50/50 rounded-xl border-2 border-dashed border-gray-200 p-12 text-center text-gray-400">
-                <LayoutTemplate className="w-12 h-12 mb-3 opacity-20" />
+                <Layout className="w-12 h-12 mb-3 opacity-20" />
                 <p className="font-medium">Select a template to generate preview</p>
             </div>
         );

@@ -45,7 +45,7 @@ import {
   ArrowClockwise,
   ArrowCounterClockwise,
   PaintBrush,
-  Highlighter,
+  Highlighter
 } from "@phosphor-icons/react";
 import { createCustomTemplate, getTemplate, updateCustomTemplate } from "../api";
 import { useUser } from "../context/UserContext";

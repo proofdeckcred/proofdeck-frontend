@@ -5,16 +5,16 @@ import {
   CreditCard,
   Calendar,
   User,
-  Mail,
+  EnvelopeSimple as Mail,
   Tag,
   Globe,
   CheckCircle,
   XCircle,
-  AlertCircle,
-  Loader2,
-  AlertTriangle,
-  Receipt,
-} from "lucide-react";
+  WarningCircle as AlertCircle,
+  CircleNotch as Loader2,
+  Warning as AlertTriangle,
+  Receipt
+} from "@phosphor-icons/react";
 import { getAdminTransactionDetails } from "../api";
 
 function AdminPaymentDetailsPage() {

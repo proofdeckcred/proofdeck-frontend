@@ -1,17 +1,17 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-  Building,
-  Search,
-  Trash2,
+  Buildings as Building,
+  MagnifyingGlass as Search,
+  Trash as Trash2,
   Eye,
   Users,
   Calendar,
-  ChevronLeft,
-  ChevronRight,
-  AlertTriangle,
-  Loader2,
-} from "lucide-react";
+  CaretLeft as ChevronLeft,
+  CaretRight as ChevronRight,
+  Warning as AlertTriangle,
+  CircleNotch as Loader2
+} from "@phosphor-icons/react";
 import { getAdminCompanies, deleteAdminCompany } from "../api";
 
 function AdminCompaniesPage() {

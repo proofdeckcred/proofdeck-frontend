@@ -2,7 +2,13 @@ import React from "react";
 import { Link } from "react-router-dom";
 import PublicHeader from "../components/PublicHeader";
 import PublicFooter from "../components/PublicFooter";
-import { ShieldCheck, Stack, SealCheck, Check, ArrowRight } from "@phosphor-icons/react";
+import {
+  ShieldCheck,
+  Stack,
+  SealCheck,
+  Check,
+  ArrowRight
+} from "@phosphor-icons/react";
 import { motion } from "motion/react";
 import SEO from "../components/SEO";
 import IconBadge from "../components/ui/IconBadge";

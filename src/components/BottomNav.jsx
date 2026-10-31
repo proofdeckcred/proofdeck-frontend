@@ -1,14 +1,14 @@
 import React, { useState } from "react";
 import { NavLink } from "react-router-dom";
 import {
-  LayoutGrid,
-  Folder,
+  SquaresFour as LayoutGrid,
+  FolderOpen as Folder,
   Plus,
-  LayoutTemplate,
-  Menu,
+  Layout as LayoutTemplate,
+  List as Menu,
   FilePlus,
-  Users,
-} from "lucide-react";
+  Users
+} from "@phosphor-icons/react";
 import "../styles/BottomNav.css";
 
 function BottomNav({ onOpenMenu }) {

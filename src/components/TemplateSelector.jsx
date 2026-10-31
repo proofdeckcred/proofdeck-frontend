@@ -1,5 +1,11 @@
 import React, { useState } from "react";
-import { Check, SquaresFour, Crown, CaretDown, CaretUp } from "@phosphor-icons/react";
+import {
+  Check,
+  SquaresFour,
+  Crown,
+  CaretDown,
+  CaretUp
+} from "@phosphor-icons/react";
 import TemplateRenderer from "./templates/TemplateRenderer";
 
 /**

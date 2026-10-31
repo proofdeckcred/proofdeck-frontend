@@ -10,7 +10,7 @@ import {
   Sparkle,
   WifiSlash,
   FolderSimple,
-  CircleNotch,
+  CircleNotch
 } from "@phosphor-icons/react";
 import toast, { Toaster } from "react-hot-toast";
 

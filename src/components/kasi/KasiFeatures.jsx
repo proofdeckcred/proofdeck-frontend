@@ -1,5 +1,14 @@
 import React from "react";
-import { Bot, FileText, BookOpen, Clock, Shield, BarChart3, TrendingUp, MessageSquareQuote } from "lucide-react";
+import {
+  Robot as Bot,
+  FileText,
+  BookOpen,
+  Clock,
+  Shield,
+  ChartBar as BarChart3,
+  TrendUp as TrendingUp,
+  Quotes as MessageSquareQuote
+} from "@phosphor-icons/react";
 
 const FeatureCard = ({ icon: Icon, title, description, badge, list, image }) => (
   <div className="flex flex-col h-full bg-white rounded-3xl border border-gray-100 shadow-sm hover:shadow-xl hover:border-[#0F8C55]/20 transition-all group overflow-hidden">

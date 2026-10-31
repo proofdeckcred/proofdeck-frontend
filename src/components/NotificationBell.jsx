@@ -1,6 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import * as Popover from '@radix-ui/react-popover';
-import { Bell, BellOff, Check } from 'lucide-react';
+import {
+  Bell,
+  BellSlash as BellOff,
+  Check
+} from "@phosphor-icons/react";
 import { getNotifications, getUnreadNotificationCount, markNotificationRead, markAllNotificationsRead } from '../api';
 
 function formatRelativeTime(dateString) {

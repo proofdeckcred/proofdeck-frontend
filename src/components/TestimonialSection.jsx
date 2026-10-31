@@ -1,5 +1,9 @@
 import React, { useState, useEffect } from "react";
-import { Quotes, CaretLeft, CaretRight } from "@phosphor-icons/react";
+import {
+  Quotes,
+  CaretLeft,
+  CaretRight
+} from "@phosphor-icons/react";
 import { motion, AnimatePresence } from "motion/react";
 import Tag from "./ui/Tag";
 import { Guilloche } from "./ui/decor";

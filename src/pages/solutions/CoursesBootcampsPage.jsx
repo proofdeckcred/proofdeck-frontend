@@ -3,7 +3,11 @@ import { Link } from "react-router-dom";
 import PublicHeader from "../../components/PublicHeader";
 import PublicFooter from "../../components/PublicFooter";
 import SEO from "../../components/SEO";
-import { GraduationCap, ShieldCheck, ArrowRight } from "@phosphor-icons/react";
+import {
+  GraduationCap,
+  ShieldCheck,
+  ArrowRight
+} from "@phosphor-icons/react";
 import BrandIcon from "../../components/ui/BrandIcon";
 import Tag from "../../components/ui/Tag";
 import IconBadge from "../../components/ui/IconBadge";

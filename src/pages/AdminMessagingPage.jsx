@@ -1,15 +1,15 @@
 import React, { useState, useEffect, useRef, useMemo } from "react";
 import {
-  Mail,
-  Send,
+  EnvelopeSimple as Mail,
+  PaperPlaneRight as Send,
   Image as ImageIcon,
   Eye,
   Users,
-  Loader2,
+  CircleNotch as Loader2,
   CheckCircle,
-  AlertTriangle,
-  X,
-} from "lucide-react";
+  Warning as AlertTriangle,
+  X
+} from "@phosphor-icons/react";
 import {
   getEmailRecipients,
   sendAdminBulkEmail,

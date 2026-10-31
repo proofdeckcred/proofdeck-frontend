@@ -2,17 +2,17 @@ import React, { useState, useRef, useEffect } from "react";
 import { useUser } from "../context/UserContext";
 import { transferQuota } from "../api";
 import {
-  Building2,
+  Buildings,
   User,
-  ChevronDown,
+  CaretDown,
   Check,
-  ArrowRightLeft,
+  ArrowsLeftRight,
   ShieldCheck,
   PlusCircle,
   Coins,
   X,
-  Loader2,
-} from "lucide-react";
+  CircleNotch
+} from "@phosphor-icons/react";
 
 const WorkspaceSwitcher = ({ isCollapsed }) => {
   const { user, workspace, switchWorkspace, fetchUser } = useUser();
@@ -127,7 +127,7 @@ const WorkspaceSwitcher = ({ isCollapsed }) => {
           {workspace === "personal" ? (
             <User size={18} />
           ) : (
-            <Building2 size={18} />
+            <Buildings size={18} />
           )}
         </button>
       ) : (
@@ -146,7 +146,7 @@ const WorkspaceSwitcher = ({ isCollapsed }) => {
               {workspace === "personal" ? (
                 <User size={16} />
               ) : (
-                <Building2 size={16} />
+                <Buildings size={16} />
               )}
             </div>
             <div className="flex flex-col min-w-0">
@@ -160,7 +160,7 @@ const WorkspaceSwitcher = ({ isCollapsed }) => {
               </span>
             </div>
           </div>
-          <ChevronDown
+          <CaretDown
             size={14}
             className={`text-slate-400 group-hover:text-slate-600 dark:text-zinc-500 dark:group-hover:text-zinc-300 transition-transform duration-200 shrink-0 ${
               isOpen ? "rotate-180" : ""
@@ -243,7 +243,7 @@ const WorkspaceSwitcher = ({ isCollapsed }) => {
                               : "bg-slate-100 text-slate-700"
                           }`}
                         >
-                          <Building2 size={14} />
+                          <Buildings size={14} />
                         </div>
                         <div className="min-w-0">
                           <div className="flex items-center gap-1.5">
@@ -289,7 +289,7 @@ const WorkspaceSwitcher = ({ isCollapsed }) => {
                 }}
                 className="w-full flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-xl text-xs font-bold text-indigo-600 hover:bg-indigo-50 border border-indigo-100/80 transition-colors cursor-pointer"
               >
-                <ArrowRightLeft size={13} />
+                <ArrowsLeftRight size={13} />
                 <span>Transfer Personal Quota</span>
               </button>
             </div>
@@ -414,12 +414,12 @@ const WorkspaceSwitcher = ({ isCollapsed }) => {
                 >
                   {transferring ? (
                     <>
-                      <Loader2 size={14} className="animate-spin" />
+                      <CircleNotch size={14} className="animate-spin" />
                       <span>Transferring...</span>
                     </>
                   ) : (
                     <>
-                      <ArrowRightLeft size={14} />
+                      <ArrowsLeftRight size={14} />
                       <span>Confirm Transfer</span>
                     </>
                   )}

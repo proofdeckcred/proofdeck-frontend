@@ -1,6 +1,14 @@
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Shield, ExternalLink, LogOut, Activity, User, Menu, Bell } from 'lucide-react';
+import {
+  Shield,
+  ArrowSquareOut as ExternalLink,
+  SignOut as LogOut,
+  Pulse as Activity,
+  User,
+  List as Menu,
+  Bell
+} from "@phosphor-icons/react";
 import { useAdminAuth } from '../context/AdminAuthContext';
 
 export default function AdminTopbar({ toggleMobileSidebar }) {

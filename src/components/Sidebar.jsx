@@ -17,7 +17,7 @@ import {
   CaretLeft,
   CaretRight,
   EnvelopeSimple,
-  X,
+  X
 } from "@phosphor-icons/react";
 import { OverlayTrigger, Tooltip } from "react-bootstrap";
 import WorkspaceSwitcher from "./WorkspaceSwitcher";

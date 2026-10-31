@@ -1,5 +1,13 @@
 import React, { useEffect, useState } from "react";
-import { HardDrive, Database, Cpu, AlertTriangle, ShieldCheck, MailCheck, Server } from "lucide-react";
+import {
+  HardDrive,
+  Database,
+  Cpu,
+  Warning as AlertTriangle,
+  ShieldCheck,
+  EnvelopeSimple as MailCheck,
+  HardDrives as Server
+} from "@phosphor-icons/react";
 import axios from "axios";
 import { SERVER_BASE_URL } from "../config";
 

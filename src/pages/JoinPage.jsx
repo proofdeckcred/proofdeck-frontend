@@ -3,7 +3,13 @@ import { useParams, useNavigate, Link } from "react-router-dom";
 import { getInvitationDetails, acceptInvitation } from "../api";
 import toast, { Toaster } from "react-hot-toast";
 import { Spinner } from "react-bootstrap";
-import { User, Lock, Building, ShieldCheck, AlertCircle } from "lucide-react";
+import {
+  User,
+  Lock,
+  Buildings as Building,
+  ShieldCheck,
+  WarningCircle as AlertCircle
+} from "@phosphor-icons/react";
 
 function JoinPage() {
   const { token } = useParams();

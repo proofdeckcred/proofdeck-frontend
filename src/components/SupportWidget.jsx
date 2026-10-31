@@ -1,5 +1,14 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { MessageSquare, X, Send, Loader, ChevronLeft, HelpCircle, Clock, ShieldCheck } from 'lucide-react';
+import {
+  ChatCenteredText as MessageSquare,
+  X,
+  PaperPlaneRight as Send,
+  CircleNotch as Loader,
+  CaretLeft as ChevronLeft,
+  Question as HelpCircle,
+  Clock,
+  ShieldCheck
+} from "@phosphor-icons/react";
 import { motion, AnimatePresence } from 'motion/react';
 import { sendSupportMessage, getChatHistory } from '../api';
 import toast from 'react-hot-toast';

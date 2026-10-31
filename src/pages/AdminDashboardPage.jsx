@@ -2,25 +2,25 @@ import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
   Users,
-  FileBadge,
-  DollarSign,
-  BarChart2,
-  ListOrdered,
-  Loader2,
-  AlertCircle,
-  Inbox,
-  Activity,
-  Mail,
+  Certificate as FileBadge,
+  CurrencyDollar as DollarSign,
+  ChartBar as BarChart2,
+  ListNumbers as ListOrdered,
+  CircleNotch as Loader2,
+  WarningCircle as AlertCircle,
+  Tray as Inbox,
+  Pulse as Activity,
+  EnvelopeSimple as Mail,
   CreditCard,
   FileText,
   Radio,
   Plus,
   ArrowUpRight,
   Shield,
-  RefreshCw,
-  TrendingUp,
-  Building,
-} from "lucide-react";
+  ArrowClockwise as RefreshCw,
+  TrendUp as TrendingUp,
+  Buildings as Building
+} from "@phosphor-icons/react";
 import { Line } from "react-chartjs-2";
 import {
   Chart as ChartJS,

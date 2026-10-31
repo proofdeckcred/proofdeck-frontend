@@ -10,7 +10,7 @@ import {
   X,
   CalendarBlank,
   CaretRight,
-  CircleNotch,
+  CircleNotch
 } from "@phosphor-icons/react";
 import DatePicker from "react-datepicker";
 import PublicHeader from "../components/PublicHeader";

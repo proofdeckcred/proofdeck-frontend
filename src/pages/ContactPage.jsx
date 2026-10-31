@@ -13,7 +13,7 @@ import {
   CircleNotch,
   CheckCircle,
   MapPin,
-  Phone,
+  Phone
 } from "@phosphor-icons/react";
 import SEO from "../components/SEO";
 import Tag from "../components/ui/Tag";

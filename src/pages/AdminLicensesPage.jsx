@@ -7,25 +7,25 @@ import {
   extendAdminLicense
 } from "../api";
 import {
-  KeyRound,
+  Key as KeyRound,
   Plus,
-  Search,
-  Building2,
+  MagnifyingGlass as Search,
+  Buildings as Building2,
   Calendar,
   Monitor,
-  CheckCircle2,
-  AlertTriangle,
+  CheckCircle as CheckCircle2,
+  Warning as AlertTriangle,
   XCircle,
   Copy,
   Check,
-  RefreshCw,
-  ExternalLink,
+  ArrowClockwise as RefreshCw,
+  ArrowSquareOut as ExternalLink,
   ShieldCheck,
   Clock,
-  ChevronRight,
+  CaretRight as ChevronRight,
   Database,
   QrCode
-} from "lucide-react";
+} from "@phosphor-icons/react";
 import toast, { Toaster } from "react-hot-toast";
 
 function AdminLicensesPage() {

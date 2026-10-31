@@ -1,21 +1,21 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-  Search,
+  MagnifyingGlass as Search,
   Users,
-  Filter,
-  MoreVertical,
+  Funnel as Filter,
+  DotsThreeVertical as MoreVertical,
   Eye,
-  Trash2,
-  Ban,
+  Trash as Trash2,
+  Prohibit as Ban,
   CheckCircle,
-  ChevronLeft,
-  ChevronRight,
-  Download,
-  ArrowUpDown,
+  CaretLeft as ChevronLeft,
+  CaretRight as ChevronRight,
+  DownloadSimple as Download,
+  ArrowsDownUp as ArrowUpDown,
   ArrowUp,
-  ArrowDown,
-} from "lucide-react";
+  ArrowDown
+} from "@phosphor-icons/react";
 import {
   getAdminUsers,
   suspendAdminUser,

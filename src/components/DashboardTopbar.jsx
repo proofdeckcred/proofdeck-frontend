@@ -1,6 +1,13 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { SidebarSimple, List, Sun, Moon, HardDrives, ShieldCheck } from '@phosphor-icons/react';
+import {
+  SidebarSimple,
+  List,
+  Sun,
+  Moon,
+  HardDrives,
+  ShieldCheck
+} from "@phosphor-icons/react";
 import { OverlayTrigger, Tooltip } from 'react-bootstrap';
 import NotificationBell from './NotificationBell';
 import ProfileDropdown from './ProfileDropdown';

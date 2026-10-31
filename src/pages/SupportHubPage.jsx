@@ -3,7 +3,12 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { helpArticles } from "../data/helpArticles.jsx";
-import { Search, MessageCircle, HelpCircle, ArrowLeft } from "lucide-react";
+import {
+  MagnifyingGlass as Search,
+  ChatCircle as MessageCircle,
+  Question as HelpCircle,
+  ArrowLeft
+} from "@phosphor-icons/react";
 import { useSupportStatus } from "../hooks/useSupportStatus";
 import { useUser } from "../context/UserContext";
 

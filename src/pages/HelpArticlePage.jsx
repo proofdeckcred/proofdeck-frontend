@@ -2,7 +2,10 @@
 
 import React from "react";
 import { useParams, Link, Navigate } from "react-router-dom";
-import { ArrowLeft, MessageCircle } from "lucide-react";
+import {
+  ArrowLeft,
+  ChatCircle as MessageCircle
+} from "@phosphor-icons/react";
 import { helpArticles } from "../data/helpArticles.jsx";
 
 function HelpArticlePage() {

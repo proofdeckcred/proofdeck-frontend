@@ -10,7 +10,7 @@ import {
   Rocket,
   TrendUp,
   Crown,
-  Buildings,
+  Buildings
 } from "@phosphor-icons/react";
 import SEO from "../components/SEO";
 import CustomPricingModal from "../components/CustomPricingModal";

@@ -5,7 +5,7 @@ import {
   Stack,
   ChartLineUp,
   ShieldCheck,
-  Code,
+  Code
 } from "@phosphor-icons/react";
 import Tag from "./ui/Tag";
 import CheckBadge from "./ui/CheckBadge";

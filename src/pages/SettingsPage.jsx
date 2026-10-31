@@ -24,13 +24,13 @@ import {
   User,
   CreditCard,
   Shield,
-  Building,
-  PenTool,
-  UploadCloud,
+  Buildings as Building,
+  Pen as PenTool,
+  CloudArrowUp as UploadCloud,
   Check,
   Copy,
-  LogOut,
-  HelpCircle,
+  SignOut as LogOut,
+  Question as HelpCircle,
   Lock,
   Info,
   Key,
@@ -38,17 +38,17 @@ import {
   Link as LinkIcon,
   Gift,
   PlusCircle,
-  Trash2,
+  Trash as Trash2,
   UserMinus,
-  Mail,
+  EnvelopeSimple as Mail,
   Globe,
   ArrowRight,
-  Zap,
+  Lightning as Zap,
   Palette,
   Sun,
   Moon,
-  Monitor,
-} from "lucide-react";
+  Monitor
+} from "@phosphor-icons/react";
 import { Modal, Spinner, Button } from "react-bootstrap";
 import WhitelabelSettingsTab from "../components/settings/WhitelabelSettingsTab";
 import { useTheme } from "../context/ThemeContext";

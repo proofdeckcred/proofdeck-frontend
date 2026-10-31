@@ -4,16 +4,16 @@ import React, { useState, useMemo } from "react";
 import {
   X,
   Cpu,
-  CheckCircle2,
-  AlertCircle,
-  HelpCircle,
+  CheckCircle as CheckCircle2,
+  WarningCircle as AlertCircle,
+  Question as HelpCircle,
   ArrowRight,
-  Split,
+  GitFork as Split,
   Table,
-  Loader2,
-  RotateCcw,
+  CircleNotch as Loader2,
+  ArrowCounterClockwise as RotateCcw,
   Info
-} from "lucide-react";
+} from "@phosphor-icons/react";
 import {
   PROOFDECK_CORE_FIELDS,
   requestAiMapping,

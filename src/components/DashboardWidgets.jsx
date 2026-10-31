@@ -1,5 +1,15 @@
 import React from "react";
-import { ArrowUp, ArrowDown, DollarSign, Users, AlertCircle, Activity, Building, CreditCard, ShieldCheck } from "lucide-react";
+import {
+  ArrowUp,
+  ArrowDown,
+  CurrencyDollar as DollarSign,
+  Users,
+  WarningCircle as AlertCircle,
+  Pulse as Activity,
+  Buildings as Building,
+  CreditCard,
+  ShieldCheck
+} from "@phosphor-icons/react";
 import { Doughnut } from "react-chartjs-2";
 
 export const PulseCard = ({ title, value, subtext, icon: Icon, trend, color, subColor }) => (

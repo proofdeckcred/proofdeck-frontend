@@ -1,7 +1,18 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { signupUser } from "../api";
-import { Mail, Lock, User, Briefcase, Loader2, AlertCircle, Check, Building2, Eye, EyeOff } from "lucide-react";
+import {
+  EnvelopeSimple as Mail,
+  Lock,
+  User,
+  Briefcase,
+  CircleNotch as Loader2,
+  WarningCircle as AlertCircle,
+  Check,
+  Buildings as Building2,
+  Eye,
+  EyeSlash as EyeOff
+} from "@phosphor-icons/react";
 import AuthLayout from "../layouts/AuthLayout";
 
 function SignupPage() {

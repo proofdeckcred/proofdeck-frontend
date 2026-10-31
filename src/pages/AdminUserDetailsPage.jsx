@@ -2,19 +2,19 @@ import React, { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import {
   ArrowLeft,
-  Mail,
+  EnvelopeSimple as Mail,
   Calendar,
   CreditCard,
-  Ban,
+  Prohibit as Ban,
   CheckCircle,
-  ExternalLink,
+  ArrowSquareOut as ExternalLink,
   Shield,
   Clock,
   Briefcase,
-  Award,
-  AlertTriangle,
-  Loader2,
-} from "lucide-react";
+  Medal as Award,
+  Warning as AlertTriangle,
+  CircleNotch as Loader2
+} from "@phosphor-icons/react";
 import {
   getAdminUserDetails,
   adjustUserQuota,

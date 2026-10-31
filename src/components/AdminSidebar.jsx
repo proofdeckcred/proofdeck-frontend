@@ -1,20 +1,20 @@
 import React from "react";
 import { Link, NavLink, useNavigate } from "react-router-dom";
 import {
-  LayoutDashboard,
+  SquaresFour as LayoutDashboard,
   Users,
-  Building,
+  Buildings as Building,
   CreditCard,
   FileText,
-  BarChart2,
-  Mail,
+  ChartBar as BarChart2,
+  EnvelopeSimple as Mail,
   Shield,
   X,
   Radio,
   BookOpen,
-  KeyRound,
-  LogOut,
-} from "lucide-react";
+  Key as KeyRound,
+  SignOut as LogOut
+} from "@phosphor-icons/react";
 import { useAdminAuth } from "../context/AdminAuthContext";
 
 function AdminSidebar({ onClose }) {

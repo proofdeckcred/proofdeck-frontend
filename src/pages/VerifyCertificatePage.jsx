@@ -14,7 +14,7 @@ import {
   ShareNetwork,
   Copy,
   Check,
-  SignIn,
+  SignIn
 } from "@phosphor-icons/react";
 import BrandIcon from "../components/ui/BrandIcon";
 import TemplateRenderer from "../components/templates/TemplateRenderer";

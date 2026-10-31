@@ -17,7 +17,7 @@ import {
   ChatCircleDots,
   Buildings,
   Pulse,
-  Check,
+  Check
 } from "@phosphor-icons/react";
 import IconBadge from "../components/ui/IconBadge";
 import BrandIcon from "../components/ui/BrandIcon";

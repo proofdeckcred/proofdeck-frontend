@@ -1,5 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
-import { DotsThreeVertical } from "@phosphor-icons/react";
+import {
+  DotsThreeVertical
+} from "@phosphor-icons/react";
 
 export default function KebabMenu({ items = [], align = "right" }) {
   const [isOpen, setIsOpen] = useState(false);

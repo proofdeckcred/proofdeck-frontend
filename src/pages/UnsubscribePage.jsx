@@ -1,6 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
-import { Mail, CheckCircle2, AlertCircle, ShieldCheck, ArrowLeft, Loader2 } from 'lucide-react';
+import {
+  EnvelopeSimple as Mail,
+  CheckCircle as CheckCircle2,
+  WarningCircle as AlertCircle,
+  ShieldCheck,
+  ArrowLeft,
+  CircleNotch as Loader2
+} from "@phosphor-icons/react";
 import { getEmailPreferences, updateEmailPreferences } from '../api';
 
 export default function UnsubscribePage() {

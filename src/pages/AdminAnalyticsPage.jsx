@@ -13,12 +13,12 @@ import {
   Legend,
 } from "chart.js";
 import {
-    Users,
-    DollarSign,
-    FileText,
-    TrendingUp,
-    Download,
-} from "lucide-react";
+  Users,
+  CurrencyDollar as DollarSign,
+  FileText,
+  TrendUp as TrendingUp,
+  DownloadSimple as Download
+} from "@phosphor-icons/react";
 import { getAdminAnalytics } from "../api";
 
 ChartJS.register(

@@ -1,5 +1,8 @@
 import React, { useState } from "react";
-import { Copy, Check } from "lucide-react";
+import {
+  Copy,
+  Check
+} from "@phosphor-icons/react";
 import toast from "react-hot-toast";
 
 const CodeBlock = ({ children, language }) => {

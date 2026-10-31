@@ -2,17 +2,17 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   CreditCard,
-  Search,
-  Filter,
+  MagnifyingGlass as Search,
+  Funnel as Filter,
   CheckCircle,
   XCircle,
-  AlertCircle,
+  WarningCircle as AlertCircle,
   Eye,
-  Download,
-  ChevronLeft,
-  ChevronRight,
-  TrendingUp,
-} from "lucide-react";
+  DownloadSimple as Download,
+  CaretLeft as ChevronLeft,
+  CaretRight as ChevronRight,
+  TrendUp as TrendingUp
+} from "@phosphor-icons/react";
 import { getAdminTransactions } from "../api";
 
 function AdminPaymentsPage() {

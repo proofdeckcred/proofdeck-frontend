@@ -1,6 +1,10 @@
 import React from "react";
 import { motion } from "motion/react";
-import { ArrowRight, Bot, Sparkles } from "lucide-react";
+import {
+  ArrowRight,
+  Robot as Bot,
+  Sparkle as Sparkles
+} from "@phosphor-icons/react";
 
 const KasiHero = () => {
   return (

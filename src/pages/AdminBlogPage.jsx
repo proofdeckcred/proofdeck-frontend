@@ -3,19 +3,19 @@ import { Link, useNavigate } from "react-router-dom";
 import {
   BookOpen,
   Plus,
-  Search,
-  Filter,
+  MagnifyingGlass as Search,
+  Funnel as Filter,
   Eye,
-  Edit2,
-  Trash2,
+  PencilSimple as Edit2,
+  Trash as Trash2,
   Globe,
   Clock,
   CheckCircle,
   FileText,
-  AlertCircle,
-  Loader2,
-  ExternalLink
-} from "lucide-react";
+  WarningCircle as AlertCircle,
+  CircleNotch as Loader2,
+  ArrowSquareOut as ExternalLink
+} from "@phosphor-icons/react";
 import { getAdminBlogPosts, deleteAdminBlogPost, updateAdminBlogPost } from "../api";
 
 function AdminBlogPage() {

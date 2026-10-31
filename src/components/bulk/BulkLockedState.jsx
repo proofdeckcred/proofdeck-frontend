@@ -2,7 +2,14 @@
 
 import React from "react";
 import { Link } from "react-router-dom";
-import { Lock, Table2, FileSpreadsheet, CheckCircle2, ArrowRight, X } from "lucide-react";
+import {
+  Lock,
+  Table as Table2,
+  FileCsv as FileSpreadsheet,
+  CheckCircle as CheckCircle2,
+  ArrowRight,
+  X
+} from "@phosphor-icons/react";
 
 const BulkLockedState = ({ isOpen, onClose }) => {
   if (!isOpen) return null;

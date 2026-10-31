@@ -15,24 +15,24 @@ import TemplateRenderer from "../components/templates/TemplateRenderer";
 import { SERVER_BASE_URL } from "../config";
 import {
   Calendar,
-  Maximize2,
+  CornersOut as Maximize2,
   X,
   ArrowLeft,
-  Send,
+  PaperPlaneRight as Send,
   User,
-  Type,
+  TextT as Type,
   FileText,
   MapPin,
   Clock,
-  Loader2,
+  CircleNotch as Loader2,
   Info,
   Plus,
-  Trash2,
-  UploadCloud,
-  Download,
+  Trash as Trash2,
+  CloudArrowUp as UploadCloud,
+  DownloadSimple as Download,
   Users,
-  Mail,
-} from "lucide-react";
+  EnvelopeSimple as Mail
+} from "@phosphor-icons/react";
 import toast, { Toaster } from "react-hot-toast";
 import { useUser } from "../context/UserContext";
 import HelpGuide from "../components/HelpGuide";

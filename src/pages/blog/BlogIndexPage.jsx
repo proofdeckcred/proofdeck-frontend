@@ -9,7 +9,7 @@ import {
   CalendarBlank,
   ShieldCheck,
   ShareNetwork,
-  BookOpen,
+  BookOpen
 } from "@phosphor-icons/react";
 import Tag from "../../components/ui/Tag";
 import IconBadge from "../../components/ui/IconBadge";

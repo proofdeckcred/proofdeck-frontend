@@ -2,7 +2,10 @@ import React, { useState, useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Form, Button, Alert, Spinner } from "react-bootstrap";
 import { adminLogin } from "../api";
-import { Eye, EyeOff } from "lucide-react";
+import {
+  Eye,
+  EyeSlash as EyeOff
+} from "@phosphor-icons/react";
 import "../styles/Auth.css";
 
 function AdminLoginPage() {

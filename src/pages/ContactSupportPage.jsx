@@ -15,18 +15,18 @@ import {
 import {
   PlusCircle,
   ArrowLeft,
-  Send,
+  PaperPlaneRight as Send,
   User,
   Paperclip,
-  Trash2,
-  MessageCircle,
+  Trash as Trash2,
+  ChatCircle as MessageCircle,
   Clock,
   CheckCircle,
-  AlertCircle,
+  WarningCircle as AlertCircle,
   FileText,
-  CornerDownRight,
-  Shield,
-} from "lucide-react";
+  ArrowBendDownRight as CornerDownRight,
+  Shield
+} from "@phosphor-icons/react";
 import {
   createUserTicket,
   getUserTickets,

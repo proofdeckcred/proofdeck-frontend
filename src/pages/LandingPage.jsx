@@ -1,6 +1,15 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
-import { Check, ChatCircleDots, Plus, Minus, Buildings, Rocket, TrendUp, Crown } from "@phosphor-icons/react";
+import {
+  Check,
+  ChatCircleDots,
+  Plus,
+  Minus,
+  Buildings,
+  Rocket,
+  TrendUp,
+  Crown
+} from "@phosphor-icons/react";
 import PublicHeader from "../components/PublicHeader";
 import PublicFooter from "../components/PublicFooter";
 import { LandingHero } from "../components/ui/landing-hero";

@@ -2,7 +2,16 @@ import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { loginUser, resendVerificationEmail } from "../api";
 import { useUser } from "../context/UserContext";
-import { Mail, Lock, Loader2, AlertCircle, Eye, EyeOff, ArrowRight, CheckCircle } from "lucide-react";
+import {
+  EnvelopeSimple as Mail,
+  Lock,
+  CircleNotch as Loader2,
+  WarningCircle as AlertCircle,
+  Eye,
+  EyeSlash as EyeOff,
+  ArrowRight,
+  CheckCircle
+} from "@phosphor-icons/react";
 import AuthLayout from "../layouts/AuthLayout";
 import { useWhiteLabel } from "../context/WhiteLabelContext";
 

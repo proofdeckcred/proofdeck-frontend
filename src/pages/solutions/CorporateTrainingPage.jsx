@@ -3,7 +3,12 @@ import { Link } from "react-router-dom";
 import PublicHeader from "../../components/PublicHeader";
 import PublicFooter from "../../components/PublicFooter";
 import SEO from "../../components/SEO";
-import { Briefcase, Medal, TrendUp, ArrowRight } from "@phosphor-icons/react";
+import {
+  Briefcase,
+  Medal,
+  TrendUp,
+  ArrowRight
+} from "@phosphor-icons/react";
 import Tag from "../../components/ui/Tag";
 import IconBadge from "../../components/ui/IconBadge";
 import CheckBadge from "../../components/ui/CheckBadge";

@@ -12,7 +12,7 @@ import {
   HardDrives,
   ArrowClockwise,
   FloppyDisk,
-  X,
+  X
 } from "@phosphor-icons/react";
 import toast from "react-hot-toast";
 import {

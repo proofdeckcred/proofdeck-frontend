@@ -1,6 +1,8 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { CaretLeft } from "@phosphor-icons/react";
+import {
+  CaretLeft
+} from "@phosphor-icons/react";
 
 export default function PageHeader({ title, backTo, backLabel, action, secondaryAction }) {
   return (

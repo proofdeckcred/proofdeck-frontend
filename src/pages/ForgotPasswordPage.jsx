@@ -1,7 +1,13 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { requestPasswordReset } from "../api";
-import { Mail, ArrowLeft, Loader2, CheckCircle, AlertCircle } from "lucide-react";
+import {
+  EnvelopeSimple as Mail,
+  ArrowLeft,
+  CircleNotch as Loader2,
+  CheckCircle,
+  WarningCircle as AlertCircle
+} from "@phosphor-icons/react";
 import AuthLayout from "../layouts/AuthLayout";
 
 function ForgotPasswordPage() {

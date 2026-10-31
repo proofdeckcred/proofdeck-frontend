@@ -1,5 +1,7 @@
 import React from "react";
-import { Check } from "@phosphor-icons/react";
+import {
+  Check
+} from "@phosphor-icons/react";
 
 const TONE_BG = {
   indigo: "bg-[#5144E8] text-white",

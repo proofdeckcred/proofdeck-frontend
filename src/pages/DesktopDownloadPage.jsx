@@ -18,7 +18,7 @@ import {
   Cpu,
   ArrowsClockwise,
   ArrowRight,
-  Info,
+  Info
 } from "@phosphor-icons/react";
 
 export default function DesktopDownloadPage() {

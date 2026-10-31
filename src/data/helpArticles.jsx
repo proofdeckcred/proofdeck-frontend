@@ -4,13 +4,13 @@ import React from "react";
 import {
   Rocket,
   UserCircle,
-  LayoutTemplate,
+  Layout as LayoutTemplate,
   FolderOpen,
-  FileBadge,
+  Certificate as FileBadge,
   CreditCard,
-  Search,
-  Code2,
-} from "lucide-react";
+  MagnifyingGlass as Search,
+  Code as Code2
+} from "@phosphor-icons/react";
 
 export const helpArticles = [
   {

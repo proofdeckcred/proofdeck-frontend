@@ -1,18 +1,18 @@
 // frontend/src/components/HelpGuide.jsx
 
 import React, { useState } from "react";
-import { 
-  Info, 
-  HelpCircle, 
-  Settings2, 
-  FileBadge, 
-  UserPlus, 
-  CheckCircle2, 
-  QrCode, 
-  Mail, 
+import {
+  Info,
+  Question as HelpCircle,
+  SlidersHorizontal as Settings2,
+  Certificate as FileBadge,
+  UserPlus,
+  CheckCircle as CheckCircle2,
+  QrCode,
+  EnvelopeSimple as Mail,
   FileText,
-  MousePointerClick
-} from "lucide-react";
+  CursorClick as MousePointerClick
+} from "@phosphor-icons/react";
 import {
   Sheet,
   SheetContent,

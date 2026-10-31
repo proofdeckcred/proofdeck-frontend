@@ -3,7 +3,12 @@ import PublicHeader from "../components/PublicHeader";
 import PublicFooter from "../components/PublicFooter";
 import KasiHero from "../components/kasi/KasiHero";
 import KasiFeatures from "../components/kasi/KasiFeatures";
-import { ArrowRight, Zap, Bot, ShieldCheck } from "lucide-react";
+import {
+  ArrowRight,
+  Lightning as Zap,
+  Robot as Bot,
+  ShieldCheck
+} from "@phosphor-icons/react";
 import { motion } from "motion/react";
 
 const KasiLandingPage = () => {

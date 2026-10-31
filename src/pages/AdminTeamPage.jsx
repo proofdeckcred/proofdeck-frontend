@@ -1,5 +1,13 @@
 import React, { useState, useEffect } from "react";
-import { Users, Trash2, Key, Shield, Plus, MoreVertical, CheckCircle } from "lucide-react";
+import {
+  Users,
+  Trash as Trash2,
+  Key,
+  Shield,
+  Plus,
+  DotsThreeVertical as MoreVertical,
+  CheckCircle
+} from "@phosphor-icons/react";
 import axios from "axios";
 import { SERVER_BASE_URL } from "../config";
 import { Spinner } from "react-bootstrap";

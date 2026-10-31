@@ -8,7 +8,7 @@ import {
   Buildings,
   Pulse,
   EnvelopeSimple,
-  Code,
+  Code
 } from "@phosphor-icons/react";
 import IconBadge from "./IconBadge";
 import BrandIcon from "./BrandIcon";

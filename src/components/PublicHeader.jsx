@@ -1,6 +1,11 @@
 import React, { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { List, X, ArrowRight, CaretRight } from "@phosphor-icons/react";
+import {
+  List,
+  X,
+  ArrowRight,
+  CaretRight
+} from "@phosphor-icons/react";
 
 const PublicHeader = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);

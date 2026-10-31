@@ -2,16 +2,16 @@ import React, { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import {
   ArrowLeft,
-  Building,
-  Mail,
+  Buildings as Building,
+  EnvelopeSimple as Mail,
   Users,
   Calendar,
-  Award,
-  Loader2,
-  AlertTriangle,
+  Medal as Award,
+  CircleNotch as Loader2,
+  Warning as AlertTriangle,
   User,
-  Shield,
-} from "lucide-react";
+  Shield
+} from "@phosphor-icons/react";
 import { getAdminCompanyDetails, adjustCompanyQuota } from "../api";
 
 function AdminCompanyDetailsPage() {

@@ -1,5 +1,12 @@
 import React, { useState } from "react";
-import { X, MessageSquare, Send, CheckCircle2, Loader2, Building2 } from "lucide-react";
+import {
+  X,
+  ChatCenteredText as MessageSquare,
+  PaperPlaneRight as Send,
+  CheckCircle as CheckCircle2,
+  CircleNotch as Loader2,
+  Buildings as Building2
+} from "@phosphor-icons/react";
 import toast from "react-hot-toast";
 import { sendContactMessage } from "../api";
 
