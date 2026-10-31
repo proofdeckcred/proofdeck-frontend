@@ -1216,14 +1216,12 @@ const UploadTemplatePage = () => {
           </button>
           <div className="h-5 w-px bg-gray-200" />
           <div className="flex items-center gap-2">
-            <span className="text-[10px] font-bold bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded uppercase tracking-wider">
-              Studio
-            </span>
+            
             <input
               type="text"
               value={templateTitle}
               onChange={(e) => setTemplateTitle(e.target.value)}
-              placeholder="Untitled Certificate"
+              placeholder="Template name"
               className="text-sm font-bold text-gray-800 border-none focus:ring-0 placeholder-gray-400 bg-transparent w-48 lg:w-64 hover:bg-gray-50 px-1.5 py-0.5 rounded transition-colors"
             />
           </div>
@@ -1240,7 +1238,7 @@ const UploadTemplatePage = () => {
           >
             <FileUp size={13} />
             <span className="hidden md:inline">
-              {templateImageUrl ? "Replace Cert Template" : "Import Cert Template"}
+              {templateImageUrl ? "Replace image" : "Import image"}
             </span>
           </button>
 
@@ -1260,7 +1258,7 @@ const UploadTemplatePage = () => {
           >
             {previewMode ? <EyeOff size={13} /> : <Eye size={13} />}
             <span className="hidden sm:inline">
-              {previewMode ? "Exit Preview" : "Live Preview"}
+              {previewMode ? "Edit" : "Preview"}
             </span>
           </button>
 
@@ -1307,7 +1305,7 @@ const UploadTemplatePage = () => {
             title="Download high-resolution PNG preview"
           >
             <Download size={13} />
-            <span className="hidden xl:inline">Export PNG</span>
+            <span className="hidden xl:inline">Export</span>
           </button>
 
           {/* Clear / Blank Button */}
@@ -1317,7 +1315,7 @@ const UploadTemplatePage = () => {
             title="Clear all elements and start blank"
           >
             <RefreshCw size={13} />
-            <span className="hidden xl:inline">Reset Blank</span>
+            <span className="hidden xl:inline">Reset</span>
           </button>
 
           {/* Save Button */}
@@ -1331,7 +1329,7 @@ const UploadTemplatePage = () => {
             ) : (
               <Save size={14} />
             )}
-            <span>Save Certificate</span>
+            <span>Save template</span>
           </button>
         </div>
       </header>

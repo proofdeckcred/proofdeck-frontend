@@ -42,7 +42,7 @@ function Sidebar({ isCollapsed: propIsCollapsed, toggleSidebar: propToggleSideba
 
   const renderTooltip = (props) => (
     <Tooltip id="button-tooltip" {...props}>
-      Upgrade to a paid plan to unlock insights!
+      Upgrade to unlock analytics.
     </Tooltip>
   );
 
@@ -135,10 +135,10 @@ function Sidebar({ isCollapsed: propIsCollapsed, toggleSidebar: propToggleSideba
 
       {/* --- NAVIGATION LINKS --- */}
       <div className={`flex-1 py-4 space-y-1 ${isCollapsed ? "px-1" : "px-3"}`}>
-        {renderNavLink("/dashboard", <LayoutDashboard />, "My Certificates", true)}
+        {renderNavLink("/dashboard", <LayoutDashboard />, "Overview", true)}
         {renderNavLink("/dashboard/groups", <FolderOpen />, "Groups")}
         {renderNavLink("/dashboard/templates", <FileBadge />, "Templates")}
-        {renderNavLink("/dashboard/documents/editor", <FileText />, "Document Studio")}
+        {renderNavLink("/dashboard/documents/editor", <FileText />, "Documents")}
 
         {!isCollapsed ? (
           <div className="pt-3 pb-1">
@@ -150,7 +150,7 @@ function Sidebar({ isCollapsed: propIsCollapsed, toggleSidebar: propToggleSideba
           <div className="border-t border-gray-100 my-3 mx-2" />
         )}
 
-        {renderNavLink("/dashboard/create", <PlusCircle />, "Issue Credentials")}
+        {renderNavLink("/dashboard/create", <PlusCircle />, "Issue credential")}
         {/* Commented out for now - will be updated later:
         {renderNavLink("/dashboard/send-invitation", <Mail />, "Send Invitations")}
         */}

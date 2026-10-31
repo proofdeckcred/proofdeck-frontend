@@ -347,7 +347,7 @@ function TemplatesPage() {
           {/* Left: Page Title */}
           <div>
             <h1 className="text-sm font-bold text-slate-800 uppercase tracking-wider mb-0">Templates</h1>
-            <p className="text-[11px] text-slate-500 mb-0">Create from presets or design from scratch in ProofDeck Studio.</p>
+            
           </div>
 
           {/* Right Actions */}
@@ -357,14 +357,14 @@ function TemplatesPage() {
               className="inline-flex items-center justify-center bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg py-2 px-3.5 transition-all font-semibold text-xs shadow-sm hover:shadow decoration-none w-full sm:w-auto text-center gap-1.5"
             >
               <FileText size={14} className="text-white" />
-              Document Studio (Google Docs)
+              New document
             </Link>
             <Link
               to="/dashboard/upload-template"
               className="inline-flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white rounded-lg py-2 px-3.5 transition-all font-semibold text-xs shadow-sm hover:shadow decoration-none w-full sm:w-auto text-center gap-1.5"
             >
               <Paintbrush size={14} className="text-white" />
-              Certificate Studio
+              New certificate
             </Link>
           </div>
         </div>
@@ -377,7 +377,7 @@ function TemplatesPage() {
             <div className="flex items-center gap-2 mb-4 pb-2 border-b border-slate-100">
               <LayoutTemplate size={16} className="text-indigo-600" />
               <h3 className="text-xs font-bold text-slate-800">
-                Standard Creator
+                Preset creator
               </h3>
             </div>
 
@@ -465,7 +465,7 @@ function TemplatesPage() {
                 type="submit"
                 className="w-full bg-slate-900 border border-slate-900 hover:bg-black text-white text-xs font-semibold py-2 px-4 rounded-lg shadow-sm transition-all flex items-center justify-center gap-1.5 mt-2"
               >
-                <Plus size={14} /> Create Template
+                <Plus size={14} /> Save template
               </button>
             </form>
           </div>
@@ -499,7 +499,7 @@ function TemplatesPage() {
       <div>
         <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider mb-4 flex items-center gap-1.5">
           <div className="w-1 h-3.5 bg-indigo-600 rounded-full"></div>
-          <span>Your Library</span>
+          <span>Templates</span>
         </h3>
 
         {loading ? (
@@ -532,7 +532,7 @@ function TemplatesPage() {
                   className="bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 px-4 py-1.5 rounded text-xs font-semibold transition-all shadow-sm flex items-center gap-1.5"
                 >
                   {showAllLibrary ? <X size={12} /> : <Plus size={12} />}
-                  {showAllLibrary ? "Show Less" : `View All Templates (${templates.length})`}
+                  {showAllLibrary ? "Show less" : `View all (${templates.length})`}
                 </button>
               </div>
             )}
@@ -738,7 +738,7 @@ const TemplateCard = ({
   const handleCopyId = () => {
     navigator.clipboard.writeText(template.id);
     setIsCopied(true);
-    toast.success("Template ID copied!");
+    toast.success("Copied");
     setTimeout(() => setIsCopied(false), 2000);
   };
 
@@ -770,13 +770,13 @@ const TemplateCard = ({
                     onClick={() => onEditClick(template)}
                     className="bg-white text-slate-800 border border-slate-200 rounded py-1.5 px-3 font-semibold text-xs shadow-md transform translate-y-2 group-hover:translate-y-0 transition-all hover:bg-slate-50 flex items-center gap-1.5"
                 >
-                    <Edit size={12} /> Edit Design
+                    <Edit size={12} /> Edit
                 </button>
              ) : (
                 <div className="bg-white/95 text-slate-800 rounded p-3 font-bold text-xs shadow-lg flex flex-col items-center gap-1.5">
                     <Award className="text-amber-500" size={18} />
                     <span>Premium Template</span>
-                    <Link to="/pricing" className="text-indigo-600 text-[10px] hover:underline">Upgrade to Access</Link>
+                    <Link to="/pricing" className="text-indigo-600 text-[10px] hover:underline">Upgrade</Link>
                 </div>
              )}
         </div>
@@ -799,7 +799,7 @@ const TemplateCard = ({
            <div className="flex items-center gap-1">
                <span className="capitalize text-indigo-600 font-semibold">{template.layout_style?.replace(/_/g, " ")}</span>
                <span className="text-slate-300">•</span>
-               <span>{template.certificates ? template.certificates.length : 0} issued</span>
+               <span>{template.certificates && template.certificates.length > 0 ? `${template.certificates.length} issued` : ""}</span>
            </div>
         </div>
 
@@ -812,7 +812,7 @@ const TemplateCard = ({
                >
                   {isCopied ? <Check size={12} className="text-green-500" /> : <Copy size={12} />}
                </button>
-               <span className="text-[9px] font-mono text-slate-400 select-all">#{template.id}</span>
+               
            </div>
            
            <div className="flex items-center gap-1">

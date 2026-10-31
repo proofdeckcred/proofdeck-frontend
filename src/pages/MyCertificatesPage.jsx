@@ -344,36 +344,36 @@ function MyCertificatesPage() {
 
   const quickActions = [
     {
-      title: "Issue Certificate",
-      description: "Create a single certificate manually",
+      title: "Single credential",
+      description: "",
       buttonText: "Issue",
       icon: <Award className="w-4 h-4 text-slate-600" />,
       onClick: () => navigate("/dashboard/create"),
     },
     {
-      title: "Bulk Import Excel",
-      description: "Issue certificates from spreadsheets",
+      title: "Import spreadsheet",
+      description: "",
       buttonText: "Import",
       icon: <Upload className="w-4 h-4 text-slate-600" />,
       onClick: () => navigate("/dashboard/bulk-create"),
     },
     {
-      title: "Visual Templates",
-      description: "Design and customize certificate layouts",
+      title: "Templates",
+      description: "",
       buttonText: "Design",
       icon: <LayoutTemplate className="w-4 h-4 text-slate-600" />,
       onClick: () => navigate("/dashboard/templates"),
     },
     {
-      title: "Certificate Groups",
-      description: "Organize credentials in batches",
+      title: "Groups",
+      description: "",
       buttonText: "Groups",
       icon: <Folder className="w-4 h-4 text-slate-600" />,
       onClick: () => navigate("/dashboard/groups"),
     },
     {
-      title: "System Settings",
-      description: "Configure profile and API keys",
+      title: "Settings",
+      description: "",
       buttonText: "Settings",
       icon: <Settings className="w-4 h-4 text-slate-600" />,
       onClick: () => navigate("/dashboard/settings"),
@@ -458,7 +458,7 @@ function MyCertificatesPage() {
                 <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 w-3.5 h-3.5" />
                 <input
                   type="text"
-                  placeholder="Search recipients or courses..."
+                  placeholder="Search"
                   className="w-full pl-8 pr-3 py-1.5 bg-slate-50 border border-slate-200/60 rounded-lg focus:bg-white focus:border-slate-400 transition-all text-xs outline-none"
                   value={searchTerm}
                   onChange={(e) => {
@@ -497,42 +497,36 @@ function MyCertificatesPage() {
               <div className="p-3 sm:p-5 bg-white hover:bg-slate-50/20 transition-colors">
                 <div className="flex items-center justify-between mb-1 gap-1">
                   <span className="text-[9px] sm:text-[10px] font-bold text-slate-400 uppercase tracking-wider truncate">Credits</span>
-                  <span className="hidden sm:inline-flex items-center gap-0.5 px-1.5 py-0.5 bg-indigo-50 text-indigo-700 border border-indigo-100 rounded text-[9px] font-bold shrink-0">
-                    Active
-                  </span>
+                  
                 </div>
                 <h3 className="text-base sm:text-2xl font-bold tracking-tight text-slate-900 mt-0.5 sm:mt-1">
                   {user?.cert_quota?.toLocaleString() || 0}
                 </h3>
-                <p className="text-[9px] sm:text-[10px] text-slate-400 mt-0.5 truncate hidden xs:block">Plan balance</p>
+                
               </div>
 
               {/* Certificates Issued Card */}
               <div className="p-3 sm:p-5 bg-white hover:bg-slate-50/20 transition-colors">
                 <div className="flex items-center justify-between mb-1 gap-1">
                   <span className="text-[9px] sm:text-[10px] font-bold text-slate-400 uppercase tracking-wider truncate">Issued</span>
-                  <span className="hidden sm:inline-flex items-center gap-0.5 px-1.5 py-0.5 bg-emerald-50 text-emerald-700 border border-emerald-100 rounded text-[9px] font-bold shrink-0">
-                    Live
-                  </span>
+                  
                 </div>
                 <h3 className="text-base sm:text-2xl font-bold tracking-tight text-slate-900 mt-0.5 sm:mt-1">
                   {certificates.length}
                 </h3>
-                <p className="text-[9px] sm:text-[10px] text-slate-400 mt-0.5 truncate hidden xs:block">Total documents</p>
+                
               </div>
 
               {/* Active Templates Card */}
               <div className="p-3 sm:p-5 bg-white hover:bg-slate-50/20 transition-colors">
                 <div className="flex items-center justify-between mb-1 gap-1">
                   <span className="text-[9px] sm:text-[10px] font-bold text-slate-400 uppercase tracking-wider truncate">Templates</span>
-                  <span className="hidden sm:inline-flex items-center gap-0.5 px-1.5 py-0.5 bg-amber-50 text-amber-700 border border-amber-100 rounded text-[9px] font-bold shrink-0">
-                    Ready
-                  </span>
+                  
                 </div>
                 <h3 className="text-base sm:text-2xl font-bold tracking-tight text-slate-900 mt-0.5 sm:mt-1">
                   {templates.length}
                 </h3>
-                <p className="text-[9px] sm:text-[10px] text-slate-400 mt-0.5 truncate hidden xs:block">Presets</p>
+                
               </div>
             </div>
 
@@ -541,7 +535,7 @@ function MyCertificatesPage() {
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
                 <div>
                   <h3 className="text-sm font-bold text-slate-800">Activity Overview</h3>
-                  <p className="text-[10px] text-slate-400">Weekly certificate issuance statistics</p>
+                  
                 </div>
                 <div className="flex items-center gap-2">
                   <button className="px-2.5 py-1 text-[11px] font-semibold text-slate-600 bg-white border border-slate-200 rounded-md hover:bg-slate-50 shadow-sm flex items-center gap-1">
@@ -584,9 +578,7 @@ function MyCertificatesPage() {
                         <div className="absolute top-0 z-20 bg-white border border-slate-200/80 rounded-lg py-1.5 px-2.5 shadow-md flex items-center gap-2 mb-2 animate-in fade-in slide-in-from-bottom-2 duration-300 pointer-events-none">
                           <span className="text-[11px] font-bold text-slate-850">{data.count}</span>
                           <span className="text-[9px] font-semibold text-slate-400">
-                            {certificates.length > 0 
-                              ? `${(data.count / certificates.length * 100).toFixed(0)}% Issued` 
-                              : "0% Issued"}
+                            {data.count === 1 ? "1 credential" : `${data.count} credentials`}
                           </span>
                           {/* Little dynamic avatars */}
                           {avatars.length > 0 && (
@@ -632,7 +624,7 @@ function MyCertificatesPage() {
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
                 <div>
                   <h3 className="text-sm font-bold text-slate-800">Recent Credentials</h3>
-                  <p className="text-[10px] text-slate-400">Manage and verify issued certificates</p>
+                  
                 </div>
 
                 {/* Filters */}
@@ -681,13 +673,13 @@ function MyCertificatesPage() {
                     <div className="w-12 h-12 bg-slate-50 rounded-full flex items-center justify-center mb-3 border border-slate-100">
                       <Search className="w-5 h-5 text-slate-300" />
                     </div>
-                    <h3 className="text-xs font-bold text-slate-900 mb-0.5">No certificates found</h3>
+                    <h3 className="text-xs font-bold text-slate-900 mb-0.5">No credentials</h3>
                     <p className="text-slate-500 text-[10px] max-w-sm mx-auto mb-3">
-                      {searchTerm ? "No results match your search." : "Get started by creating your first certificate."}
+                      {searchTerm ? "No results" : "No credentials issued"}
                     </p>
                     {(!searchTerm && filterStatus === "all") && (
                       <Link to="/dashboard/create" className="text-indigo-600 font-semibold hover:text-indigo-800 text-[11px] decoration-none">
-                        Create new certificate &rarr;
+                        Issue credential &rarr;
                       </Link>
                     )}
                   </div>
@@ -707,8 +699,8 @@ function MyCertificatesPage() {
                               />
                             </th>
                             <th className="px-4 py-2 text-left text-[10px] font-bold text-slate-400 dark:text-zinc-300 uppercase tracking-wider">Recipient</th>
-                            <th className="px-4 py-2 text-left text-[10px] font-bold text-slate-400 dark:text-zinc-300 uppercase tracking-wider">Course Detail</th>
-                            <th className="px-4 py-2 text-left text-[10px] font-bold text-slate-400 dark:text-zinc-300 uppercase tracking-wider">Issued</th>
+                            <th className="px-4 py-2 text-left text-[10px] font-bold text-slate-400 dark:text-zinc-300 uppercase tracking-wider">Course</th>
+                            <th className="px-4 py-2 text-left text-[10px] font-bold text-slate-400 dark:text-zinc-300 uppercase tracking-wider">Date</th>
                             <th className="px-4 py-2 text-left text-[10px] font-bold text-slate-400 dark:text-zinc-300 uppercase tracking-wider">Status</th>
                             <th className="px-4 py-2 text-right text-[10px] font-bold text-slate-400 dark:text-zinc-300 uppercase tracking-wider">Actions</th>
                           </tr>
@@ -760,7 +752,7 @@ function MyCertificatesPage() {
                                 <td className="px-4 py-3 align-middle whitespace-nowrap">
                                   <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded border text-[9px] font-bold ${cert.sent_at ? "bg-emerald-50 text-emerald-700 border-emerald-100" : "bg-slate-50 text-slate-650 border-slate-200"}`}>
                                     <span className={`w-1 h-1 rounded-full ${cert.sent_at ? "bg-emerald-500" : "bg-slate-400"}`} />
-                                    {cert.sent_at ? "Emailed" : "Draft"}
+                                    {cert.sent_at ? "Issued" : "Draft"}
                                   </span>
                                 </td>
                                 <td className="px-4 py-2.5 whitespace-nowrap text-right text-xs">
@@ -856,7 +848,7 @@ function MyCertificatesPage() {
                                   : "bg-slate-50 text-slate-600 border-slate-200"
                               }`}>
                                 <span className={`w-1 h-1 rounded-full ${cert.sent_at ? "bg-emerald-500" : "bg-slate-400"}`} />
-                                {cert.sent_at ? "Emailed" : "Draft"}
+                                {cert.sent_at ? "Issued" : "Draft"}
                               </span>
                             </div>
 
@@ -954,8 +946,7 @@ function MyCertificatesPage() {
             {/* Quick Actions Action Checklist */}
             <div className="p-6 bg-white dark:bg-[#18181b]">
               <div className="mb-4">
-                <h3 className="text-sm font-bold text-slate-800 dark:text-white">Start issuing certificates</h3>
-                <p className="text-[10px] text-slate-400 dark:text-zinc-400">Get started with templates and credentials</p>
+                <h3 className="text-sm font-bold text-slate-800 dark:text-white">Quick actions</h3>
               </div>
 
               {/* Large primary issue button */}
@@ -964,7 +955,7 @@ function MyCertificatesPage() {
                 className="w-full bg-slate-900 hover:bg-black text-white text-xs font-semibold py-2.5 px-4 rounded-lg shadow-sm transition-all flex items-center justify-center gap-1.5 mb-5 animate-pulse-subtle"
               >
                 <FileBadge size={13} className="text-indigo-450" />
-                <span>Issue Certificate</span>
+                <span>Issue credential</span>
               </button>
 
               {/* List Actions */}
@@ -977,7 +968,7 @@ function MyCertificatesPage() {
                       </div>
                       <div>
                         <h4 className="text-[11px] font-bold text-slate-800 dark:text-white leading-tight">{action.title}</h4>
-                        <p className="text-[9px] text-slate-400 dark:text-zinc-400 leading-tight mt-0.5">{action.description}</p>
+                        
                       </div>
                     </div>
                     <button 
@@ -996,13 +987,13 @@ function MyCertificatesPage() {
               <div className="space-y-4">
                 <div className="mb-2">
                   <h3 className="text-xs font-bold text-slate-850 dark:text-white uppercase tracking-wider">Account Quotas</h3>
-                  <p className="text-[9px] text-slate-400 dark:text-zinc-400">Plan usage metrics and balance</p>
+                  
                 </div>
 
                 {/* Quota Progress Bar 1 */}
                 <div>
                   <div className="flex justify-between items-center mb-1 text-[10px] font-semibold">
-                    <span className="text-slate-500 dark:text-zinc-400">Certificate Credits Used</span>
+                    <span className="text-slate-500 dark:text-zinc-400">Credits used</span>
                     <span className="text-slate-800 dark:text-white font-bold">
                       {certificates.length} / {(certificates.length + (user?.cert_quota || 0))}
                     </span>
@@ -1018,7 +1009,7 @@ function MyCertificatesPage() {
                 {/* Quota Progress Bar 2 */}
                 <div>
                   <div className="flex justify-between items-center mb-1 text-[10px] font-semibold">
-                    <span className="text-slate-500 dark:text-zinc-400">Templates Active</span>
+                    <span className="text-slate-500 dark:text-zinc-400">Templates used</span>
                     <span className="text-slate-800 dark:text-white font-bold">
                       {templates.length} / 50
                     </span>
@@ -1034,7 +1025,7 @@ function MyCertificatesPage() {
 
               <div className="mt-8 pt-4 border-t border-slate-100 dark:border-[#28282d] flex flex-col gap-3">
                 <div className="text-[9px] text-slate-400 dark:text-zinc-400 font-medium flex items-center justify-between">
-                  <span>Usage resets on:</span>
+                  <span>Resets:</span>
                   <span className="text-slate-600 dark:text-zinc-200 font-bold">
                     {user?.subscription_expiry 
                       ? new Date(user.subscription_expiry).toLocaleDateString()
@@ -1047,7 +1038,7 @@ function MyCertificatesPage() {
                   to="/dashboard/settings" 
                   className="w-full bg-white dark:bg-[#222228] hover:bg-slate-50 dark:hover:bg-[#2a2a32] text-slate-700 dark:text-white text-xs font-bold py-2 px-4 rounded-lg border border-slate-200 dark:border-[#32323a] text-center shadow-sm transition-all decoration-none"
                 >
-                  Upgrade Account
+                  Upgrade
                 </Link>
               </div>
             </div>
@@ -1092,9 +1083,9 @@ function MyCertificatesPage() {
                 <div className="w-10 h-10 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-3 text-red-600 border border-red-100">
                   <Trash className="w-5 h-5" />
                 </div>
-                <h3 className="text-sm font-bold text-slate-900">Delete Certificate?</h3>
+                <h3 className="text-sm font-bold text-slate-900">Delete credential?</h3>
                 <p className="text-slate-500 text-xs mt-1.5">
-                    Are you sure? This will permanently remove the certificate for <strong>{selectedCert?.recipient_name}</strong>.
+                    This will delete the credential for <strong>{selectedCert?.recipient_name}</strong>.
                 </p>
               </div>
               <div className="flex gap-2">

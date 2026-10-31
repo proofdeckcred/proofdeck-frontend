@@ -367,7 +367,7 @@ function ViewCertificatePage() {
                 <button
                   onClick={handleDownloadPNG}
                   disabled={downloadingPng}
-                  title="Download high-resolution PNG image"
+                  title="Download PNG image"
                   className="flex items-center gap-1.5 px-3 py-1.5 text-slate-800 bg-white hover:bg-indigo-50/50 hover:text-indigo-600 rounded-lg border border-slate-250 transition-all text-xs font-bold shadow-sm disabled:opacity-70 cursor-pointer"
                 >
                   {downloadingPng ? (

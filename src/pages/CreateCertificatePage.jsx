@@ -2199,7 +2199,7 @@ const CreateCertificatePage = () => {
                     ) : (
                       <Save size={14} />
                     )}
-                    <span>{isEditMode ? "Update Document" : "Generate Document"}</span>
+                    <span>{isEditMode ? "Update credential" : "Issue credential"}</span>
                   </button>
 
                   {isEditMode && formData.recipient_email && (
@@ -2214,7 +2214,7 @@ const CreateCertificatePage = () => {
                       ) : (
                         <Send size={13} />
                       )}
-                      <span>Update &amp; Resend Email</span>
+                      <span>Update &amp; resend</span>
                     </button>
                   )}
                 </div>
@@ -2254,7 +2254,7 @@ const CreateCertificatePage = () => {
 
                 {/* Group Selector */}
                 <div className="space-y-1">
-                  <label className="block text-xs font-semibold text-slate-700">Select Group Folder *</label>
+                  <label className="block text-xs font-semibold text-slate-700">Group *</label>
                   <select
                     value={selectedGroupId}
                     onChange={(e) => setSelectedGroupId(e.target.value)}
@@ -2262,7 +2262,7 @@ const CreateCertificatePage = () => {
                     className="block w-full rounded border border-slate-200 bg-white py-1.5 px-2.5 text-slate-850 focus:border-indigo-500 focus:outline-none transition-all duration-200 text-xs shadow-sm disabled:bg-slate-100"
                     required
                   >
-                    <option value="">-- Choose Folder --</option>
+                    <option value="">-- Select group --</option>
                     {groups.map((g) => (
                       <option key={g.id} value={g.id}>{g.name}</option>
                     ))}
@@ -2272,7 +2272,7 @@ const CreateCertificatePage = () => {
                 {/* Quick group creation inline */}
                 {!isBulkGroupEditMode && (
                   <div className="bg-slate-50 p-3 rounded-xl border border-slate-200/60 space-y-2">
-                    <label className="block text-[9px] font-bold text-slate-405 uppercase tracking-wider">Or Create Folder</label>
+                    <label className="block text-[9px] font-bold text-slate-405 uppercase tracking-wider">New group</label>
                     <div className="flex gap-2">
                       <input
                         type="text"
@@ -2295,7 +2295,7 @@ const CreateCertificatePage = () => {
                 {/* File Upload Box */}
                 <div className="space-y-1">
                   <div className="flex justify-between items-center">
-                    <label className="block text-xs font-semibold text-slate-700">Import Spreadsheet File</label>
+                    <label className="block text-xs font-semibold text-slate-700">Upload spreadsheet</label>
                     {detectedHeaders.length > 0 && (
                       <button
                         type="button"
@@ -2315,7 +2315,7 @@ const CreateCertificatePage = () => {
                     />
                     <UploadCloud className="mx-auto text-slate-400 mb-2" size={24} />
                     <span className="block text-xs font-bold text-slate-800">
-                      {bulkFile ? bulkFile.name : "Choose CSV or Excel File"}
+                      {bulkFile ? bulkFile.name : "Choose spreadsheet"}
                     </span>
                     <span className="block text-[9px] text-slate-400 mt-1">
                       Drag & drop or click to browse & auto-map
@@ -2333,10 +2333,10 @@ const CreateCertificatePage = () => {
                     <Database size={16} className="text-emerald-700 group-hover:scale-110 transition-transform" />
                     <div className="text-left">
                       <span className="block text-xs font-bold text-slate-800">
-                        Pull from University DB (Student ID)
+                        Pull from database
                       </span>
                       <span className="block text-[10px] text-slate-500">
-                        Fetch student records directly by ID, Faculty, or Department
+                        
                       </span>
                     </div>
                   </div>
@@ -2354,9 +2354,9 @@ const CreateCertificatePage = () => {
                   <div className="flex items-center gap-2">
                     <Table size={16} className="text-indigo-600 group-hover:scale-110 transition-transform" />
                     <div className="text-left">
-                      <span className="block text-xs font-bold text-slate-800">In-Page Spreadsheet</span>
+                      <span className="block text-xs font-bold text-slate-800">Spreadsheet editor</span>
                       <span className="block text-[10px] text-slate-400">
-                        Type, paste from Excel, or save draft for later
+                        Edit rows and map columns
                       </span>
                     </div>
                   </div>
@@ -2371,7 +2371,7 @@ const CreateCertificatePage = () => {
                     onClick={handleDownloadTemplate}
                     className="text-indigo-650 font-bold hover:underline flex items-center gap-1 cursor-pointer"
                   >
-                    <Download size={12} /> Download Sample
+                    <Download size={12} /> Download sample
                   </button>
 
                   <div className="flex items-center gap-3">
@@ -2382,7 +2382,7 @@ const CreateCertificatePage = () => {
                         className="text-red-600 font-bold hover:underline flex items-center gap-1 cursor-pointer"
                         title="Clear the current spreadsheet and start fresh"
                       >
-                        <RotateCcw size={11} /> Clear / New Sheet
+                        <RotateCcw size={11} /> Clear
                       </button>
                     )}
 
@@ -2392,7 +2392,7 @@ const CreateCertificatePage = () => {
                       className="text-emerald-700 font-bold hover:underline flex items-center gap-1 cursor-pointer"
                       title="Save current spreadsheet as a draft"
                     >
-                      <Save size={11} /> Save Sheet Draft
+                      <Save size={11} /> Save draft
                     </button>
                   </div>
                 </div>
@@ -2443,11 +2443,9 @@ const CreateCertificatePage = () => {
                 {/* Batch Defaults */}
                 <div className="pt-3 border-t border-slate-150 space-y-2">
                   <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider">
-                    Batch Defaults (Optional)
+                    Defaults (Optional)
                   </label>
-                  <p className="text-[10px] text-slate-400 mb-2">
-                    Only Recipient Name is compulsory. These optional defaults apply to rows with blank cells.
-                  </p>
+                  
                   <div className="space-y-2">
                     <input
                       type="text"

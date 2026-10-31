@@ -155,16 +155,11 @@ export default function DesktopEnterpriseModal({ show, onHide }) {
         <div>
           <div className="flex items-center gap-2.5">
             <h3 className="text-sm font-bold text-slate-900 tracking-tight mb-0">
-              Enterprise Workstation Settings
+              Workstation settings
             </h3>
-            <span className="inline-flex items-center gap-1.5 px-2 py-0.5 text-[10px] font-semibold text-slate-600 bg-slate-100 border border-slate-200/80 rounded-md">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-              Local Vault Active
-            </span>
+            
           </div>
-          <p className="text-xs text-slate-500 mb-0 mt-0.5">
-            On-premise configuration &bull; Complete student data sovereignty &bull; Offline engine
-          </p>
+          
         </div>
         <button
           type="button"
@@ -178,10 +173,10 @@ export default function DesktopEnterpriseModal({ show, onHide }) {
       {/* Navigation Tabs */}
       <div className="bg-slate-50/60 border-b border-slate-200 px-6 flex gap-6">
         {[
-          { id: "overview", label: "Institution & License" },
-          { id: "verification", label: "Data Sovereignty & QR" },
-          { id: "database", label: "Campus Database Connector" },
-          { id: "export", label: "Local Folder Export" },
+          { id: "overview", label: "Institution" },
+          { id: "verification", label: "Verification & QR" },
+          { id: "database", label: "Database connector" },
+          { id: "export", label: "Export folder" },
         ].map((tab) => {
           const active = activeTab === tab.id;
           return (
@@ -212,18 +207,16 @@ export default function DesktopEnterpriseModal({ show, onHide }) {
                     <span className="text-xs font-bold text-slate-900">Institutional License Active</span>
                     <span className="text-[11px] text-slate-500">&bull; Valid until {desktopConfig?.license_expires_at || "2027-10-30"}</span>
                   </div>
-                  <span className="text-[10px] font-mono font-medium px-2 py-0.5 rounded bg-slate-200/70 text-slate-700">
-                    Air-Gapped Verified
-                  </span>
+                  
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs text-slate-600 pt-3 border-t border-slate-200/70">
                   <div>
                     <span className="text-[11px] text-slate-400 block mb-0.5">Local Storage Engine</span>
-                    <span className="font-medium text-slate-800">{desktopStorage?.engine || "Local SQLite Vault (Offline)"}</span>
+                    <span className="font-medium text-slate-800">Local storage</span>
                   </div>
                   <div>
                     <span className="text-[11px] text-slate-400 block mb-0.5">Privacy &amp; Sovereignty</span>
-                    <span className="font-medium text-slate-800">100% Local PC Issuance — Zero student records sent to cloud</span>
+                    <span className="font-medium text-slate-800">Local PC issuance</span>
                   </div>
                 </div>
               </div>
@@ -272,9 +265,7 @@ export default function DesktopEnterpriseModal({ show, onHide }) {
                   }
                   className="w-full px-3 py-2 text-xs font-mono rounded-lg border border-slate-200 bg-slate-50 focus:outline-none focus:border-slate-400 text-slate-800"
                 />
-                <span className="block text-[10px] text-slate-400 mt-1">
-                  Renewed annually. Works 100% offline once activated on this workstation.
-                </span>
+                
               </div>
             </div>
           )}
@@ -289,13 +280,13 @@ export default function DesktopEnterpriseModal({ show, onHide }) {
                 {[
                   {
                     id: "university_portal",
-                    title: "Institution Self-Hosted Verification Portal",
-                    desc: "QR codes point directly to your university's internal domain (e.g. verify.youruniversity.edu) backed by your campus database.",
+                    title: "Custom verification URL",
+                    desc: "QR codes link to your institution verification portal.",
                   },
                   {
                     id: "no_qr",
-                    title: "Internal Document Mode (No External Verification QR)",
-                    desc: "For internal A4 letters, transcripts, or physically embossed credentials without online QR lookups.",
+                    title: "No QR code",
+                    desc: "Issue documents without verification QR codes.",
                   },
                 ].map((opt) => (
                   <label
