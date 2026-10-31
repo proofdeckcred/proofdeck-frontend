@@ -73,6 +73,7 @@ import {
   isRowNonEmpty,
   validateRow,
   looksLikeEmail,
+  formatExcelDate,
 } from "../utils/columnMapping";
 
 // --- REUSABLE UI COMPONENTS ---
@@ -1085,7 +1086,7 @@ const CreateCertificatePage = () => {
             if (srcCol) {
               const idx = headers.indexOf(srcCol);
               if (idx !== -1 && r[idx] !== undefined) {
-                const val = String(r[idx]).trim();
+                const val = key === "issue_date" ? formatExcelDate(r[idx]) : String(r[idx]).trim();
                 if (val) rowObj[key] = val;
               }
             } else if (currentDefaults[key]) {
@@ -1099,7 +1100,7 @@ const CreateCertificatePage = () => {
             if (srcCol) {
               const idx = headers.indexOf(srcCol);
               if (idx !== -1 && r[idx] !== undefined) {
-                const val = String(r[idx]).trim();
+                const val = key === "issue_date" ? formatExcelDate(r[idx]) : String(r[idx]).trim();
                 if (val) rowObj[cf.key] = val;
               }
             }
@@ -1240,7 +1241,7 @@ const CreateCertificatePage = () => {
       reader.onload = (evt) => {
         try {
           const data = new Uint8Array(evt.target.result);
-          const workbook = XLSX.read(data, { type: "array" });
+          const workbook = XLSX.read(data, { type: "array", cellDates: true });
           const firstSheetName = workbook.SheetNames[0];
           const worksheet = workbook.Sheets[firstSheetName];
           const matrix = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false });
@@ -1459,7 +1460,7 @@ const CreateCertificatePage = () => {
       return;
     }
     if (!formData.template_id || !selectedGroupId) {
-      toast.error("Please select a Template and a Group Folder.");
+      toast.error("Please select a Template and a Group.");
       return;
     }
 
@@ -1589,7 +1590,7 @@ const CreateCertificatePage = () => {
             </Link>
             <div>
               <h1 className="text-xs sm:text-sm font-bold text-slate-800 uppercase tracking-wider mb-0 truncate">
-                {isEditMode ? "Edit Credential" : "Issue Credentials"}
+                {isEditMode ? "Edit credential" : "Issue credential"}
               </h1>
             </div>
           </div>
@@ -2199,7 +2200,7 @@ const CreateCertificatePage = () => {
                     ) : (
                       <Save size={14} />
                     )}
-                    <span>{isEditMode ? "Update Document" : "Generate Document"}</span>
+                    <span>{isEditMode ? "Update credential" : "Issue certificate"}</span>
                   </button>
 
                   {isEditMode && formData.recipient_email && (
@@ -2254,7 +2255,7 @@ const CreateCertificatePage = () => {
 
                 {/* Group Selector */}
                 <div className="space-y-1">
-                  <label className="block text-xs font-semibold text-slate-700">Select Group Folder *</label>
+                  <label className="block text-xs font-semibold text-slate-700">Select Group *</label>
                   <select
                     value={selectedGroupId}
                     onChange={(e) => setSelectedGroupId(e.target.value)}
@@ -2262,7 +2263,7 @@ const CreateCertificatePage = () => {
                     className="block w-full rounded border border-slate-200 bg-white py-1.5 px-2.5 text-slate-850 focus:border-indigo-500 focus:outline-none transition-all duration-200 text-xs shadow-sm disabled:bg-slate-100"
                     required
                   >
-                    <option value="">-- Choose Folder --</option>
+                    <option value="">-- Choose Group --</option>
                     {groups.map((g) => (
                       <option key={g.id} value={g.id}>{g.name}</option>
                     ))}
@@ -2272,7 +2273,7 @@ const CreateCertificatePage = () => {
                 {/* Quick group creation inline */}
                 {!isBulkGroupEditMode && (
                   <div className="bg-slate-50 p-3 rounded-xl border border-slate-200/60 space-y-2">
-                    <label className="block text-[9px] font-bold text-slate-405 uppercase tracking-wider">Or Create Folder</label>
+                    <label className="block text-[9px] font-bold text-slate-405 uppercase tracking-wider">Or Create Group</label>
                     <div className="flex gap-2">
                       <input
                         type="text"

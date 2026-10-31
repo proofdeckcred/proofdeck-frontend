@@ -48,6 +48,7 @@ import {
   PenTool,
   QrCode,
   X,
+  MoreVertical,
 } from "lucide-react";
 import { Spinner } from "react-bootstrap";
 import {
@@ -1216,75 +1217,24 @@ const UploadTemplatePage = () => {
           </button>
           <div className="h-5 w-px bg-gray-200" />
           <div className="flex items-center gap-2">
-            <span className="text-[10px] font-bold bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded uppercase tracking-wider">
-              Studio
-            </span>
             <input
               type="text"
               value={templateTitle}
               onChange={(e) => setTemplateTitle(e.target.value)}
               placeholder="Untitled Certificate"
-              className="text-sm font-bold text-gray-800 border-none focus:ring-0 placeholder-gray-400 bg-transparent w-48 lg:w-64 hover:bg-gray-50 px-1.5 py-0.5 rounded transition-colors"
+              className="text-sm font-semibold text-gray-800 border-none focus:ring-0 placeholder-gray-400 bg-transparent w-48 lg:w-64 hover:bg-gray-50 px-1.5 py-0.5 rounded transition-colors outline-none"
             />
           </div>
         </div>
 
         {/* Studio Toolbar */}
         <div className="flex items-center gap-1.5">
-          {/* Prominent Import Cert Template CTA */}
-          <button
-            type="button"
-            onClick={() => fileInputRef.current?.click()}
-            className="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 font-semibold py-1.5 px-2.5 rounded-lg flex items-center gap-1.5 text-xs transition-all cursor-pointer shadow-2xs"
-            title="Import your own pre-designed certificate template (Canva, Photoshop, Figma, etc.)"
-          >
-            <FileUp size={13} />
-            <span className="hidden md:inline">
-              {templateImageUrl ? "Replace Cert Template" : "Import Cert Template"}
-            </span>
-          </button>
-
-          {/* Live Sample Data Preview Toggle */}
-          <button
-            type="button"
-            onClick={() => {
-              setPreviewMode((prev) => !prev);
-              if (!previewMode) setSelectedId(null);
-            }}
-            className={`py-1.5 px-2.5 rounded-lg flex items-center gap-1.5 text-xs font-semibold border transition-all cursor-pointer ${
-              previewMode
-                ? "bg-emerald-600 text-white border-emerald-600 shadow-xs"
-                : "bg-white text-gray-700 border-gray-200 hover:bg-gray-50"
-            }`}
-            title="Preview certificate with real sample recipient names and dates instead of {{placeholders}}"
-          >
-            {previewMode ? <EyeOff size={13} /> : <Eye size={13} />}
-            <span className="hidden sm:inline">
-              {previewMode ? "Exit Preview" : "Live Preview"}
-            </span>
-          </button>
-
-          {/* Grid Toggle */}
-          <button
-            onClick={() => setShowGrid(!showGrid)}
-            className={`p-1.5 rounded-md transition-colors border cursor-pointer ${
-              showGrid
-                ? "bg-indigo-50 border-indigo-200 text-indigo-600"
-                : "bg-white border-gray-200 text-gray-500 hover:bg-gray-50"
-            }`}
-            title="Toggle Alignment Grid"
-          >
-            <Grid size={14} />
-          </button>
-
-          <div className="h-5 w-px bg-gray-200 mx-0.5" />
-
           {/* Undo / Redo */}
           <button
             onClick={handleUndo}
             disabled={currentStep <= 0}
             className="text-gray-600 hover:text-gray-900 disabled:opacity-30 p-1.5 rounded-md hover:bg-gray-100 border border-transparent cursor-pointer"
-            title="Undo (Ctrl+Z)"
+            title="Undo"
           >
             <RotateCcw size={14} />
           </button>
@@ -1292,46 +1242,81 @@ const UploadTemplatePage = () => {
             onClick={handleRedo}
             disabled={currentStep >= history.length - 1}
             className="text-gray-600 hover:text-gray-900 disabled:opacity-30 p-1.5 rounded-md hover:bg-gray-100 border border-transparent cursor-pointer"
-            title="Redo (Ctrl+Y)"
+            title="Redo"
           >
             <RotateCw size={14} />
           </button>
 
           <div className="h-5 w-px bg-gray-200 mx-0.5" />
 
+          {/* Live Preview Toggle */}
+          <button
+            type="button"
+            onClick={() => {
+              setPreviewMode((prev) => !prev);
+              if (!previewMode) setSelectedId(null);
+            }}
+            className={`py-1.5 px-2.5 rounded-md flex items-center gap-1 text-xs font-medium border transition-colors cursor-pointer ${
+              previewMode
+                ? "bg-slate-900 text-white border-slate-900"
+                : "bg-white text-gray-700 border-gray-200 hover:bg-gray-50"
+            }`}
+          >
+            {previewMode ? <EyeOff size={13} /> : <Eye size={13} />}
+            <span>Preview</span>
+          </button>
+
           {/* Export PNG */}
           <button
             type="button"
             onClick={handleExportPng}
-            className="text-gray-600 hover:text-indigo-600 p-1.5 rounded-md hover:bg-indigo-50 text-xs font-semibold flex items-center gap-1 cursor-pointer transition-colors"
-            title="Download high-resolution PNG preview"
+            className="text-gray-700 bg-white border border-gray-200 hover:bg-gray-50 py-1.5 px-2.5 rounded-md text-xs font-medium flex items-center gap-1 cursor-pointer transition-colors"
           >
             <Download size={13} />
-            <span className="hidden xl:inline">Export PNG</span>
+            <span>Export</span>
           </button>
 
-          {/* Clear / Blank Button */}
-          <button
-            onClick={handleClearCanvas}
-            className="text-gray-500 hover:text-red-600 p-1.5 rounded-md hover:bg-red-50 text-xs font-semibold flex items-center gap-1 cursor-pointer transition-colors"
-            title="Clear all elements and start blank"
-          >
-            <RefreshCw size={13} />
-            <span className="hidden xl:inline">Reset Blank</span>
-          </button>
+          {/* More options menu */}
+          <div className="relative group">
+            <button
+              type="button"
+              className="text-gray-600 hover:text-gray-900 p-1.5 rounded-md hover:bg-gray-100 border border-gray-200 text-xs cursor-pointer"
+              title="More options"
+            >
+              <MoreVertical size={14} />
+            </button>
+            <div className="absolute right-0 top-full mt-1 hidden group-hover:block hover:block w-40 bg-white border border-gray-200 rounded-md shadow-lg py-1 z-50 text-xs">
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="w-full text-left px-3 py-1.5 hover:bg-gray-50 text-gray-700 flex items-center gap-2 cursor-pointer"
+              >
+                <FileUp size={13} /> Import template
+              </button>
+              <button
+                type="button"
+                onClick={handleClearCanvas}
+                className="w-full text-left px-3 py-1.5 hover:bg-gray-50 text-gray-700 flex items-center gap-2 cursor-pointer"
+              >
+                <RefreshCw size={13} /> Reset blank
+              </button>
+            </div>
+          </div>
 
-          {/* Save Button */}
+          <div className="h-5 w-px bg-gray-200 mx-0.5" />
+
+          {/* Single Primary Button: Save */}
           <button
             onClick={handleSaveTemplate}
             disabled={isSubmitting}
-            className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-1.5 px-4 rounded-lg flex items-center gap-1.5 disabled:opacity-70 shadow-sm transition-all ml-1 text-xs cursor-pointer"
+            className="bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-1.5 px-3 rounded-md flex items-center gap-1.5 disabled:opacity-70 transition-colors text-xs cursor-pointer shadow-xs"
           >
             {isSubmitting ? (
               <Spinner animation="border" size="sm" style={{ width: 12, height: 12 }} />
             ) : (
               <Save size={14} />
             )}
-            <span>Save Certificate</span>
+            <span>Save certificate</span>
           </button>
         </div>
       </header>
@@ -1428,8 +1413,7 @@ const UploadTemplatePage = () => {
                         className="w-full text-left p-2.5 rounded-lg border border-gray-200 hover:border-indigo-500 hover:bg-indigo-50/20 transition-all group cursor-pointer flex items-center justify-between"
                       >
                         <span className="font-serif font-bold text-base text-gray-800 group-hover:text-indigo-600">
-                          Add a Heading
-                        </span>
+                          Add a Heading</span>
                         <Plus size={14} className="text-gray-400 group-hover:text-indigo-600" />
                       </button>
 
@@ -1438,8 +1422,7 @@ const UploadTemplatePage = () => {
                         className="w-full text-left p-2 rounded-lg border border-gray-200 hover:border-indigo-500 hover:bg-indigo-50/20 transition-all group cursor-pointer flex items-center justify-between"
                       >
                         <span className="font-sans font-semibold text-xs text-gray-700 group-hover:text-indigo-600">
-                          Add a Subheading
-                        </span>
+                          Add a Subheading</span>
                         <Plus size={14} className="text-gray-400 group-hover:text-indigo-600" />
                       </button>
 
@@ -1448,8 +1431,7 @@ const UploadTemplatePage = () => {
                         className="w-full text-left p-2 rounded-lg border border-gray-200 hover:border-indigo-500 hover:bg-indigo-50/20 transition-all group cursor-pointer flex items-center justify-between"
                       >
                         <span className="font-sans text-[11px] text-gray-500 group-hover:text-indigo-600">
-                          Add body descriptive text
-                        </span>
+                          Add body descriptive text</span>
                         <Plus size={14} className="text-gray-400 group-hover:text-indigo-600" />
                       </button>
                     </div>
@@ -1509,15 +1491,12 @@ const UploadTemplatePage = () => {
                         <div
                           key={p.value}
                           onClick={() => handleAddPlaceholder(p)}
-                          className="text-[11px] bg-white border border-gray-200 hover:border-indigo-500 hover:shadow-xs text-gray-700 p-2 rounded-lg cursor-pointer transition-all flex items-center justify-between group select-none"
+                          className="text-xs bg-white border border-gray-200 hover:border-indigo-500 text-gray-700 p-2 rounded-md cursor-pointer transition-colors flex items-center justify-between group select-none"
                           title="Click to add to canvas"
                         >
-                          <span className="font-semibold group-hover:text-indigo-600">
-                            {p.name}
-                          </span>
-                          <span className="text-[9px] text-gray-400 bg-gray-50 px-1 py-0.5 rounded border border-gray-100 font-mono">
-                            {p.value.replace(/[{}]/g, "")}
-                          </span>
+                          <span className="font-medium group-hover:text-indigo-600">
+                            {p.name}</span>
+                          <Plus size={12} className="text-gray-400 group-hover:text-indigo-600" />
                         </div>
                       ))}
                     </div>
@@ -1527,11 +1506,9 @@ const UploadTemplatePage = () => {
                   <div className="pt-3 border-t border-gray-100">
                     <div className="flex items-center justify-between mb-1.5">
                       <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">
-                        Custom Fields
-                      </span>
+                        Custom Fields</span>
                       <span className="text-[8px] text-indigo-600 font-bold">
-                        + Dynamic
-                      </span>
+                        + Dynamic</span>
                     </div>
                     <div className="flex gap-1 mb-2">
                       <input
@@ -1563,14 +1540,11 @@ const UploadTemplatePage = () => {
                           <div
                             key={cv.value}
                             onClick={() => handleAddPlaceholder(cv)}
-                            className="text-[11px] bg-white border border-gray-200 hover:border-indigo-500 text-gray-700 p-2 rounded-lg cursor-pointer transition-all flex items-center justify-between group"
+                            className="text-xs bg-white border border-gray-200 hover:border-indigo-500 text-gray-700 p-2 rounded-md cursor-pointer transition-colors flex items-center justify-between group"
                           >
-                            <span className="font-semibold group-hover:text-indigo-600">
-                              {cv.name}
-                            </span>
-                            <span className="text-[9px] text-gray-400 font-mono">
-                              {cv.value}
-                            </span>
+                            <span className="font-medium group-hover:text-indigo-600">
+                              {cv.name}</span>
+                            <Plus size={12} className="text-gray-400 group-hover:text-indigo-600" />
                           </div>
                         ))}
                       </div>
@@ -1654,12 +1628,12 @@ const UploadTemplatePage = () => {
                   <div className="p-3 rounded-xl border-2 border-indigo-100 bg-gradient-to-b from-indigo-50/60 to-white space-y-2.5">
                     <div className="flex items-center justify-between">
                       <span className="text-[10px] font-extrabold text-indigo-700 uppercase tracking-wider flex items-center gap-1">
-                        <FileUp size={12} /> Import Your Cert Template
-                      </span>
+                        <FileUp size={12} /> Import Your Cert Template</span>
+
                       {templateImageUrl && (
                         <span className="text-[8px] font-bold bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded-full">
-                          Active
-                        </span>
+                          Active</span>
+
                       )}
                     </div>
 
@@ -1723,8 +1697,8 @@ const UploadTemplatePage = () => {
                         {/* Quick-Drop Variables for Imported Certs */}
                         <div className="pt-2 border-t border-indigo-100">
                           <span className="text-[9px] font-bold text-indigo-700 block mb-1.5">
-                            Quick-Drop Variables onto Template:
-                          </span>
+                            Quick-Drop Variables onto Template:</span>
+
                           <div className="flex flex-wrap gap-1">
                             {CERTIFICATE_PLACEHOLDERS.map((p) => (
                               <button
@@ -1761,14 +1735,14 @@ const UploadTemplatePage = () => {
                       >
                         <FileUp size={20} className="text-indigo-500 group-hover:scale-110 transition-transform mx-auto mb-1" />
                         <span className="text-[11px] font-bold text-gray-800 block">
-                          Import Your Own Cert Design
-                        </span>
+                          Import Your Own Cert Design</span>
+
                         <span className="text-[9px] text-gray-500 block mt-0.5">
-                          Drag & drop or click to upload PNG, JPG, WEBP
-                        </span>
+                          Drag & drop or click to upload PNG, JPG, WEBP</span>
+
                         <span className="text-[8px] text-indigo-600 font-semibold block mt-1">
-                          Auto-fits canvas & keeps your dynamic variables
-                        </span>
+                          Auto-fits canvas & keeps your dynamic variables</span>
+
                       </div>
                     )}
                   </div>
@@ -1796,8 +1770,8 @@ const UploadTemplatePage = () => {
                           >
                             <span className="text-[10px] block">{p.name}</span>
                             <span className="text-[8px] text-gray-400 block font-mono">
-                              {p.width} × {p.height}px
-                            </span>
+                              {p.width} × {p.height}px</span>
+
                           </button>
                         );
                       })}
@@ -1907,8 +1881,8 @@ const UploadTemplatePage = () => {
                       </p>
                       {templateImageUrl && (
                         <span className="text-[8px] font-bold bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded-full">
-                          Loaded
-                        </span>
+                          Loaded</span>
+
                       )}
                     </div>
                     <p className="text-[9px] text-gray-500 leading-relaxed mb-1">
@@ -1946,11 +1920,11 @@ const UploadTemplatePage = () => {
                       >
                         <FileUp size={20} className="text-indigo-500 group-hover:scale-110 transition-transform mx-auto mb-1" />
                         <span className="text-[11px] font-bold text-gray-800 block">
-                          Upload Full Cert Template
-                        </span>
+                          Upload Full Cert Template</span>
+
                         <span className="text-[8px] text-gray-400">
-                          PNG, JPG, WEBP (Auto-optimizes & prevents 413 errors)
-                        </span>
+                          PNG, JPG, WEBP (Auto-optimizes & prevents 413 errors)</span>
+
                       </div>
                     )}
                   </div>
@@ -1988,8 +1962,8 @@ const UploadTemplatePage = () => {
                           >
                             <img src={asset.src} alt={asset.name} className="h-12 max-w-full mx-auto object-contain mb-1" />
                             <span className="text-[8px] font-semibold text-gray-600 truncate block">
-                              + Add to Canvas
-                            </span>
+                              + Add to Canvas</span>
+
                           </div>
                         ))}
                       </div>
@@ -2053,6 +2027,7 @@ const UploadTemplatePage = () => {
                               {isLocked && <Lock size={10} className="text-amber-600 shrink-0" />}
                               <span className="truncate">{label}</span>
                             </span>
+                
                             <div className="flex items-center gap-0.5 shrink-0">
                               <button
                                 type="button"
@@ -2164,12 +2139,12 @@ const UploadTemplatePage = () => {
                 {isLeftSidebarOpen ? <ChevronLeft size={14} /> : <ChevronRight size={14} />}
               </button>
               <span className="text-[10px] font-semibold text-gray-500">
-                Canvas: {canvasSize.width} × {canvasSize.height} px
-              </span>
+                Canvas: {canvasSize.width} × {canvasSize.height} px</span>
+
               {templateImageUrl && (
                 <span className="text-[9px] font-semibold bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded-full border border-indigo-200 hidden sm:inline-flex items-center gap-1">
-                  <Check size={10} /> Custom Cert Template Active
-                </span>
+                  <Check size={10} /> Custom Cert Template Active</span>
+
               )}
             </div>
 
@@ -2297,8 +2272,8 @@ const UploadTemplatePage = () => {
                   ))}
                 </select>
                 <span className="pointer-events-none absolute right-1 top-1/2 -translate-y-1/2 text-gray-400 text-[7px]">
-                  ▼
-                </span>
+                  ▼</span>
+
               </div>
 
               <button
@@ -2479,19 +2454,15 @@ const UploadTemplatePage = () => {
                 />
               ) : (
                 <div className="space-y-4">
-                  <div className="p-3 bg-gray-50 rounded-xl border border-gray-100 text-center">
-                    <Shapes size={24} className="mx-auto text-indigo-500 mb-1.5 opacity-80" />
-                    <p className="text-xs font-bold text-gray-700">Canvas Selected</p>
-                    <p className="text-[10px] text-gray-400 mt-0.5">
-                      Click any element to inspect its properties, or use the controls below to style the canvas background.
-                    </p>
+                  <div className="p-4 text-center text-xs text-gray-400">
+                    Select an element
                   </div>
 
                   {/* Canvas Quick Palette */}
                   <div>
                     <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mb-1.5">
-                      Canvas Color
-                    </span>
+                      Canvas Color</span>
+
                     <div className="grid grid-cols-5 gap-1.5">
                       {LUXURY_COLORS.map((c) => (
                         <button
@@ -2536,8 +2507,8 @@ const UploadTemplatePage = () => {
                   {/* Add Elements Shortcut */}
                   <div>
                     <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mb-1.5">
-                      Quick Add
-                    </span>
+                      Quick Add</span>
+
                     <div className="grid grid-cols-2 gap-1.5">
                       <button
                         onClick={() => handleAddText("heading")}

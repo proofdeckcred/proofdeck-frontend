@@ -141,6 +141,7 @@ const DraggableText = ({
   onDragEndSnap,
 }) => {
   const groupRef = useRef();
+  const [isHovered, setIsHovered] = useState(false);
   const width = shapeProps.width || 200;
   const height = shapeProps.height || 30;
   const isLocked = !!shapeProps.locked;
@@ -185,10 +186,12 @@ const DraggableText = ({
         onSelect();
       }}
       onMouseEnter={(e) => {
+        setIsHovered(true);
         const stage = e.target.getStage();
         if (stage) stage.container().style.cursor = isLocked ? "default" : "move";
       }}
       onMouseLeave={(e) => {
+        setIsHovered(false);
         const stage = e.target.getStage();
         if (stage) stage.container().style.cursor = "default";
       }}
@@ -214,18 +217,20 @@ const DraggableText = ({
         y={0}
         width={width}
         height={height}
-        fill="rgba(255,255,255,0.01)"
+        fill="rgba(255,255,255,0.001)"
         stroke={
           previewMode
             ? "transparent"
             : isSelected
             ? isLocked
               ? "#f59e0b"
-              : "transparent"
-            : "rgba(99, 102, 241, 0.45)"
+              : "#4f46e5"
+            : isHovered
+            ? "rgba(99, 102, 241, 0.45)"
+            : "transparent"
         }
         strokeWidth={1}
-        dash={isSelected && !isLocked ? undefined : [4, 4]}
+        dash={isSelected && !isLocked ? undefined : [3, 3]}
         strokeScaleEnabled={false}
         cornerRadius={2}
         listening={true}

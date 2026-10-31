@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from "react";
-import { Link, useNavigate, useLocation } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import {
   getCertificates,
   getTemplates,
@@ -11,95 +11,46 @@ import {
   getCurrentUser,
 } from "../api";
 import {
-  Pencil,
-  Trash,
-  PlusCircle,
-  Download,
-  Eye,
-  Mail,
-  Send,
-  HelpCircle,
   Search,
-  Filter,
   ChevronLeft,
   ChevronRight,
-  MoreHorizontal,
-  FileText,
+  Eye,
+  Pencil,
+  Download,
+  Mail,
+  Trash,
   CheckCircle,
-  CreditCard,
-  LayoutTemplate,
-  Upload,
-  AlertCircle,
-  Award,
-  FileBadge,
-  Bell,
-  Settings,
-  ArrowUpRight,
-  Activity,
-  TrendingUp,
-  Users,
-  Folder
 } from "lucide-react";
 import toast, { Toaster } from "react-hot-toast";
+import PageHeader from "../components/ui/PageHeader";
+import StatCard from "../components/ui/StatCard";
+import AppButton from "../components/ui/AppButton";
+import EmptyState from "../components/ui/EmptyState";
+import KebabMenu from "../components/ui/KebabMenu";
 
-function ErrorBoundary({ children }) {
-  const [hasError, setHasError] = useState(false);
+export default function MyCertificatesPage() {
+  const navigate = useNavigate();
 
-  useEffect(() => {
-    const errorHandler = (error) => {
-      console.error(
-        "Error caught by ErrorBoundary in MyCertificatesPage:",
-        error
-      );
-      setHasError(true);
-    };
-    const originalError = console.error;
-    console.error = (...args) => {
-      if (/The above error occurred in the <.*> component/.test(args[0])) {
-        errorHandler(args[0]);
-      }
-      originalError(...args);
-    };
-
-    return () => {
-      console.error = originalError;
-    };
-  }, []);
-
-  if (hasError) {
-    return (
-      <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded m-4">
-        Something went wrong while rendering this page. Please refresh or try
-        logging in again.
-      </div>
-    );
-  }
-  return children;
-}
-
-function MyCertificatesPage() {
   const [certificates, setCertificates] = useState([]);
   const [templates, setTemplates] = useState([]);
   const [user, setUser] = useState(null);
-  const [error, setError] = useState("");
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [selectedCert, setSelectedCert] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  const [downloadingId, setDownloadingId] = useState(null);
-  const [downloadFormatCert, setDownloadFormatCert] = useState(null);
-  const [sendingId, setSendingId] = useState(null);
-  const [isBulkSending, setIsBulkSending] = useState(false);
-  const [selectedCertIds, setSelectedCertIds] = useState(new Set());
-
-  // Filter & Pagination States
+  // Table State
+  const [filterStatus, setFilterStatus] = useState("all"); // all | sent | not_sent
   const [searchTerm, setSearchTerm] = useState("");
-  const [filterStatus, setFilterStatus] = useState("all"); // all, sent, not_sent
   const [currentPage, setCurrentPage] = useState(1);
-  const [hoveredDay, setHoveredDay] = useState(null);
-  const itemsPerPage = 10;
+  const [selectedCertIds, setSelectedCertIds] = useState(new Set());
+  const [timeRange, setTimeRange] = useState("week"); // week | month
 
-  const navigate = useNavigate();
+  // Modal / Action State
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [selectedCert, setSelectedCert] = useState(null);
+  const [isBulkDeleting, setIsBulkDeleting] = useState(false);
+  const [isSendingEmails, setIsSendingEmails] = useState(false);
+  const [downloadingId, setDownloadingId] = useState(null);
+
+  const certificatesPerPage = 10;
 
   useEffect(() => {
     fetchData();
@@ -108,1075 +59,564 @@ function MyCertificatesPage() {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const [certResponse, templateResponse, userResponse] = await Promise.all([
+      const [certRes, tempRes, userRes] = await Promise.all([
         getCertificates(),
         getTemplates(),
-        getCurrentUser(),
+        getCurrentUser().catch(() => ({ data: null })),
       ]);
-      // Sort by newest first
-      const sortedCertificates = certResponse.data.sort(
-        (a, b) =>
-          new Date(b.issue_date).getTime() - new Date(a.issue_date).getTime()
-      );
-      setCertificates(sortedCertificates);
-      setTemplates(templateResponse.data.templates);
-      setUser(userResponse.data);
+
+      const certsData = Array.isArray(certRes.data)
+        ? certRes.data
+        : certRes.data?.certificates || [];
+      const templatesData = Array.isArray(tempRes.data)
+        ? tempRes.data
+        : tempRes.data?.templates || [];
+
+      setCertificates(certsData);
+      setTemplates(templatesData);
+      if (userRes?.data) setUser(userRes.data);
     } catch (err) {
-      console.error("Fetch error:", err);
-      setError(
-        "Could not fetch dashboard data. Your session might have expired. Please try logging in again."
-      );
+      console.error("Failed to load dashboard data:", err);
+      toast.error("Failed to load dashboard data.");
     } finally {
       setLoading(false);
     }
   };
 
-  // --- Derived State for Filtering & Pagination ---
+  // --- Filtered and Paginated Certificates ---
   const filteredCertificates = useMemo(() => {
     return certificates.filter((cert) => {
-      const matchesSearch =
-        cert.recipient_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        cert.course_title.toLowerCase().includes(searchTerm.toLowerCase());
+      const recipient = (cert.recipient_name || "").toLowerCase();
+      const course = (cert.course_title || "").toLowerCase();
+      const search = searchTerm.toLowerCase();
+      const matchesSearch = recipient.includes(search) || course.includes(search);
 
-      const matchesStatus =
-        filterStatus === "all"
-          ? true
-          : filterStatus === "sent"
-          ? !!cert.sent_at
-          : !cert.sent_at;
-
-      return matchesSearch && matchesStatus;
+      if (!matchesSearch) return false;
+      if (filterStatus === "sent") return cert.email_sent;
+      if (filterStatus === "not_sent") return !cert.email_sent;
+      return true;
     });
   }, [certificates, searchTerm, filterStatus]);
 
-  const totalPages = Math.ceil(filteredCertificates.length / itemsPerPage);
+  const totalPages = Math.ceil(filteredCertificates.length / certificatesPerPage) || 1;
   const paginatedCertificates = useMemo(() => {
-    const startIndex = (currentPage - 1) * itemsPerPage;
-    return filteredCertificates.slice(startIndex, startIndex + itemsPerPage);
+    const start = (currentPage - 1) * certificatesPerPage;
+    return filteredCertificates.slice(start, start + certificatesPerPage);
   }, [filteredCertificates, currentPage]);
 
-  // --- Handlers ---
+  // --- Activity Chart Data ---
+  const chartData = useMemo(() => {
+    const days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+    const counts = { Mon: 0, Tue: 0, Wed: 0, Thu: 0, Fri: 0, Sat: 0, Sun: 0 };
 
-  const handlePageChange = (newPage) => {
-    if (newPage >= 1 && newPage <= totalPages) {
-      setCurrentPage(newPage);
+    certificates.forEach((cert) => {
+      const dateStr = cert.issue_date || cert.created_at;
+      if (dateStr) {
+        const d = new Date(dateStr);
+        if (!isNaN(d.getTime())) {
+          const dayName = d.toLocaleDateString("en-US", { weekday: "short" });
+          if (counts[dayName] !== undefined) counts[dayName] += 1;
+        }
+      }
+    });
+
+    return days.map((day) => ({ day, count: counts[day] }));
+  }, [certificates]);
+
+  const maxChartCount = Math.max(...chartData.map((d) => d.count), 1);
+
+  // --- Handlers ---
+  const handleDeleteCert = async () => {
+    if (!selectedCert) return;
+    try {
+      await deleteCertificate(selectedCert.id);
+      setCertificates((prev) => prev.filter((c) => c.id !== selectedCert.id));
+      toast.success("Certificate deleted.");
+    } catch (err) {
+      toast.error("Failed to delete certificate.");
+    } finally {
+      setShowDeleteModal(false);
+      setSelectedCert(null);
     }
   };
 
-  const handleSendEmail = (certId) => {
-    setSendingId(certId);
-    const promise = sendCertificateEmail(certId);
+  const handleBulkDelete = async () => {
+    if (selectedCertIds.size === 0) return;
+    if (!window.confirm(`Delete ${selectedCertIds.size} certificates?`)) return;
 
-    toast.promise(promise, {
-      loading: "Sending email...",
-      success: (res) => {
-        setCertificates((certs) =>
-          certs.map((c) =>
-            c.id === certId ? { ...c, sent_at: new Date().toISOString() } : c
-          )
-        );
-        return res.data.msg || "Email sent successfully!";
-      },
-      error: (err) => err.response?.data?.msg || "Failed to send email.",
-    });
-
-    promise.finally(() => setSendingId(null));
+    setIsBulkDeleting(true);
+    try {
+      await Promise.all(
+        Array.from(selectedCertIds).map((id) => deleteCertificate(id))
+      );
+      setCertificates((prev) => prev.filter((c) => !selectedCertIds.has(c.id)));
+      setSelectedCertIds(new Set());
+      toast.success("Certificates deleted.");
+    } catch (err) {
+      toast.error("Failed to delete some certificates.");
+    } finally {
+      setIsBulkDeleting(false);
+    }
   };
 
-  const handleSelectOne = (certId) => {
-    const newSelection = new Set(selectedCertIds);
-    if (newSelection.has(certId)) newSelection.delete(certId);
-    else newSelection.add(certId);
-    setSelectedCertIds(newSelection);
+  const handleDownloadPDF = async (cert) => {
+    setDownloadingId(cert.id);
+    try {
+      const response = await getCertificatePDF(cert.id);
+      const blob = new Blob([response.data], { type: "application/pdf" });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${cert.recipient_name || "certificate"}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      toast.error("Failed to download PDF.");
+    } finally {
+      setDownloadingId(null);
+    }
+  };
+
+  const handleDownloadPNG = async (cert) => {
+    setDownloadingId(cert.id);
+    try {
+      const response = await getCertificatePNG(cert.id);
+      const blob = new Blob([response.data], { type: "image/png" });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${cert.recipient_name || "certificate"}.png`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      toast.error("Failed to download PNG.");
+    } finally {
+      setDownloadingId(null);
+    }
+  };
+
+  const handleSendEmail = async (cert) => {
+    if (!cert.recipient_email) {
+      toast.error("No recipient email on file.");
+      return;
+    }
+    try {
+      await sendCertificateEmail(cert.id);
+      toast.success("Email sent.");
+      setCertificates((prev) =>
+        prev.map((c) => (c.id === cert.id ? { ...c, email_sent: true } : c))
+      );
+    } catch (err) {
+      toast.error("Failed to send email.");
+    }
   };
 
   const handleSelectAll = (e) => {
     if (e.target.checked) {
-      // Select all currently filtered certificates
-      const allIds = filteredCertificates.map((c) => c.id);
-      setSelectedCertIds(new Set(allIds));
+      setSelectedCertIds(new Set(paginatedCertificates.map((c) => c.id)));
     } else {
       setSelectedCertIds(new Set());
     }
   };
 
-  const handleBulkSend = () => {
-    if (selectedCertIds.size === 0) {
-      toast.error("Please select at least one certificate to send.");
-      return;
-    }
-    setIsBulkSending(true);
-    const ids = Array.from(selectedCertIds);
-    const promise = sendBulkEmails(ids);
-
-    toast.promise(promise, {
-      loading: `Sending ${ids.length} emails...`,
-      success: (res) => {
-        fetchData();
-        setSelectedCertIds(new Set());
-        const sentCount = typeof res.data?.sent === 'number' ? res.data.sent : (Array.isArray(res.data?.sent) ? res.data.sent.length : ids.length);
-        const errorCount = Array.isArray(res.data?.errors) ? res.data.errors.length : 0;
-        if (errorCount > 0) {
-          return `Sent ${sentCount} emails (${errorCount} failed).`;
-        }
-        return res.data?.msg || `Successfully sent ${sentCount} emails.`;
-      },
-      error: (err) => err.response?.data?.msg || "Bulk send failed.",
-    });
-
-    promise.finally(() => setIsBulkSending(false));
-  };
-
-  const handleDelete = async () => {
-    if (!selectedCert) return;
-    const promise = deleteCertificate(selectedCert.id);
-    toast.promise(promise, {
-      loading: "Deleting certificate...",
-      success: () => {
-        setCertificates(
-          certificates.filter((cert) => cert.id !== selectedCert.id)
-        );
-        setShowDeleteModal(false);
-        setSelectedCert(null);
-        // Clear from selection if it was selected
-        if (selectedCertIds.has(selectedCert.id)) {
-          const newSet = new Set(selectedCertIds);
-          newSet.delete(selectedCert.id);
-          setSelectedCertIds(newSet);
-        }
-        return "Certificate deleted successfully.";
-      },
-      error: (err) =>
-        err.response?.data?.msg || "Failed to delete certificate.",
+  const handleToggleSelect = (id) => {
+    setSelectedCertIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
     });
   };
-
-  const handleDownload = (cert) => {
-    setDownloadingId(cert.id);
-    const promise = getCertificatePDF(cert.id);
-    toast.promise(promise, {
-      loading: "Generating PDF...",
-      success: (response) => {
-        const url = window.URL.createObjectURL(new Blob([response.data]));
-        const link = document.createElement("a");
-        link.href = url;
-        const saneName = cert.recipient_name?.replace(/[\W_]+/g, "_").replace(/^_+|_+$/g, "");
-        const filename = saneName ? `${saneName}.pdf` : `doc_${cert.verification_id}.pdf`;
-        link.setAttribute("download", filename);
-        document.body.appendChild(link);
-        link.click();
-        link.parentNode.removeChild(link);
-        window.URL.revokeObjectURL(url);
-        return "Download started!";
-      },
-      error: async (err) => {
-        if (err.response?.data instanceof Blob) {
-          try {
-            const text = await err.response.data.text();
-            const json = JSON.parse(text);
-            return json.msg || "Failed to download PDF.";
-          } catch {
-            // fallback
-          }
-        }
-        return err.response?.data?.msg || "Failed to download PDF.";
-      },
-    });
-    promise.finally(() => setDownloadingId(null));
-  };
-
-  const handleDownloadPNG = (cert) => {
-    setDownloadingId(cert.id);
-    const promise = getCertificatePNG(cert.id);
-    toast.promise(promise, {
-      loading: "Generating PNG image...",
-      success: (response) => {
-        const url = window.URL.createObjectURL(new Blob([response.data], { type: "image/png" }));
-        const link = document.createElement("a");
-        link.href = url;
-        const saneName = cert.recipient_name?.replace(/[\W_]+/g, "_").replace(/^_+|_+$/g, "");
-        const filename = saneName ? `${saneName}.png` : `doc_${cert.verification_id || cert.id}.png`;
-        link.setAttribute("download", filename);
-        document.body.appendChild(link);
-        link.click();
-        link.parentNode.removeChild(link);
-        window.URL.revokeObjectURL(url);
-        return "PNG download started!";
-      },
-      error: async (err) => {
-        if (err.response?.status === 403) {
-          return "PNG image downloads are exclusively available on Enterprise plan.";
-        }
-        if (err.response?.data instanceof Blob) {
-          try {
-            const text = await err.response.data.text();
-            const json = JSON.parse(text);
-            return json.msg || "Failed to download PNG.";
-          } catch {
-            // fallback
-          }
-        }
-        return err.response?.data?.msg || "Failed to download PNG.";
-      },
-    });
-    promise.finally(() => setDownloadingId(null));
-  };
-
-  const isEnterpriseUser = Boolean(user?.is_enterprise || user?.role === 'enterprise' || user?.effective_role === 'enterprise');
-
-  const onDownloadClick = (cert) => {
-    if (isEnterpriseUser) {
-      setDownloadFormatCert(cert);
-    } else {
-      handleDownload(cert);
-    }
-  };
-
-  const location = useLocation();
-
-  const navLinks = [
-    { name: "Overview", path: "/dashboard" },
-    { name: "Templates", path: "/dashboard/templates" },
-    { name: "Groups", path: "/dashboard/groups" },
-    { name: "Analytics", path: "/dashboard/analytics" },
-    { name: "Settings", path: "/dashboard/settings" },
-  ];
-
-  const quickActions = [
-    {
-      title: "Issue Certificate",
-      description: "Create a single certificate manually",
-      buttonText: "Issue",
-      icon: <Award className="w-4 h-4 text-slate-600" />,
-      onClick: () => navigate("/dashboard/create"),
-    },
-    {
-      title: "Bulk Import Excel",
-      description: "Issue certificates from spreadsheets",
-      buttonText: "Import",
-      icon: <Upload className="w-4 h-4 text-slate-600" />,
-      onClick: () => navigate("/dashboard/bulk-create"),
-    },
-    {
-      title: "Visual Templates",
-      description: "Design and customize certificate layouts",
-      buttonText: "Design",
-      icon: <LayoutTemplate className="w-4 h-4 text-slate-600" />,
-      onClick: () => navigate("/dashboard/templates"),
-    },
-    {
-      title: "Certificate Groups",
-      description: "Organize credentials in batches",
-      buttonText: "Groups",
-      icon: <Folder className="w-4 h-4 text-slate-600" />,
-      onClick: () => navigate("/dashboard/groups"),
-    },
-    {
-      title: "System Settings",
-      description: "Configure profile and API keys",
-      buttonText: "Settings",
-      icon: <Settings className="w-4 h-4 text-slate-600" />,
-      onClick: () => navigate("/dashboard/settings"),
-    },
-  ];
-
-  // Activity Chart Data
-  const chartData = useMemo(() => {
-    const days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
-    const counts = { Monday: 0, Tuesday: 0, Wednesday: 0, Thursday: 0, Friday: 0, Saturday: 0, Sunday: 0 };
-    
-    certificates.forEach(c => {
-      if (c.issue_date || c.created_at) {
-        const date = new Date(c.issue_date || c.created_at);
-        const dayName = date.toLocaleDateString("en-US", { weekday: "long" });
-        if (counts[dayName] !== undefined) {
-          counts[dayName]++;
-        }
-      }
-    });
-
-    const total = Object.values(counts).reduce((a, b) => a + b, 0);
-    
-    // Fallback default distribution (for premium placeholder/aesthetic look)
-    const baseMock = { Monday: 3, Tuesday: 2, Wednesday: 6, Thursday: 1, Friday: 4, Saturday: 0, Sunday: 1 };
-    
-    return days.map(d => {
-      const count = total > 0 ? counts[d] : baseMock[d];
-      return {
-        day: d,
-        shortDay: d.substring(0, 3),
-        count: count,
-      };
-    });
-  }, [certificates]);
-
-  // Find max count to scale the bars
-  const maxCount = useMemo(() => {
-    const counts = chartData.map(d => d.count);
-    const max = Math.max(...counts);
-    return max > 0 ? max : 10;
-  }, [chartData]);
-
-  const maxDayIndex = useMemo(() => {
-    const counts = chartData.map(d => d.count);
-    const max = Math.max(...counts);
-    if (max <= 0) return -1;
-    return chartData.findIndex(d => d.count === max);
-  }, [chartData]);
 
   return (
-    <ErrorBoundary>
-      <div className="w-full pb-20">
-        <Toaster position="top-right" />
+    <div className="max-w-[1600px] mx-auto px-4 sm:px-6 py-6 font-sans">
+      <Toaster position="top-right" />
 
-        {/* --- 1. Top Navigation Bar (Header) --- */}
-        <div className="border-b border-slate-200/80 bg-white mb-4 sm:mb-6 -mt-6 px-4 py-3 rounded-b-lg">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 max-w-[1600px] mx-auto">
-            {/* Left: Page Title & Mobile Quick Buttons */}
-            <div className="flex items-center justify-between">
-              <h1 className="text-sm font-bold text-slate-800 uppercase tracking-wider mb-0">Overview</h1>
-              <div className="flex items-center gap-2 sm:hidden">
-                <Link
-                  to="/dashboard/create"
-                  className="inline-flex items-center justify-center bg-slate-900 text-white rounded-lg py-1 px-2.5 font-semibold text-xs shadow-sm decoration-none"
-                >
-                  <PlusCircle size={13} className="mr-1" />
-                  <span>Issue</span>
-                </Link>
-                <Link
-                  to="/dashboard/bulk-create"
-                  className="inline-flex items-center justify-center bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-lg py-1 px-2.5 font-semibold text-xs shadow-sm decoration-none"
-                >
-                  Import
-                </Link>
+      {/* --- Page Header (Title + One Primary Action) --- */}
+      <PageHeader
+        title="Overview"
+        action={
+          <AppButton
+            variant="primary"
+            onClick={() => navigate("/dashboard/create")}
+          >
+            Issue certificate
+          </AppButton>
+        }
+      />
+
+      {/* --- Stat Cards (Number + Label only, No Badges) --- */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+        <StatCard
+          label="Credits"
+          value={user?.cert_quota?.toLocaleString() || 0}
+        />
+        <StatCard
+          label="Issued"
+          value={certificates.length.toLocaleString()}
+        />
+        <StatCard
+          label="Templates"
+          value={templates.length.toLocaleString()}
+        />
+      </div>
+
+      {/* --- Activity Chart & Account Quotas Grid --- */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-6">
+        {/* Activity Chart (Left Column) */}
+        <div className="lg:col-span-8 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-xl p-5 shadow-2xs">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-sm font-bold text-slate-900 dark:text-zinc-100">
+              Activity
+            </h2>
+            <select
+              value={timeRange}
+              onChange={(e) => setTimeRange(e.target.value)}
+              className="text-xs font-medium text-slate-600 dark:text-zinc-300 bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-lg px-2 py-1 outline-none cursor-pointer"
+            >
+              <option value="week">This week</option>
+              <option value="month">This month</option>
+            </select>
+          </div>
+
+          {certificates.length === 0 ? (
+            <EmptyState message="No certificates issued yet." />
+          ) : (
+            <div className="flex items-end justify-between h-44 pt-6 px-4 border-b border-slate-100 dark:border-zinc-800">
+              {chartData.map((d) => {
+                const heightPercent = (d.count / maxChartCount) * 100;
+                return (
+                  <div key={d.day} className="flex flex-col items-center flex-1 h-full justify-end">
+                    <span className="text-[11px] font-semibold text-slate-500 mb-1">
+                      {d.count > 0 ? d.count : ""}
+                    </span>
+                    <div className="w-8 sm:w-10 bg-slate-100 dark:bg-zinc-800 rounded-t h-full flex items-end justify-center">
+                      <div
+                        style={{ height: `${Math.max(heightPercent, 4)}%` }}
+                        className="w-full bg-[#5144E8] rounded-t transition-all duration-300"
+                      />
+                    </div>
+                    <span className="text-xs font-medium text-slate-400 mt-2">
+                      {d.day}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* Account Quotas (Right Column) */}
+        <div className="lg:col-span-4 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-xl p-5 shadow-2xs flex flex-col justify-between">
+          <div>
+            <h2 className="text-sm font-bold text-slate-900 dark:text-zinc-100 mb-4">
+              Quotas
+            </h2>
+
+            <div className="space-y-4">
+              <div>
+                <div className="flex justify-between items-center text-xs mb-1 font-medium">
+                  <span className="text-slate-500 dark:text-zinc-400">Credits used</span>
+                  <span className="text-slate-800 dark:text-zinc-200 font-bold">
+                    {certificates.length} / {(certificates.length + (user?.cert_quota || 0)).toLocaleString()}
+                  </span>
+                </div>
+                <div className="w-full h-1.5 bg-slate-100 dark:bg-zinc-800 rounded-full overflow-hidden">
+                  <div
+                    style={{
+                      width: `${Math.min(
+                        100,
+                        (certificates.length / (certificates.length + (user?.cert_quota || 0) || 1)) * 100
+                      )}%`,
+                    }}
+                    className="h-full bg-[#5144E8] rounded-full"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <div className="flex justify-between items-center text-xs mb-1 font-medium">
+                  <span className="text-slate-500 dark:text-zinc-400">Templates used</span>
+                  <span className="text-slate-800 dark:text-zinc-200 font-bold">
+                    {templates.length} / 50
+                  </span>
+                </div>
+                <div className="w-full h-1.5 bg-slate-100 dark:bg-zinc-800 rounded-full overflow-hidden">
+                  <div
+                    style={{ width: `${Math.min(100, (templates.length / 50) * 100)}%` }}
+                    className="h-full bg-[#5144E8] rounded-full"
+                  />
+                </div>
               </div>
             </div>
+          </div>
 
-            {/* Right: Search & Desktop Import */}
-            <div className="flex items-center gap-3 w-full sm:w-auto">
-              <div className="relative flex-1 sm:w-60">
-                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 w-3.5 h-3.5" />
-                <input
-                  type="text"
-                  placeholder="Search recipients or courses..."
-                  className="w-full pl-8 pr-3 py-1.5 bg-slate-50 border border-slate-200/60 rounded-lg focus:bg-white focus:border-slate-400 transition-all text-xs outline-none"
-                  value={searchTerm}
-                  onChange={(e) => {
-                    setSearchTerm(e.target.value);
-                    setCurrentPage(1);
-                  }}
-                />
-              </div>
+          <div className="pt-4 border-t border-slate-100 dark:border-zinc-800 mt-6 flex items-center justify-between text-xs text-slate-500">
+            <span>Usage resets on:</span>
+            <span className="font-semibold text-slate-800 dark:text-zinc-200">
+              {user?.subscription_expiry
+                ? new Date(user.subscription_expiry).toLocaleDateString()
+                : "Lifetime"}
+            </span>
+          </div>
+        </div>
+      </div>
 
-              <Link
-                to="/dashboard/bulk-create"
-                className="hidden sm:inline-flex items-center justify-center bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-lg py-1.5 px-3 transition-all font-semibold text-xs shadow-sm decoration-none"
+      {/* --- Recent Credentials Section --- */}
+      <div className="bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-xl overflow-hidden shadow-2xs">
+        {/* Table Toolbar */}
+        <div className="p-4 border-b border-slate-200 dark:border-zinc-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <h2 className="text-sm font-bold text-slate-900 dark:text-zinc-100">
+            Recent credentials
+          </h2>
+
+          <div className="flex items-center gap-2">
+            {/* Search */}
+            <div className="relative">
+              <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
+              <input
+                type="text"
+                value={searchTerm}
+                onChange={(e) => {
+                  setSearchTerm(e.target.value);
+                  setCurrentPage(1);
+                }}
+                placeholder="Search..."
+                className="pl-8 pr-3 py-1.5 text-xs bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-lg outline-none focus:border-indigo-500 w-44 sm:w-56"
+              />
+            </div>
+
+            {/* Filter */}
+            <select
+              value={filterStatus}
+              onChange={(e) => {
+                setFilterStatus(e.target.value);
+                setCurrentPage(1);
+              }}
+              className="text-xs bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 text-slate-700 dark:text-zinc-300 font-medium rounded-lg px-2.5 py-1.5 outline-none cursor-pointer"
+            >
+              <option value="all">All statuses</option>
+              <option value="sent">Issued</option>
+              <option value="not_sent">Draft</option>
+            </select>
+
+            {/* Bulk Delete (if selected) */}
+            {selectedCertIds.size > 0 && (
+              <AppButton
+                variant="danger"
+                size="sm"
+                onClick={handleBulkDelete}
+                disabled={isBulkDeleting}
               >
-                Import
-              </Link>
-            </div>
+                Delete ({selectedCertIds.size})
+              </AppButton>
+            )}
           </div>
         </div>
 
-        {error && (
-          <div className="bg-red-50 border-l-4 border-red-500 text-red-700 p-3 rounded text-xs mb-6 shadow-sm flex items-center gap-3">
-            <AlertCircle className="w-4 h-4" />
-            {error}
+        {/* Table of Records */}
+        {loading ? (
+          <div className="py-16 text-center text-xs text-slate-400">Loading...</div>
+        ) : filteredCertificates.length === 0 ? (
+          <div className="p-6">
+            <EmptyState
+              message="No certificates found."
+              action={
+                <AppButton
+                  variant="primary"
+                  size="sm"
+                  onClick={() => navigate("/dashboard/create")}
+                >
+                  Issue certificate
+                </AppButton>
+              }
+            />
           </div>
-        )}
-
-        {/* --- 2. Bento-Grid Layout --- */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 border border-slate-200/80 bg-white rounded-xl overflow-hidden shadow-sm divide-y lg:divide-y-0 lg:divide-x divide-slate-200/80">
-          
-          {/* LEFT COLUMN PANEL (lg:col-span-8) */}
-          <div className="lg:col-span-8 flex flex-col divide-y divide-slate-200/80">
-            
-            {/* Metrics Sub-grid */}
-            <div className="grid grid-cols-3 divide-x divide-slate-200/80">
-              {/* Available Credits Card */}
-              <div className="p-3 sm:p-5 bg-white hover:bg-slate-50/20 transition-colors">
-                <div className="flex items-center justify-between mb-1 gap-1">
-                  <span className="text-[9px] sm:text-[10px] font-bold text-slate-400 uppercase tracking-wider truncate">Credits</span>
-                  <span className="hidden sm:inline-flex items-center gap-0.5 px-1.5 py-0.5 bg-indigo-50 text-indigo-700 border border-indigo-100 rounded text-[9px] font-bold shrink-0">
-                    Active
-                  </span>
-                </div>
-                <h3 className="text-base sm:text-2xl font-bold tracking-tight text-slate-900 mt-0.5 sm:mt-1">
-                  {user?.cert_quota?.toLocaleString() || 0}
-                </h3>
-                <p className="text-[9px] sm:text-[10px] text-slate-400 mt-0.5 truncate hidden xs:block">Plan balance</p>
-              </div>
-
-              {/* Certificates Issued Card */}
-              <div className="p-3 sm:p-5 bg-white hover:bg-slate-50/20 transition-colors">
-                <div className="flex items-center justify-between mb-1 gap-1">
-                  <span className="text-[9px] sm:text-[10px] font-bold text-slate-400 uppercase tracking-wider truncate">Issued</span>
-                  <span className="hidden sm:inline-flex items-center gap-0.5 px-1.5 py-0.5 bg-emerald-50 text-emerald-700 border border-emerald-100 rounded text-[9px] font-bold shrink-0">
-                    Live
-                  </span>
-                </div>
-                <h3 className="text-base sm:text-2xl font-bold tracking-tight text-slate-900 mt-0.5 sm:mt-1">
-                  {certificates.length}
-                </h3>
-                <p className="text-[9px] sm:text-[10px] text-slate-400 mt-0.5 truncate hidden xs:block">Total documents</p>
-              </div>
-
-              {/* Active Templates Card */}
-              <div className="p-3 sm:p-5 bg-white hover:bg-slate-50/20 transition-colors">
-                <div className="flex items-center justify-between mb-1 gap-1">
-                  <span className="text-[9px] sm:text-[10px] font-bold text-slate-400 uppercase tracking-wider truncate">Templates</span>
-                  <span className="hidden sm:inline-flex items-center gap-0.5 px-1.5 py-0.5 bg-amber-50 text-amber-700 border border-amber-100 rounded text-[9px] font-bold shrink-0">
-                    Ready
-                  </span>
-                </div>
-                <h3 className="text-base sm:text-2xl font-bold tracking-tight text-slate-900 mt-0.5 sm:mt-1">
-                  {templates.length}
-                </h3>
-                <p className="text-[9px] sm:text-[10px] text-slate-400 mt-0.5 truncate hidden xs:block">Presets</p>
-              </div>
-            </div>
-
-            {/* Issuance Activity Chart Panel */}
-            <div className="p-4 sm:p-6 bg-white">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
-                <div>
-                  <h3 className="text-sm font-bold text-slate-800">Activity Overview</h3>
-                  <p className="text-[10px] text-slate-400">Weekly certificate issuance statistics</p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <button className="px-2.5 py-1 text-[11px] font-semibold text-slate-600 bg-white border border-slate-200 rounded-md hover:bg-slate-50 shadow-sm flex items-center gap-1">
-                    Customize
-                  </button>
-                  <button className="px-2.5 py-1 text-[11px] font-semibold text-slate-600 bg-white border border-slate-200 rounded-md hover:bg-slate-50 shadow-sm flex items-center gap-1">
-                    This week
-                  </button>
-                  <button className="p-1 bg-white border border-slate-200 rounded-md hover:bg-slate-50 shadow-sm">
-                    <Filter className="w-3.5 h-3.5 text-slate-500" />
-                  </button>
-                </div>
-              </div>
-
-              {/* Chart */}
-              <div className="flex items-end justify-between h-48 pt-6 pb-2 px-4 relative border-b border-slate-100">
-                {chartData.map((data, index) => {
-                  const heightPercent = (data.count / maxCount) * 80; // scale to max 80% height
-                  
-                  // Filter certificates for this day
-                  const dayCertificates = certificates.filter(c => {
-                    if (c.issue_date || c.created_at) {
-                      const date = new Date(c.issue_date || c.created_at);
-                      const dayName = date.toLocaleDateString("en-US", { weekday: "long" });
-                      return dayName === data.day;
-                    }
-                    return false;
-                  });
-
-                  const avatars = dayCertificates.slice(0, 3).map(c => {
-                    return (c.recipient_name || "G").charAt(0).toUpperCase();
-                  });
-
-                  const showTooltip = hoveredDay === data.day || (hoveredDay === null && maxCount > 0 && index === maxDayIndex);
-                  
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="border-b border-slate-100 dark:border-zinc-800 bg-slate-50/50 dark:bg-zinc-800/40 text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+                  <th className="py-2.5 px-4 w-8">
+                    <input
+                      type="checkbox"
+                      onChange={handleSelectAll}
+                      checked={
+                        paginatedCertificates.length > 0 &&
+                        paginatedCertificates.every((c) => selectedCertIds.has(c.id))
+                      }
+                      className="rounded text-indigo-600 cursor-pointer"
+                    />
+                  </th>
+                  <th className="py-2.5 px-4">Recipient</th>
+                  <th className="py-2.5 px-4">Course</th>
+                  <th className="py-2.5 px-4">Date</th>
+                  <th className="py-2.5 px-4">Status</th>
+                  <th className="py-2.5 px-4 text-right w-12"></th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 dark:divide-zinc-800 text-sm">
+                {paginatedCertificates.map((cert) => {
+                  const isSelected = selectedCertIds.has(cert.id);
+                  const isIssued = cert.email_sent;
                   return (
-                    <div key={index} className="flex flex-col items-center justify-end flex-1 h-full group/bar relative">
-                      {/* Tooltip Card */}
-                      {showTooltip && (
-                        <div className="absolute top-0 z-20 bg-white border border-slate-200/80 rounded-lg py-1.5 px-2.5 shadow-md flex items-center gap-2 mb-2 animate-in fade-in slide-in-from-bottom-2 duration-300 pointer-events-none">
-                          <span className="text-[11px] font-bold text-slate-850">{data.count}</span>
-                          <span className="text-[9px] font-semibold text-slate-400">
-                            {certificates.length > 0 
-                              ? `${(data.count / certificates.length * 100).toFixed(0)}% Issued` 
-                              : "0% Issued"}
-                          </span>
-                          {/* Little dynamic avatars */}
-                          {avatars.length > 0 && (
-                            <div className="flex -space-x-1 overflow-hidden">
-                              {avatars.map((initial, i) => (
-                                <div key={i} className={`w-3.5 h-3.5 rounded-full ring-1 ring-white text-[6px] text-white flex items-center justify-center font-bold ${
-                                  i === 0 ? "bg-indigo-500" : i === 1 ? "bg-emerald-500" : "bg-amber-500"
-                                }`}>
-                                  {initial}
-                                </div>
-                              ))}
-                            </div>
-                          )}
-                          {/* Small tooltip arrow */}
-                          <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-white border-b border-r border-slate-200/80 rotate-45"></div>
-                        </div>
-                      )}
-
-                      {/* Bar Container with definite height so CSS percentage heights render properly */}
-                      <div className="w-full h-34 flex items-end justify-center relative">
-                        <div 
-                          onMouseEnter={() => setHoveredDay(data.day)}
-                          onMouseLeave={() => setHoveredDay(null)}
-                          style={{ height: `${Math.max(heightPercent, 8)}%` }}
-                          className={`w-9 sm:w-11 rounded-t-md transition-all duration-300 relative cursor-pointer
-                            ${showTooltip 
-                              ? "bg-gradient-to-t from-indigo-600 to-indigo-500 shadow-sm shadow-indigo-500/10 scale-x-105" 
-                              : "bg-indigo-100/70 hover:bg-indigo-200/80"
-                            }`}
+                    <tr
+                      key={cert.id}
+                      className={`hover:bg-slate-50/70 dark:hover:bg-zinc-800/50 transition-colors ${
+                        isSelected ? "bg-indigo-50/40 dark:bg-indigo-950/20" : ""
+                      }`}
+                    >
+                      <td className="py-3 px-4">
+                        <input
+                          type="checkbox"
+                          checked={isSelected}
+                          onChange={() => handleToggleSelect(cert.id)}
+                          className="rounded text-indigo-600 cursor-pointer"
                         />
-                      </div>
-                      
-                      {/* Day Label */}
-                      <span className="text-[10px] font-semibold text-slate-400 mt-2.5 tracking-wider">{data.shortDay}</span>
-                    </div>
+                      </td>
+                      <td className="py-3 px-4">
+                        <div className="font-semibold text-slate-900 dark:text-zinc-100">
+                          {cert.recipient_name || "Untitled"}
+                        </div>
+                        {cert.recipient_email && (
+                          <div className="text-xs text-slate-400">{cert.recipient_email}</div>
+                        )}
+                      </td>
+                      <td className="py-3 px-4 text-slate-600 dark:text-zinc-300">
+                        {cert.course_title || "—"}
+                      </td>
+                      <td className="py-3 px-4 text-slate-500 text-xs">
+                        {cert.issue_date || cert.created_at
+                          ? new Date(cert.issue_date || cert.created_at).toLocaleDateString()
+                          : "—"}
+                      </td>
+                      <td className="py-3 px-4">
+                        <span
+                          className={`inline-block px-2 py-0.5 rounded text-xs font-semibold ${
+                            isIssued
+                              ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800"
+                              : "bg-slate-100 text-slate-600 dark:bg-zinc-800 dark:text-zinc-400 border border-slate-200 dark:border-zinc-700"
+                          }`}
+                        >
+                          {isIssued ? "Issued" : "Draft"}
+                        </span>
+                      </td>
+                      <td className="py-3 px-4 text-right">
+                        <KebabMenu
+                          items={[
+                            {
+                              label: "View",
+                              icon: <Eye size={14} />,
+                              onClick: () => navigate(`/dashboard/view/${cert.id}`),
+                            },
+                            {
+                              label: "Edit",
+                              icon: <Pencil size={14} />,
+                              onClick: () => navigate(`/dashboard/edit/${cert.id}`),
+                            },
+                            {
+                              label: "Download PDF",
+                              icon: <Download size={14} />,
+                              onClick: () => handleDownloadPDF(cert),
+                            },
+                            {
+                              label: "Download PNG",
+                              icon: <Download size={14} />,
+                              onClick: () => handleDownloadPNG(cert),
+                            },
+                            cert.recipient_email
+                              ? {
+                                  label: "Resend email",
+                                  icon: <Mail size={14} />,
+                                  onClick: () => handleSendEmail(cert),
+                                }
+                              : null,
+                            { divider: true },
+                            {
+                              label: "Delete",
+                              icon: <Trash size={14} />,
+                              danger: true,
+                              onClick: () => {
+                                setSelectedCert(cert);
+                                setShowDeleteModal(true);
+                              },
+                            },
+                          ].filter(Boolean)}
+                        />
+                      </td>
+                    </tr>
                   );
                 })}
-              </div>
-            </div>
-
-            {/* Recent Certificates / Listing Panel */}
-            <div className="p-6 bg-white flex flex-col flex-1">
-              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
-                <div>
-                  <h3 className="text-sm font-bold text-slate-800">Recent Credentials</h3>
-                  <p className="text-[10px] text-slate-400">Manage and verify issued certificates</p>
-                </div>
-
-                {/* Filters */}
-                <div className="flex items-center gap-2 w-full sm:w-auto">
-                  <div className="flex p-0.5 bg-slate-100 dark:bg-[#141417] border border-slate-200/60 dark:border-[#2b2b31] rounded w-full sm:w-auto">
-                    {["all", "sent", "not_sent"].map((status) => (
-                      <button
-                        key={status}
-                        onClick={() => {
-                          setFilterStatus(status);
-                          setCurrentPage(1);
-                        }}
-                        className={`flex-1 sm:flex-none px-3 py-1 text-[10px] font-bold rounded transition-all ${
-                          filterStatus === status
-                            ? "bg-white dark:bg-[#27272e] text-slate-800 dark:text-white shadow-sm border border-slate-200/20 dark:border-[#383842]"
-                            : "text-slate-500 dark:text-zinc-400 hover:text-slate-800 dark:hover:text-white"
-                        }`}
-                      >
-                        {status === "all" ? "All" : status === "sent" ? "Issued" : "Drafts"}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              {/* Table Area */}
-              <div className="flex-1 relative border border-slate-100 dark:border-[#2b2b31] rounded-lg overflow-hidden bg-white dark:bg-[#18181b]">
-                {loading ? (
-                  <div className="w-full divide-y divide-slate-100 animate-pulse">
-                    {[...Array(5)].map((_, i) => (
-                      <div key={i} className="flex items-center justify-between p-4 bg-white">
-                        <div className="flex items-center gap-3 w-1/3">
-                          <div className="w-4 h-4 bg-gray-200 rounded" />
-                          <div className="h-3.5 bg-gray-200 rounded w-full" />
-                        </div>
-                        <div className="h-3 bg-gray-200 rounded w-1/4" />
-                        <div className="h-3 bg-gray-200 rounded w-1/6" />
-                        <div className="h-4 bg-gray-200 rounded w-12" />
-                      </div>
-                    ))}
-                  </div>
-                ) : null}
-
-                {filteredCertificates.length === 0 && !loading ? (
-                  <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
-                    <div className="w-12 h-12 bg-slate-50 rounded-full flex items-center justify-center mb-3 border border-slate-100">
-                      <Search className="w-5 h-5 text-slate-300" />
-                    </div>
-                    <h3 className="text-xs font-bold text-slate-900 mb-0.5">No certificates found</h3>
-                    <p className="text-slate-500 text-[10px] max-w-sm mx-auto mb-3">
-                      {searchTerm ? "No results match your search." : "Get started by creating your first certificate."}
-                    </p>
-                    {(!searchTerm && filterStatus === "all") && (
-                      <Link to="/dashboard/create" className="text-indigo-600 font-semibold hover:text-indigo-800 text-[11px] decoration-none">
-                        Create new certificate &rarr;
-                      </Link>
-                    )}
-                  </div>
-                ) : (
-                  <>
-                    {/* Desktop Table View */}
-                    <div className="overflow-x-auto hidden sm:block">
-                      <table className="min-w-full divide-y divide-slate-100 dark:divide-[#232328]">
-                        <thead className="bg-slate-50/50 dark:bg-[#141417]">
-                          <tr>
-                            <th scope="col" className="px-4 py-2 text-left w-10">
-                              <input
-                                type="checkbox"
-                                onChange={handleSelectAll}
-                                checked={paginatedCertificates.length > 0 && paginatedCertificates.every((c) => selectedCertIds.has(c.id))}
-                                className="h-3 w-3 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
-                              />
-                            </th>
-                            <th className="px-4 py-2 text-left text-[10px] font-bold text-slate-400 dark:text-zinc-300 uppercase tracking-wider">Recipient</th>
-                            <th className="px-4 py-2 text-left text-[10px] font-bold text-slate-400 dark:text-zinc-300 uppercase tracking-wider">Course Detail</th>
-                            <th className="px-4 py-2 text-left text-[10px] font-bold text-slate-400 dark:text-zinc-300 uppercase tracking-wider">Issued</th>
-                            <th className="px-4 py-2 text-left text-[10px] font-bold text-slate-400 dark:text-zinc-300 uppercase tracking-wider">Status</th>
-                            <th className="px-4 py-2 text-right text-[10px] font-bold text-slate-400 dark:text-zinc-300 uppercase tracking-wider">Actions</th>
-                          </tr>
-                        </thead>
-                        <tbody className="bg-white dark:bg-[#18181b] divide-y divide-slate-50 dark:divide-[#232328]">
-                          {paginatedCertificates.map((cert) => {
-                            const isSelected = selectedCertIds.has(cert.id);
-                            return (
-                              <tr key={cert.id} className={`group hover:bg-slate-50/30 transition-colors ${isSelected ? "bg-indigo-50/30" : ""}`}>
-                                <td className="px-4 py-3 align-middle whitespace-nowrap">
-                                  <input
-                                    type="checkbox"
-                                    checked={isSelected}
-                                    onChange={() => handleSelectOne(cert.id)}
-                                    className="h-3.5 w-3.5 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
-                                  />
-                                </td>
-                                <td className="px-4 py-3 align-middle">
-                                  <div className="flex items-center gap-3">
-                                    {(() => {
-                                      const colors = [
-                                        "bg-indigo-50 text-indigo-700 border-indigo-150",
-                                        "bg-emerald-50 text-emerald-700 border-emerald-150",
-                                        "bg-sky-50 text-sky-700 border-sky-150",
-                                        "bg-violet-50 text-violet-700 border-violet-150",
-                                        "bg-pink-50 text-pink-700 border-pink-150",
-                                        "bg-amber-50 text-amber-700 border-amber-150",
-                                      ];
-                                      const colorIndex = (cert.recipient_name || "G").charCodeAt(0) % colors.length;
-                                      const avatarColorClass = colors[colorIndex];
-                                      return (
-                                        <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs uppercase border flex-shrink-0 shadow-xs ${avatarColorClass}`}>
-                                          {(cert.recipient_name || "G").charAt(0)}
-                                        </div>
-                                      );
-                                    })()}
-                                    <div className="flex flex-col justify-center">
-                                      <p className="text-xs font-bold text-slate-800 leading-normal mb-0.5">{cert.recipient_name}</p>
-                                      <p className="text-[10px] text-slate-400 font-medium leading-none">{cert.recipient_email}</p>
-                                    </div>
-                                  </div>
-                                </td>
-                                <td className="px-4 py-3 align-middle text-xs text-slate-700 font-bold">
-                                  {cert.course_title}
-                                </td>
-                                <td className="px-4 py-3 align-middle text-xs text-slate-500 font-medium">
-                                  {new Date(cert.issue_date).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric'})}
-                                </td>
-                                <td className="px-4 py-3 align-middle whitespace-nowrap">
-                                  <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded border text-[9px] font-bold ${cert.sent_at ? "bg-emerald-50 text-emerald-700 border-emerald-100" : "bg-slate-50 text-slate-650 border-slate-200"}`}>
-                                    <span className={`w-1 h-1 rounded-full ${cert.sent_at ? "bg-emerald-500" : "bg-slate-400"}`} />
-                                    {cert.sent_at ? "Emailed" : "Draft"}
-                                  </span>
-                                </td>
-                                <td className="px-4 py-2.5 whitespace-nowrap text-right text-xs">
-                                  <div className="flex items-center justify-end gap-0.5 opacity-60 group-hover:opacity-100 transition-opacity">
-                                    <button
-                                      onClick={() => handleSendEmail(cert.id)}
-                                      className="p-1 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded transition-all"
-                                      title={cert.sent_at ? "Resend Email" : "Send Email"}
-                                    >
-                                      {sendingId === cert.id ? <div className="animate-spin h-3 w-3 border-2 border-indigo-600 border-t-transparent rounded-full" /> : <Mail className="w-3.5 h-3.5" />}
-                                    </button>
-                                    <button
-                                      onClick={() => onDownloadClick(cert)}
-                                      className="p-1 text-slate-400 hover:text-slate-800 hover:bg-slate-100 rounded transition-all"
-                                      title="Download Certificate"
-                                    >
-                                      {downloadingId === cert.id ? <div className="animate-spin h-3.5 w-3.5 border-2 border-slate-600 border-t-transparent rounded-full" /> : <Download className="w-3.5 h-3.5" />}
-                                    </button>
-                                    <Link
-                                      to={`/dashboard/view/${cert.verification_id || cert.id}`}
-                                      className="p-1 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded transition-all"
-                                      title="View Details"
-                                    >
-                                      <Eye className="w-3.5 h-3.5" />
-                                    </Link>
-                                    <Link
-                                      to={`/dashboard/edit/${cert.id}`}
-                                      className="p-1 text-slate-400 hover:text-slate-800 hover:bg-slate-100 rounded transition-all"
-                                      title="Edit"
-                                    >
-                                      <Pencil className="w-3.5 h-3.5" />
-                                    </Link>
-                                    <button
-                                      onClick={() => { setSelectedCert(cert); setShowDeleteModal(true); }}
-                                      className="p-1 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded transition-all"
-                                      title="Delete"
-                                    >
-                                      <Trash className="w-3.5 h-3.5" />
-                                    </button>
-                                  </div>
-                                </td>
-                              </tr>
-                            );
-                          })}
-                        </tbody>
-                      </table>
-                    </div>
-
-                    {/* Mobile Card List (sm:hidden) */}
-                    <div className="divide-y divide-slate-100 block sm:hidden">
-                      {paginatedCertificates.map((cert) => {
-                        const isSelected = selectedCertIds.has(cert.id);
-                        const colors = [
-                          "bg-indigo-50 text-indigo-700 border-indigo-150",
-                          "bg-emerald-50 text-emerald-700 border-emerald-150",
-                          "bg-sky-50 text-sky-700 border-sky-150",
-                          "bg-violet-50 text-violet-700 border-violet-150",
-                          "bg-pink-50 text-pink-700 border-pink-150",
-                          "bg-amber-50 text-amber-700 border-amber-150",
-                        ];
-                        const colorIndex = (cert.recipient_name || "G").charCodeAt(0) % colors.length;
-                        const avatarColorClass = colors[colorIndex];
-
-                        return (
-                          <div 
-                            key={cert.id} 
-                            className={`p-3 transition-colors ${isSelected ? "bg-indigo-50/40" : "bg-white"}`}
-                          >
-                            <div className="flex items-start justify-between gap-2">
-                              <div className="flex items-center gap-2.5 flex-1 min-w-0">
-                                <input
-                                  type="checkbox"
-                                  checked={isSelected}
-                                  onChange={() => handleSelectOne(cert.id)}
-                                  className="h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer shrink-0"
-                                />
-                                <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs uppercase border shrink-0 ${avatarColorClass}`}>
-                                  {(cert.recipient_name || "G").charAt(0)}
-                                </div>
-                                <div className="min-w-0 flex-1">
-                                  <h4 className="text-xs font-bold text-slate-900 truncate leading-tight">
-                                    {cert.recipient_name}
-                                  </h4>
-                                  <p className="text-[10px] text-slate-400 truncate mt-0.5">
-                                    {cert.recipient_email}
-                                  </p>
-                                </div>
-                              </div>
-                              
-                              <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded border text-[9px] font-bold shrink-0 ${
-                                cert.sent_at 
-                                  ? "bg-emerald-50 text-emerald-700 border-emerald-100" 
-                                  : "bg-slate-50 text-slate-600 border-slate-200"
-                              }`}>
-                                <span className={`w-1 h-1 rounded-full ${cert.sent_at ? "bg-emerald-500" : "bg-slate-400"}`} />
-                                {cert.sent_at ? "Emailed" : "Draft"}
-                              </span>
-                            </div>
-
-                            <div className="mt-2 text-xs font-medium text-slate-700 truncate pl-6.5">
-                              {cert.course_title}
-                            </div>
-
-                            <div className="mt-2 pt-2 border-t border-slate-50 flex items-center justify-between text-[10px] text-slate-400">
-                              <span>{new Date(cert.issue_date).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}</span>
-
-                              <div className="flex items-center gap-1.5">
-                                <button
-                                  onClick={() => handleSendEmail(cert.id)}
-                                  className="p-1.5 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
-                                  title={cert.sent_at ? "Resend Email" : "Send Email"}
-                                >
-                                  {sendingId === cert.id ? (
-                                    <div className="animate-spin h-3.5 w-3.5 border-2 border-indigo-600 border-t-transparent rounded-full" />
-                                  ) : (
-                                    <Mail size={15} />
-                                  )}
-                                </button>
-                                <button
-                                  onClick={() => onDownloadClick(cert)}
-                                  className="p-1.5 text-slate-500 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors"
-                                  title="Download Certificate"
-                                >
-                                  {downloadingId === cert.id ? (
-                                    <div className="animate-spin h-3.5 w-3.5 border-2 border-slate-600 border-t-transparent rounded-full" />
-                                  ) : (
-                                    <Download size={15} />
-                                  )}
-                                </button>
-                                <Link
-                                  to={`/dashboard/view/${cert.verification_id || cert.id}`}
-                                  className="p-1.5 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
-                                  title="View Details"
-                                >
-                                  <Eye size={15} />
-                                </Link>
-                                <Link
-                                  to={`/dashboard/edit/${cert.id}`}
-                                  className="p-1.5 text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition-colors"
-                                  title="Edit"
-                                >
-                                  <Pencil size={15} />
-                                </Link>
-                                <button
-                                  onClick={() => { setSelectedCert(cert); setShowDeleteModal(true); }}
-                                  className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                                  title="Delete"
-                                >
-                                  <Trash size={15} />
-                                </button>
-                              </div>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </>
-                )}
-
-                {/* Pagination Footer */}
-                {!loading && filteredCertificates.length > itemsPerPage && (
-                  <div className="px-4 py-2 border-t border-slate-100 dark:border-[#2b2b31] flex items-center justify-between bg-slate-50/30 dark:bg-[#141417]">
-                    <p className="text-[10px] text-slate-500 dark:text-zinc-300 font-medium">
-                      Page {currentPage} of {totalPages}
-                    </p>
-                    <div className="flex gap-1.5">
-                      <button
-                        onClick={() => handlePageChange(currentPage - 1)}
-                        disabled={currentPage === 1}
-                        className="p-1 bg-white dark:bg-[#222228] border border-slate-200 dark:border-[#32323a] rounded text-slate-500 dark:text-zinc-300 hover:bg-slate-50 dark:hover:bg-[#2a2a32] disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
-                      >
-                        <ChevronLeft className="w-3 h-3" />
-                      </button>
-                      <button
-                        onClick={() => handlePageChange(currentPage + 1)}
-                        disabled={currentPage === totalPages}
-                        className="p-1 bg-white dark:bg-[#222228] border border-slate-200 dark:border-[#32323a] rounded text-slate-500 dark:text-zinc-300 hover:bg-slate-50 dark:hover:bg-[#2a2a32] disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
-                      >
-                        <ChevronRight className="w-3 h-3" />
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
+              </tbody>
+            </table>
           </div>
+        )}
 
-          {/* RIGHT COLUMN PANEL (lg:col-span-4) */}
-          <div className="lg:col-span-4 bg-slate-50/20 dark:bg-[#18181b] flex flex-col divide-y divide-slate-200/80 dark:divide-[#2b2b31]">
-            
-            {/* Quick Actions Action Checklist */}
-            <div className="p-6 bg-white dark:bg-[#18181b]">
-              <div className="mb-4">
-                <h3 className="text-sm font-bold text-slate-800 dark:text-white">Start issuing certificates</h3>
-                <p className="text-[10px] text-slate-400 dark:text-zinc-400">Get started with templates and credentials</p>
-              </div>
-
-              {/* Large primary issue button */}
-              <button 
-                onClick={() => navigate("/dashboard/create")}
-                className="w-full bg-slate-900 hover:bg-black text-white text-xs font-semibold py-2.5 px-4 rounded-lg shadow-sm transition-all flex items-center justify-center gap-1.5 mb-5 animate-pulse-subtle"
-              >
-                <FileBadge size={13} className="text-indigo-450" />
-                <span>Issue Certificate</span>
-              </button>
-
-              {/* List Actions */}
-              <div className="space-y-3.5">
-                {quickActions.map((action, index) => (
-                  <div key={index} className="flex items-center justify-between py-1">
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-lg bg-slate-50 dark:bg-[#222228] border border-slate-200/40 dark:border-[#32323a] flex items-center justify-center text-slate-500 dark:text-zinc-300 shadow-inner">
-                        {action.icon}
-                      </div>
-                      <div>
-                        <h4 className="text-[11px] font-bold text-slate-800 dark:text-white leading-tight">{action.title}</h4>
-                        <p className="text-[9px] text-slate-400 dark:text-zinc-400 leading-tight mt-0.5">{action.description}</p>
-                      </div>
-                    </div>
-                    <button 
-                      onClick={action.onClick}
-                      className="px-2.5 py-1 text-[10px] font-bold text-slate-600 dark:text-zinc-200 bg-white dark:bg-[#222228] border border-slate-250 dark:border-[#32323a] rounded hover:bg-slate-50 dark:hover:bg-[#2a2a32] transition-colors shadow-sm animate-none"
-                    >
-                      {action.buttonText}
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Quotas & Credit Limits Panel */}
-            <div className="p-6 bg-white dark:bg-[#18181b] flex flex-col gap-6">
-              <div className="space-y-4">
-                <div className="mb-2">
-                  <h3 className="text-xs font-bold text-slate-850 dark:text-white uppercase tracking-wider">Account Quotas</h3>
-                  <p className="text-[9px] text-slate-400 dark:text-zinc-400">Plan usage metrics and balance</p>
-                </div>
-
-                {/* Quota Progress Bar 1 */}
-                <div>
-                  <div className="flex justify-between items-center mb-1 text-[10px] font-semibold">
-                    <span className="text-slate-500 dark:text-zinc-400">Certificate Credits Used</span>
-                    <span className="text-slate-800 dark:text-white font-bold">
-                      {certificates.length} / {(certificates.length + (user?.cert_quota || 0))}
-                    </span>
-                  </div>
-                  <div className="w-full h-1.5 bg-slate-100 dark:bg-[#27272f] rounded-full overflow-hidden">
-                    <div 
-                      style={{ width: `${(certificates.length / (certificates.length + (user?.cert_quota || 0) || 1) * 100)}%` }} 
-                      className="h-full bg-blue-500 rounded-full transition-all duration-500"
-                    />
-                  </div>
-                </div>
-
-                {/* Quota Progress Bar 2 */}
-                <div>
-                  <div className="flex justify-between items-center mb-1 text-[10px] font-semibold">
-                    <span className="text-slate-500 dark:text-zinc-400">Templates Active</span>
-                    <span className="text-slate-800 dark:text-white font-bold">
-                      {templates.length} / 50
-                    </span>
-                  </div>
-                  <div className="w-full h-1.5 bg-slate-100 dark:bg-[#27272f] rounded-full overflow-hidden">
-                    <div 
-                      style={{ width: `${(templates.length / 50 * 100)}%` }} 
-                      className="h-full bg-blue-500 rounded-full transition-all duration-500"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <div className="mt-8 pt-4 border-t border-slate-100 dark:border-[#28282d] flex flex-col gap-3">
-                <div className="text-[9px] text-slate-400 dark:text-zinc-400 font-medium flex items-center justify-between">
-                  <span>Usage resets on:</span>
-                  <span className="text-slate-600 dark:text-zinc-200 font-bold">
-                    {user?.subscription_expiry 
-                      ? new Date(user.subscription_expiry).toLocaleDateString()
-                      : "Never (Lifetime)"
-                    }
-                  </span>
-                </div>
-                
-                <Link 
-                  to="/dashboard/settings" 
-                  className="w-full bg-white dark:bg-[#222228] hover:bg-slate-50 dark:hover:bg-[#2a2a32] text-slate-700 dark:text-white text-xs font-bold py-2 px-4 rounded-lg border border-slate-200 dark:border-[#32323a] text-center shadow-sm transition-all decoration-none"
-                >
-                  Upgrade Account
-                </Link>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Floating Bulk Action Bar */}
-        {selectedCertIds.size > 0 && (
-          <div className="fixed bottom-20 sm:bottom-6 left-1/2 -translate-x-1/2 bg-slate-900 border border-slate-800 text-white rounded-xl px-4 py-2.5 shadow-2xl flex items-center justify-between gap-3.5 z-45 animate-in slide-in-from-bottom duration-300 w-[calc(100%-2rem)] max-w-md">
-            <span className="text-[11px] font-medium text-slate-300 truncate">
-              {selectedCertIds.size} selected
+        {/* Pagination Footer */}
+        {filteredCertificates.length > certificatesPerPage && (
+          <div className="p-3 border-t border-slate-200 dark:border-zinc-800 flex items-center justify-between text-xs text-slate-500">
+            <span>
+              Page {currentPage} of {totalPages} ({filteredCertificates.length} items)
             </span>
-            <div className="h-4 w-px bg-slate-800 shrink-0" />
-            <div className="flex gap-2 shrink-0">
+            <div className="flex items-center gap-1">
               <button
-                onClick={handleBulkSend}
-                disabled={isBulkSending}
-                className="bg-indigo-600 hover:bg-indigo-700 text-white text-[11px] font-semibold py-1 px-3 rounded-lg flex items-center gap-1.5 transition-colors disabled:opacity-50"
+                type="button"
+                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                disabled={currentPage === 1}
+                className="p-1 rounded border border-slate-200 dark:border-zinc-700 hover:bg-slate-50 dark:hover:bg-zinc-800 disabled:opacity-40 cursor-pointer"
               >
-                {isBulkSending ? (
-                  <div className="animate-spin h-3 w-3 border-2 border-white/30 border-t-white rounded-full" />
-                ) : (
-                  <Send className="w-3 h-3" />
-                )}
-                Send Emails
+                <ChevronLeft size={14} />
               </button>
               <button
-                onClick={() => setSelectedCertIds(new Set())}
-                className="bg-slate-800 hover:bg-slate-700 text-slate-200 text-[11px] font-semibold py-1 px-3 rounded-lg border border-slate-700 transition-colors"
+                type="button"
+                onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                disabled={currentPage === totalPages}
+                className="p-1 rounded border border-slate-200 dark:border-zinc-700 hover:bg-slate-50 dark:hover:bg-zinc-800 disabled:opacity-40 cursor-pointer"
               >
-                Deselect
+                <ChevronRight size={14} />
               </button>
-            </div>
-          </div>
-        )}
-
-        {/* Delete Modal */}
-        {showDeleteModal && (
-          <div className="fixed inset-0 bg-slate-950/40 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
-            <div className="bg-white rounded shadow-2xl p-5 max-w-sm w-full border border-slate-100">
-              <div className="text-center mb-5">
-                <div className="w-10 h-10 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-3 text-red-600 border border-red-100">
-                  <Trash className="w-5 h-5" />
-                </div>
-                <h3 className="text-sm font-bold text-slate-900">Delete Certificate?</h3>
-                <p className="text-slate-500 text-xs mt-1.5">
-                    Are you sure? This will permanently remove the certificate for <strong>{selectedCert?.recipient_name}</strong>.
-                </p>
-              </div>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => setShowDeleteModal(false)}
-                  className="flex-1 px-3 py-2 text-slate-700 bg-slate-100 hover:bg-slate-200 rounded font-semibold transition-colors text-xs"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleDelete}
-                  className="flex-1 px-3 py-2 text-white bg-red-600 hover:bg-red-700 rounded font-semibold transition-colors shadow-sm text-xs"
-                >
-                  Delete
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Download Format Modal (Enterprise Only) */}
-        {downloadFormatCert && isEnterpriseUser && (
-          <div className="fixed inset-0 bg-slate-950/40 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
-            <div className="bg-white rounded-xl shadow-2xl p-5 max-w-xs w-full border border-slate-100 relative">
-              <div className="text-center mb-4">
-                <div className="w-10 h-10 bg-indigo-50 rounded-full flex items-center justify-center mx-auto mb-2 text-indigo-600 border border-indigo-100">
-                  <Download className="w-5 h-5" />
-                </div>
-                <h3 className="text-sm font-bold text-slate-900">Download Format</h3>
-                <p className="text-slate-500 text-[11px] mt-1">
-                  Choose format for <strong>{downloadFormatCert.recipient_name}</strong>
-                </p>
-              </div>
-
-              <div className="space-y-2">
-                <button
-                  onClick={() => {
-                    const c = downloadFormatCert;
-                    setDownloadFormatCert(null);
-                    handleDownload(c);
-                  }}
-                  className="w-full py-2.5 px-3 bg-slate-50 hover:bg-indigo-50 hover:border-indigo-200 border border-slate-200 rounded-lg flex items-center justify-between transition-all group"
-                >
-                  <div className="flex items-center gap-2">
-                    <FileText className="w-4 h-4 text-slate-600 group-hover:text-indigo-600" />
-                    <span className="text-xs font-bold text-slate-800 group-hover:text-indigo-600">PDF Document</span>
-                  </div>
-                  <span className="text-[10px] text-slate-400 font-medium">Standard</span>
-                </button>
-
-                <button
-                  onClick={() => {
-                    const c = downloadFormatCert;
-                    setDownloadFormatCert(null);
-                    handleDownloadPNG(c);
-                  }}
-                  className="w-full py-2.5 px-3 bg-slate-50 hover:bg-purple-50 hover:border-purple-200 border border-slate-200 rounded-lg flex items-center justify-between transition-all group"
-                >
-                  <div className="flex items-center gap-2">
-                    <Award className="w-4 h-4 text-purple-600" />
-                    <span className="text-xs font-bold text-slate-800 group-hover:text-purple-600">PNG Image</span>
-                  </div>
-                  <span className="text-[9px] font-bold bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded border border-amber-200">
-                    Enterprise
-                  </span>
-                </button>
-              </div>
-
-              <div className="mt-4 pt-3 border-t border-slate-100">
-                <button
-                  onClick={() => setDownloadFormatCert(null)}
-                  className="w-full py-1.5 text-center text-xs text-slate-500 hover:text-slate-700 font-medium"
-                >
-                  Cancel
-                </button>
-              </div>
             </div>
           </div>
         )}
       </div>
-    </ErrorBoundary>
+
+      {/* Confirm Delete Dialog */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-xl p-5 max-w-sm w-full shadow-lg">
+            <h3 className="text-base font-bold text-slate-900 dark:text-zinc-100 mb-2">
+              Delete certificate
+            </h3>
+            <p className="text-xs text-slate-500 dark:text-zinc-400 mb-5 leading-relaxed">
+              Are you sure you want to delete the certificate for{" "}
+              <strong>{selectedCert?.recipient_name || "this recipient"}</strong>? This action cannot be undone.
+            </p>
+            <div className="flex justify-end gap-2">
+              <AppButton
+                variant="secondary"
+                size="sm"
+                onClick={() => {
+                  setShowDeleteModal(false);
+                  setSelectedCert(null);
+                }}
+              >
+                Cancel
+              </AppButton>
+              <AppButton
+                variant="danger"
+                size="sm"
+                onClick={handleDeleteCert}
+              >
+                Delete
+              </AppButton>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
-
-export default MyCertificatesPage;

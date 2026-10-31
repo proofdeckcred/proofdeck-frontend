@@ -1,14 +1,25 @@
+if (typeof window !== "undefined") {
+  if (
+    window.location.search.includes("desktop=0") ||
+    window.location.search.includes("web=1")
+  ) {
+    try {
+      localStorage.removeItem("pd_desktop_mode");
+    } catch (e) {}
+  } else if (window.location.search.includes("desktop=1")) {
+    try {
+      localStorage.setItem("pd_desktop_mode", "1");
+    } catch (e) {}
+  }
+}
+
 const isDesktopUrl =
   typeof window !== "undefined" &&
+  !window.location.search.includes("desktop=0") &&
+  !window.location.search.includes("web=1") &&
   (window.location.search.includes("desktop=1") ||
     localStorage.getItem("pd_desktop_mode") === "1" ||
     window.navigator.userAgent.includes("Electron"));
-
-if (typeof window !== "undefined" && window.location.search.includes("desktop=1")) {
-  try {
-    localStorage.setItem("pd_desktop_mode", "1");
-  } catch (e) {}
-}
 
 export const IS_DESKTOP_APP = Boolean(isDesktopUrl);
 

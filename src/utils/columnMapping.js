@@ -141,6 +141,17 @@ export function looksLikeEmail(val) {
   return EMAIL_REGEX.test(String(val).trim());
 }
 
+export function formatExcelDate(val) {
+  if (val === null || val === undefined || val === "") return "";
+  if (val instanceof Date) return val.toISOString().split("T")[0];
+  const num = typeof val === "number" ? val : (typeof val === "string" && /^\d{5}$/.test(val.trim()) ? parseInt(val.trim(), 10) : null);
+  if (num && num > 20000 && num < 60000) {
+    const jsDate = new Date(Math.round((num - 25569) * 86400 * 1000));
+    return jsDate.toISOString().split("T")[0];
+  }
+  return String(val).trim();
+}
+
 export function looksLikeDate(val) {
   if (val === null || val === undefined) return false;
   if (typeof val === "number" && val >= 35000 && val <= 65000) return true;

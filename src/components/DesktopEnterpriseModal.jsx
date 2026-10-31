@@ -1,17 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { Modal } from "react-bootstrap";
 import {
-  ShieldCheck,
-  Database,
   FolderOpen,
-  KeyRound,
-  Building2,
-  QrCode,
-  CheckCircle2,
-  ExternalLink,
-  HardDrive,
   RefreshCw,
-  Save,
+  Eye,
+  EyeOff,
   X,
 } from "lucide-react";
 import toast from "react-hot-toast";
@@ -22,20 +15,22 @@ import {
   pullStudentsFromUniversityDb,
 } from "../api";
 import { useUser } from "../context/UserContext";
+import AppButton from "./ui/AppButton";
 
 export default function DesktopEnterpriseModal({ show, onHide }) {
-  const { desktopConfig, setDesktopConfig, desktopStorage, refreshUser } = useUser();
-  const [activeTab, setActiveTab] = useState("overview");
+  const { desktopConfig, setDesktopConfig, refreshUser } = useUser();
+  const [activeTab, setActiveTab] = useState("institution");
   const [saving, setSaving] = useState(false);
   const [testingDb, setTestingDb] = useState(false);
   const [dbTestResult, setDbTestResult] = useState(null);
+  const [showLicenseKey, setShowLicenseKey] = useState(false);
 
   const [formState, setFormState] = useState({
-    institution_name: "Apex State University — Academic Division",
-    signatory_name: "Prof. Academic Registrar",
-    license_key: "PD-ENT-APEX-2026-ANNUAL-PRO",
+    institution_name: "",
+    signatory_name: "",
+    license_key: "",
     verification_mode: "university_portal",
-    custom_verification_url: "https://verify.youruniversity.edu/credential",
+    custom_verification_url: "",
     default_export_folder: "",
     db_engine: "sqlite_demo",
     connection_uri: "",
@@ -46,12 +41,11 @@ export default function DesktopEnterpriseModal({ show, onHide }) {
   useEffect(() => {
     if (desktopConfig) {
       setFormState({
-        institution_name: desktopConfig.institution_name || "Apex State University — Academic Division",
-        signatory_name: desktopConfig.signatory_name || "Prof. Academic Registrar",
-        license_key: desktopConfig.license_key || "PD-ENT-APEX-2026-ANNUAL-PRO",
+        institution_name: desktopConfig.institution_name || "",
+        signatory_name: desktopConfig.signatory_name || "",
+        license_key: desktopConfig.license_key || "",
         verification_mode: desktopConfig.verification_mode || "university_portal",
-        custom_verification_url:
-          desktopConfig.custom_verification_url || "https://verify.youruniversity.edu/credential",
+        custom_verification_url: desktopConfig.custom_verification_url || "",
         default_export_folder: desktopConfig.default_export_folder || "",
         db_engine: desktopConfig.db_connector?.engine || "sqlite_demo",
         connection_uri: desktopConfig.db_connector?.connection_uri || "",
@@ -69,7 +63,7 @@ export default function DesktopEnterpriseModal({ show, onHide }) {
         toast.success(`Selected folder: ${res.data.folder}`);
       }
     } catch (err) {
-      toast.error("Could not open native folder picker.");
+      toast.error("Could not open folder picker.");
     }
   };
 
@@ -77,7 +71,7 @@ export default function DesktopEnterpriseModal({ show, onHide }) {
     try {
       await openDesktopFolder(formState.default_export_folder);
     } catch (err) {
-      toast.error("Folder will be created automatically on your first batch export.");
+      toast.error("Could not open folder.");
     }
   };
 
@@ -96,11 +90,11 @@ export default function DesktopEnterpriseModal({ show, onHide }) {
         count: res.data?.total_pulled || 0,
         sample: res.data?.rows?.slice(0, 3) || [],
       });
-      toast.success(`Connected! Found student records in '${formState.table_or_view}'.`);
+      toast.success("Database connected.");
     } catch (err) {
       setDbTestResult({
         success: false,
-        error: err.response?.data?.msg || "Could not connect to database.",
+        error: err.response?.data?.msg || "Connection failed.",
       });
       toast.error(err.response?.data?.msg || "Database connection test failed.");
     } finally {
@@ -121,9 +115,7 @@ export default function DesktopEnterpriseModal({ show, onHide }) {
         default_export_folder: formState.default_export_folder,
         db_connector: {
           engine: formState.db_engine,
-          ...(formState.db_engine !== "sqlite_demo" && formState.connection_uri
-            ? { connection_uri: formState.connection_uri }
-            : {}),
+          connection_uri: formState.connection_uri,
           table_or_view: formState.table_or_view,
           id_column: formState.id_column,
         },
@@ -133,14 +125,22 @@ export default function DesktopEnterpriseModal({ show, onHide }) {
         setDesktopConfig(res.data.config);
       }
       await refreshUser();
-      toast.success("Enterprise Desktop settings saved locally!");
+      toast.success("Settings saved");
       onHide();
     } catch (err) {
-      toast.error("Failed to save desktop settings.");
+      toast.error("Failed to save settings.");
     } finally {
       setSaving(false);
     }
   };
+
+  const tabs = [
+    { id: "institution", label: "Institution" },
+    { id: "license", label: "License" },
+    { id: "data_qr", label: "Data/QR" },
+    { id: "database", label: "Database connector" },
+    { id: "export", label: "Export folder" },
+  ];
 
   return (
     <Modal
@@ -148,162 +148,127 @@ export default function DesktopEnterpriseModal({ show, onHide }) {
       onHide={onHide}
       size="lg"
       centered
-      contentClassName="rounded-2xl border border-slate-200 shadow-xl overflow-hidden bg-white"
+      contentClassName="rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-hidden"
     >
-      {/* Header */}
-      <div className="bg-white border-b border-slate-200/90 px-6 py-4 flex items-center justify-between">
-        <div>
-          <div className="flex items-center gap-2.5">
-            <h3 className="text-sm font-bold text-slate-900 tracking-tight mb-0">
-              Enterprise Workstation Settings
-            </h3>
-            <span className="inline-flex items-center gap-1.5 px-2 py-0.5 text-[10px] font-semibold text-slate-600 bg-slate-100 border border-slate-200/80 rounded-md">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-              Local Vault Active
-            </span>
-          </div>
-          <p className="text-xs text-slate-500 mb-0 mt-0.5">
-            On-premise configuration &bull; Complete student data sovereignty &bull; Offline engine
-          </p>
-        </div>
+      <div className="border-b border-slate-100 dark:border-slate-800 px-5 py-3.5 flex items-center justify-between">
+        <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 mb-0">
+          Workstation settings
+        </h3>
         <button
           type="button"
           onClick={onHide}
-          className="p-1.5 rounded-md text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
+          className="text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-800"
         >
           <X size={16} />
         </button>
       </div>
 
-      {/* Navigation Tabs */}
-      <div className="bg-slate-50/60 border-b border-slate-200 px-6 flex gap-6">
-        {[
-          { id: "overview", label: "Institution & License" },
-          { id: "verification", label: "Data Sovereignty & QR" },
-          { id: "database", label: "Campus Database Connector" },
-          { id: "export", label: "Local Folder Export" },
-        ].map((tab) => {
+      <div className="border-b border-slate-100 dark:border-slate-800 px-5 flex gap-4 overflow-x-auto">
+        {tabs.map((tab) => {
           const active = activeTab === tab.id;
           return (
             <button
               key={tab.id}
               type="button"
               onClick={() => setActiveTab(tab.id)}
-              className={`py-3 text-xs font-semibold border-b-2 transition-all cursor-pointer ${
+              className={`py-2.5 text-xs font-semibold border-b-2 -mb-px transition-colors cursor-pointer shrink-0 ${
                 active
-                  ? "text-slate-900 border-slate-900"
-                  : "text-slate-500 border-transparent hover:text-slate-800"
+                  ? "text-slate-900 dark:text-slate-100 border-indigo-600"
+                  : "text-slate-500 border-transparent hover:text-slate-800 dark:hover:text-slate-300"
               }`}
             >
-              <span>{tab.label}</span>
+              {tab.label}
             </button>
           );
         })}
       </div>
 
       <form onSubmit={handleSave}>
-        <Modal.Body className="p-6 space-y-4 max-h-[68vh] overflow-y-auto">
-          {activeTab === "overview" && (
-            <div className="space-y-4">
-              <div className="bg-slate-50/70 border border-slate-200 rounded-xl p-4">
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
-                    <span className="text-xs font-bold text-slate-900">Institutional License Active</span>
-                    <span className="text-[11px] text-slate-500">&bull; Valid until {desktopConfig?.license_expires_at || "2027-10-30"}</span>
-                  </div>
-                  <span className="text-[10px] font-mono font-medium px-2 py-0.5 rounded bg-slate-200/70 text-slate-700">
-                    Air-Gapped Verified
-                  </span>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs text-slate-600 pt-3 border-t border-slate-200/70">
-                  <div>
-                    <span className="text-[11px] text-slate-400 block mb-0.5">Local Storage Engine</span>
-                    <span className="font-medium text-slate-800">{desktopStorage?.engine || "Local SQLite Vault (Offline)"}</span>
-                  </div>
-                  <div>
-                    <span className="text-[11px] text-slate-400 block mb-0.5">Privacy &amp; Sovereignty</span>
-                    <span className="font-medium text-slate-800">100% Local PC Issuance — Zero student records sent to cloud</span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">
-                    Institution / Division Name
-                  </label>
-                  <input
-                    type="text"
-                    value={formState.institution_name}
-                    onChange={(e) =>
-                      setFormState((p) => ({ ...p, institution_name: e.target.value }))
-                    }
-                    className="w-full px-3 py-2 text-xs rounded-lg border border-slate-200 focus:outline-none focus:border-slate-400 text-slate-800"
-                    placeholder="e.g. Apex State University — Academic Division"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">
-                    Default Authorized Signatory
-                  </label>
-                  <input
-                    type="text"
-                    value={formState.signatory_name}
-                    onChange={(e) =>
-                      setFormState((p) => ({ ...p, signatory_name: e.target.value }))
-                    }
-                    className="w-full px-3 py-2 text-xs rounded-lg border border-slate-200 focus:outline-none focus:border-slate-400 text-slate-800"
-                    placeholder="e.g. Prof. Academic Registrar"
-                  />
-                </div>
-              </div>
-
+        <Modal.Body className="p-5 space-y-4 max-h-[60vh] overflow-y-auto">
+          {/* Tab 1: Institution */}
+          {activeTab === "institution" && (
+            <div className="space-y-3.5">
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">
-                  Enterprise Annual License Key
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                  Institution name
                 </label>
                 <input
                   type="text"
-                  value={formState.license_key}
+                  value={formState.institution_name}
                   onChange={(e) =>
-                    setFormState((p) => ({ ...p, license_key: e.target.value }))
+                    setFormState((p) => ({ ...p, institution_name: e.target.value }))
                   }
-                  className="w-full px-3 py-2 text-xs font-mono rounded-lg border border-slate-200 bg-slate-50 focus:outline-none focus:border-slate-400 text-slate-800"
+                  className="w-full px-2.5 py-1.5 text-xs rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:outline-none focus:border-indigo-500"
                 />
-                <span className="block text-[10px] text-slate-400 mt-1">
-                  Renewed annually. Works 100% offline once activated on this workstation.
-                </span>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                  Default signatory
+                </label>
+                <input
+                  type="text"
+                  value={formState.signatory_name}
+                  onChange={(e) =>
+                    setFormState((p) => ({ ...p, signatory_name: e.target.value }))
+                  }
+                  className="w-full px-2.5 py-1.5 text-xs rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:outline-none focus:border-indigo-500"
+                />
               </div>
             </div>
           )}
 
-          {activeTab === "verification" && (
-            <div className="space-y-4">
-              <p className="text-xs text-slate-600 mb-2">
-                Choose how documents generated on this workstation handle verification:
-              </p>
+          {/* Tab 2: License */}
+          {activeTab === "license" && (
+            <div className="space-y-3.5">
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                  License key
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    type={showLicenseKey ? "text" : "password"}
+                    value={formState.license_key}
+                    onChange={(e) =>
+                      setFormState((p) => ({ ...p, license_key: e.target.value }))
+                    }
+                    className="flex-1 px-2.5 py-1.5 text-xs font-mono rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:outline-none focus:border-indigo-500"
+                  />
+                  <AppButton
+                    type="button"
+                    variant="secondary"
+                    onClick={() => setShowLicenseKey(!showLicenseKey)}
+                  >
+                    {showLicenseKey ? <EyeOff size={13} /> : <Eye size={13} />}
+                    <span>{showLicenseKey ? "Hide" : "Show"}</span>
+                  </AppButton>
+                </div>
+              </div>
+            </div>
+          )}
 
-              <div className="space-y-2.5">
+          {/* Tab 3: Data/QR */}
+          {activeTab === "data_qr" && (
+            <div className="space-y-3.5">
+              <div className="space-y-2">
                 {[
                   {
                     id: "university_portal",
-                    title: "Institution Self-Hosted Verification Portal",
-                    desc: "QR codes point directly to your university's internal domain (e.g. verify.youruniversity.edu) backed by your campus database.",
+                    title: "Custom verification URL",
+                    desc: "QR codes link to your custom domain verification page.",
                   },
                   {
                     id: "no_qr",
-                    title: "Internal Document Mode (No External Verification QR)",
-                    desc: "For internal A4 letters, transcripts, or physically embossed credentials without online QR lookups.",
+                    title: "No verification QR",
+                    desc: "Documents do not encode verification links.",
                   },
                 ].map((opt) => (
                   <label
                     key={opt.id}
-                    className={`block p-3.5 rounded-xl border cursor-pointer transition-all ${
+                    className={`block p-3 rounded border cursor-pointer transition-colors ${
                       formState.verification_mode === opt.id
-                        ? "border-slate-900 bg-slate-50"
-                        : "border-slate-200 hover:border-slate-300 bg-white"
+                        ? "border-indigo-600 bg-indigo-50/20 dark:bg-indigo-950/20"
+                        : "border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
                     }`}
                   >
                     <div className="flex items-start gap-2.5">
@@ -314,13 +279,13 @@ export default function DesktopEnterpriseModal({ show, onHide }) {
                         onChange={() =>
                           setFormState((p) => ({ ...p, verification_mode: opt.id }))
                         }
-                        className="mt-0.5 text-slate-900"
+                        className="mt-0.5 text-indigo-600"
                       />
                       <div>
-                        <span className="block text-xs font-bold text-slate-900">
+                        <span className="block text-xs font-semibold text-slate-900 dark:text-slate-100">
                           {opt.title}
                         </span>
-                        <span className="block text-[11px] text-slate-500 mt-0.5">
+                        <span className="block text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
                           {opt.desc}
                         </span>
                       </div>
@@ -331,8 +296,8 @@ export default function DesktopEnterpriseModal({ show, onHide }) {
 
               {formState.verification_mode === "university_portal" && (
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">
-                    Institution Verification Base URL
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                    Verification base URL
                   </label>
                   <input
                     type="text"
@@ -340,49 +305,40 @@ export default function DesktopEnterpriseModal({ show, onHide }) {
                     onChange={(e) =>
                       setFormState((p) => ({ ...p, custom_verification_url: e.target.value }))
                     }
-                    className="w-full px-3 py-2 text-xs font-mono rounded-lg border border-slate-200 focus:outline-none focus:border-slate-400 text-slate-800"
-                    placeholder="https://verify.youruniversity.edu/credential"
+                    className="w-full px-2.5 py-1.5 text-xs font-mono rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:outline-none focus:border-indigo-500"
+                    placeholder="https://verify.example.edu/credential"
                   />
-                  <span className="block text-[10px] text-slate-400 mt-1">
-                    Generated QR codes will encode: <code>{formState.custom_verification_url}/&lt;document_id&gt;</code>
-                  </span>
                 </div>
               )}
             </div>
           )}
 
+          {/* Tab 4: Database Connector */}
           {activeTab === "database" && (
-            <div className="space-y-4">
-              <div className="bg-slate-50 border border-slate-200 rounded-xl p-3.5 text-xs text-slate-700">
-                <strong className="text-slate-900">Campus SIS Database Connector:</strong> Pull student records directly by{" "}
-                <code>student_id</code>, Faculty, or Department into batch issuing without manual CSV imports.
-              </div>
-
+            <div className="space-y-3.5">
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">
-                  Database Source
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                  Database source
                 </label>
                 <select
                   value={formState.db_engine}
                   onChange={(e) =>
                     setFormState((p) => ({ ...p, db_engine: e.target.value }))
                   }
-                  className="w-full px-3 py-2 text-xs rounded-lg border border-slate-200 bg-white focus:outline-none focus:border-slate-400 text-slate-800"
+                  className="w-full px-2.5 py-1.5 text-xs rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:outline-none focus:border-indigo-500"
                 >
-                  <option value="sqlite_demo">
-                    Built-In Demo University SIS Database (20 Sample Campus Students: 20220001–20220020)
-                  </option>
-                  <option value="mssql">Microsoft SQL Server (Campus Intranet / Active Directory)</option>
-                  <option value="postgresql">PostgreSQL Database</option>
-                  <option value="mysql">MySQL / MariaDB Database</option>
-                  <option value="sqlite_custom">Custom Local SQLite Database File</option>
+                  <option value="sqlite_demo">Demo database (Local SQLite)</option>
+                  <option value="mssql">Microsoft SQL Server</option>
+                  <option value="postgresql">PostgreSQL</option>
+                  <option value="mysql">MySQL</option>
+                  <option value="sqlite_custom">Custom SQLite file</option>
                 </select>
               </div>
 
               {formState.db_engine !== "sqlite_demo" && (
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">
-                    SQLAlchemy Connection URI (Read-Only User Recommended)
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                    Connection URI
                   </label>
                   <input
                     type="text"
@@ -390,16 +346,16 @@ export default function DesktopEnterpriseModal({ show, onHide }) {
                     onChange={(e) =>
                       setFormState((p) => ({ ...p, connection_uri: e.target.value }))
                     }
-                    placeholder="e.g. mssql+pyodbc://readonly_user:pass@10.0.1.25/campus_sis_db?driver=ODBC+Driver+17+for+SQL+Server"
-                    className="w-full px-3 py-2 text-xs font-mono rounded-lg border border-slate-200 focus:outline-none focus:border-slate-400 text-slate-800"
+                    placeholder="mssql+pyodbc://user:pass@host/db"
+                    className="w-full px-2.5 py-1.5 text-xs font-mono rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:outline-none focus:border-indigo-500"
                   />
                 </div>
               )}
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">
-                    Student Table or View Name
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                    Table or view
                   </label>
                   <input
                     type="text"
@@ -407,12 +363,12 @@ export default function DesktopEnterpriseModal({ show, onHide }) {
                     onChange={(e) =>
                       setFormState((p) => ({ ...p, table_or_view: e.target.value }))
                     }
-                    className="w-full px-3 py-1.5 text-xs font-mono rounded-lg border border-slate-200 text-slate-800"
+                    className="w-full px-2.5 py-1.5 text-xs font-mono rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:outline-none focus:border-indigo-500"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">
-                    Student ID Lookup Column
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                    ID column
                   </label>
                   <input
                     type="text"
@@ -420,45 +376,33 @@ export default function DesktopEnterpriseModal({ show, onHide }) {
                     onChange={(e) =>
                       setFormState((p) => ({ ...p, id_column: e.target.value }))
                     }
-                    className="w-full px-3 py-1.5 text-xs font-mono rounded-lg border border-slate-200 text-slate-800"
+                    className="w-full px-2.5 py-1.5 text-xs font-mono rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 focus:outline-none focus:border-indigo-500"
                   />
                 </div>
               </div>
 
-              <div className="flex items-center justify-between pt-1">
-                <button
+              <div>
+                <AppButton
                   type="button"
+                  variant="secondary"
                   onClick={handleTestDatabase}
                   disabled={testingDb}
-                  className="px-3.5 py-1.5 rounded-lg bg-slate-900 hover:bg-black text-white text-xs font-semibold flex items-center gap-1.5 cursor-pointer"
                 >
                   <RefreshCw size={13} className={testingDb ? "animate-spin" : ""} />
-                  <span>{testingDb ? "Testing Connection..." : "Test Database Connection"}</span>
-                </button>
+                  <span>{testingDb ? "Testing..." : "Test connection"}</span>
+                </AppButton>
               </div>
 
               {dbTestResult && (
                 <div
-                  className={`p-3 rounded-xl border text-xs ${
+                  className={`p-3 rounded text-xs ${
                     dbTestResult.success
-                      ? "bg-slate-50 border-slate-200 text-slate-800"
-                      : "bg-red-50 border-red-200 text-red-800"
+                      ? "bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200"
+                      : "bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900 text-red-800 dark:text-red-300"
                   }`}
                 >
                   {dbTestResult.success ? (
-                    <div>
-                      <div className="font-bold flex items-center gap-1.5 mb-1 text-slate-900">
-                        <CheckCircle2 size={14} className="text-emerald-600" />
-                        <span>Connection Verified! Sample records preview:</span>
-                      </div>
-                      <div className="space-y-1 font-mono text-[11px] bg-white p-2 rounded border border-slate-200">
-                        {dbTestResult.sample.map((s, i) => (
-                          <div key={i}>
-                            [{s.student_id}] {s.recipient_name} — {s.course_title} (CGPA: {s.cgpa})
-                          </div>
-                        ))}
-                      </div>
-                    </div>
+                    <div>Found {dbTestResult.count} records.</div>
                   ) : (
                     <div>{dbTestResult.error}</div>
                   )}
@@ -467,15 +411,12 @@ export default function DesktopEnterpriseModal({ show, onHide }) {
             </div>
           )}
 
+          {/* Tab 5: Export Folder */}
           {activeTab === "export" && (
-            <div className="space-y-4">
-              <p className="text-xs text-slate-600">
-                When you export a batch of certificates or A4 documents in Desktop Mode, files are saved directly to your computer&apos;s hard drive (named <code>{"{student_id}_{recipient_name}.pdf"}</code>) — 100% offline.
-              </p>
-
+            <div className="space-y-3.5">
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">
-                  Default Local Export Directory
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                  Default export folder
                 </label>
                 <div className="flex gap-2">
                   <input
@@ -484,54 +425,47 @@ export default function DesktopEnterpriseModal({ show, onHide }) {
                     onChange={(e) =>
                       setFormState((p) => ({ ...p, default_export_folder: e.target.value }))
                     }
-                    className="flex-1 px-3 py-2 text-xs font-mono rounded-lg border border-slate-200 bg-slate-50 text-slate-800"
+                    className="flex-1 px-2.5 py-1.5 text-xs font-mono rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100"
                   />
-                  <button
+                  <AppButton
                     type="button"
+                    variant="secondary"
                     onClick={handleBrowseFolder}
-                    className="px-3.5 py-2 rounded-lg bg-slate-900 hover:bg-black text-white text-xs font-semibold flex items-center gap-1.5 shrink-0 cursor-pointer"
                   >
                     <FolderOpen size={14} />
-                    <span>Browse PC...</span>
-                  </button>
+                    <span>Browse</span>
+                  </AppButton>
                 </div>
               </div>
 
               <div>
-                <button
+                <AppButton
                   type="button"
+                  variant="ghost"
                   onClick={handleOpenExplorer}
-                  className="px-3.5 py-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-semibold flex items-center gap-1.5 cursor-pointer"
                 >
-                  <ExternalLink size={13} />
-                  <span>Open Export Folder in Windows File Explorer</span>
-                </button>
+                  Open in Explorer
+                </AppButton>
               </div>
             </div>
           )}
         </Modal.Body>
 
-        <Modal.Footer className="bg-slate-50 border-t border-slate-200 px-6 py-3 flex justify-between items-center">
-          <span className="text-[11px] text-slate-500">
-            ProofDeck Desktop Enterprise v1.0 &bull; Local SQLite &amp; Native File System
-          </span>
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={onHide}
-              className="px-3.5 py-1.5 rounded-lg border border-slate-200 bg-white text-slate-700 text-xs font-semibold hover:bg-slate-50 cursor-pointer"
-            >
-              Close
-            </button>
-            <button
-              type="submit"
-              disabled={saving}
-              className="px-4 py-1.5 rounded-lg bg-slate-900 hover:bg-black text-white text-xs font-bold flex items-center gap-1.5 cursor-pointer"
-            >
-              <Save size={13} />
-              <span>{saving ? "Saving..." : "Save Desktop Settings"}</span>
-            </button>
-          </div>
+        <Modal.Footer className="border-t border-slate-100 dark:border-slate-800 px-5 py-3 flex justify-end gap-2">
+          <AppButton
+            type="button"
+            variant="secondary"
+            onClick={onHide}
+          >
+            Cancel
+          </AppButton>
+          <AppButton
+            type="submit"
+            variant="primary"
+            disabled={saving}
+          >
+            {saving ? "Saving..." : "Save settings"}
+          </AppButton>
         </Modal.Footer>
       </form>
     </Modal>
