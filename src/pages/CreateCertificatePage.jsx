@@ -53,7 +53,6 @@ import {
   RotateCcw,
   FolderOpen,
   Database,
-  LayoutTemplate,
 } from "lucide-react";
 import { Spinner } from "react-bootstrap";
 import toast, { Toaster } from "react-hot-toast";
@@ -75,8 +74,6 @@ import {
   validateRow,
   looksLikeEmail,
   formatExcelDate,
-  parseExcelOrStringDate,
-  looksLikeDate,
 } from "../utils/columnMapping";
 
 // --- REUSABLE UI COMPONENTS ---
@@ -109,14 +106,6 @@ const CreateCertificatePage = () => {
 
   // Active Handoff Modes: "single" or "bulk"
   const [creationMode, setCreationMode] = useState("single");
-  const [isTemplateModalOpen, setIsTemplateModalOpen] = useState(false);
-  const [showMoreOptions, setShowMoreOptions] = useState(false);
-  const [showBatchDefaults, setShowBatchDefaults] = useState(false);
-  const [bulkActiveTab, setBulkActiveTab] = useState("upload"); // "upload" | "paste" | "database"
-  const [previewRowIndex, setPreviewRowIndex] = useState(0);
-  const [showCreateGroupModal, setShowCreateGroupModal] = useState(false);
-  const [quickPasteText, setQuickPasteText] = useState("");
-  const [templateSearchQuery, setTemplateSearchQuery] = useState("");
 
   // Core Form State
   const [formData, setFormData] = useState({
@@ -1091,19 +1080,17 @@ const CreateCertificatePage = () => {
             }
           }
 
-          // 2. Core Fields (Auto-convert Excel serial numbers and dates)
+          // 2. Core Fields
           ["recipient_email", "course_title", "issuer_name", "issue_date", "signature"].forEach((key) => {
             const srcCol = mapping[key]?.sourceColumn;
             if (srcCol) {
               const idx = headers.indexOf(srcCol);
               if (idx !== -1 && r[idx] !== undefined) {
                 const val = String(r[idx]).trim();
-                if (val) {
-                  rowObj[key] = key === "issue_date" ? formatExcelDate(val) : val;
-                }
+                if (val) rowObj[key] = key === "issue_date" ? formatExcelDate(val) : val;
               }
             } else if (currentDefaults[key]) {
-              rowObj[key] = key === "issue_date" ? formatExcelDate(currentDefaults[key]) : currentDefaults[key];
+              rowObj[key] = currentDefaults[key];
             }
           });
 
@@ -1566,90 +1553,6 @@ const CreateCertificatePage = () => {
     }
   };
 
-
-  // Derived active rows and preview row data for Bulk & Single parity
-  const activeNonEmptyRows = useMemo(
-    () => spreadsheetRows.filter((r) => isRowNonEmpty(r, allCustomColumnKeys)),
-    [spreadsheetRows, allCustomColumnKeys]
-  );
-
-  const currentPreviewRowData = useMemo(() => {
-    if (creationMode !== "bulk") {
-      return formData;
-    }
-    const safeIdx = Math.min(previewRowIndex, Math.max(0, activeNonEmptyRows.length - 1));
-    const selectedRow = activeNonEmptyRows[safeIdx] || activeNonEmptyRows[0] || {};
-    return {
-      ...formData,
-      recipient_name: selectedRow.recipient_name || formData.recipient_name || "Jane Doe",
-      recipient_email: selectedRow.recipient_email || formData.recipient_email || "",
-      course_title: selectedRow.course_title || batchDefaults.course_title || formData.course_title || "Course Title",
-      issuer_name: selectedRow.issuer_name || batchDefaults.issuer_name || formData.issuer_name || "Issuer Name",
-      issue_date: selectedRow.issue_date || batchDefaults.issue_date || formData.issue_date || new Date().toISOString().split("T")[0],
-      signature: selectedRow.signature || batchDefaults.signature || formData.signature || "",
-      extra_fields: { ...(formData.extra_fields || {}), ...(selectedRow.extra_fields || {}) },
-    };
-  }, [creationMode, formData, activeNonEmptyRows, previewRowIndex, batchDefaults, allCustomColumnKeys]);
-
-  // Handle inline cell edits in the 5-row table with auto-save & date parsing
-  const handleInlineCellChange = (displayRowIdx, colKey, val) => {
-    setSpreadsheetRows((prev) => {
-      const next = [...prev];
-      const targetRow = activeNonEmptyRows[displayRowIdx] || next[displayRowIdx];
-      if (targetRow) {
-        const globalIdx = next.indexOf(targetRow);
-        if (globalIdx !== -1) {
-          let cleanVal = val;
-          if (colKey === "issue_date") {
-            cleanVal = formatExcelDate(val);
-          }
-          next[globalIdx] = { ...next[globalIdx], [colKey]: cleanVal };
-        }
-      }
-      return next;
-    });
-  };
-
-  // Import pasted data from "Type or paste" tab
-  const handleImportPastedText = () => {
-    if (!quickPasteText.trim()) {
-      toast.error("Please paste recipient lines first");
-      return;
-    }
-    const lines = quickPasteText.split(/\r\n|\n|\r/).filter((l) => l.trim() !== "");
-    if (lines.length === 0) return;
-    const matrix = lines.map((line) => (line.includes("\t") ? line.split("\t") : line.split(",")));
-    handleParsedMatrix(matrix, "Pasted recipients");
-    setQuickPasteText("");
-    toast.success(`Imported ${matrix.length} rows`);
-  };
-
-  // Clear loaded recipients
-  const handleClearRecipients = () => {
-    if (window.confirm("Are you sure you want to clear all loaded recipients?")) {
-      handleNewSheet();
-      setBulkFile(null);
-      setPreviewRowIndex(0);
-      toast.success("Recipients cleared");
-    }
-  };
-
-  // Resume saved draft
-  const handleResumeDraft = (draft) => {
-    handleLoadSavedSheet(draft || savedSheets[0]);
-    toast.success("Draft resumed");
-  };
-
-  // Single mode save draft
-  const handleSaveSingleDraft = () => {
-    try {
-      localStorage.setItem(`pd_single_draft_${user?.id || "anon"}`, JSON.stringify(formData));
-      toast.success("Draft saved");
-    } catch (e) {
-      toast.error("Failed to save draft");
-    }
-  };
-
   if (loading) {
     return (
       <div className="w-full pb-12 animate-pulse">
@@ -1670,1165 +1573,1182 @@ const CreateCertificatePage = () => {
   }
 
   return (
-    <div className="w-full pb-32">
+    <div className="w-full pb-12">
       <Toaster position="top-right" />
 
-      {/* --- Top Bar & 3-Step Indicator (Matching Wireframes) --- */}
-      <div className="border-b border-slate-200/80 bg-white mb-6 -mt-6 px-4 sm:px-6 py-3.5 rounded-b-lg">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 max-w-[1600px] mx-auto">
-          {/* Breadcrumb Title */}
-          <div className="flex items-center gap-3">
+      {/* --- 1. Top Navigation Bar (Header - Locked to Top) --- */}
+      <div className="border-b border-slate-200/80 bg-white mb-4 sm:mb-6 -mt-6 px-4 py-3 rounded-b-lg">
+        <div className="flex items-center justify-between gap-3 max-w-[1600px] mx-auto">
+          {/* Left: Page Title */}
+          <div className="flex items-center gap-2.5 sm:gap-3">
             <Link
               to="/dashboard"
-              className="w-8 h-8 rounded-lg bg-slate-900 text-white flex items-center justify-center font-bold text-xs shadow-xs hover:bg-black transition-colors"
+              className="p-1.5 rounded-full hover:bg-slate-100 text-slate-500 transition-colors shrink-0"
               aria-label="Back to dashboard"
             >
-              PD
+              <ArrowLeft size={16} />
             </Link>
-            <div className="flex items-center gap-1.5 text-xs sm:text-sm font-semibold text-slate-800">
-              <span className="font-bold">ProofDeck</span>
-              <span className="text-slate-400">/</span>
-              <span className="text-slate-500 font-medium">Issue credentials</span>
+            <div>
+              <h1 className="text-xs sm:text-sm font-bold text-slate-800 uppercase tracking-wider mb-0 truncate">
+                {isEditMode ? "Edit Credential" : "Issue Credentials"}
+              </h1>
             </div>
           </div>
-
-          {/* 3-Step Indicator */}
-          <nav aria-label="Issuance steps" className="flex items-center gap-6 sm:gap-8">
-            <button
-              type="button"
-              onClick={() => setIsTemplateModalOpen(true)}
-              className="flex items-center gap-2 text-xs font-semibold text-slate-700 hover:text-slate-900 transition-colors cursor-pointer min-h-[44px]"
-            >
-              <span className="w-5 h-5 rounded-full bg-slate-900 text-white flex items-center justify-center text-[10px] font-bold">
-                1
-              </span>
-              <span>Template</span>
-            </button>
-
-            <div className="flex items-center gap-2 text-xs font-bold text-sky-600">
-              <span className="w-5 h-5 rounded-full bg-sky-600 text-white flex items-center justify-center text-[10px] font-bold">
-                2
-              </span>
-              <span>{creationMode === "single" ? "Details" : "Recipients"}</span>
-            </div>
-
-            <div className="flex items-center gap-2 text-xs font-medium text-slate-400">
-              <span className="w-5 h-5 rounded-full bg-slate-200 text-slate-600 flex items-center justify-center text-[10px] font-bold">
-                3
-              </span>
-              <span>Review &amp; issue</span>
-            </div>
-          </nav>
-
+          
           <HelpGuide type="certificates" />
         </div>
       </div>
 
-      {/* --- Main 2-Column Bento Layout --- */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-8 items-start max-w-[1600px] mx-auto">
+      {/* --- 2. Main Content (Bento Grid) --- */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         
-        {/* ================= LEFT COLUMN: FORM & RECIPIENTS ================= */}
-        <div className="lg:col-span-6 space-y-4">
-          
-          {/* Top Row: Mode Switcher & Bulk Template Link */}
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            {/* Mode Switcher Pill */}
+        {/* LEFT COLUMN: FORM DETAILS (col-span-4) */}
+        <div className="lg:col-span-4 space-y-4">
+          <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
+            
+            {/* Segmented Mode Selector Pills */}
             {!isEditMode && (
-              <div
-                role="tablist"
-                aria-label="Credential mode"
-                className="bg-slate-100 p-1 rounded-xl flex gap-1 border border-slate-200/60"
-              >
+              <div className="bg-slate-100/80 p-1 rounded-xl flex gap-1 mb-5 border border-slate-200/40">
                 <button
                   type="button"
-                  role="tab"
-                  aria-selected={creationMode === "single"}
                   onClick={() => setCreationMode("single")}
-                  className={`px-4 py-2 text-xs font-semibold rounded-lg transition-all min-h-[44px] cursor-pointer flex items-center gap-2 ${
+                  className={`flex-1 flex items-center justify-center gap-1.5 px-2 sm:px-3 py-1.5 sm:py-2 text-[11px] sm:text-xs font-bold rounded-lg transition-all decoration-none ${
                     creationMode === "single"
-                      ? "bg-white text-slate-900 shadow-xs border border-slate-200/80 font-bold"
-                      : "text-slate-600 hover:text-slate-900"
+                      ? "bg-white text-slate-900 shadow-sm border border-slate-200/30"
+                      : "text-slate-500 hover:text-slate-850"
                   }`}
                 >
-                  <User size={14} />
-                  <span>One person</span>
+                  <User size={13} className="shrink-0" />
+                  <span>Single</span>
+                  <span className="hidden xs:inline">Recipient</span>
                 </button>
                 <button
                   type="button"
-                  role="tab"
-                  aria-selected={creationMode === "bulk"}
                   onClick={() => setCreationMode("bulk")}
-                  className={`px-4 py-2 text-xs font-semibold rounded-lg transition-all min-h-[44px] cursor-pointer flex items-center gap-2 ${
+                  className={`flex-1 flex items-center justify-center gap-1.5 px-2 sm:px-3 py-1.5 sm:py-2 text-[11px] sm:text-xs font-bold rounded-lg transition-all decoration-none ${
                     creationMode === "bulk"
-                      ? "bg-white text-slate-900 shadow-xs border border-slate-200/80 font-bold"
-                      : "text-slate-600 hover:text-slate-900"
+                      ? "bg-white text-slate-900 shadow-sm border border-slate-200/30"
+                      : "text-slate-500 hover:text-slate-850"
                   }`}
                 >
-                  <Users size={14} />
-                  <span>Many people (bulk)</span>
+                  <Users size={13} className="shrink-0" />
+                  <span>Bulk</span>
+                  <span className="hidden xs:inline">Import</span>
                 </button>
               </div>
             )}
 
-            {/* Bulk Mode Compact Template Link */}
-            {creationMode === "bulk" && (
-              <div className="text-xs text-slate-600 flex items-center gap-1.5">
-                <span>Template:</span>
-                <span className="font-bold text-slate-900 truncate max-w-[150px]">
-                  {selectedTemplate?.name || "Pro Certified"}
-                </span>
-                <span className="text-slate-300">·</span>
-                <button
-                  type="button"
-                  onClick={() => setIsTemplateModalOpen(true)}
-                  className="font-semibold text-sky-600 hover:text-sky-800 hover:underline cursor-pointer"
-                >
-                  Change
-                </button>
-              </div>
-            )}
-          </div>
+            {/* Render Form based on Active Mode */}
+            {creationMode === "single" ? (
+              <form onSubmit={handleSubmit} className="space-y-3.5">
+                <TemplateSelector
+                  value={formData.template_id}
+                  onChange={(val) => handleTemplateChange({ target: { value: val } })}
+                  options={templates}
+                />
 
-          {/* ================= SINGLE PERSON MODE ================= */}
-          {creationMode === "single" ? (
-            <div className="space-y-4">
-              {/* Selected Template Compact Row */}
-              <div className="bg-white rounded-xl border border-slate-200 p-3.5 sm:p-4 shadow-xs flex items-center justify-between gap-3">
-                <div className="flex items-center gap-3 min-w-0">
-                  <div className="w-14 h-11 bg-slate-100 rounded-lg border border-slate-200 flex items-center justify-center shrink-0 overflow-hidden">
-                    {selectedTemplate?.thumbnail_url || selectedTemplate?.background_url ? (
-                      <img
-                        src={selectedTemplate.thumbnail_url || selectedTemplate.background_url}
-                        alt=""
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <LayoutTemplate size={20} className="text-slate-400" />
-                    )}
-                  </div>
-                  <div className="min-w-0">
-                    <h3 className="text-xs sm:text-sm font-bold text-slate-800 truncate">
-                      {selectedTemplate?.name || "Pro Certified"}
-                    </h3>
-                    <p className="text-[11px] text-slate-400 truncate">
-                      {selectedTemplate?.category || "Certificate of completion"}
-                    </p>
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setIsTemplateModalOpen(true)}
-                  className="px-3.5 py-2 text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 border border-slate-200 rounded-lg shadow-xs transition-colors shrink-0 cursor-pointer min-h-[44px] flex items-center justify-center"
-                >
-                  Change template
-                </button>
-              </div>
+                <div className="border-t border-slate-100 my-3.5"></div>
 
-              {/* Card 1: Who is it for? */}
-              <div className="bg-white rounded-xl border border-slate-200 p-4 sm:p-5 shadow-xs space-y-4">
-                <h2 className="text-sm font-bold text-slate-800">Who is it for?</h2>
-                
-                <div className="space-y-1.5">
-                  <label htmlFor="single_recipient_name" className="block text-xs font-semibold text-slate-700">
-                    Recipient name <span className="text-slate-400 font-normal">(required)</span>
-                  </label>
-                  <input
-                    id="single_recipient_name"
-                    name="recipient_name"
-                    type="text"
-                    required
-                    placeholder="e.g. Jane Doe"
-                    value={formData.recipient_name}
-                    onChange={handleChange}
-                    className="w-full px-3.5 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-900 focus:border-transparent min-h-[44px]"
+                <FormInput
+                  name="recipient_name"
+                  label={isInvitation ? "Guest Name" : isReceipt ? "Payer Name" : "Recipient Name"}
+                  icon={User}
+                  placeholder="e.g., Jane Doe"
+                  required
+                  value={formData.recipient_name}
+                  onChange={handleChange}
+                />
+
+                <FormInput
+                  name="recipient_email"
+                  label="Email (Optional)"
+                  icon={Type}
+                  type="email"
+                  placeholder="jane@example.com"
+                  value={formData.recipient_email}
+                  onChange={handleChange}
+                />
+
+                <FormInput
+                  name="course_title"
+                  label={isInvitation ? "Event Title (Optional)" : isReceipt ? "Payment Description (Optional)" : "Course / Event Title (Optional)"}
+                  icon={FileText}
+                  placeholder={isInvitation ? "e.g. Annual Gala" : isReceipt ? "e.g. Web Dev Course" : "e.g., Advanced React Workshop"}
+                  value={formData.course_title}
+                  onChange={handleChange}
+                />
+
+                {isReceipt && (
+                  <FormInput
+                    name="amount"
+                    label="Amount (Total)"
+                    icon={DollarSign}
+                    placeholder="e.g. $500.00"
+                    value={amount}
+                    onChange={(e) => setAmount(e.target.value)}
                   />
-                </div>
-
-                <div className="space-y-1.5">
-                  <label htmlFor="single_recipient_email" className="block text-xs font-semibold text-slate-700">
-                    Email <span className="text-slate-400 font-normal">(optional)</span>
-                  </label>
-                  <input
-                    id="single_recipient_email"
-                    name="recipient_email"
-                    type="email"
-                    placeholder="jane@example.com"
-                    value={formData.recipient_email}
-                    onChange={handleChange}
-                    className="w-full px-3.5 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-900 focus:border-transparent min-h-[44px]"
-                  />
-                  <p className="text-xs text-slate-400">
-                    We&apos;ll email them their credential link.
-                  </p>
-                </div>
-              </div>
-
-              {/* Card 2: What is it for? */}
-              <div className="bg-white rounded-xl border border-slate-200 p-4 sm:p-5 shadow-xs space-y-4">
-                <h2 className="text-sm font-bold text-slate-800">What is it for?</h2>
-
-                <div className="space-y-1.5">
-                  <label htmlFor="single_course_title" className="block text-xs font-semibold text-slate-700">
-                    Course or event title
-                  </label>
-                  <input
-                    id="single_course_title"
-                    name="course_title"
-                    type="text"
-                    placeholder="e.g. Advanced React Workshop"
-                    value={formData.course_title}
-                    onChange={handleChange}
-                    className="w-full px-3.5 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-900 focus:border-transparent min-h-[44px]"
-                  />
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="space-y-1.5">
-                    <label htmlFor="single_issue_date" className="block text-xs font-semibold text-slate-700">
-                      Issue date
-                    </label>
-                    <input
-                      id="single_issue_date"
-                      name="issue_date"
-                      type="text"
-                      placeholder="YYYY-MM-DD or Oct 22, 2024"
-                      value={formData.issue_date}
-                      onChange={handleChange}
-                      onBlur={(e) => {
-                        const formatted = formatExcelDate(e.target.value);
-                        if (formatted) {
-                          setFormData((prev) => ({ ...prev, issue_date: formatted }));
-                        }
-                      }}
-                      className="w-full px-3.5 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-900 focus:border-transparent min-h-[44px]"
-                    />
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <label htmlFor="single_issuer_name" className="block text-xs font-semibold text-slate-700">
-                      Issued by
-                    </label>
-                    <input
-                      id="single_issuer_name"
-                      name="issuer_name"
-                      type="text"
-                      placeholder="e.g. Acme Inc"
-                      value={formData.issuer_name}
-                      onChange={handleChange}
-                      className="w-full px-3.5 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-900 focus:border-transparent min-h-[44px]"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Card 3: Signature Row */}
-              <div className="bg-white rounded-xl border border-slate-200 p-4 sm:p-5 shadow-xs">
-                <div className="flex items-center justify-between gap-3">
-                  <label
-                    htmlFor="single_signature_check"
-                    className="flex items-center gap-3 cursor-pointer select-none min-h-[44px]"
-                  >
-                    <input
-                      id="single_signature_check"
-                      type="checkbox"
-                      checked={useUploadedSignature}
-                      onChange={(e) => setUseUploadedSignature(e.target.checked)}
-                      className="w-4 h-4 rounded border-slate-300 text-slate-900 focus:ring-2 focus:ring-slate-900 cursor-pointer"
-                    />
-                    <span className="text-sm font-semibold text-slate-800">
-                      Add my saved signature
-                    </span>
-                  </label>
-                  <div className="w-16 h-10 border border-slate-200 rounded-lg bg-slate-50 flex items-center justify-center p-1 overflow-hidden shrink-0">
-                    {uploadedSignatureFullUrl ? (
-                      <img
-                        src={uploadedSignatureFullUrl}
-                        alt="Signature thumbnail"
-                        className="max-h-full max-w-full object-contain"
-                      />
-                    ) : (
-                      <PenTool size={16} className="text-slate-400" />
-                    )}
-                  </div>
-                </div>
-                {!useUploadedSignature && (
-                  <div className="mt-3 pt-3 border-t border-slate-100 space-y-1.5">
-                    <label htmlFor="single_signature_text" className="block text-xs font-semibold text-slate-700">
-                      Signature name or title (optional)
-                    </label>
-                    <input
-                      id="single_signature_text"
-                      name="signature"
-                      type="text"
-                      placeholder="e.g. Dr. John Smith"
-                      value={formData.signature}
-                      onChange={handleChange}
-                      className="w-full px-3.5 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-900 focus:border-transparent min-h-[44px]"
-                    />
-                  </div>
                 )}
-              </div>
 
-              {/* Card 4: Collapsed "More options" */}
-              <div className="bg-white rounded-xl border border-slate-200 shadow-xs overflow-hidden">
-                <button
-                  type="button"
-                  onClick={() => setShowMoreOptions(!showMoreOptions)}
-                  className="w-full p-4 flex items-center justify-between text-left hover:bg-slate-50 transition-colors cursor-pointer min-h-[44px]"
-                  aria-expanded={showMoreOptions}
-                >
-                  <span className="text-sm font-bold text-slate-800">More options</span>
-                  <span className="text-slate-500 text-lg font-light">
-                    {showMoreOptions ? "−" : "+"}
-                  </span>
-                </button>
+                <div className="grid grid-cols-2 gap-3">
+                  <FormInput
+                    name="issue_date"
+                    label={isInvitation ? "Event Date" : isReceipt ? "Payment Date" : "Issue Date"}
+                    icon={Calendar}
+                    type="date"
+                    value={formData.issue_date}
+                    onChange={handleChange}
+                  />
+                  <FormInput
+                    name="issuer_name"
+                    label="Issuer Name (Optional)"
+                    icon={User}
+                    placeholder="e.g. Acme Inc"
+                    value={formData.issuer_name}
+                    onChange={handleChange}
+                  />
+                </div>
 
-                {showMoreOptions && (
-                  <div className="p-4 pt-1 border-t border-slate-100 space-y-4">
-                    {isReceipt && (
-                      <div className="space-y-1.5">
-                        <label htmlFor="receipt_amount" className="block text-xs font-semibold text-slate-700">
-                          Amount (Total)
-                        </label>
-                        <input
-                          id="receipt_amount"
-                          type="text"
-                          placeholder="e.g. $500.00"
-                          value={amount}
-                          onChange={(e) => setAmount(e.target.value)}
-                          className="w-full px-3.5 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-900"
-                        />
-                      </div>
-                    )}
-
-                    {/* Template Custom Placeholders */}
-                    {templateCustomPlaceholders.length > 0 && (
-                      <div className="space-y-2">
-                        <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
-                          Template Custom Fields
-                        </label>
-                        {templateCustomPlaceholders.map(({ key, label }) => (
-                          <div key={key} className="space-y-1">
-                            <label htmlFor={`cf_${key}`} className="block text-[11px] font-semibold text-slate-600">
-                              {label}
-                            </label>
-                            <input
-                              id={`cf_${key}`}
-                              type="text"
-                              placeholder={`Enter ${label}...`}
-                              value={formData.extra_fields?.[key] || ""}
-                              onChange={(e) => {
-                                const val = e.target.value;
-                                setFormData((prev) => ({
-                                  ...prev,
-                                  extra_fields: { ...(prev.extra_fields || {}), [key]: val },
-                                }));
-                              }}
-                              className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-900"
+                {!templateHasSignatureField ? (
+                  <div className="bg-slate-50 border border-slate-200/80 rounded-lg p-2.5 text-[11px] text-slate-600 flex items-start gap-2">
+                    <PenTool size={13} className="text-slate-400 mt-0.5 shrink-0" />
+                    <div>
+                      <span className="font-semibold text-slate-700 block">Signature included in template design</span>
+                      <span className="text-[10px] text-slate-500">
+                        This custom template does not use a <code className="text-indigo-600">{"{{signature}}"}</code> field, so your template&apos;s built-in signature graphic will be preserved as-is.
+                      </span>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {hasUploadedSignature && (
+                      <label className="flex items-center justify-between gap-2 p-2.5 rounded-lg border border-indigo-100 bg-indigo-50/40 cursor-pointer hover:bg-indigo-50/70 transition-colors">
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="checkbox"
+                            checked={useUploadedSignature}
+                            onChange={(e) => setUseUploadedSignature(e.target.checked)}
+                            className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 h-3.5 w-3.5 cursor-pointer"
+                          />
+                          <div>
+                            <span className="block text-xs font-bold text-slate-800">
+                              Use uploaded signature
+                            </span>
+                            <span className="block text-[10px] text-slate-500">
+                              Automatically applies your saved digital signature
+                            </span>
+                          </div>
+                        </div>
+                        {uploadedSignatureFullUrl && (
+                          <div className="h-7 px-2 bg-white border border-slate-200 rounded flex items-center justify-center shrink-0">
+                            <img
+                              src={uploadedSignatureFullUrl}
+                              alt="Uploaded signature"
+                              className="max-h-5 max-w-[70px] object-contain"
                             />
                           </div>
-                        ))}
-                      </div>
+                        )}
+                      </label>
                     )}
 
-                    {/* Additional Custom Fields */}
-                    <div className="space-y-2 pt-2 border-t border-slate-100">
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs font-bold text-slate-700">Custom Fields</span>
-                        <button
-                          type="button"
-                          onClick={addCustomField}
-                          className="text-xs font-semibold text-sky-600 hover:text-sky-800 cursor-pointer flex items-center gap-1"
-                        >
-                          <Plus size={13} /> Add field
-                        </button>
-                      </div>
+                    {(!hasUploadedSignature || !useUploadedSignature) && (
+                      <FormInput
+                        name="signature"
+                        label="Signature Text (Optional)"
+                        icon={PenTool}
+                        placeholder="e.g., Dr. John Smith"
+                        value={formData.signature}
+                        onChange={handleChange}
+                      />
+                    )}
+                  </div>
+                )}
+
+                {/* TEMPLATE CUSTOM PLACEHOLDERS (Auto-mapped) */}
+                {templateCustomPlaceholders.length > 0 && (
+                  <div className="pt-3.5 border-t border-slate-100">
+                    <div className="flex items-center gap-1.5 mb-2.5">
+                      <SlidersHorizontal size={13} className="text-indigo-600" />
+                      <label className="block text-xs font-bold text-slate-800">
+                        Template Custom Fields
+                      </label>
+                    </div>
+                    <div className="space-y-2 bg-indigo-50/40 p-2.5 rounded-xl border border-indigo-100/70">
+                      {templateCustomPlaceholders.map(({ key, label }) => (
+                        <div key={key}>
+                          <label className="block text-[11px] font-semibold text-slate-700 mb-1 flex items-center justify-between">
+                            <span>{label}</span>
+                            <span className="text-[9px] font-mono text-indigo-500 font-normal">{`{{${key}}}`}</span>
+                          </label>
+                          <input
+                            type="text"
+                            placeholder={`Enter ${label}...`}
+                            className="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded text-xs focus:outline-none focus:border-indigo-500 shadow-xs"
+                            value={formData.extra_fields?.[key] || ""}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              setFormData((prev) => ({
+                                ...prev,
+                                extra_fields: {
+                                  ...(prev.extra_fields || {}),
+                                  [key]: val,
+                                },
+                              }));
+                            }}
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* DYNAMIC FIELDS SECTION */}
+                <div className="pt-3.5 border-t border-slate-100">
+                  <div className="flex justify-between items-center mb-2.5">
+                    <label className="block text-xs font-semibold text-slate-700">
+                      Additional Fields
+                    </label>
+                    <button
+                      type="button"
+                      onClick={addCustomField}
+                      className="text-[11px] flex items-center gap-0.5 text-indigo-650 font-bold hover:text-indigo-850"
+                    >
+                      <Plus size={12} /> Add Field
+                    </button>
+                  </div>
+
+                  {customFields.length > 0 ? (
+                    <div className="space-y-2">
                       {customFields.map((field, index) => (
                         <div key={index} className="flex gap-2 items-center">
                           <input
-                            aria-label={`Custom field ${index + 1} label`}
                             placeholder="Label"
+                            className="w-1/3 px-2 py-1 bg-white border border-slate-200 rounded text-xs focus:outline-none focus:border-indigo-500 shadow-sm"
                             value={field.key}
-                            onChange={(e) => handleCustomFieldChange(index, "key", e.target.value)}
-                            className="w-1/3 px-2.5 py-1.5 text-xs border border-slate-200 rounded-lg"
+                            onChange={(e) =>
+                              handleCustomFieldChange(index, "key", e.target.value)
+                            }
                           />
                           <input
-                            aria-label={`Custom field ${index + 1} value`}
                             placeholder="Value"
+                            className="flex-1 px-2 py-1 bg-white border border-slate-200 rounded text-xs focus:outline-none focus:border-indigo-500 shadow-sm"
                             value={field.value}
-                            onChange={(e) => handleCustomFieldChange(index, "value", e.target.value)}
-                            className="flex-1 px-2.5 py-1.5 text-xs border border-slate-200 rounded-lg"
+                            onChange={(e) =>
+                              handleCustomFieldChange(index, "value", e.target.value)
+                            }
                           />
                           <button
                             type="button"
                             onClick={() => removeCustomField(index)}
-                            className="text-slate-400 hover:text-red-600 p-1 cursor-pointer"
-                            aria-label="Remove field"
+                            className="text-slate-400 hover:text-red-650 transition-colors"
                           >
                             <Trash2 size={14} />
                           </button>
                         </div>
                       ))}
                     </div>
+                  ) : (
+                    <p className="text-[10px] text-slate-400 italic">
+                      No custom fields added.
+                    </p>
+                  )}
+                </div>
+
+                {/* PER-CERTIFICATE FONT SIZE & LAYOUT CUSTOMIZER */}
+                <div ref={styleEditorRef} className="pt-3.5 border-t border-slate-100">
+                  <button
+                    type="button"
+                    onClick={() => setShowCertStyleEditor((prev) => !prev)}
+                    className="w-full flex items-center justify-between gap-2 px-3 py-2 rounded-xl border border-indigo-200/80 bg-indigo-50/40 hover:bg-indigo-50/80 transition-colors text-left cursor-pointer"
+                  >
+                    <div className="flex items-center gap-2">
+                      <SlidersHorizontal size={14} className="text-indigo-600 shrink-0" />
+                      <div>
+                        <span className="block text-xs font-bold text-slate-800">
+                          Customize Font Size &amp; Layout
+                        </span>
+                        <span className="block text-[10px] text-slate-500">
+                          Adjust text size, font, color &amp; position for this certificate only
+                        </span>
+                      </div>
+                    </div>
+                    <span className="text-[10px] font-bold text-indigo-700 bg-white px-2 py-0.5 rounded-full border border-indigo-200">
+                      {showCertStyleEditor ? "Hide" : "Customize"}
+                    </span>
+                  </button>
+
+                  {showCertStyleEditor && (
+                    <div className="mt-2.5 p-3 rounded-xl border border-slate-200 bg-slate-50/70 space-y-3">
+                      {/* Auto-Fit Long Text Toggle */}
+                      <label className="flex items-center justify-between gap-2 p-2 rounded-lg bg-white border border-slate-200 cursor-pointer">
+                        <div>
+                          <span className="block text-[11px] font-bold text-slate-800">
+                            Auto-fit long names &amp; text
+                          </span>
+                          <span className="block text-[9px] text-slate-500">
+                            Automatically scales down long text so it never overflows the placeholder
+                          </span>
+                        </div>
+                        <input
+                          type="checkbox"
+                          checked={certStyles.autoFit !== false}
+                          onChange={(e) => handleToggleAutoFit(e.target.checked)}
+                          className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 h-4 w-4 cursor-pointer"
+                        />
+                      </label>
+
+                      {/* Field Selector Pills */}
+                      <div>
+                        <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">
+                          Select Field to Adjust
+                        </label>
+                        <div className="flex flex-wrap gap-1">
+                          {customizableStyleFields.map((f) => {
+                            const hasOvr =
+                              certStyles.fields?.[f.key] &&
+                              Object.keys(certStyles.fields[f.key]).length > 0;
+                            const isActive = activeStyleField === f.key;
+                            return (
+                              <button
+                                key={f.key}
+                                type="button"
+                                onClick={() => setActiveStyleField(f.key)}
+                                className={`px-2 py-1 rounded-md text-[10px] font-bold border transition-all cursor-pointer flex items-center gap-1 ${
+                                  isActive
+                                    ? "bg-indigo-600 text-white border-indigo-600 shadow-2xs"
+                                    : hasOvr
+                                    ? "bg-indigo-50 text-indigo-700 border-indigo-200 hover:bg-indigo-100"
+                                    : "bg-white text-slate-600 border-slate-200 hover:bg-slate-100"
+                                }`}
+                              >
+                                <span>{f.label}</span>
+                                {hasOvr && (
+                                  <span
+                                    className={`w-1.5 h-1.5 rounded-full ${
+                                      isActive ? "bg-white" : "bg-indigo-600"
+                                    }`}
+                                  />
+                                )}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+
+                      {/* Active Field Controls */}
+                      {(() => {
+                        const fieldMeta =
+                          customizableStyleFields.find((f) => f.key === activeStyleField) ||
+                          customizableStyleFields[0];
+                        const fKey = fieldMeta.key;
+                        const activeOvr = certStyles.fields?.[fKey] || {};
+                        const currentFontSize =
+                          activeOvr.fontSize !== undefined && activeOvr.fontSize !== ""
+                            ? Number(activeOvr.fontSize)
+                            : "";
+
+                        return (
+                          <div className="bg-white p-2.5 rounded-lg border border-slate-200 space-y-2.5">
+                            <div className="flex items-center justify-between border-b border-slate-100 pb-1.5">
+                              <span className="text-[11px] font-bold text-slate-800">
+                                {fieldMeta.label} Styling
+                              </span>
+                              {Object.keys(activeOvr).length > 0 && (
+                                <button
+                                  type="button"
+                                  onClick={() => handleResetFieldStyle(fKey)}
+                                  className="text-[10px] text-slate-500 hover:text-red-600 font-semibold flex items-center gap-0.5 cursor-pointer"
+                                >
+                                  <RotateCcw size={10} /> Reset Field
+                                </button>
+                              )}
+                            </div>
+
+                            {/* Font Size Slider & Stepper */}
+                            <div>
+                              <div className="flex items-center justify-between mb-1">
+                                <label className="text-[10px] font-semibold text-slate-600">
+                                  Font Size (px)
+                                </label>
+                                <span className="text-[10px] font-mono text-indigo-600 font-bold">
+                                  {currentFontSize ? `${currentFontSize}px` : "Auto / Default"}
+                                </span>
+                              </div>
+                              <div className="flex items-center gap-1.5">
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    const base = currentFontSize || fieldMeta.defaultSize || 28;
+                                    handleFieldStyleChange(fKey, "fontSize", Math.max(8, base - 2));
+                                  }}
+                                  className="px-2 py-1 rounded border border-slate-200 bg-slate-50 hover:bg-slate-100 text-xs font-bold text-slate-700 cursor-pointer"
+                                  title="Decrease Font Size"
+                                >
+                                  -
+                                </button>
+                                <input
+                                  type="range"
+                                  min="8"
+                                  max="80"
+                                  step="1"
+                                  value={currentFontSize || fieldMeta.defaultSize || 28}
+                                  onChange={(e) =>
+                                    handleFieldStyleChange(fKey, "fontSize", Number(e.target.value))
+                                  }
+                                  className="flex-1 accent-indigo-600 cursor-pointer"
+                                />
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    const base = currentFontSize || fieldMeta.defaultSize || 28;
+                                    handleFieldStyleChange(fKey, "fontSize", Math.min(96, base + 2));
+                                  }}
+                                  className="px-2 py-1 rounded border border-slate-200 bg-slate-50 hover:bg-slate-100 text-xs font-bold text-slate-700 cursor-pointer"
+                                  title="Increase Font Size"
+                                >
+                                  +
+                                </button>
+                                <input
+                                  type="number"
+                                  min="8"
+                                  max="120"
+                                  placeholder="Auto"
+                                  value={currentFontSize}
+                                  onChange={(e) =>
+                                    handleFieldStyleChange(
+                                      fKey,
+                                      "fontSize",
+                                      e.target.value === "" ? "" : Number(e.target.value)
+                                    )
+                                  }
+                                  className="w-14 px-1.5 py-1 border border-slate-200 rounded text-xs text-center font-mono focus:outline-none focus:border-indigo-500"
+                                />
+                                {currentFontSize !== "" && (
+                                  <button
+                                    type="button"
+                                    onClick={() => handleFieldStyleChange(fKey, "fontSize", "")}
+                                    className="px-1.5 py-1 rounded bg-slate-100 hover:bg-slate-200 text-[10px] font-semibold text-slate-600 cursor-pointer"
+                                    title="Use Auto-Fit / Template Default"
+                                  >
+                                    Auto
+                                  </button>
+                                )}
+                              </div>
+                            </div>
+
+                            {/* Font Family & Color */}
+                            <div className="grid grid-cols-2 gap-2">
+                              <div>
+                                <label className="block text-[10px] font-semibold text-slate-600 mb-1">
+                                  Font Family
+                                </label>
+                                <select
+                                  value={activeOvr.fontFamily || ""}
+                                  onChange={(e) =>
+                                    handleFieldStyleChange(fKey, "fontFamily", e.target.value)
+                                  }
+                                  className="w-full px-2 py-1 border border-slate-200 rounded text-xs bg-white focus:outline-none focus:border-indigo-500"
+                                >
+                                  <option value="">Template Default</option>
+                                  <option value="Cinzel">Cinzel (Serif Display)</option>
+                                  <option value="Playfair Display">Playfair Display</option>
+                                  <option value="Montserrat">Montserrat</option>
+                                  <option value="Merriweather">Merriweather</option>
+                                  <option value="Lato">Lato</option>
+                                  <option value="Open Sans">Open Sans</option>
+                                  <option value="Roboto">Roboto</option>
+                                  <option value="Georgia">Georgia</option>
+                                  <option value="Times New Roman">Times New Roman</option>
+                                  <option value="Great Vibes">Great Vibes (Script)</option>
+                                  <option value="Arial">Arial</option>
+                                </select>
+                              </div>
+                              <div>
+                                <label className="block text-[10px] font-semibold text-slate-600 mb-1">
+                                  Text Color
+                                </label>
+                                <div className="flex items-center gap-1">
+                                  <input
+                                    type="color"
+                                    value={activeOvr.color || "#1e293b"}
+                                    onChange={(e) =>
+                                      handleFieldStyleChange(fKey, "color", e.target.value)
+                                    }
+                                    className="h-6 w-7 rounded border border-slate-200 cursor-pointer p-0 bg-white"
+                                  />
+                                  <input
+                                    type="text"
+                                    placeholder="Default"
+                                    value={activeOvr.color || ""}
+                                    onChange={(e) =>
+                                      handleFieldStyleChange(fKey, "color", e.target.value)
+                                    }
+                                    className="flex-1 min-w-0 px-1.5 py-1 border border-slate-200 rounded text-[11px] font-mono focus:outline-none focus:border-indigo-500"
+                                  />
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Position Offset (Nudge X / Y) & Box Width */}
+                            <div className="grid grid-cols-3 gap-2 pt-1">
+                              <div>
+                                <label className="block text-[10px] font-semibold text-slate-600 mb-0.5">
+                                  Horizontal (X px)
+                                </label>
+                                <input
+                                  type="number"
+                                  step="2"
+                                  placeholder="0"
+                                  value={activeOvr.offsetX ?? ""}
+                                  onChange={(e) =>
+                                    handleFieldStyleChange(
+                                      fKey,
+                                      "offsetX",
+                                      e.target.value === "" ? "" : Number(e.target.value)
+                                    )
+                                  }
+                                  className="w-full px-2 py-1 border border-slate-200 rounded text-xs font-mono focus:outline-none focus:border-indigo-500"
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-[10px] font-semibold text-slate-600 mb-0.5">
+                                  Vertical (Y px)
+                                </label>
+                                <input
+                                  type="number"
+                                  step="2"
+                                  placeholder="0"
+                                  value={activeOvr.offsetY ?? ""}
+                                  onChange={(e) =>
+                                    handleFieldStyleChange(
+                                      fKey,
+                                      "offsetY",
+                                      e.target.value === "" ? "" : Number(e.target.value)
+                                    )
+                                  }
+                                  className="w-full px-2 py-1 border border-slate-200 rounded text-xs font-mono focus:outline-none focus:border-indigo-500"
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-[10px] font-semibold text-slate-600 mb-0.5">
+                                  Box Width (px)
+                                </label>
+                                <input
+                                  type="number"
+                                  step="10"
+                                  min="50"
+                                  max="1100"
+                                  placeholder="Auto"
+                                  value={activeOvr.width ?? ""}
+                                  onChange={(e) =>
+                                    handleFieldStyleChange(
+                                      fKey,
+                                      "width",
+                                      e.target.value === "" ? "" : Number(e.target.value)
+                                    )
+                                  }
+                                  className="w-full px-2 py-1 border border-slate-200 rounded text-xs font-mono focus:outline-none focus:border-indigo-500"
+                                />
+                              </div>
+                            </div>
+
+                            {/* Multi-line Wrap Toggle */}
+                            <label className="flex items-center justify-between gap-2 pt-1 cursor-pointer">
+                              <span className="text-[10px] text-slate-600 font-medium">
+                                Allow wrapping onto multiple lines
+                              </span>
+                              <input
+                                type="checkbox"
+                                checked={Boolean(activeOvr.wrap)}
+                                onChange={(e) =>
+                                  handleFieldStyleChange(fKey, "wrap", e.target.checked)
+                                }
+                                className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 h-3.5 w-3.5 cursor-pointer"
+                              />
+                            </label>
+                          </div>
+                        );
+                      })()}
+
+                      {Object.keys(certStyles.fields || {}).length > 0 && (
+                        <button
+                          type="button"
+                          onClick={handleResetAllCertStyles}
+                          className="w-full py-1.5 text-[10px] font-bold text-slate-500 hover:text-red-600 border border-slate-200 hover:border-red-200 rounded-lg bg-white transition-colors flex items-center justify-center gap-1 cursor-pointer"
+                        >
+                          <RotateCcw size={11} /> Reset All Custom Styling
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                {error && (
+                  <div className="bg-red-50 text-red-650 p-2 rounded text-xs flex items-start gap-1.5 border border-red-100">
+                    <Info size={14} className="mt-0.5 flex-shrink-0" />
+                    {error}
                   </div>
                 )}
-              </div>
-            </div>
-          ) : (
-            /* ================= BULK IMPORT MODE ================= */
-            <div className="space-y-4">
-              {/* Card 1: Group Selector */}
-              <div className="bg-white rounded-xl border border-slate-200 p-4 sm:p-5 shadow-xs space-y-2.5">
-                <label htmlFor="bulk_group_select" className="block text-sm font-bold text-slate-800">
-                  Group (keeps this batch together)
-                </label>
-                <div className="flex gap-2.5 items-center">
+
+                <div className="space-y-2 mt-3.5">
+                  <button
+                    type="submit"
+                    disabled={submitting}
+                    className="w-full bg-slate-900 border border-slate-900 hover:bg-black text-white text-xs font-bold py-2 px-4 rounded-lg shadow-sm transition-all flex items-center justify-center gap-1.5 disabled:opacity-75 disabled:cursor-not-allowed"
+                  >
+                    {submitting ? (
+                      <Loader2 className="animate-spin" size={14} />
+                    ) : (
+                      <Save size={14} />
+                    )}
+                    <span>{isEditMode ? "Update credential" : "Issue credential"}</span>
+                  </button>
+
+                  {isEditMode && formData.recipient_email && (
+                    <button
+                      type="button"
+                      disabled={submitting}
+                      onClick={(e) => handleSubmit(e, true)}
+                      className="w-full bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold py-2 px-4 rounded-lg shadow-sm transition-all flex items-center justify-center gap-1.5 disabled:opacity-75 disabled:cursor-not-allowed cursor-pointer"
+                    >
+                      {submitting ? (
+                        <Loader2 className="animate-spin" size={14} />
+                      ) : (
+                        <Send size={13} />
+                      )}
+                      <span>Update &amp; resend</span>
+                    </button>
+                  )}
+                </div>
+              </form>
+            ) : (
+              <form onSubmit={handleBulkSubmit} className="space-y-4">
+                {isBulkGroupEditMode && (
+                  <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 flex items-start justify-between gap-2">
+                    <div className="flex items-start gap-2">
+                      <Pencil size={14} className="text-amber-700 mt-0.5 shrink-0" />
+                      <div>
+                        <span className="block text-xs font-bold text-amber-900">
+                          Bulk Editing Group: {editingGroupInfo?.name || "Selected Batch"}
+                        </span>
+                        <span className="block text-[10px] text-amber-700 mt-0.5">
+                          All group certificates are loaded in the spreadsheet. Edit any details, then Save or Save &amp; Resend.
+                        </span>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => navigate("/dashboard/certificates")}
+                      className="text-[10px] font-bold text-amber-800 hover:underline shrink-0"
+                    >
+                      Exit
+                    </button>
+                  </div>
+                )}
+
+                <TemplateSelector
+                  value={formData.template_id}
+                  onChange={(val) => handleTemplateChange({ target: { value: val } })}
+                  options={templates}
+                />
+
+                <div className="border-t border-slate-100 my-3.5"></div>
+
+                {/* Group Selector */}
+                <div className="space-y-1">
+                  <label className="block text-xs font-semibold text-slate-700">Group *</label>
                   <select
-                    id="bulk_group_select"
                     value={selectedGroupId}
                     onChange={(e) => setSelectedGroupId(e.target.value)}
                     disabled={isBulkGroupEditMode}
-                    className="flex-1 px-3.5 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-900 focus:border-transparent min-h-[44px] bg-white cursor-pointer"
+                    className="block w-full rounded border border-slate-200 bg-white py-1.5 px-2.5 text-slate-850 focus:border-indigo-500 focus:outline-none transition-all duration-200 text-xs shadow-sm disabled:bg-slate-100"
+                    required
                   >
-                    <option value="">Select a group...</option>
+                    <option value="">-- Select group --</option>
                     {groups.map((g) => (
                       <option key={g.id} value={g.id}>{g.name}</option>
                     ))}
                   </select>
-                  {!isBulkGroupEditMode && (
-                    <button
-                      type="button"
-                      onClick={() => setShowCreateGroupModal(true)}
-                      className="px-4 py-2 text-xs font-semibold text-slate-800 bg-white hover:bg-slate-50 border border-slate-200 rounded-lg shadow-xs transition-colors shrink-0 min-h-[44px] flex items-center gap-1.5 cursor-pointer"
-                    >
-                      + New group
-                    </button>
-                  )}
-                </div>
-              </div>
-
-              {/* Card 2: Add your recipients */}
-              <div className="bg-white rounded-xl border border-slate-200 p-4 sm:p-5 shadow-xs space-y-4">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-3">
-                  <h2 className="text-sm font-bold text-slate-800">Add your recipients</h2>
-                  
-                  {/* Tabs */}
-                  <div className="flex items-center gap-1 bg-slate-100 p-0.5 rounded-lg border border-slate-200/60">
-                    <button
-                      type="button"
-                      onClick={() => setBulkActiveTab("upload")}
-                      className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-colors min-h-[36px] cursor-pointer ${
-                        bulkActiveTab === "upload"
-                          ? "bg-white text-slate-900 shadow-2xs font-bold"
-                          : "text-slate-600 hover:text-slate-900"
-                      }`}
-                    >
-                      Upload a file
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setBulkActiveTab("paste")}
-                      className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-colors min-h-[36px] cursor-pointer ${
-                        bulkActiveTab === "paste"
-                          ? "bg-white text-slate-900 shadow-2xs font-bold"
-                          : "text-slate-600 hover:text-slate-900"
-                      }`}
-                    >
-                      Type or paste
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setBulkActiveTab("database")}
-                      className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-colors min-h-[36px] cursor-pointer ${
-                        bulkActiveTab === "database"
-                          ? "bg-white text-slate-900 shadow-2xs font-bold"
-                          : "text-slate-600 hover:text-slate-900"
-                      }`}
-                    >
-                      From database
-                    </button>
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={handleDownloadTemplate}
-                    className="text-xs text-slate-500 hover:text-slate-900 underline cursor-pointer shrink-0"
-                  >
-                    Download sample file
-                  </button>
                 </div>
 
-                {/* Tab 1: File Upload */}
-                {bulkActiveTab === "upload" && (
-                  <div className="border-2 border-dashed border-slate-200 rounded-xl p-6 text-center bg-slate-50 hover:bg-slate-100/60 transition-colors relative cursor-pointer group">
-                    <input
-                      type="file"
-                      aria-label="Upload spreadsheet"
-                      accept=".csv, .xlsx, .xls, .ods"
-                      onChange={handleBulkFileChange}
-                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                    />
-                    <UploadCloud className="mx-auto text-slate-400 group-hover:text-slate-600 mb-2" size={26} />
-                    <span className="block text-xs font-bold text-slate-800">
-                      {bulkFile ? bulkFile.name : "Choose spreadsheet"}
-                    </span>
-                    <span className="block text-[11px] text-slate-400 mt-1">
-                      Drag &amp; drop or click to browse &amp; auto-map (.csv, .xlsx, .xls)
-                    </span>
-                  </div>
-                )}
-
-                {/* Tab 2: Type or Paste */}
-                {bulkActiveTab === "paste" && (
-                  <div className="space-y-2.5">
-                    <label htmlFor="quick_paste_box" className="block text-xs font-semibold text-slate-700">
-                      Paste table data (copied from Excel or Google Sheets):
-                    </label>
-                    <textarea
-                      id="quick_paste_box"
-                      rows={4}
-                      placeholder="Jane Doe	jane@example.com	Web Development	Oct 22, 2024&#10;Liam Johnson	liam@example.com	Full Stack Dev	Jan 15, 2024"
-                      value={quickPasteText}
-                      onChange={(e) => setQuickPasteText(e.target.value)}
-                      className="w-full p-3 font-mono text-xs border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-900"
-                    />
-                    <div className="flex justify-end">
+                {/* Quick group creation inline */}
+                {!isBulkGroupEditMode && (
+                  <div className="bg-slate-50 p-3 rounded-xl border border-slate-200/60 space-y-2">
+                    <label className="block text-[9px] font-bold text-slate-405 uppercase tracking-wider">New group</label>
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        placeholder="e.g. Python Cohort A"
+                        value={newGroupName}
+                        onChange={(e) => setNewGroupName(e.target.value)}
+                        className="flex-1 px-2.5 py-1.5 border border-slate-200 bg-white rounded-lg text-xs focus:outline-none focus:border-indigo-500"
+                      />
                       <button
                         type="button"
-                        onClick={handleImportPastedText}
-                        className="px-4 py-2 text-xs font-bold text-white bg-slate-900 hover:bg-black rounded-lg transition-colors cursor-pointer min-h-[44px]"
+                        onClick={handleCreateGroup}
+                        className="bg-slate-900 hover:bg-black text-white text-xs font-bold px-3 py-1.5 rounded-lg transition-all"
                       >
-                        Import pasted rows
+                        Create
                       </button>
                     </div>
                   </div>
                 )}
 
-                {/* Tab 3: University Database */}
-                {bulkActiveTab === "database" && (
-                  <div className="p-3.5 bg-emerald-50/50 border border-emerald-200/80 rounded-xl space-y-3">
-                    <div className="flex items-center gap-2 text-xs font-bold text-emerald-900">
-                      <Database size={15} className="text-emerald-700" />
-                      <span>Direct Database Connector (SIS Pull)</span>
-                    </div>
-                    <p className="text-[11px] text-emerald-800">
-                      Query student records directly into this batch by student ID or department.
-                    </p>
-                    <button
-                      type="button"
-                      onClick={() => setShowDbPullModal(true)}
-                      className="w-full py-2.5 px-4 bg-emerald-700 hover:bg-emerald-800 text-white rounded-lg text-xs font-bold transition-colors shadow-2xs flex items-center justify-center gap-2 cursor-pointer min-h-[44px]"
-                    >
-                      <Database size={14} />
-                      <span>Query Database &amp; Pull Students</span>
-                    </button>
-                  </div>
-                )}
-
-                {/* Status Line */}
-                <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-slate-100">
-                  <div className="flex items-center gap-2 text-xs font-semibold text-slate-700">
-                    <CheckCircle2 size={15} className="text-emerald-600" />
-                    <span className="text-emerald-700 font-bold">{readyRowsCount} ready</span>
-                    <span className="text-slate-300">·</span>
-                    <span className={invalidRowsCount > 0 ? "text-amber-600 font-bold" : "text-slate-500"}>
-                      {invalidRowsCount} need fixing
-                    </span>
-                    {(bulkFile?.name || sheetName) && (
-                      <>
-                        <span className="text-slate-300">·</span>
-                        <span className="text-slate-500 truncate max-w-[200px]">
-                          {bulkFile?.name || sheetName}
-                        </span>
-                      </>
+                {/* File Upload Box */}
+                <div className="space-y-1">
+                  <div className="flex justify-between items-center">
+                    <label className="block text-xs font-semibold text-slate-700">Upload spreadsheet</label>
+                    {detectedHeaders.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => setIsMappingModalOpen(true)}
+                        className="text-[10px] text-indigo-650 hover:underline font-bold flex items-center gap-1"
+                      >
+                        <Columns3 size={11} /> Re-map Columns
+                      </button>
                     )}
                   </div>
-                  <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={handleOpenSpreadsheet}
-                      className="px-3.5 py-1.5 text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 border border-slate-200 rounded-lg shadow-2xs transition-colors min-h-[38px] cursor-pointer"
-                    >
-                      Open full editor
-                    </button>
-                    <button
-                      type="button"
-                      onClick={handleClearRecipients}
-                      className="px-3 py-1.5 text-xs font-semibold text-slate-500 hover:text-red-600 bg-white hover:bg-slate-50 border border-slate-200 rounded-lg shadow-2xs transition-colors min-h-[38px] cursor-pointer"
-                    >
-                      Clear
-                    </button>
+                  <div className="border-2 border-dashed border-slate-200 rounded-xl p-5 text-center bg-slate-50 hover:bg-slate-100/50 hover:border-slate-350 transition-all relative cursor-pointer">
+                    <input
+                      type="file"
+                      accept=".csv, .xlsx, .xls, .ods"
+                      onChange={handleBulkFileChange}
+                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                    />
+                    <UploadCloud className="mx-auto text-slate-400 mb-2" size={24} />
+                    <span className="block text-xs font-bold text-slate-800">
+                      {bulkFile ? bulkFile.name : "Choose spreadsheet"}
+                    </span>
+                    <span className="block text-[9px] text-slate-400 mt-1">
+                      Drag & drop or click to browse & auto-map
+                    </span>
                   </div>
                 </div>
 
-                {/* Inline 5-Row Table with Per-Row Status */}
-                <div className="overflow-x-auto border border-slate-200 rounded-lg">
-                  <table className="w-full text-left text-xs border-collapse">
-                    <thead className="bg-slate-50 text-slate-600 font-bold border-b border-slate-200">
-                      <tr>
-                        <th className="py-2.5 px-3 w-10 text-center">#</th>
-                        <th className="py-2.5 px-3">Recipient</th>
-                        <th className="py-2.5 px-3">Email</th>
-                        <th className="py-2.5 px-3">Course</th>
-                        <th className="py-2.5 px-3">Date</th>
-                        <th className="py-2.5 px-3 w-24 text-right">Status</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100">
-                      {(() => {
-                        const rowsToDisplay =
-                          activeNonEmptyRows.length > 0
-                            ? activeNonEmptyRows.slice(0, 5)
-                            : spreadsheetRows.slice(0, 5);
-
-                        return rowsToDisplay.map((r, idx) => {
-                          const isSelected = idx === previewRowIndex;
-                          const emailCounts = new Map();
-                          const valResult = validateRow(r, emailCounts);
-                          const isRowValid = valResult.isValid;
-
-                          return (
-                            <tr
-                              key={idx}
-                              onClick={() => setPreviewRowIndex(idx)}
-                              className={`cursor-pointer transition-colors ${
-                                isSelected ? "bg-sky-50/70 border-l-4 border-l-sky-600" : "hover:bg-slate-50"
-                              }`}
-                            >
-                              <td className="py-2 px-3 text-center text-slate-400 font-mono">
-                                {idx + 1}
-                              </td>
-                              <td className="py-1 px-2">
-                                <input
-                                  type="text"
-                                  aria-label={`Row ${idx + 1} recipient name`}
-                                  value={r.recipient_name || ""}
-                                  placeholder="Recipient name"
-                                  onChange={(e) => handleInlineCellChange(idx, "recipient_name", e.target.value)}
-                                  className="w-full px-2 py-1 bg-transparent hover:bg-white focus:bg-white rounded border border-transparent hover:border-slate-200 focus:border-slate-900 focus:outline-none"
-                                />
-                              </td>
-                              <td className="py-1 px-2">
-                                <input
-                                  type="email"
-                                  aria-label={`Row ${idx + 1} recipient email`}
-                                  value={r.recipient_email || ""}
-                                  placeholder="Email"
-                                  onChange={(e) => handleInlineCellChange(idx, "recipient_email", e.target.value)}
-                                  className="w-full px-2 py-1 bg-transparent hover:bg-white focus:bg-white rounded border border-transparent hover:border-slate-200 focus:border-slate-900 focus:outline-none"
-                                />
-                              </td>
-                              <td className="py-1 px-2">
-                                <input
-                                  type="text"
-                                  aria-label={`Row ${idx + 1} course title`}
-                                  value={r.course_title || ""}
-                                  placeholder="Course"
-                                  onChange={(e) => handleInlineCellChange(idx, "course_title", e.target.value)}
-                                  className="w-full px-2 py-1 bg-transparent hover:bg-white focus:bg-white rounded border border-transparent hover:border-slate-200 focus:border-slate-900 focus:outline-none"
-                                />
-                              </td>
-                              <td className="py-1 px-2">
-                                <input
-                                  type="text"
-                                  aria-label={`Row ${idx + 1} issue date`}
-                                  value={r.issue_date || ""}
-                                  placeholder="Date"
-                                  onChange={(e) => handleInlineCellChange(idx, "issue_date", e.target.value)}
-                                  onBlur={(e) => {
-                                    const formatted = formatExcelDate(e.target.value);
-                                    if (formatted) handleInlineCellChange(idx, "issue_date", formatted);
-                                  }}
-                                  className="w-full px-2 py-1 bg-transparent hover:bg-white focus:bg-white rounded border border-transparent hover:border-slate-200 focus:border-slate-900 focus:outline-none"
-                                />
-                              </td>
-                              <td className="py-2 px-3 text-right">
-                                {isRowValid ? (
-                                  <span className="font-semibold text-emerald-600">Ready</span>
-                                ) : (
-                                  <span
-                                    className="font-semibold text-amber-600"
-                                    title={Object.values(valResult.cellErrors || {}).join(", ")}
-                                  >
-                                    Need fixing
-                                  </span>
-                                )}
-                              </td>
-                            </tr>
-                          );
-                        });
-                      })()}
-                    </tbody>
-                  </table>
-                </div>
-
-                <p className="text-xs text-slate-400">
-                  Showing {Math.min(5, nonEmptyRowsCount || 5)} of {nonEmptyRowsCount || 5} rows · click a cell to edit · Changes auto-save
-                </p>
-              </div>
-
-              {/* Card 3: Fill in blanks for everyone (Batch Defaults) */}
-              <div className="bg-white rounded-xl border border-slate-200 shadow-xs overflow-hidden">
+                {/* Direct University Database Connector Shortcut (Pull by Student ID) */}
                 <button
                   type="button"
-                  onClick={() => setShowBatchDefaults(!showBatchDefaults)}
-                  className="w-full p-4 flex items-center justify-between text-left hover:bg-slate-50 transition-colors cursor-pointer min-h-[44px]"
-                  aria-expanded={showBatchDefaults}
+                  onClick={() => setShowDbPullModal(true)}
+                  className="w-full py-2.5 px-3 rounded-xl border border-emerald-200/90 bg-gradient-to-r from-emerald-50/80 to-teal-50/50 hover:from-emerald-100/80 hover:to-teal-100/60 text-slate-800 transition-all flex items-center justify-between shadow-2xs group cursor-pointer"
                 >
-                  <div>
-                    <h3 className="text-sm font-bold text-slate-800">
-                      Fill in blanks for everyone
-                    </h3>
-                    <p className="text-xs text-slate-400 mt-0.5">
-                      Default course, issuer, date and signature. Only used where a row is empty.
-                    </p>
+                  <div className="flex items-center gap-2">
+                    <Database size={16} className="text-emerald-700 group-hover:scale-110 transition-transform" />
+                    <div className="text-left">
+                      <span className="block text-xs font-bold text-slate-800">
+                        Pull from database
+                      </span>
+                      <span className="block text-[10px] text-slate-500">
+                        
+                      </span>
+                    </div>
                   </div>
-                  <span className="text-slate-500 text-lg font-light shrink-0 ml-3">
-                    {showBatchDefaults ? "−" : "+"}
+                  <span className="text-[10px] font-mono font-semibold bg-white text-emerald-800 px-2.5 py-1 rounded-full border border-emerald-200 shadow-2xs">
+                    Connect &rarr;
                   </span>
                 </button>
 
-                {showBatchDefaults && (
-                  <div className="p-4 pt-1 border-t border-slate-100 space-y-3">
-                    <div className="space-y-1">
-                      <label htmlFor="batch_default_course" className="block text-xs font-semibold text-slate-700">
-                        Default course or event title
-                      </label>
-                      <input
-                        id="batch_default_course"
-                        type="text"
-                        placeholder="e.g. Full Stack Web Development"
-                        value={batchDefaults.course_title || ""}
-                        onChange={(e) => setBatchDefaults((prev) => ({ ...prev, course_title: e.target.value }))}
-                        className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-900"
-                      />
-                    </div>
-
-                    <div className="space-y-1">
-                      <label htmlFor="batch_default_issuer" className="block text-xs font-semibold text-slate-700">
-                        Default issuer name
-                      </label>
-                      <input
-                        id="batch_default_issuer"
-                        type="text"
-                        placeholder="e.g. Acme Tech Academy"
-                        value={batchDefaults.issuer_name || ""}
-                        onChange={(e) => setBatchDefaults((prev) => ({ ...prev, issuer_name: e.target.value }))}
-                        className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-900"
-                      />
-                    </div>
-
-                    <div className="space-y-1">
-                      <label htmlFor="batch_default_date" className="block text-xs font-semibold text-slate-700">
-                        Default issue date
-                      </label>
-                      <input
-                        id="batch_default_date"
-                        type="text"
-                        placeholder="YYYY-MM-DD or Oct 22, 2024"
-                        value={batchDefaults.issue_date || ""}
-                        onChange={(e) => setBatchDefaults((prev) => ({ ...prev, issue_date: e.target.value }))}
-                        onBlur={(e) => {
-                          const formatted = formatExcelDate(e.target.value);
-                          if (formatted) setBatchDefaults((prev) => ({ ...prev, issue_date: formatted }));
-                        }}
-                        className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-900"
-                      />
-                    </div>
-
-                    <div className="space-y-1">
-                      <label htmlFor="batch_default_signature" className="block text-xs font-semibold text-slate-700">
-                        Default signature text
-                      </label>
-                      <input
-                        id="batch_default_signature"
-                        type="text"
-                        placeholder="e.g. Dr. John Smith"
-                        value={batchDefaults.signature || ""}
-                        onChange={(e) => setBatchDefaults((prev) => ({ ...prev, signature: e.target.value }))}
-                        className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-900"
-                      />
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* Card 4: Saved Drafts Row */}
-              {savedSheets.length > 0 && (
-                <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-xs flex items-center justify-between gap-3">
-                  <div className="flex items-center gap-2 text-xs font-semibold text-slate-800 truncate">
-                    <FolderOpen size={15} className="text-slate-500 shrink-0" />
-                    <span className="truncate">
-                      Saved drafts ({savedSheets.length}) · {savedSheets[0]?.name || sheetName} · {savedSheets[0]?.rowCount || nonEmptyRowsCount} rows
-                    </span>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => handleResumeDraft(savedSheets[0])}
-                    className="px-3.5 py-1.5 text-xs font-semibold text-slate-800 bg-white hover:bg-slate-50 border border-slate-200 rounded-lg shadow-2xs transition-colors shrink-0 min-h-[38px] cursor-pointer"
-                  >
-                    Resume
-                  </button>
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-
-        {/* ================= RIGHT COLUMN: LIVE PREVIEW ================= */}
-        <div className="lg:col-span-6 space-y-4">
-          <div className="bg-white rounded-xl border border-slate-200 p-4 sm:p-5 shadow-xs">
-            {/* Header: Title + Edit layout + Expand */}
-            <div className="flex items-center justify-between gap-3 mb-4">
-              <h2 className="text-sm font-bold text-slate-800">
-                {creationMode === "bulk"
-                  ? `Preview of row ${previewRowIndex + 1}`
-                  : "Live preview"}
-              </h2>
-
-              <div className="flex items-center gap-2">
-                {creationMode === "single" && (
-                  <button
-                    type="button"
-                    onClick={() => setShowCertStyleEditor(!showCertStyleEditor)}
-                    className="px-3 py-1.5 text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 border border-slate-200 rounded-lg shadow-2xs transition-colors flex items-center gap-1.5 cursor-pointer min-h-[38px]"
-                  >
-                    <SlidersHorizontal size={13} />
-                    <span>Edit layout</span>
-                  </button>
-                )}
+                {/* In-Page Spreadsheet Shortcut Button in Form */}
                 <button
                   type="button"
-                  onClick={() => setShowFullscreen(true)}
-                  className="px-3 py-1.5 text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 border border-slate-200 rounded-lg shadow-2xs transition-colors flex items-center gap-1.5 cursor-pointer min-h-[38px]"
+                  onClick={handleOpenSpreadsheet}
+                  className="w-full py-2.5 px-3 rounded-xl border border-indigo-200/80 bg-gradient-to-r from-indigo-50/70 to-slate-50 hover:from-indigo-100/80 hover:to-slate-100 text-slate-800 transition-all flex items-center justify-between shadow-2xs group cursor-pointer"
                 >
-                  <Maximize2 size={13} />
-                  <span>Expand</span>
+                  <div className="flex items-center gap-2">
+                    <Table size={16} className="text-indigo-600 group-hover:scale-110 transition-transform" />
+                    <div className="text-left">
+                      <span className="block text-xs font-bold text-slate-800">Spreadsheet editor</span>
+                      <span className="block text-[10px] text-slate-400">
+                        Edit rows and map columns
+                      </span>
+                    </div>
+                  </div>
+                  <span className="text-[10px] font-mono font-semibold bg-white text-indigo-700 px-2.5 py-1 rounded-full border border-indigo-200 shadow-2xs">
+                    {nonEmptyRowsCount === 0 ? "Open Grid" : `${readyRowsCount} ready`} &rarr;
+                  </span>
                 </button>
+
+                <div className="flex flex-wrap justify-between items-center gap-2 text-[10px]">
+                  <button
+                    type="button"
+                    onClick={handleDownloadTemplate}
+                    className="text-indigo-650 font-bold hover:underline flex items-center gap-1 cursor-pointer"
+                  >
+                    <Download size={12} /> Download sample
+                  </button>
+
+                  <div className="flex items-center gap-3">
+                    {!isBulkGroupEditMode && (
+                      <button
+                        type="button"
+                        onClick={handleNewSheet}
+                        className="text-red-600 font-bold hover:underline flex items-center gap-1 cursor-pointer"
+                        title="Clear the current spreadsheet and start fresh"
+                      >
+                        <RotateCcw size={11} /> Clear
+                      </button>
+                    )}
+
+                    <button
+                      type="button"
+                      onClick={() => handleSaveSheet(sheetName)}
+                      className="text-emerald-700 font-bold hover:underline flex items-center gap-1 cursor-pointer"
+                      title="Save current spreadsheet as a draft"
+                    >
+                      <Save size={11} /> Save draft
+                    </button>
+                  </div>
+                </div>
+
+                {/* Saved Drafts Quick-Load List */}
+                {!isBulkGroupEditMode && savedSheets.length > 0 && (
+                  <div className="bg-slate-50/90 border border-slate-200/80 rounded-xl p-2.5 space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1">
+                        <FolderOpen size={11} className="text-indigo-600" />
+                        Saved Drafts ({savedSheets.length})
+                      </span>
+                      <span className="text-[9px] text-slate-400">Click to resume</span>
+                    </div>
+                    <div className="max-h-28 overflow-y-auto space-y-1 pr-0.5">
+                      {savedSheets.map((s) => (
+                        <div
+                          key={s.id}
+                          className="flex items-center justify-between gap-2 bg-white px-2.5 py-1.5 rounded-lg border border-slate-200/70 hover:border-indigo-300 transition-all text-xs"
+                        >
+                          <button
+                            type="button"
+                            onClick={() => {
+                              handleLoadSavedSheet(s);
+                              setIsSpreadsheetOpen(true);
+                            }}
+                            className="flex-1 text-left truncate font-semibold text-slate-700 hover:text-indigo-600 cursor-pointer"
+                          >
+                            {s.name}{" "}
+                            <span className="text-[10px] font-normal text-slate-400">
+                              ({s.rowCount || 0} rows)
+                            </span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteSavedSheet(s.id)}
+                            className="text-slate-400 hover:text-red-600 p-0.5 cursor-pointer"
+                            title="Delete saved draft"
+                          >
+                            <Trash2 size={12} />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Batch Defaults */}
+                <div className="pt-3 border-t border-slate-150 space-y-2">
+                  <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider">
+                    Defaults (Optional)
+                  </label>
+                  
+                  <div className="space-y-2">
+                    <input
+                      type="text"
+                      placeholder="Batch Course / Event Title (Optional)"
+                      value={batchDefaults.course_title || ""}
+                      onChange={(e) =>
+                        setBatchDefaults((prev) => ({ ...prev, course_title: e.target.value }))
+                      }
+                      className="w-full px-2.5 py-1.5 border border-slate-200 bg-white rounded-lg text-xs focus:outline-none focus:border-indigo-500 shadow-2xs"
+                    />
+                    <input
+                      type="text"
+                      placeholder="Batch Issuer Name (e.g. Acme Inc)"
+                      value={batchDefaults.issuer_name || ""}
+                      onChange={(e) =>
+                        setBatchDefaults((prev) => ({ ...prev, issuer_name: e.target.value }))
+                      }
+                      className="w-full px-2.5 py-1.5 border border-slate-200 bg-white rounded-lg text-xs focus:outline-none focus:border-indigo-500 shadow-2xs"
+                    />
+                    <input
+                      type="date"
+                      value={batchDefaults.issue_date || ""}
+                      onChange={(e) =>
+                        setBatchDefaults((prev) => ({ ...prev, issue_date: e.target.value }))
+                      }
+                      className="w-full px-2.5 py-1.5 border border-slate-200 bg-white rounded-lg text-xs focus:outline-none focus:border-indigo-500 shadow-2xs"
+                    />
+                    {!templateHasSignatureField ? (
+                      <div className="bg-slate-50 border border-slate-200/80 rounded-lg p-2 text-[10px] text-slate-500 flex items-center gap-1.5">
+                        <PenTool size={12} className="text-slate-400 shrink-0" />
+                        <span>Signature is already part of this template&apos;s background design.</span>
+                      </div>
+                    ) : (
+                      <>
+                        {hasUploadedSignature && (
+                          <label className="flex items-center justify-between gap-2 p-2.5 rounded-lg border border-indigo-100 bg-indigo-50/40 cursor-pointer hover:bg-indigo-50/70 transition-colors">
+                            <div className="flex items-center gap-2">
+                              <input
+                                type="checkbox"
+                                checked={useUploadedSignature}
+                                onChange={(e) => setUseUploadedSignature(e.target.checked)}
+                                className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 h-3.5 w-3.5 cursor-pointer"
+                              />
+                              <div>
+                                <span className="block text-xs font-bold text-slate-800">
+                                  Use uploaded signature
+                                </span>
+                                <span className="block text-[10px] text-slate-500">
+                                  Applied to all certificates in this batch
+                                </span>
+                              </div>
+                            </div>
+                            {uploadedSignatureFullUrl && (
+                              <div className="h-7 px-2 bg-white border border-slate-200 rounded flex items-center justify-center shrink-0">
+                                <img
+                                  src={uploadedSignatureFullUrl}
+                                  alt="Uploaded signature"
+                                  className="max-h-5 max-w-[70px] object-contain"
+                                />
+                              </div>
+                            )}
+                          </label>
+                        )}
+                        {(!hasUploadedSignature || !useUploadedSignature) && (
+                          <input
+                            type="text"
+                            placeholder="Batch Signatory (e.g. Dr. John Smith)"
+                            value={batchDefaults.signature || ""}
+                            onChange={(e) =>
+                              setBatchDefaults((prev) => ({ ...prev, signature: e.target.value }))
+                            }
+                            className="w-full px-2.5 py-1.5 border border-slate-200 bg-white rounded-lg text-xs focus:outline-none focus:border-indigo-500 shadow-2xs"
+                          />
+                        )}
+                      </>
+                    )}
+                  </div>
+                </div>
+
+                {/* Action Buttons: Bulk Group Edit Mode vs Standard Bulk Create + Save Draft */}
+                {isBulkGroupEditMode ? (
+                  <div className="space-y-2 mt-3">
+                    <button
+                      type="button"
+                      onClick={() => handleBulkGroupUpdate(false)}
+                      disabled={
+                        bulkSubmitting ||
+                        !formData.template_id ||
+                        readyRowsCount === 0 ||
+                        invalidRowsCount > 0 ||
+                        (newGroupRowsCount > 0 && userCredits < newGroupRowsCount)
+                      }
+                      className="w-full bg-slate-900 border border-slate-900 hover:bg-black text-white text-xs font-bold py-2.5 px-4 rounded-lg shadow-sm transition-all flex items-center justify-center gap-1.5 disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
+                    >
+                      {bulkSubmitting ? (
+                        <Loader2 className="animate-spin" size={14} />
+                      ) : (
+                        <Save size={14} />
+                      )}
+                      <span>
+                        Save Changes ({readyRowsCount}{" "}
+                        {readyRowsCount === 1 ? "certificate" : "certificates"})
+                      </span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => handleBulkGroupUpdate(true)}
+                      disabled={
+                        bulkSubmitting ||
+                        !formData.template_id ||
+                        readyRowsCount === 0 ||
+                        invalidRowsCount > 0 ||
+                        (newGroupRowsCount > 0 && userCredits < newGroupRowsCount)
+                      }
+                      className="w-full bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold py-2.5 px-4 rounded-lg shadow-sm transition-all flex items-center justify-center gap-1.5 disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
+                    >
+                      {bulkSubmitting ? (
+                        <Loader2 className="animate-spin" size={14} />
+                      ) : (
+                        <Send size={13} />
+                      )}
+                      <span>Save &amp; Resend Emails</span>
+                    </button>
+                  </div>
+                ) : (
+                  <div className="space-y-2 mt-3">
+                    <button
+                      type="button"
+                      onClick={() => handleSaveSheet(sheetName)}
+                      disabled={nonEmptyRowsCount === 0}
+                      className="w-full bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 text-xs font-bold py-2 px-4 rounded-lg transition-all flex items-center justify-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                      title="Save your spreadsheet details as a draft without creating certificates yet"
+                    >
+                      <Save size={13} className="text-emerald-700" />
+                      <span>
+                        Save as Draft ({nonEmptyRowsCount}{" "}
+                        {nonEmptyRowsCount === 1 ? "row" : "rows"}) — 0 Credits
+                      </span>
+                    </button>
+
+                    <button
+                      type="submit"
+                      disabled={
+                        bulkSubmitting ||
+                        !formData.template_id ||
+                        !selectedGroupId ||
+                        readyRowsCount === 0 ||
+                        invalidRowsCount > 0 ||
+                        userCredits < readyRowsCount
+                      }
+                      className="w-full bg-slate-900 border border-slate-900 hover:bg-black text-white text-xs font-bold py-2.5 px-4 rounded-lg shadow-sm transition-all flex items-center justify-center gap-1.5 disabled:opacity-60 disabled:cursor-not-allowed"
+                    >
+                      {bulkSubmitting ? (
+                        <Loader2 className="animate-spin" size={14} />
+                      ) : (
+                        <Save size={14} />
+                      )}
+                      <span>
+                        Generate Bulk Documents ({readyRowsCount}{" "}
+                        {readyRowsCount === 1 ? "document" : "documents"})
+                      </span>
+                    </button>
+                  </div>
+                )}
+
+                {!isBulkGroupEditMode && userCredits < readyRowsCount && readyRowsCount > 0 && (
+                  <p className="text-[10px] text-red-600 text-center font-semibold mt-1">
+                    You need {readyRowsCount} credits but have {userCredits}. You can still click &quot;Save as Draft&quot; above!
+                  </p>
+                )}
+                {isBulkGroupEditMode &&
+                  newGroupRowsCount > 0 &&
+                  userCredits < newGroupRowsCount && (
+                    <p className="text-[10px] text-red-600 text-center font-semibold mt-1">
+                      You added {newGroupRowsCount} new rows requiring {newGroupRowsCount} credits (you have {userCredits}).
+                    </p>
+                  )}
+                {invalidRowsCount > 0 && (
+                  <p className="text-[10px] text-amber-600 text-center font-semibold mt-1">
+                    {invalidRowsCount} {invalidRowsCount === 1 ? "row needs" : "rows need"} attention in the spreadsheet before issuing.
+                  </p>
+                )}
+              </form>
+            )}
+          </div>
+        </div>
+
+        {/* RIGHT COLUMN: WYSIWYG LIVE PREVIEW (col-span-8) */}
+        <div className="lg:col-span-8 space-y-6">
+          <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm flex flex-col justify-between">
+            <div className="flex justify-between items-center mb-3">
+              <h3 className="font-bold text-slate-700 text-xs flex items-center gap-1.5">
+                <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-status-pulse" />
+                <span>WYSIWYG Live Preview</span>
+              </h3>
+              <div className="flex items-center gap-1.5">
+                {selectedTemplate && creationMode === "single" && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowCertStyleEditor(true);
+                      setTimeout(() => {
+                        styleEditorRef.current?.scrollIntoView({
+                          behavior: "smooth",
+                          block: "center",
+                        });
+                      }, 80);
+                    }}
+                    className="p-1.5 text-emerald-700 hover:text-emerald-900 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded transition-all shadow-xs flex items-center gap-1 text-xs font-semibold cursor-pointer"
+                    title="Adjust Font Size, Font Family & Position for this certificate"
+                  >
+                    <SlidersHorizontal size={12} />
+                    <span>Adjust Font Size</span>
+                  </button>
+                )}
+                {selectedTemplate && selectedTemplate.layout_style === "visual" && !selectedTemplate.is_public && (
+                  <button
+                    type="button"
+                    onClick={() => navigate(`/dashboard/upload-template/${selectedTemplate.id}`)}
+                    className="p-1.5 text-indigo-600 hover:text-indigo-800 hover:bg-indigo-50 border border-indigo-200 rounded transition-all shadow-xs flex items-center gap-1 text-xs font-semibold"
+                    title="Edit Template Layout in Visual Editor"
+                  >
+                    <Pencil size={12} />
+                    <span>Edit Template</span>
+                  </button>
+                )}
+                {selectedTemplate && (
+                  <button
+                    className="p-1.5 text-slate-500 hover:text-slate-800 hover:bg-white border border-transparent hover:border-slate-200 rounded transition-all shadow-sm bg-white/50 flex items-center gap-1.5 text-xs font-medium"
+                    onClick={() => setShowFullscreen(true)}
+                  >
+                    <Maximize2 size={14} />
+                    <span>Expand</span>
+                  </button>
+                )}
               </div>
             </div>
 
-            {/* Preview Frame */}
-            <div className="w-full bg-slate-100/70 rounded-xl border border-slate-200/80 p-4 sm:p-6 flex items-center justify-center min-h-[380px]">
-              <div className="w-full max-w-xl shadow-md rounded-lg overflow-hidden bg-white border border-slate-200">
+            <div className="w-full bg-slate-50 rounded-xl border border-slate-200/60 overflow-hidden flex items-center justify-center p-4 min-h-[350px] shadow-inner">
+              <div className="w-full shadow-md border border-slate-200/50 max-w-2xl transition-all duration-300">
                 <TemplateRenderer
                   template={selectedTemplate}
-                  formData={creationMode === "bulk" ? currentPreviewRowData : formData}
+                  formData={formData}
                 />
               </div>
             </div>
 
-            {/* Subtitle Under Preview */}
-            <p className="text-center text-xs text-slate-400 mt-3">
-              {creationMode === "bulk"
-                ? "Pick a row in the table to preview it"
-                : "Updates as you type"}
+            <p className="text-center text-slate-400 text-[10px] mt-3 flex items-center justify-center gap-1.5">
+              <Info size={12} />
+              Preview updates in real-time as you type or upload files
             </p>
+          </div>
 
-            {/* Merged "Edit layout" style editor panel when opened in Single Mode */}
-            {creationMode === "single" && showCertStyleEditor && (
-              <div className="mt-4 pt-4 border-t border-slate-200 space-y-3">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider">
-                    Layout &amp; Font Adjustments
-                  </h3>
+            {/* In-Page Spreadsheet Status Bar in Bulk Mode */}
+            {creationMode === "bulk" && (
+              <div className="bg-white rounded-xl border border-slate-200 p-3.5 shadow-2xs flex flex-wrap items-center justify-between gap-3">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-lg bg-indigo-50 border border-indigo-200/80 flex items-center justify-center text-indigo-650">
+                    <Table size={16} />
+                  </div>
+                  <div>
+                    <span className="text-xs font-bold text-slate-800 flex items-center gap-2">
+                      <span>In-Page Spreadsheet:</span>
+                      <span className="text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full font-mono text-[10px]">
+                        {nonEmptyRowsCount === 0
+                          ? "0 rows"
+                          : invalidRowsCount > 0
+                          ? `${readyRowsCount} ready, ${invalidRowsCount} need attention`
+                          : `${readyRowsCount} ready`}
+                      </span>
+                    </span>
+                    <span className="block text-[10px] text-slate-400">
+                      Type directly, paste from Excel, or save draft for later
+                    </span>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  {!isBulkGroupEditMode && (
+                    <button
+                      type="button"
+                      onClick={() => handleSaveSheet(sheetName)}
+                      className="px-3 py-1.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer"
+                    >
+                      <Save size={12} />
+                      <span>Save Draft</span>
+                    </button>
+                  )}
                   <button
                     type="button"
-                    onClick={() => setShowCertStyleEditor(false)}
-                    className="text-xs text-slate-400 hover:text-slate-600"
+                    onClick={handleOpenSpreadsheet}
+                    className="px-3 py-1.5 rounded-lg bg-slate-900 hover:bg-black text-white text-xs font-bold transition-all shadow-xs flex items-center gap-1.5 cursor-pointer"
                   >
-                    Close
+                    <Table size={13} />
+                    <span>Open Spreadsheet Editor</span>
                   </button>
                 </div>
-
-                {/* Auto-fit toggle */}
-                <label className="flex items-center justify-between p-2.5 rounded-lg bg-slate-50 border border-slate-200 cursor-pointer">
-                  <span className="text-xs font-semibold text-slate-700">Auto-fit long names &amp; text</span>
-                  <input
-                    type="checkbox"
-                    checked={certStyles.autoFit !== false}
-                    onChange={(e) => handleToggleAutoFit(e.target.checked)}
-                    className="rounded border-slate-300 text-slate-900 focus:ring-slate-900 h-4 w-4 cursor-pointer"
-                  />
-                </label>
-
-                {/* Field selector pills */}
-                <div className="flex flex-wrap gap-1.5">
-                  {customizableStyleFields.map((f) => (
-                    <button
-                      key={f.key}
-                      type="button"
-                      onClick={() => setActiveStyleField(f.key)}
-                      className={`px-2.5 py-1 rounded-md text-xs font-semibold border transition-all cursor-pointer ${
-                        activeStyleField === f.key
-                          ? "bg-slate-900 text-white border-slate-900"
-                          : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50"
-                      }`}
-                    >
-                      {f.label}
-                    </button>
-                  ))}
-                </div>
-
-                {/* Controls for active field */}
-                {(() => {
-                  const activeFieldMeta =
-                    customizableStyleFields.find((f) => f.key === activeStyleField) ||
-                    customizableStyleFields[0];
-                  const fKey = activeFieldMeta.key;
-                  const activeOvr = certStyles.fields?.[fKey] || {};
-                  const currentFontSize =
-                    activeOvr.fontSize !== undefined && activeOvr.fontSize !== ""
-                      ? Number(activeOvr.fontSize)
-                      : "";
-
-                  return (
-                    <div className="bg-slate-50 p-3 rounded-lg border border-slate-200 space-y-2.5">
-                      <div className="flex items-center justify-between text-xs font-semibold text-slate-700">
-                        <span>{activeFieldMeta.label} Font Size</span>
-                        <span className="font-mono">{currentFontSize ? `${currentFontSize}px` : "Default"}</span>
-                      </div>
-                      <input
-                        type="range"
-                        min="12"
-                        max="72"
-                        value={currentFontSize || activeFieldMeta.defaultSize || 24}
-                        onChange={(e) => handleFieldStyleChange(fKey, "fontSize", e.target.value)}
-                        className="w-full accent-slate-900 cursor-pointer"
-                      />
-                      <div className="flex justify-end">
-                        <button
-                          type="button"
-                          onClick={() => handleResetFieldStyle(fKey)}
-                          className="text-[11px] font-semibold text-slate-500 hover:text-slate-800"
-                        >
-                          Reset to default
-                        </button>
-                      </div>
-                    </div>
-                  );
-                })()}
               </div>
             )}
           </div>
-        </div>
 
       </div>
-
-      {/* --- Sticky Bottom Bar (Full-Width Matching Wireframes) --- */}
-      <aside aria-label="Issuance summary and actions" className="fixed bottom-0 left-0 right-0 z-30 bg-white border-t border-slate-200 px-4 sm:px-8 py-3.5 shadow-lg">
-        <div className="max-w-[1600px] mx-auto flex flex-wrap items-center justify-between gap-3">
-          {/* Balance & Cost Info */}
-          <div className="text-xs sm:text-sm font-semibold text-slate-800">
-            {creationMode === "single" ? (
-              <span>
-                1 credential{" "}
-                <span className="text-slate-400 font-normal">
-                  · uses 1 credit · {userCredits.toLocaleString()} credits available
-                </span>
-              </span>
-            ) : (
-              <span>
-                {readyRowsCount} credentials{" "}
-                <span className="text-slate-400 font-normal">
-                  · uses {readyRowsCount} credits · {userCredits.toLocaleString()} credits available
-                </span>
-              </span>
-            )}
-          </div>
-
-          {/* Action Buttons */}
-          <div className="flex items-center gap-3">
-            <button
-              type="button"
-              onClick={creationMode === "single" ? handleSaveSingleDraft : () => handleSaveSheet(sheetName || "Untitled Sheet")}
-              className="px-4 py-2.5 text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 border border-slate-200 rounded-lg shadow-xs transition-colors cursor-pointer min-h-[44px]"
-            >
-              Save draft (free)
-            </button>
-
-            {creationMode === "single" ? (
-              <button
-                type="button"
-                onClick={handleSubmit}
-                disabled={submitting || !formData.recipient_name || !formData.template_id}
-                className="px-5 py-2.5 text-xs font-bold text-white bg-slate-900 hover:bg-black rounded-lg shadow-sm transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer min-h-[44px]"
-              >
-                {submitting && <Loader2 size={14} className="animate-spin" />}
-                <span>{isEditMode ? "Update credential" : "Issue credential"}</span>
-              </button>
-            ) : (
-              <button
-                type="button"
-                onClick={handleBulkSubmit}
-                disabled={
-                  bulkSubmitting ||
-                  !formData.template_id ||
-                  !selectedGroupId ||
-                  readyRowsCount === 0 ||
-                  invalidRowsCount > 0 ||
-                  userCredits < readyRowsCount
-                }
-                className="px-5 py-2.5 text-xs font-bold text-white bg-slate-900 hover:bg-black rounded-lg shadow-sm transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer min-h-[44px]"
-              >
-                {bulkSubmitting && <Loader2 size={14} className="animate-spin" />}
-                <span>Issue {readyRowsCount} credentials</span>
-              </button>
-            )}
-          </div>
-        </div>
-      </aside>
-
-      {/* --- Template Selector Modal --- */}
-      {isTemplateModalOpen && (
-        <div
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="template_modal_title"
-          className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4"
-          onClick={() => setIsTemplateModalOpen(false)}
-        >
-          <div
-            className="bg-white rounded-2xl border border-slate-200 shadow-2xl w-full max-w-4xl max-h-[85vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* Modal Header */}
-            <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between shrink-0">
-              <div>
-                <h3 id="template_modal_title" className="text-base font-bold text-slate-800">Choose a template</h3>
-                <p className="text-xs text-slate-400 mt-0.5">Select a layout design for your credentials</p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setIsTemplateModalOpen(false)}
-                className="text-slate-400 hover:text-slate-700 p-1 rounded-lg cursor-pointer"
-              >
-                <X size={20} />
-              </button>
-            </div>
-
-            {/* Modal Search */}
-            <div className="px-6 py-3 border-b border-slate-100 bg-slate-50/50">
-              <input
-                type="text"
-                placeholder="Search templates..."
-                value={templateSearchQuery}
-                onChange={(e) => setTemplateSearchQuery(e.target.value)}
-                className="w-full px-3.5 py-2 text-xs border border-slate-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-slate-900"
-              />
-            </div>
-
-            {/* Template Grid */}
-            <div className="p-6 overflow-y-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-              {templates
-                .filter((t) =>
-                  templateSearchQuery
-                    ? t.name?.toLowerCase().includes(templateSearchQuery.toLowerCase()) ||
-                      t.layout_style?.toLowerCase().includes(templateSearchQuery.toLowerCase())
-                    : true
-                )
-                .map((tmpl) => {
-                  const isSelected = String(tmpl.id) === String(formData.template_id);
-                  return (
-                    <div
-                      key={tmpl.id}
-                      onClick={() => {
-                        handleTemplateChange({ target: { value: tmpl.id } });
-                        setIsTemplateModalOpen(false);
-                      }}
-                      className={`group border rounded-xl p-3 flex flex-col justify-between cursor-pointer transition-all hover:shadow-md ${
-                        isSelected
-                          ? "border-sky-600 bg-sky-50/30 ring-2 ring-sky-600"
-                          : "border-slate-200 bg-white hover:border-slate-300"
-                      }`}
-                    >
-                      <div className="aspect-[16/11] bg-slate-100 rounded-lg border border-slate-200/80 mb-3 overflow-hidden flex items-center justify-center">
-                        {tmpl.thumbnail_url || tmpl.background_url ? (
-                          <img
-                            src={tmpl.thumbnail_url || tmpl.background_url}
-                            alt=""
-                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                          />
-                        ) : (
-                          <LayoutTemplate size={28} className="text-slate-300" />
-                        )}
-                      </div>
-                      <div className="flex items-center justify-between gap-2">
-                        <div className="min-w-0">
-                          <h4 className="text-xs font-bold text-slate-800 truncate">{tmpl.name}</h4>
-                          <span className="text-[10px] text-slate-400 capitalize">{tmpl.layout_style || "Certificate"}</span>
-                        </div>
-                        <button
-                          type="button"
-                          className={`px-2.5 py-1 text-[11px] font-bold rounded-md transition-colors ${
-                            isSelected
-                              ? "bg-sky-600 text-white"
-                              : "bg-slate-100 text-slate-700 hover:bg-slate-200"
-                          }`}
-                        >
-                          {isSelected ? "Selected" : "Select"}
-                        </button>
-                      </div>
-                    </div>
-                  );
-                })}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* --- New Group Modal --- */}
-      {showCreateGroupModal && (
-        <div
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="create_group_modal_title"
-          className="fixed inset-0 z-50 bg-slate-950/60 flex items-center justify-center p-4"
-          onClick={() => setShowCreateGroupModal(false)}
-        >
-          <div
-            className="bg-white rounded-xl border border-slate-200 shadow-xl max-w-sm w-full p-5 space-y-4"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div>
-              <h3 id="create_group_modal_title" className="text-sm font-bold text-slate-800">Create new group</h3>
-              <p className="text-xs text-slate-400 mt-0.5">Groups keep recipient batches organized</p>
-            </div>
-            <div className="space-y-1.5">
-              <label htmlFor="new_group_name_input" className="block text-xs font-semibold text-slate-700">
-                Group name
-              </label>
-              <input
-                id="new_group_name_input"
-                type="text"
-                placeholder="e.g. October 2024 Graduates"
-                value={newGroupName}
-                onChange={(e) => setNewGroupName(e.target.value)}
-                className="w-full px-3 py-2 text-xs border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-900"
-              />
-            </div>
-            <div className="flex justify-end gap-2">
-              <button
-                type="button"
-                onClick={() => setShowCreateGroupModal(false)}
-                className="px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-lg"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={async (e) => {
-                  await handleCreateGroup(e);
-                  setShowCreateGroupModal(false);
-                }}
-                className="px-4 py-1.5 text-xs font-bold text-white bg-slate-900 hover:bg-black rounded-lg"
-              >
-                Create group
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Fullscreen Modal */}
       {showFullscreen && (
