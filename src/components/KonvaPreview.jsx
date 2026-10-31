@@ -12,6 +12,7 @@ import {
 } from "react-konva";
 import useImage from "use-image";
 import { SERVER_BASE_URL } from "../config";
+import { parseExcelOrStringDate } from "../utils/columnMapping";
 
 const resolveImageUrl = (src) => {
   if (!src) return "";
@@ -159,13 +160,15 @@ const KonvaPreview = ({ layoutData, dynamicData }) => {
     if (dynamicData && text) {
       const recipientName = dynamicData.recipient_name || "Recipient Name";
       const issuerName = dynamicData.issuer_name || "Issuer Name";
-      const issueDate = dynamicData.issue_date
-        ? new Date(dynamicData.issue_date).toLocaleDateString("en-US", {
+      const parsedIssueDate = dynamicData.issue_date ? parseExcelOrStringDate(dynamicData.issue_date) : null;
+      const issueDate = parsedIssueDate?.valid
+        ? parsedIssueDate.date.toLocaleDateString("en-US", {
             year: "numeric",
             month: "long",
             day: "numeric",
+            timeZone: "UTC",
           })
-        : "Issue Date";
+        : (dynamicData.issue_date || "Issue Date");
       const signature = dynamicData.signature || issuerName;
       const courseTitle = dynamicData.course_title || "Course Title";
       const verificationId = dynamicData.verification_id || "pending-id";

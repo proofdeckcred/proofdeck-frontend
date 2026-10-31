@@ -3,6 +3,7 @@ import KonvaPreview from '../KonvaPreview'; // Adjust path as needed
 import { LayoutTemplate } from 'lucide-react';
 import { SERVER_BASE_URL } from '../../config';
 import { useUser } from '../../context/UserContext';
+import { parseExcelOrStringDate } from '../../utils/columnMapping';
 
 // Import Styles
 import Classic from './styles/Classic';
@@ -199,11 +200,15 @@ const TemplateRenderer = ({ template, formData = {}, isFullscreen = false }) => 
         backgroundPosition: "center",
     };
 
-    combinedData.issueDateFormatted = new Date(combinedData.issue_date).toLocaleDateString("en-US", {
-        month: "long",
-        day: "numeric",
-        year: "numeric",
-    });
+    const parsedIssueDate = parseExcelOrStringDate(combinedData.issue_date);
+    combinedData.issueDateFormatted = parsedIssueDate.valid
+        ? parsedIssueDate.date.toLocaleDateString("en-US", {
+            month: "long",
+            day: "numeric",
+            year: "numeric",
+            timeZone: "UTC",
+        })
+        : (combinedData.issue_date || "");
 
     // --- VISUAL LAYOUT (CANVA-LIKE) ---
     if (template.layout_style === "visual") {

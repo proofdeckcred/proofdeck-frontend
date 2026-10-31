@@ -141,28 +141,119 @@ export function looksLikeEmail(val) {
   return EMAIL_REGEX.test(String(val).trim());
 }
 
-export function formatExcelDate(val) {
-  if (val === null || val === undefined || val === "") return "";
-  if (val instanceof Date) return val.toISOString().split("T")[0];
-  const num = typeof val === "number" ? val : (typeof val === "string" && /^\d{5}$/.test(val.trim()) ? parseInt(val.trim(), 10) : null);
-  if (num && num > 20000 && num < 60000) {
-    const jsDate = new Date(Math.round((num - 25569) * 86400 * 1000));
-    return jsDate.toISOString().split("T")[0];
+export function parseExcelOrStringDate(val) {
+  if (val === null || val === undefined || val === "") {
+    return { valid: false, date: null, iso: "", display: "" };
   }
-  return String(val).trim();
+  if (val instanceof Date) {
+    if (isNaN(val.getTime())) return { valid: false, date: null, iso: "", display: "" };
+    const iso = val.toISOString().split("T")[0];
+    const display = val.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" });
+    return { valid: true, date: val, iso, display };
+  }
+
+  // Handle numbers or numeric strings (Excel serials, e.g. 45587, "45587", or 45587.0)
+  const isNumeric = typeof val === "number" || (typeof val === "string" && /^\d+(\.\d+)?$/.test(val.trim()));
+  if (isNumeric) {
+    const num = typeof val === "number" ? val : parseFloat(val.trim());
+    // Excel serial dates: 1000 (around 1902) to 90000 (around 2146). 45587 = Oct 22, 2024
+    if (num >= 1000 && num <= 90000) {
+      const utcMs = Math.round((num - 25569) * 86400 * 1000);
+      const jsDate = new Date(utcMs);
+      if (!isNaN(jsDate.getTime())) {
+        const year = jsDate.getUTCFullYear();
+        if (year >= 1950 && year <= 2100) {
+          const iso = jsDate.toISOString().split("T")[0];
+          const display = jsDate.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" });
+          return { valid: true, date: jsDate, iso, display };
+        }
+      }
+    }
+    return { valid: false, date: null, iso: "", display: "" };
+  }
+
+  const s = String(val).trim();
+  if (!s || s.length < 4 || s.length > 40) {
+    return { valid: false, date: null, iso: "", display: "" };
+  }
+
+  // If someone passed numeric string
+  if (/^\d{4,5}$/.test(s)) {
+    const num = parseInt(s, 10);
+    if (num >= 1000 && num <= 90000) {
+      const utcMs = Math.round((num - 25569) * 86400 * 1000);
+      const jsDate = new Date(utcMs);
+      if (!isNaN(jsDate.getTime())) {
+        const year = jsDate.getUTCFullYear();
+        if (year >= 1950 && year <= 2100) {
+          const iso = jsDate.toISOString().split("T")[0];
+          const display = jsDate.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" });
+          return { valid: true, date: jsDate, iso, display };
+        }
+      }
+    }
+  }
+
+  // ISO format: YYYY-MM-DD or YYYY/MM/DD
+  const isoMatch = s.match(/^(\d{4})[-/.](\d{1,2})[-/.](\d{1,2})$/);
+  if (isoMatch) {
+    const year = parseInt(isoMatch[1], 10);
+    const month = parseInt(isoMatch[2], 10) - 1;
+    const day = parseInt(isoMatch[3], 10);
+    if (year >= 1950 && year <= 2100 && month >= 0 && month <= 11 && day >= 1 && day <= 31) {
+      const jsDate = new Date(Date.UTC(year, month, day));
+      if (!isNaN(jsDate.getTime())) {
+        const iso = jsDate.toISOString().split("T")[0];
+        const display = jsDate.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" });
+        return { valid: true, date: jsDate, iso, display };
+      }
+    }
+  }
+
+  // US format: MM/DD/YYYY or DD/MM/YYYY
+  const usMatch = s.match(/^(\d{1,2})[-/.](\d{1,2})[-/.](\d{4})$/);
+  if (usMatch) {
+    const p1 = parseInt(usMatch[1], 10);
+    const p2 = parseInt(usMatch[2], 10);
+    const year = parseInt(usMatch[3], 10);
+    let month = p1 - 1;
+    let day = p2;
+    if (p1 > 12 && p2 <= 12) {
+      month = p2 - 1;
+      day = p1;
+    }
+    if (year >= 1950 && year <= 2100 && month >= 0 && month <= 11 && day >= 1 && day <= 31) {
+      const jsDate = new Date(Date.UTC(year, month, day));
+      if (!isNaN(jsDate.getTime())) {
+        const iso = jsDate.toISOString().split("T")[0];
+        const display = jsDate.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" });
+        return { valid: true, date: jsDate, iso, display };
+      }
+    }
+  }
+
+  // Textual dates e.g. "Oct 22, 2024", "October 22, 2024"
+  const parsedTimestamp = Date.parse(s);
+  if (!isNaN(parsedTimestamp)) {
+    const jsDate = new Date(parsedTimestamp);
+    const year = jsDate.getFullYear();
+    if (year >= 1950 && year <= 2100) {
+      const iso = `${year}-${String(jsDate.getMonth() + 1).padStart(2, "0")}-${String(jsDate.getDate()).padStart(2, "0")}`;
+      const display = jsDate.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+      return { valid: true, date: jsDate, iso, display };
+    }
+  }
+
+  return { valid: false, date: null, iso: "", display: "" };
+}
+
+export function formatExcelDate(val) {
+  const parsed = parseExcelOrStringDate(val);
+  return parsed.valid ? parsed.display : (val !== null && val !== undefined ? String(val).trim() : "");
 }
 
 export function looksLikeDate(val) {
-  if (val === null || val === undefined) return false;
-  if (typeof val === "number" && val >= 35000 && val <= 65000) return true;
-  const s = String(val).trim();
-  if (s.length < 4 || s.length > 30) return false;
-  // Patterns like 2026-10-08, 08/10/2026, Oct 8 2026
-  if (/^\d{4}[-/.]\d{1,2}[-/.]\d{1,2}/.test(s)) return true;
-  if (/^\d{1,2}[-/.]\d{1,2}[-/.]\d{2,4}/.test(s)) return true;
-  if (/^(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)/i.test(s)) return true;
-  const parsed = Date.parse(s);
-  return !isNaN(parsed);
+  return parseExcelOrStringDate(val).valid;
 }
 
 export function looksLikePersonName(val) {

@@ -37,7 +37,8 @@ import {
   PROOFDECK_CORE_FIELDS,
   looksLikeEmail,
   isRowNonEmpty,
-  validateRow
+  validateRow,
+  formatExcelDate
 } from "../../utils/columnMapping";
 import toast from "react-hot-toast";
 
@@ -566,7 +567,7 @@ const SpreadsheetGrid = ({
             const destColIdx = validColIdx + cOffset;
             if (destColIdx < columns.length) {
               const colKey = columns[destColIdx].key;
-              newRows[destRowIdx][colKey] = cellVal.trim();
+              newRows[destRowIdx][colKey] = colKey === "issue_date" ? formatExcelDate(cellVal) : cellVal.trim();
             }
           });
         });
