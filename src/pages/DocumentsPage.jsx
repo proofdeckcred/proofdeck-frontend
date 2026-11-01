@@ -28,15 +28,19 @@ import HelpGuide from "../components/HelpGuide";
 // --- MINIATURE A4 PORTRAIT TEMPLATE ILLUSTRATIONS ---
 
 /**
- * Google Docs Style A4 Blank Document Card
+ * ProofDeck Purple Plus A4 Blank Document Card
  */
 const BlankDocThumbnail = () => (
   <div className="w-full h-full flex items-center justify-center bg-white group-hover:bg-slate-50/60 transition-colors">
-    <svg viewBox="0 0 48 48" className="w-11 h-11 transition-transform duration-200 group-hover:scale-110 drop-shadow-2xs">
-      <rect x="21" y="8" width="6" height="32" rx="3" fill="#4285F4" />
-      <rect x="8" y="21" width="32" height="6" rx="3" fill="#EA4335" />
-      <rect x="21" y="21" width="6" height="19" rx="3" fill="#34A853" />
-      <rect x="21" y="8" width="6" height="13" rx="3" fill="#FBBC05" />
+    <svg viewBox="0 0 48 48" className="w-12 h-12 transition-transform duration-200 group-hover:scale-110 drop-shadow-2xs">
+      <defs>
+        <linearGradient id="pdPurplePlus" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#6355F6" />
+          <stop offset="100%" stopColor="#5144E8" />
+        </linearGradient>
+      </defs>
+      <rect x="21" y="8" width="6" height="32" rx="3" fill="url(#pdPurplePlus)" />
+      <rect x="8" y="21" width="32" height="6" rx="3" fill="url(#pdPurplePlus)" />
     </svg>
   </div>
 );

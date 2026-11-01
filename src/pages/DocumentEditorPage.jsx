@@ -454,6 +454,22 @@ export default function DocumentEditorPage() {
     }
   };
 
+  const insertPageBreak = () => {
+    if (!editorRef.current) return;
+    editorRef.current.focus();
+    const pageBreakHtml = `&nbsp;<div class="pd-page-break" contenteditable="false" style="display: flex; align-items: center; justify-content: center; height: 36px; margin: 40px -25mm; background-color: #f0f4f9; border-top: 1px dashed #cbd5e1; border-bottom: 1px dashed #cbd5e1; position: relative; user-select: none; page-break-after: always; break-after: page;"><span style="background-color: #ffffff; color: #64748b; font-size: 11px; font-weight: 600; padding: 2px 14px; border-radius: 9999px; border: 1px solid #cbd5e1; box-shadow: 0 1px 2px rgba(0,0,0,0.05); letter-spacing: 0.5px; text-transform: uppercase;">Page Break</span></div><p><br></p>`;
+    document.execCommand("insertHTML", false, pageBreakHtml);
+    setDocHtml(editorRef.current.innerHTML);
+    setIsSaved(false);
+  };
+
+  const handleEditorKeyDown = (e) => {
+    if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
+      e.preventDefault();
+      insertPageBreak();
+    }
+  };
+
   // Word import handler
   const handleWordImport = async (e) => {
     const file = e.target.files[0];
@@ -462,8 +478,19 @@ export default function DocumentEditorPage() {
     const toastId = toast.loading("Importing Word document...");
     try {
       const arrayBuffer = await file.arrayBuffer();
-      const result = await mammoth.convertToHtml({ arrayBuffer });
+      const options = {
+        styleMap: [
+          "break[type='page'] => div.pd-page-break",
+          "hr => div.pd-page-break",
+        ],
+      };
+      const result = await mammoth.convertToHtml({ arrayBuffer }, options);
       let importedHtml = result.value;
+
+      // Replace Word page breaks or hr with our styled page break element
+      const styledPageBreak = `<div class="pd-page-break" contenteditable="false" style="display: flex; align-items: center; justify-content: center; height: 36px; margin: 40px -25mm; background-color: #f0f4f9; border-top: 1px dashed #cbd5e1; border-bottom: 1px dashed #cbd5e1; position: relative; user-select: none; page-break-after: always; break-after: page;"><span style="background-color: #ffffff; color: #64748b; font-size: 11px; font-weight: 600; padding: 2px 14px; border-radius: 9999px; border: 1px solid #cbd5e1; box-shadow: 0 1px 2px rgba(0,0,0,0.05); letter-spacing: 0.5px; text-transform: uppercase;">Page Break</span></div><p><br></p>`;
+
+      importedHtml = importedHtml.replace(/<div class="pd-page-break"><\/div>|<hr[^>]*>/gi, styledPageBreak);
 
       importedHtml = importedHtml.replace(/\{([a-zA-Z0-9_]+)\}/g, "{{$1}}");
       importedHtml = importedHtml.replace(/(\{\{[a-zA-Z0-9_]+\}\})/g, (match) => {
@@ -551,6 +578,7 @@ export default function DocumentEditorPage() {
             @page { size: A4 portrait; margin: 25mm; }
             body { font-family: ${currentFont}, sans-serif; color: #111827; margin: 0; padding: 0; }
             .pd-chip { background: transparent !important; border: none !important; font-weight: bold; }
+            .pd-page-break { display: block !important; page-break-after: always !important; break-after: page !important; height: 0 !important; margin: 0 !important; padding: 0 !important; border: none !important; background: transparent !important; visibility: hidden !important; }
           </style>
         </head>
         <body>${content}</body>
@@ -746,6 +774,18 @@ export default function DocumentEditorPage() {
                         className="w-full text-left px-3 py-1.5 hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center gap-2"
                       >
                         <PuzzlePiece size={14} /> Variables
+                      </button>
+                      <button
+                        onClick={() => {
+                          insertPageBreak();
+                          setActiveMenu(null);
+                        }}
+                        className="w-full text-left px-3 py-1.5 hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center justify-between"
+                      >
+                        <span className="flex items-center gap-2">
+                          <FileText size={14} /> Page break
+                        </span>
+                        <span className="text-[10px] text-slate-400 font-mono">Ctrl+Enter</span>
                       </button>
                       <button
                         onClick={() => {
@@ -1034,19 +1074,24 @@ export default function DocumentEditorPage() {
         >
           <TextIndent size={14} weight="bold" />
         </button>
-      </div>
 
-      {/* Margin Ruler - Fixed & Pinned */}
-      <div className="h-4 bg-[#f8f9fa] dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 flex items-center justify-center flex-none shrink-0 z-20 sticky top-[86px]">
-        <div className="w-[210mm] relative h-full flex items-center">
-          <div className="absolute left-[25mm] text-blue-600 text-[10px] leading-none select-none">▼</div>
-          <div className="absolute right-[25mm] text-blue-600 text-[10px] leading-none select-none">▼</div>
-        </div>
+        <div className="h-4 w-px bg-slate-300 dark:bg-slate-700 mx-1" />
+
+        {/* Page Break Button */}
+        <button
+          type="button"
+          onClick={insertPageBreak}
+          className="p-1.5 rounded hover:bg-white dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 flex items-center gap-1.5 text-xs cursor-pointer"
+          title="Insert Page Break (Ctrl+Enter)"
+        >
+          <FileText size={14} weight="bold" />
+          <span className="hidden sm:inline text-xs font-semibold text-slate-700 dark:text-slate-300">Page break</span>
+        </button>
       </div>
 
       {/* Preview Mode Bar */}
       {isPreviewMode && (
-        <div className="bg-slate-800 text-white px-4 py-1.5 flex items-center justify-between text-xs flex-none shrink-0 z-20 sticky top-[102px]">
+        <div className="bg-slate-800 text-white px-4 py-1.5 flex items-center justify-between text-xs flex-none shrink-0 z-20 sticky top-[86px]">
           <span>Previewing record output</span>
           <div className="flex items-center gap-2">
             <span className="text-slate-400">Record:</span>
@@ -1247,70 +1292,89 @@ export default function DocumentEditorPage() {
           )}
         </aside>
 
-        {/* Canvas Area - Only this container scrolls */}
-        <main
-          className="flex-1 min-h-0 h-full overflow-y-auto p-8 flex justify-center bg-[#f0f4f9] dark:bg-slate-950"
-          style={{ transform: `scale(${parseFloat(zoomLevel) / 100})`, transformOrigin: "top center" }}
-        >
-          {/* A4 Paper */}
-          <div
-            className="bg-white text-slate-900 shadow-sm border border-slate-200 dark:border-slate-800 relative transition-all"
-            style={{
-              width: "210mm",
-              minHeight: "297mm",
-              padding: "25mm",
-              boxSizing: "border-box",
-            }}
-            onDrop={handleDrop}
-            onDragOver={(e) => e.preventDefault()}
-          >
-            {/* Header QR */}
-            {includeQrCode && qrPosition === "header-right" && (
-              <div className="absolute top-6 right-6 flex items-center gap-2 p-2 bg-slate-50 border border-slate-200 rounded">
-                <div className="w-10 h-10 flex items-center justify-center">
-                  <QrCode size={36} className="text-slate-800" />
-                </div>
-              </div>
-            )}
-
-            {/* Content Area */}
-            {isPreviewMode ? (
-              <div
-                className="prose max-w-none text-slate-900 leading-relaxed outline-none"
-                dangerouslySetInnerHTML={{ __html: renderMergedPreview() }}
-              />
-            ) : (
-              <div
-                ref={editorRef}
-                contentEditable
-                suppressContentEditableWarning
-                onInput={handleEditorInput}
-                className="prose max-w-none text-slate-900 leading-relaxed outline-none min-h-[700px]"
-                style={{
-                  fontFamily: currentFont,
-                  fontSize: `${currentFontSize}pt`,
-                }}
-              />
-            )}
-
-            {/* Bottom QR Stamp */}
-            {includeQrCode && (qrPosition === "bottom-right" || qrPosition === "bottom-left") && (
-              <div
-                className={`mt-16 pt-6 border-t border-slate-200 flex items-center gap-3 ${
-                  qrPosition === "bottom-right" ? "justify-end" : "justify-start"
-                }`}
-              >
-                <div className="w-12 h-12 bg-white border border-slate-200 p-1 rounded flex items-center justify-center">
-                  <QrCode size={40} className="text-slate-800" />
-                </div>
-                <div className="text-left text-[10px] text-slate-500">
-                  <div className="font-semibold text-slate-700">Verified document</div>
-                  <div>Scan QR code to verify authenticity</div>
-                </div>
-              </div>
-            )}
+        {/* Right Canvas Column */}
+        <div className="flex-1 min-h-0 flex flex-col overflow-hidden bg-[#f0f4f9] dark:bg-slate-950">
+          {/* Margin Ruler - Inside Canvas Column, perfectly aligned with the A4 paper! */}
+          <div className="h-6 bg-[#f8f9fa] dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 flex items-center justify-center flex-none shrink-0 z-20 shadow-2xs">
+            <div className="w-[210mm] relative h-full flex items-center">
+              <div className="absolute left-[25mm] text-blue-600 text-[10px] leading-none select-none font-bold">▼</div>
+              <div className="absolute right-[25mm] text-blue-600 text-[10px] leading-none select-none font-bold">▼</div>
+              <div className="w-full h-0.5 bg-slate-300 dark:bg-slate-700 mx-[25mm] rounded-full" />
+            </div>
           </div>
-        </main>
+
+          {/* Canvas Area - Only this container scrolls */}
+          <main className="flex-1 min-h-0 h-full overflow-y-auto py-8 px-4 sm:px-8 flex justify-center bg-[#f0f4f9] dark:bg-slate-950">
+            {/* Transform wrapper so scroll coordinates are never distorted */}
+            <div
+              className="flex flex-col items-center pb-24"
+              style={{
+                transform: zoomLevel !== "100%" ? `scale(${parseFloat(zoomLevel) / 100})` : undefined,
+                transformOrigin: "top center",
+              }}
+            >
+              {/* A4 Paper */}
+              <div
+                className="bg-white text-slate-900 shadow-sm border border-slate-200 dark:border-slate-800 relative transition-all rounded-xs"
+                style={{
+                  width: "210mm",
+                  minHeight: "297mm",
+                  padding: "25mm",
+                  boxSizing: "border-box",
+                }}
+                onDrop={handleDrop}
+                onDragOver={(e) => e.preventDefault()}
+              >
+                {/* Header QR */}
+                {includeQrCode && qrPosition === "header-right" && (
+                  <div className="absolute top-6 right-6 flex items-center gap-2 p-2 bg-slate-50 border border-slate-200 rounded">
+                    <div className="w-10 h-10 flex items-center justify-center">
+                      <QrCode size={36} className="text-slate-800" />
+                    </div>
+                  </div>
+                )}
+
+                {/* Content Area */}
+                {isPreviewMode ? (
+                  <div
+                    className="prose max-w-none text-slate-900 leading-relaxed outline-none"
+                    dangerouslySetInnerHTML={{ __html: renderMergedPreview() }}
+                  />
+                ) : (
+                  <div
+                    ref={editorRef}
+                    contentEditable
+                    suppressContentEditableWarning
+                    onInput={handleEditorInput}
+                    onKeyDown={handleEditorKeyDown}
+                    className="prose max-w-none text-slate-900 leading-relaxed outline-none min-h-[700px]"
+                    style={{
+                      fontFamily: currentFont,
+                      fontSize: `${currentFontSize}pt`,
+                    }}
+                  />
+                )}
+
+                {/* Bottom QR Stamp */}
+                {includeQrCode && (qrPosition === "bottom-right" || qrPosition === "bottom-left") && (
+                  <div
+                    className={`mt-16 pt-6 border-t border-slate-200 flex items-center gap-3 ${
+                      qrPosition === "bottom-right" ? "justify-end" : "justify-start"
+                    }`}
+                  >
+                    <div className="w-12 h-12 bg-white border border-slate-200 p-1 rounded flex items-center justify-center">
+                      <QrCode size={40} className="text-slate-800" />
+                    </div>
+                    <div className="text-left text-[10px] text-slate-500">
+                      <div className="font-semibold text-slate-700">Verified document</div>
+                      <div>Scan QR code to verify authenticity</div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </main>
+        </div>
       </div>
 
       {/* Preset confirmation modal */}
