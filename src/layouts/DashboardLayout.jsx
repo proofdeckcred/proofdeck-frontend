@@ -14,7 +14,7 @@ function DashboardLayout() {
   const { width } = useWindowSize();
   const isMobile = width <= 768;
   const location = useLocation();
-  const isEditorPage = location.pathname.includes("/upload-template");
+  const isEditorPage = location.pathname.includes("/upload-template") || location.pathname.includes("/documents/editor");
   const { isDesktopMode, desktopConfig, setDesktopConfig } = useUser();
 
   // Show activation modal if running in Desktop mode and not yet activated

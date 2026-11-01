@@ -22,7 +22,7 @@ export default function AppButton({
 
   const variantClasses = {
     primary:
-      "bg-[#5144E8] hover:bg-[#4336D0] text-white shadow-2xs border border-transparent font-semibold",
+      "bg-slate-900 hover:bg-black text-white shadow-2xs border border-transparent font-semibold dark:bg-white dark:text-slate-900 dark:hover:bg-slate-100",
     secondary:
       "bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 text-slate-700 dark:text-zinc-200 hover:bg-slate-50 dark:hover:bg-zinc-800 hover:border-slate-300 shadow-2xs",
     danger:

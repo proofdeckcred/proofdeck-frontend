@@ -1,6 +1,6 @@
 // frontend/src/pages/DocumentsPage.jsx
 
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Modal } from "react-bootstrap";
 import {
@@ -10,285 +10,232 @@ import {
   Trash,
   Copy,
   NotePencil,
-  Sparkle,
-  ArrowRight,
   Clock,
   CircleNotch,
   CaretRight,
+  CaretDown,
+  CaretUp,
+  DotsThreeVertical,
+  SlidersHorizontal,
+  FolderSimple,
+  ArrowsDownUp,
   X
 } from "@phosphor-icons/react";
 import toast, { Toaster } from "react-hot-toast";
 import { getDocuments, deleteTemplate, createCustomTemplate, getTemplate } from "../api";
 import HelpGuide from "../components/HelpGuide";
 
-// --- CLAYMORPHIC 3D GRAPHIC COMPONENTS ---
+// --- MINIATURE A4 PORTRAIT TEMPLATE ILLUSTRATIONS ---
 
 /**
- * 3D Claymorphic Blank Document Illustration
+ * Google Docs Style A4 Blank Document Card
  */
-const ClayGraphicNewDoc = () => (
-  <div className="relative w-full h-36 flex items-center justify-center overflow-hidden rounded-xl bg-gradient-to-br from-indigo-50/70 via-sky-50/50 to-blue-100/40 select-none group-hover:from-indigo-100/70 group-hover:to-sky-100/60 transition-colors">
-    <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(255,255,255,0.8),transparent_70%)] pointer-events-none" />
-    
-    <svg viewBox="0 0 160 120" className="w-32 h-28 drop-shadow-[0_12px_16px_rgba(79,70,229,0.18)] transition-transform duration-300 group-hover:scale-105 group-hover:-translate-y-1">
-      <defs>
-        <linearGradient id="clayPaperGrad1" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#FFFFFF" />
-          <stop offset="70%" stopColor="#F8FAFC" />
-          <stop offset="100%" stopColor="#E2E8F0" />
-        </linearGradient>
-        <linearGradient id="clayPuffPlus" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#6366F1" />
-          <stop offset="100%" stopColor="#4338CA" />
-        </linearGradient>
-        <linearGradient id="clayFold" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#CBD5E1" />
-          <stop offset="100%" stopColor="#94A3B8" />
-        </linearGradient>
-        <filter id="clayPillShadow" x="-20%" y="-20%" width="140%" height="140%">
-          <feDropShadow dx="0" dy="4" stdDeviation="3" floodColor="#312E81" floodOpacity="0.25" />
-        </filter>
-      </defs>
-
-      {/* Background Soft Shadow */}
-      <ellipse cx="80" cy="108" rx="46" ry="7" fill="#6366F1" opacity="0.12" />
-
-      {/* Stacked Under-Paper */}
-      <rect x="36" y="24" width="70" height="82" rx="12" fill="#E2E8F0" transform="rotate(-6 71 65)" />
-
-      {/* Main Clay Paper */}
-      <g>
-        <rect x="42" y="14" width="68" height="86" rx="14" fill="url(#clayPaperGrad1)" stroke="#FFFFFF" strokeWidth="2.5" />
-        
-        {/* Placeholder Lines */}
-        <rect x="52" y="32" width="40" height="5" rx="2.5" fill="#E2E8F0" />
-        <rect x="52" y="42" width="48" height="4" rx="2" fill="#F1F5F9" />
-        <rect x="52" y="50" width="38" height="4" rx="2" fill="#F1F5F9" />
-        <rect x="52" y="58" width="44" height="4" rx="2" fill="#F1F5F9" />
-
-        {/* 3D Folded Ear */}
-        <path d="M 96 14 L 110 28 L 96 28 Z" fill="url(#clayFold)" opacity="0.85" />
-
-        {/* Floating Tactile 3D Clay Plus Button */}
-        <g filter="url(#clayPillShadow)" className="animate-[pulse_3s_ease-in-out_infinite]">
-          <circle cx="86" cy="74" r="17" fill="url(#clayPuffPlus)" stroke="#A5B4FC" strokeWidth="2" />
-          <ellipse cx="82" cy="67" rx="9" ry="5" fill="#FFFFFF" opacity="0.4" />
-          <path d="M 86 66 L 86 82 M 78 74 L 94 74" stroke="#FFFFFF" strokeWidth="3.5" strokeLinecap="round" />
-        </g>
-      </g>
-
-      <path d="M 124 38 Q 128 38 128 34 Q 128 38 132 38 Q 128 38 128 42 Q 128 38 124 38 Z" fill="#818CF8" />
-      <circle cx="34" cy="46" r="3" fill="#A5B4FC" opacity="0.8" />
+const BlankDocThumbnail = () => (
+  <div className="w-full h-full flex items-center justify-center bg-white group-hover:bg-slate-50/60 transition-colors">
+    <svg viewBox="0 0 48 48" className="w-11 h-11 transition-transform duration-200 group-hover:scale-110 drop-shadow-2xs">
+      <rect x="21" y="8" width="6" height="32" rx="3" fill="#4285F4" />
+      <rect x="8" y="21" width="32" height="6" rx="3" fill="#EA4335" />
+      <rect x="21" y="21" width="6" height="19" rx="3" fill="#34A853" />
+      <rect x="21" y="8" width="6" height="13" rx="3" fill="#FBBC05" />
     </svg>
   </div>
 );
 
 /**
- * 3D Claymorphic Statement of Result Illustration
+ * A4 Miniature Portrait: Official Statement of Result
  */
-const ClayGraphicStatement = () => (
-  <div className="relative w-full h-36 flex items-center justify-center overflow-hidden rounded-xl bg-gradient-to-br from-blue-50/80 via-slate-50 to-indigo-100/50 select-none group-hover:from-blue-100/80 group-hover:to-indigo-100/70 transition-colors">
-    <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(255,255,255,0.85),transparent_70%)] pointer-events-none" />
+const StatementThumbnail = () => (
+  <div className="w-full h-full p-3.5 bg-white flex flex-col justify-between text-[6px] select-none pointer-events-none relative overflow-hidden">
+    {/* Academic Header */}
+    <div className="text-center space-y-0.5 border-b border-slate-200 pb-1.5">
+      <div className="h-1.5 w-12 bg-slate-800 mx-auto rounded-xs" />
+      <div className="h-1 w-20 bg-slate-400 mx-auto rounded-xs" />
+      <div className="h-0.5 w-16 bg-slate-300 mx-auto rounded-xs" />
+    </div>
 
-    <svg viewBox="0 0 160 120" className="w-32 h-28 drop-shadow-[0_12px_16px_rgba(30,58,138,0.18)] transition-transform duration-300 group-hover:scale-105 group-hover:-translate-y-1">
-      <defs>
-        <linearGradient id="clayAcadGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#FFFFFF" />
-          <stop offset="70%" stopColor="#F8FAFC" />
-          <stop offset="100%" stopColor="#E2E8F0" />
-        </linearGradient>
-        <linearGradient id="clayGoldSeal" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#FDE047" />
-          <stop offset="60%" stopColor="#F59E0B" />
-          <stop offset="100%" stopColor="#B45309" />
-        </linearGradient>
-        <linearGradient id="clayBlueCap" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#3B82F6" />
-          <stop offset="100%" stopColor="#1D4ED8" />
-        </linearGradient>
-        <filter id="claySealShadow" x="-20%" y="-20%" width="140%" height="140%">
-          <feDropShadow dx="0" dy="3" stdDeviation="2.5" floodColor="#78350F" floodOpacity="0.3" />
-        </filter>
-      </defs>
+    {/* Ref & Date */}
+    <div className="flex justify-between items-center px-0.5 my-1">
+      <div className="h-1 w-8 bg-slate-300 rounded-xs" />
+      <div className="h-1 w-6 bg-slate-300 rounded-xs" />
+    </div>
 
-      <ellipse cx="80" cy="108" rx="46" ry="7" fill="#1E3A8A" opacity="0.12" />
+    {/* Title Badge */}
+    <div className="my-0.5 text-center">
+      <div className="h-1.5 w-24 bg-blue-900 mx-auto rounded-xs" />
+    </div>
 
-      {/* Main Parchment */}
-      <rect x="42" y="14" width="76" height="88" rx="14" fill="url(#clayAcadGrad)" stroke="#FFFFFF" strokeWidth="2.5" />
+    {/* Micro Paragraph Lines */}
+    <div className="space-y-1 px-0.5">
+      <div className="h-1 w-full bg-slate-200 rounded-xs" />
+      <div className="h-1 w-11/12 bg-slate-200 rounded-xs" />
+      <div className="h-1 w-full bg-slate-200 rounded-xs" />
+    </div>
 
-      {/* Top Banner */}
-      <rect x="52" y="24" width="56" height="7" rx="3.5" fill="#1E3A8A" />
-      <rect x="60" y="34" width="40" height="3.5" rx="1.7" fill="#64748B" />
+    {/* Degree Award Box */}
+    <div className="p-1.5 my-1 bg-slate-50 border border-slate-200 rounded text-center space-y-0.5">
+      <div className="h-1.5 w-16 bg-slate-800 mx-auto rounded-xs" />
+      <div className="h-1 w-12 bg-blue-600 mx-auto rounded-xs" />
+    </div>
 
-      {/* Table Rows */}
-      <rect x="50" y="44" width="60" height="18" rx="4" fill="#F1F5F9" stroke="#E2E8F0" strokeWidth="1" />
-      <rect x="54" y="48" width="30" height="3" rx="1.5" fill="#94A3B8" />
-      <rect x="92" y="48" width="14" height="3" rx="1.5" fill="#3B82F6" />
-      <rect x="54" y="54" width="24" height="3" rx="1.5" fill="#CBD5E1" />
-      <rect x="92" y="54" width="14" height="3" rx="1.5" fill="#10B981" />
+    {/* Micro text */}
+    <div className="space-y-1 px-0.5">
+      <div className="h-1 w-10/12 bg-slate-200 rounded-xs" />
+      <div className="h-1 w-8/12 bg-slate-200 rounded-xs" />
+    </div>
 
-      {/* Signature Flourish */}
-      <path d="M 52 74 Q 60 68 68 73 T 80 72" stroke="#475569" strokeWidth="1.5" fill="none" strokeLinecap="round" />
-      <line x1="52" y1="76" x2="80" y2="76" stroke="#CBD5E1" strokeWidth="1" />
-
-      {/* 3D Gold Wax Seal */}
-      <g filter="url(#claySealShadow)">
-        <path d="M 98 84 L 92 98 L 98 94 L 104 98 Z" fill="#DC2626" />
-        <path d="M 103 84 L 100 98 L 106 94 L 112 98 Z" fill="#B91C1C" />
-        <circle cx="101" cy="78" r="14" fill="url(#clayGoldSeal)" stroke="#FEF08A" strokeWidth="1.8" />
-        <circle cx="101" cy="78" r="9.5" fill="none" stroke="#FDE047" strokeWidth="1.2" opacity="0.8" />
-        <ellipse cx="98" cy="72" rx="7" ry="3.5" fill="#FFFFFF" opacity="0.45" />
-      </g>
-
-      {/* Floating 3D Cap */}
-      <g transform="translate(18, 12)">
-        <polygon points="18,12 30,7 42,12 30,17" fill="url(#clayBlueCap)" stroke="#93C5FD" strokeWidth="1" />
-        <rect x="25" y="15" width="10" height="6" rx="2" fill="#1E40AF" />
-        <path d="M 38 12 Q 40 18 36 21" stroke="#F59E0B" strokeWidth="1.5" fill="none" />
-      </g>
-    </svg>
+    {/* Signature & Gold Wax Seal */}
+    <div className="flex justify-between items-end pt-1 border-t border-slate-100">
+      <div className="space-y-0.5">
+        <div className="h-1 w-10 bg-blue-950 rounded-xs" />
+        <div className="h-0.5 w-12 bg-slate-400 rounded-xs" />
+      </div>
+      <div className="w-5 h-5 rounded-full bg-amber-400 border border-amber-500 shadow-2xs flex items-center justify-center">
+        <div className="w-3.5 h-3.5 rounded-full border border-amber-600/50" />
+      </div>
+    </div>
   </div>
 );
 
 /**
- * 3D Claymorphic English Proficiency Illustration
+ * A4 Miniature Portrait: Letter of English Proficiency
  */
-const ClayGraphicProficiency = () => (
-  <div className="relative w-full h-36 flex items-center justify-center overflow-hidden rounded-xl bg-gradient-to-br from-emerald-50/80 via-teal-50/50 to-emerald-100/50 select-none group-hover:from-emerald-100/80 group-hover:to-teal-100/60 transition-colors">
-    <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(255,255,255,0.85),transparent_70%)] pointer-events-none" />
+const ProficiencyThumbnail = () => (
+  <div className="w-full h-full p-3.5 bg-white flex flex-col justify-between text-[6px] select-none pointer-events-none relative overflow-hidden">
+    {/* Directorate Header with Green Band */}
+    <div className="text-center space-y-0.5 border-b-2 border-emerald-600 pb-1.5">
+      <div className="h-1.5 w-14 bg-emerald-800 mx-auto rounded-xs" />
+      <div className="h-1 w-16 bg-slate-400 mx-auto rounded-xs" />
+      <div className="h-0.5 w-12 bg-emerald-500 mx-auto rounded-xs" />
+    </div>
 
-    <svg viewBox="0 0 160 120" className="w-32 h-28 drop-shadow-[0_12px_16px_rgba(5,150,105,0.18)] transition-transform duration-300 group-hover:scale-105 group-hover:-translate-y-1">
-      <defs>
-        <linearGradient id="clayParchGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#FFFFFF" />
-          <stop offset="70%" stopColor="#F0FDF4" />
-          <stop offset="100%" stopColor="#DCFCE7" />
-        </linearGradient>
-        <linearGradient id="clayEmeraldBadge" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#34D399" />
-          <stop offset="100%" stopColor="#059669" />
-        </linearGradient>
-        <filter id="clayTealShadow" x="-20%" y="-20%" width="140%" height="140%">
-          <feDropShadow dx="0" dy="3" stdDeviation="2.5" floodColor="#064E3B" floodOpacity="0.25" />
-        </filter>
-      </defs>
+    {/* Ref & Date */}
+    <div className="flex justify-between items-center px-0.5 my-1">
+      <div className="h-1 w-7 bg-slate-300 rounded-xs" />
+      <div className="h-1 w-6 bg-slate-300 rounded-xs" />
+    </div>
 
-      <ellipse cx="80" cy="108" rx="46" ry="7" fill="#065F46" opacity="0.12" />
+    {/* Title */}
+    <div className="my-0.5 text-center">
+      <div className="h-1.5 w-24 bg-emerald-900 mx-auto rounded-xs" />
+    </div>
 
-      <rect x="42" y="14" width="76" height="88" rx="14" fill="url(#clayParchGrad)" stroke="#FFFFFF" strokeWidth="2.5" />
-      <rect x="46" y="18" width="68" height="80" rx="10" fill="none" stroke="#A7F3D0" strokeWidth="1" strokeDasharray="3 2" />
+    {/* Paragraphs */}
+    <div className="space-y-1 px-0.5">
+      <div className="h-1 w-full bg-slate-200 rounded-xs" />
+      <div className="h-1 w-full bg-slate-200 rounded-xs" />
+      <div className="h-1 w-10/12 bg-slate-200 rounded-xs" />
+      <div className="h-1 w-full bg-slate-200 rounded-xs" />
+      <div className="h-1 w-9/12 bg-slate-200 rounded-xs" />
+    </div>
 
-      <rect x="54" y="26" width="52" height="6" rx="3" fill="#047857" />
-      <rect x="62" y="36" width="36" height="3" rx="1.5" fill="#6EE7B7" />
+    {/* Green Highlight Box */}
+    <div className="p-1 my-1 bg-emerald-50 border border-emerald-200 rounded text-center space-y-0.5">
+      <div className="h-1 w-20 bg-emerald-700 mx-auto rounded-xs" />
+    </div>
 
-      <rect x="52" y="46" width="40" height="3.5" rx="1.7" fill="#CBD5E1" />
-      <rect x="52" y="53" width="46" height="3.5" rx="1.7" fill="#CBD5E1" />
-      <rect x="52" y="60" width="34" height="3.5" rx="1.7" fill="#CBD5E1" />
+    <div className="space-y-1 px-0.5">
+      <div className="h-1 w-full bg-slate-200 rounded-xs" />
+      <div className="h-1 w-8/12 bg-slate-200 rounded-xs" />
+    </div>
 
-      {/* 3D Clay Emerald Rosette */}
-      <g filter="url(#clayTealShadow)">
-        <path d="M 94 72 L 90 92 L 96 88 L 102 92 Z" fill="#059669" />
-        <path d="M 101 72 L 98 92 L 104 88 L 110 92 Z" fill="#047857" />
-        <circle cx="100" cy="68" r="15" fill="url(#clayEmeraldBadge)" stroke="#A7F3D0" strokeWidth="1.8" />
-        <circle cx="100" cy="68" r="10.5" fill="#065F46" />
-        <path d="M 95 68 L 98 71 L 106 63" stroke="#FFFFFF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none" />
-        <ellipse cx="97" cy="62" rx="7" ry="3.5" fill="#FFFFFF" opacity="0.4" />
-      </g>
-
-      <path d="M 32 30 Q 30 40 36 46 Q 34 38 32 30 Z" fill="#10B981" opacity="0.8" />
-      <circle cx="128" cy="46" r="3" fill="#34D399" opacity="0.7" />
-    </svg>
+    {/* Signature & Emerald Rosette Seal */}
+    <div className="flex justify-between items-end pt-1 border-t border-slate-100">
+      <div className="space-y-0.5">
+        <div className="h-1 w-10 bg-emerald-900 rounded-xs" />
+        <div className="h-0.5 w-12 bg-slate-400 rounded-xs" />
+      </div>
+      <div className="w-5 h-5 rounded-full bg-emerald-600 border border-emerald-700 shadow-2xs flex items-center justify-center">
+        <div className="w-3.5 h-3.5 rounded-full border border-white/60" />
+      </div>
+    </div>
   </div>
 );
 
 /**
- * 3D Claymorphic Letter of Attestation Illustration
+ * A4 Miniature Portrait: Letter of Attestation
  */
-const ClayGraphicAttestation = () => (
-  <div className="relative w-full h-36 flex items-center justify-center overflow-hidden rounded-xl bg-gradient-to-br from-violet-50/80 via-slate-50 to-purple-100/50 select-none group-hover:from-violet-100/80 group-hover:to-purple-100/60 transition-colors">
-    <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(255,255,255,0.85),transparent_70%)] pointer-events-none" />
+const AttestationThumbnail = () => (
+  <div className="w-full h-full p-3.5 bg-white flex flex-col justify-between text-[6px] select-none pointer-events-none relative overflow-hidden">
+    {/* Pillars Header */}
+    <div className="text-center space-y-0.5 border-b border-slate-200 pb-1.5">
+      <div className="flex justify-center gap-1 mb-0.5">
+        <div className="w-1 h-2 bg-slate-700" />
+        <div className="w-1 h-2 bg-slate-700" />
+        <div className="w-1 h-2 bg-slate-700" />
+      </div>
+      <div className="h-1.5 w-16 bg-slate-800 mx-auto rounded-xs" />
+      <div className="h-0.5 w-20 bg-slate-400 mx-auto rounded-xs" />
+    </div>
 
-    <svg viewBox="0 0 160 120" className="w-32 h-28 drop-shadow-[0_12px_16px_rgba(109,40,217,0.18)] transition-transform duration-300 group-hover:scale-105 group-hover:-translate-y-1">
-      <defs>
-        <linearGradient id="clayPillarsGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#FFFFFF" />
-          <stop offset="70%" stopColor="#F5F3FF" />
-          <stop offset="100%" stopColor="#EDE9FE" />
-        </linearGradient>
-        <linearGradient id="clayPurpleSeal" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#8B5CF6" />
-          <stop offset="100%" stopColor="#6D28D9" />
-        </linearGradient>
-        <filter id="clayPurpleShadow" x="-20%" y="-20%" width="140%" height="140%">
-          <feDropShadow dx="0" dy="3" stdDeviation="2.5" floodColor="#4C1D95" floodOpacity="0.25" />
-        </filter>
-      </defs>
+    {/* Ref & Date */}
+    <div className="flex justify-between items-center px-0.5 my-1">
+      <div className="h-1 w-8 bg-slate-300 rounded-xs" />
+      <div className="h-1 w-6 bg-slate-300 rounded-xs" />
+    </div>
 
-      <ellipse cx="80" cy="108" rx="46" ry="7" fill="#4C1D95" opacity="0.12" />
+    {/* Title */}
+    <div className="my-0.5 text-center">
+      <div className="h-1.5 w-20 bg-slate-900 mx-auto rounded-xs" />
+    </div>
 
-      <rect x="42" y="14" width="76" height="88" rx="14" fill="url(#clayPillarsGrad)" stroke="#FFFFFF" strokeWidth="2.5" />
+    {/* Paragraphs */}
+    <div className="space-y-1 px-0.5">
+      <div className="h-1 w-full bg-slate-200 rounded-xs" />
+      <div className="h-1 w-11/12 bg-slate-200 rounded-xs" />
+      <div className="h-1 w-full bg-slate-200 rounded-xs" />
+      <div className="h-1 w-10/12 bg-slate-200 rounded-xs" />
+      <div className="h-1 w-full bg-slate-200 rounded-xs" />
+    </div>
 
-      {/* Pillars Header */}
-      <rect x="52" y="22" width="56" height="4" rx="2" fill="#6D28D9" />
-      <rect x="56" y="27" width="5" height="11" rx="2" fill="#8B5CF6" />
-      <rect x="67" y="27" width="5" height="11" rx="2" fill="#8B5CF6" />
-      <rect x="78" y="27" width="5" height="11" rx="2" fill="#8B5CF6" />
-      <rect x="89" y="27" width="5" height="11" rx="2" fill="#8B5CF6" />
-      <rect x="52" y="39" width="56" height="3" rx="1.5" fill="#6D28D9" />
+    {/* Student details mini box */}
+    <div className="p-1 my-1 bg-slate-50 border border-slate-200 rounded space-y-0.5">
+      <div className="h-1 w-16 bg-slate-600 rounded-xs" />
+      <div className="h-1 w-12 bg-slate-400 rounded-xs" />
+    </div>
 
-      <rect x="52" y="47" width="52" height="3.5" rx="1.7" fill="#C4B5FD" />
-      <rect x="52" y="54" width="46" height="3.5" rx="1.7" fill="#E2E8F0" />
-      <rect x="52" y="61" width="40" height="3.5" rx="1.7" fill="#E2E8F0" />
+    <div className="space-y-1 px-0.5">
+      <div className="h-1 w-full bg-slate-200 rounded-xs" />
+      <div className="h-1 w-7/12 bg-slate-200 rounded-xs" />
+    </div>
 
-      <path d="M 52 74 Q 58 70 66 73 T 78 72" stroke="#6D28D9" strokeWidth="1.5" fill="none" strokeLinecap="round" />
-      <line x1="52" y1="77" x2="78" y2="77" stroke="#DDD6FE" strokeWidth="1" />
-
-      {/* 3D Purple Official Stamp */}
-      <g filter="url(#clayPurpleShadow)">
-        <circle cx="100" cy="74" r="14" fill="url(#clayPurpleSeal)" stroke="#DDD6FE" strokeWidth="1.8" />
-        <circle cx="100" cy="74" r="9.5" fill="none" stroke="#C4B5FD" strokeWidth="1" strokeDasharray="2 1.5" />
-        <path d="M 97 70 L 103 70 L 103 74 Q 103 78 100 80 Q 97 78 97 74 Z" fill="#EDE9FE" />
-        <ellipse cx="97" cy="68" rx="7" ry="3.5" fill="#FFFFFF" opacity="0.4" />
-      </g>
-
-      <circle cx="34" cy="42" r="3.5" fill="#C4B5FD" opacity="0.8" />
-    </svg>
+    {/* Signature & Seal */}
+    <div className="flex justify-between items-end pt-1 border-t border-slate-100">
+      <div className="space-y-0.5">
+        <div className="h-1 w-10 bg-slate-800 rounded-xs" />
+        <div className="h-0.5 w-12 bg-slate-400 rounded-xs" />
+      </div>
+      <div className="w-5 h-5 rounded-full border border-dashed border-slate-400 flex items-center justify-center">
+        <div className="w-3.5 h-3.5 rounded-full bg-slate-200" />
+      </div>
+    </div>
   </div>
 );
 
-// --- PRESET DEFINITIONS ---
+// --- PRESET TEMPLATES DEFINITION ---
 const DOCUMENT_PRESETS = [
   {
     id: "blank",
     name: "Blank document",
     desc: "Start with an empty page",
-    badge: "Freeform",
-    badgeColor: "bg-slate-100 text-slate-700 border-slate-200",
-    clayVisual: ClayGraphicNewDoc,
+    thumbnail: BlankDocThumbnail,
   },
   {
     id: "statement_of_result",
     name: "Statement of Result",
     desc: "Academic degree & examination results",
-    badge: "Academic",
-    badgeColor: "bg-blue-100 text-blue-700 border-blue-200",
-    clayVisual: ClayGraphicStatement,
+    thumbnail: StatementThumbnail,
   },
   {
     id: "english_proficiency",
     name: "English Proficiency",
     desc: "Medium of instruction confirmation",
-    badge: "Official",
-    badgeColor: "bg-emerald-100 text-emerald-700 border-emerald-200",
-    clayVisual: ClayGraphicProficiency,
+    thumbnail: ProficiencyThumbnail,
   },
   {
     id: "attestation_completion",
     name: "Letter of Attestation",
     desc: "Formal confirmation of completion",
-    badge: "Institutional",
-    badgeColor: "bg-purple-100 text-purple-700 border-purple-200",
-    clayVisual: ClayGraphicAttestation,
+    thumbnail: AttestationThumbnail,
   },
 ];
 
@@ -300,6 +247,10 @@ const DocumentsPage = () => {
   const [sortBy, setSortBy] = useState("newest");
   const [deletingId, setDeletingId] = useState(null);
   const [duplicatingId, setDuplicatingId] = useState(null);
+
+  // Active kebab menu dropdown
+  const [openKebabId, setOpenKebabId] = useState(null);
+  const kebabRef = useRef(null);
 
   // Proper Delete Modal State (No window.confirm)
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -329,7 +280,20 @@ const DocumentsPage = () => {
     fetchDocs();
   }, []);
 
-  const handleDeleteClick = (doc) => {
+  // Close kebab menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (kebabRef.current && !kebabRef.current.contains(e.target)) {
+        setOpenKebabId(null);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const handleDeleteClick = (doc, e) => {
+    if (e) e.stopPropagation();
+    setOpenKebabId(null);
     setDocToDelete(doc);
     setShowDeleteModal(true);
   };
@@ -350,7 +314,9 @@ const DocumentsPage = () => {
     }
   };
 
-  const handleDuplicate = async (doc) => {
+  const handleDuplicate = async (doc, e) => {
+    if (e) e.stopPropagation();
+    setOpenKebabId(null);
     setDuplicatingId(doc.id);
     try {
       const full = await getTemplate(doc.id);
@@ -397,18 +363,13 @@ const DocumentsPage = () => {
   }, [documents, searchQuery, sortBy]);
 
   return (
-    <div className="w-full pb-16">
+    <div className="w-full pb-16 font-sans">
       <Toaster position="top-right" />
 
-      {/* --- Top Navigation Header --- */}
+      {/* --- Top Navigation Header (No Breadcrumb, Just Documents) --- */}
       <div className="border-b border-slate-200/80 bg-white mb-6 -mt-6 px-4 sm:px-6 py-4 rounded-b-xl shadow-2xs">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 max-w-[1600px] mx-auto">
           <div>
-            <div className="flex items-center gap-1.5 text-xs text-slate-500 mb-1">
-              <span>ProofDeck</span>
-              <span>/</span>
-              <span className="font-semibold text-slate-800">Documents</span>
-            </div>
             <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2">
               Documents
             </h1>
@@ -418,7 +379,7 @@ const DocumentsPage = () => {
             <HelpGuide type="certificates" />
             <Link
               to="/dashboard/documents/editor"
-              className="px-4 py-2.5 bg-gradient-to-r from-slate-900 to-indigo-950 hover:from-black hover:to-indigo-900 text-white text-xs font-bold rounded-xl shadow-sm hover:shadow-md flex items-center gap-2 transition-all cursor-pointer transform hover:-translate-y-0.5 active:translate-y-0"
+              className="px-4 py-2 bg-slate-900 hover:bg-black text-white text-xs font-bold rounded-xl shadow-xs hover:shadow-md flex items-center gap-2 transition-all cursor-pointer transform hover:-translate-y-0.5 active:translate-y-0 no-underline"
             >
               <Plus size={16} weight="bold" />
               <span>New document</span>
@@ -427,105 +388,90 @@ const DocumentsPage = () => {
         </div>
       </div>
 
-      <div className="max-w-[1600px] mx-auto space-y-6">
-        {/* --- Quick-Start Starter Presets Section (Claymorphic) --- */}
-        <div className="bg-white rounded-2xl border border-slate-200 p-5 sm:p-6 shadow-xs space-y-4">
+      <div className="max-w-[1600px] mx-auto space-y-8">
+        {/* --- Top Section: Start a new document (Google Docs Style A4 Portrait Cards) --- */}
+        <div className="bg-[#f8f9fa] dark:bg-slate-900/60 rounded-2xl border border-slate-200/90 dark:border-slate-800 p-5 sm:p-6 shadow-2xs space-y-4">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div className="w-6 h-6 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center">
-                <Sparkle size={15} weight="fill" />
-              </div>
-              <h2 className="text-xs font-bold text-slate-900 uppercase tracking-wider">
-                Start from a preset
-              </h2>
+            <h2 className="text-sm font-semibold text-slate-800 dark:text-slate-200">
+              Start a new document
+            </h2>
+            <div className="flex items-center gap-2 text-xs font-medium text-slate-500">
+              <span>Template gallery</span>
             </div>
-            <span className="text-xs text-slate-400">
-              Pick a layout to open in editor
-            </span>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {/* Grid of A4 Portrait Template Cards */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 sm:gap-6">
             {DOCUMENT_PRESETS.map((p) => {
-              const ClayVisual = p.clayVisual;
+              const ThumbnailComponent = p.thumbnail;
               const targetUrl =
                 p.id === "blank"
                   ? "/dashboard/documents/editor"
                   : `/dashboard/documents/editor?preset=${p.id}`;
 
               return (
-                <Link
-                  key={p.id}
-                  to={targetUrl}
-                  className="group rounded-2xl border border-slate-200/90 bg-white hover:border-indigo-400/80 hover:shadow-lg transition-all duration-300 flex flex-col justify-between overflow-hidden cursor-pointer no-underline"
-                >
-                  {/* Claymorphic 3D Animated Illustration */}
-                  <ClayVisual />
+                <div key={p.id} className="flex flex-col group">
+                  {/* Portrait A4 Card Sheet */}
+                  <Link
+                    to={targetUrl}
+                    className="w-full aspect-[1/1.38] rounded-lg border border-slate-200/90 bg-white hover:border-blue-500 hover:shadow-md transition-all duration-200 flex flex-col overflow-hidden cursor-pointer no-underline relative group shadow-2xs"
+                  >
+                    <ThumbnailComponent />
+                  </Link>
 
-                  {/* Card Content */}
-                  <div className="p-4 flex flex-col justify-between flex-1 space-y-3">
-                    <div>
-                      <div className="flex items-center justify-between mb-1.5">
-                        <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full border ${p.badgeColor}`}>
-                          {p.badge}
-                        </span>
-                        <CaretRight
-                          size={15}
-                          weight="bold"
-                          className="text-slate-400 group-hover:text-indigo-600 group-hover:translate-x-1 transition-all"
-                        />
-                      </div>
-                      <h3 className="text-sm font-bold text-slate-900 group-hover:text-indigo-600 transition-colors">
-                        {p.name}
-                      </h3>
-                      <p className="text-xs text-slate-500 mt-1 line-clamp-2">
-                        {p.desc}
-                      </p>
-                    </div>
-
-                    <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-xs font-semibold text-indigo-600 group-hover:text-indigo-700">
-                      <span>Use preset</span>
-                      <ArrowRight size={14} weight="bold" className="group-hover:translate-x-0.5 transition-transform" />
-                    </div>
+                  {/* Title & Description Below Card */}
+                  <div className="mt-2.5 px-0.5 space-y-0.5">
+                    <Link
+                      to={targetUrl}
+                      className="text-xs sm:text-sm font-semibold text-slate-800 group-hover:text-blue-600 transition-colors block truncate no-underline"
+                      title={p.name}
+                    >
+                      {p.name}
+                    </Link>
+                    <p className="text-[11px] text-slate-400 truncate leading-tight">
+                      {p.desc}
+                    </p>
                   </div>
-                </Link>
+                </div>
               );
             })}
           </div>
         </div>
 
-        {/* --- Search, Filter & Controls Bar --- */}
-        <div className="bg-white rounded-xl border border-slate-200 p-3 sm:p-4 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          {/* Search Box */}
-          <div className="relative flex-1 max-w-md">
-            <MagnifyingGlass
-              size={15}
-              weight="bold"
-              className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"
-            />
-            <input
-              type="text"
-              placeholder="Search documents by title..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-3 py-1.5 text-xs border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-900"
-            />
-          </div>
+        {/* --- Bottom Section: Recent Documents (Google Docs Style A4 Grid) --- */}
+        <div className="space-y-4">
+          {/* Header Row: Title & Controls */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2">
+            <div className="flex items-center gap-2">
+              <h2 className="text-sm sm:text-base font-semibold text-slate-800 dark:text-slate-200">
+                Recent documents
+              </h2>
+              <span className="text-xs text-slate-400 font-normal">
+                ({filteredDocs.length})
+              </span>
+            </div>
 
-          {/* Sort & Count Controls */}
-          <div className="flex items-center gap-3">
-            <span className="text-xs text-slate-400 font-medium">
-              {filteredDocs.length} {filteredDocs.length === 1 ? "document" : "documents"}
-            </span>
+            <div className="flex items-center gap-3">
+              {/* Search Box */}
+              <div className="relative w-48 sm:w-64">
+                <MagnifyingGlass
+                  size={14}
+                  className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"
+                />
+                <input
+                  type="text"
+                  placeholder="Search documents..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full pl-8 pr-2.5 py-1 text-xs border border-slate-200 rounded-lg bg-white focus:outline-none focus:ring-1 focus:ring-slate-900"
+                />
+              </div>
 
-            <div className="flex items-center gap-1.5 text-xs text-slate-600">
-              <label htmlFor="sort_docs" className="font-semibold text-slate-500">
-                Sort:
-              </label>
+              {/* Sort Control */}
               <select
-                id="sort_docs"
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value)}
-                className="px-2 py-1 text-xs border border-slate-200 rounded-lg bg-white cursor-pointer focus:outline-none focus:ring-2 focus:ring-slate-900"
+                className="px-2 py-1 text-xs border border-slate-200 rounded-lg bg-white cursor-pointer focus:outline-none focus:ring-1 focus:ring-slate-900 text-slate-600"
               >
                 <option value="newest">Newest first</option>
                 <option value="oldest">Oldest first</option>
@@ -533,169 +479,189 @@ const DocumentsPage = () => {
               </select>
             </div>
           </div>
-        </div>
 
-        {/* --- Document Grid / List --- */}
-        {loading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {[1, 2, 3].map((n) => (
-              <div
-                key={n}
-                className="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs space-y-3 animate-pulse"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-slate-200 rounded-xl" />
-                  <div className="flex-1 space-y-1.5">
-                    <div className="h-3.5 bg-slate-200 rounded w-3/4" />
-                    <div className="h-2.5 bg-slate-200 rounded w-1/2" />
+          {/* Documents Content */}
+          {loading ? (
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 sm:gap-5">
+              {[1, 2, 3, 4, 5].map((n) => (
+                <div
+                  key={n}
+                  className="bg-white border border-slate-200 rounded-lg overflow-hidden shadow-2xs space-y-2 animate-pulse"
+                >
+                  <div className="aspect-[1/1.3] bg-slate-100" />
+                  <div className="p-3 space-y-1.5">
+                    <div className="h-3 bg-slate-200 rounded w-3/4" />
+                    <div className="h-2 bg-slate-200 rounded w-1/2" />
                   </div>
                 </div>
-                <div className="h-24 bg-slate-100 rounded-xl" />
-                <div className="h-8 bg-slate-200 rounded-lg" />
-              </div>
-            ))}
-          </div>
-        ) : filteredDocs.length === 0 ? (
-          /* Claymorphic Empty State */
-          <div className="bg-gradient-to-b from-white to-slate-50/70 rounded-2xl border border-dashed border-slate-200 p-12 text-center shadow-xs space-y-4 max-w-xl mx-auto">
-            {/* 3D Clay Scene Illustration */}
-            <div className="w-24 h-24 mx-auto relative flex items-center justify-center">
-              <svg viewBox="0 0 100 100" className="w-20 h-20 drop-shadow-[0_10px_14px_rgba(99,102,241,0.2)]">
-                <ellipse cx="50" cy="85" rx="35" ry="6" fill="#6366F1" opacity="0.15" />
-                <rect x="25" y="15" width="50" height="65" rx="10" fill="#FFFFFF" stroke="#E2E8F0" strokeWidth="2" />
-                <rect x="33" y="28" width="34" height="4" rx="2" fill="#E0E7FF" />
-                <rect x="33" y="36" width="28" height="3" rx="1.5" fill="#F1F5F9" />
-                <rect x="33" y="43" width="34" height="3" rx="1.5" fill="#F1F5F9" />
-                <circle cx="50" cy="62" r="10" fill="#4F46E5" />
-                <path d="M 50 56 L 50 68 M 44 62 L 56 62" stroke="#FFFFFF" strokeWidth="2.5" strokeLinecap="round" />
-              </svg>
+              ))}
             </div>
-
-            <h3 className="text-base font-bold text-slate-900">
-              {searchQuery ? "No matching documents" : "No documents yet"}
-            </h3>
-            <p className="text-xs text-slate-500 max-w-sm mx-auto leading-relaxed">
-              {searchQuery
-                ? `No documents matched "${searchQuery}". Try a different keyword.`
-                : "Create formal statements of results, letters of proficiency, or attestations with live dynamic variables."}
-            </p>
-            {!searchQuery && (
-              <div className="pt-2">
-                <Link
-                  to="/dashboard/documents/editor"
-                  className="inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-slate-900 to-indigo-950 hover:from-black hover:to-indigo-900 text-white text-xs font-bold rounded-xl shadow-xs transition-all cursor-pointer transform hover:-translate-y-0.5 active:translate-y-0 no-underline"
-                >
-                  <Plus size={16} weight="bold" />
-                  <span>Create your first document</span>
-                </Link>
+          ) : filteredDocs.length === 0 ? (
+            /* Clean Empty State */
+            <div className="bg-white rounded-2xl border border-dashed border-slate-200 p-12 text-center shadow-2xs space-y-3 max-w-md mx-auto my-6">
+              <div className="w-12 h-12 rounded-2xl bg-slate-100 text-slate-500 mx-auto flex items-center justify-center">
+                <FileText size={24} weight="duotone" />
               </div>
-            )}
-          </div>
-        ) : (
-          /* Documents Grid */
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filteredDocs.map((doc) => {
-              const formattedDate = doc.created_at
-                ? new Date(doc.created_at).toLocaleDateString("en-US", {
-                    month: "short",
-                    day: "numeric",
-                    year: "numeric",
-                  })
-                : "Recently edited";
+              <h3 className="text-sm font-bold text-slate-900">
+                {searchQuery ? "No matching documents" : "No documents yet"}
+              </h3>
+              <p className="text-xs text-slate-500 leading-relaxed">
+                {searchQuery
+                  ? `No documents matched "${searchQuery}".`
+                  : "Create statements of results, letters of proficiency, or attestations with dynamic merge variables."}
+              </p>
+              {!searchQuery && (
+                <div className="pt-2">
+                  <Link
+                    to="/dashboard/documents/editor"
+                    className="inline-flex items-center gap-2 px-4 py-2 bg-slate-900 hover:bg-black text-white text-xs font-bold rounded-xl shadow-2xs transition-all cursor-pointer no-underline"
+                  >
+                    <Plus size={15} weight="bold" />
+                    <span>Create a document</span>
+                  </Link>
+                </div>
+              )}
+            </div>
+          ) : (
+            /* Google Docs Style A4 Portrait Document Grid */
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 sm:gap-5" ref={kebabRef}>
+              {filteredDocs.map((doc) => {
+                const formattedDate = doc.created_at
+                  ? new Date(doc.created_at).toLocaleDateString("en-US", {
+                      month: "short",
+                      day: "numeric",
+                      year: "numeric",
+                    })
+                  : "Recently edited";
 
-              const cleanTitle = (doc.title || "Untitled document")
-                .replace(/\s*\(Senate Approved\)/gi, "")
-                .replace(/Senate\s*/gi, "")
-                .trim();
+                const cleanTitle = (doc.title || "Untitled document")
+                  .replace(/\s*\(Senate Approved\)/gi, "")
+                  .replace(/Senate\s*/gi, "")
+                  .trim();
 
-              return (
-                <div
-                  key={doc.id}
-                  className="bg-white rounded-2xl border border-slate-200/90 hover:border-slate-300 shadow-xs hover:shadow-md transition-all flex flex-col justify-between overflow-hidden group"
-                >
-                  {/* Card Header */}
-                  <div className="p-5 border-b border-slate-100 space-y-3">
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="flex items-center gap-3 min-w-0">
-                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-50 to-blue-100 border border-indigo-200 flex items-center justify-center text-indigo-700 shrink-0 shadow-2xs">
-                          <FileText size={22} weight="duotone" />
+                const isKebabOpen = openKebabId === doc.id;
+
+                return (
+                  <div
+                    key={doc.id}
+                    className="group flex flex-col bg-white rounded-lg border border-slate-200 hover:border-blue-500 hover:shadow-md transition-all duration-200 overflow-hidden relative shadow-2xs"
+                  >
+                    {/* Top Portrait Preview Area */}
+                    <Link
+                      to={`/dashboard/documents/editor/${doc.id}`}
+                      className="aspect-[1/1.25] bg-[#fdfdfd] border-b border-slate-100 p-3.5 flex flex-col justify-between cursor-pointer no-underline overflow-hidden group-hover:bg-slate-50/40 transition-colors"
+                      title={`Open ${cleanTitle}`}
+                    >
+                      {/* Document Micro Lines Preview */}
+                      <div className="space-y-1.5 opacity-70">
+                        <div className="h-1.5 bg-slate-700 rounded-xs w-3/5 mx-auto" />
+                        <div className="h-1 bg-slate-300 rounded-xs w-4/5 mx-auto" />
+                        <div className="pt-2 space-y-1">
+                          <div className="h-1 bg-slate-200 rounded-xs w-full" />
+                          <div className="h-1 bg-slate-200 rounded-xs w-11/12" />
+                          <div className="h-1 bg-slate-200 rounded-xs w-full" />
+                          <div className="h-1 bg-slate-200 rounded-xs w-9/12" />
                         </div>
-                        <div className="min-w-0">
-                          <h3
-                            className="text-sm font-bold text-slate-900 truncate group-hover:text-indigo-600 transition-colors"
+                        <div className="pt-1.5 p-1 bg-slate-100/70 border border-slate-200/60 rounded-xs space-y-0.5">
+                          <div className="h-1 bg-slate-400 rounded-xs w-1/2" />
+                          <div className="h-1 bg-blue-400 rounded-xs w-2/3" />
+                        </div>
+                      </div>
+
+                      {/* Bottom Footer Details */}
+                      <div className="pt-1 flex justify-between items-center opacity-60 text-[8px] text-slate-400 border-t border-slate-100">
+                        <span>A4 Letterhead</span>
+                        <div className="w-2.5 h-2.5 rounded-full border border-slate-300" />
+                      </div>
+                    </Link>
+
+                    {/* Bottom Document Info Footer */}
+                    <div className="p-3 bg-white flex items-center justify-between gap-2 relative">
+                      <div className="flex items-center gap-2 min-w-0 flex-1">
+                        <FileText
+                          size={18}
+                          weight="fill"
+                          className="text-blue-600 shrink-0"
+                        />
+                        <div className="min-w-0 flex-1">
+                          <Link
+                            to={`/dashboard/documents/editor/${doc.id}`}
+                            className="text-xs font-semibold text-slate-800 hover:text-blue-600 block truncate transition-colors no-underline leading-tight"
                             title={cleanTitle}
                           >
                             {cleanTitle}
-                          </h3>
-                          <div className="flex items-center gap-1.5 text-[11px] text-slate-400 mt-0.5">
-                            <Clock size={13} />
-                            <span>{formattedDate}</span>
+                          </Link>
+                          <div className="text-[10px] text-slate-400 mt-0.5 truncate">
+                            {formattedDate}
                           </div>
                         </div>
                       </div>
 
-                      <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 bg-slate-100 text-slate-600 rounded-full border border-slate-200 shrink-0">
-                        Document
-                      </span>
-                    </div>
+                      {/* 3-Dots Kebab Menu Trigger */}
+                      <div className="relative shrink-0">
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setOpenKebabId(isKebabOpen ? null : doc.id);
+                          }}
+                          className="p-1 rounded-md text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
+                          title="More options"
+                        >
+                          <DotsThreeVertical size={16} weight="bold" />
+                        </button>
 
-                    {/* Preview Box */}
-                    <div className="h-24 bg-gradient-to-b from-slate-50 to-white rounded-xl border border-slate-100 p-3 flex flex-col justify-between text-[11px] text-slate-500 overflow-hidden relative">
-                      <div className="space-y-1.5 opacity-60">
-                        <div className="h-2 bg-slate-300 rounded w-3/4" />
-                        <div className="h-2 bg-slate-200 rounded w-1/2" />
-                        <div className="h-2 bg-slate-200 rounded w-5/6" />
-                      </div>
-                      <div className="flex items-center justify-between text-[10px] text-slate-400 pt-1 border-t border-slate-100">
-                        <span>A4 Letterhead</span>
-                        <span>Variable placeholders</span>
+                        {/* Dropdown Menu */}
+                        {isKebabOpen && (
+                          <div className="absolute right-0 bottom-full mb-1 w-36 bg-white border border-slate-200 rounded-xl shadow-lg py-1 z-30 text-xs font-medium text-slate-700 animate-in fade-in duration-150">
+                            <Link
+                              to={`/dashboard/documents/editor/${doc.id}`}
+                              className="w-full px-3 py-1.5 hover:bg-slate-50 flex items-center gap-2 text-slate-700 no-underline cursor-pointer"
+                              onClick={() => setOpenKebabId(null)}
+                            >
+                              <NotePencil size={14} weight="bold" />
+                              <span>Edit</span>
+                            </Link>
+
+                            <button
+                              type="button"
+                              onClick={(e) => handleDuplicate(doc, e)}
+                              disabled={duplicatingId === doc.id}
+                              className="w-full text-left px-3 py-1.5 hover:bg-slate-50 flex items-center gap-2 text-slate-700 cursor-pointer disabled:opacity-50"
+                            >
+                              {duplicatingId === doc.id ? (
+                                <CircleNotch size={14} className="animate-spin text-slate-400" />
+                              ) : (
+                                <Copy size={14} weight="bold" />
+                              )}
+                              <span>Duplicate</span>
+                            </button>
+
+                            <div className="my-1 border-t border-slate-100" />
+
+                            <button
+                              type="button"
+                              onClick={(e) => handleDeleteClick(doc, e)}
+                              disabled={deletingId === doc.id}
+                              className="w-full text-left px-3 py-1.5 hover:bg-red-50 flex items-center gap-2 text-red-600 cursor-pointer disabled:opacity-50"
+                            >
+                              {deletingId === doc.id ? (
+                                <CircleNotch size={14} className="animate-spin" />
+                              ) : (
+                                <Trash size={14} weight="bold" />
+                              )}
+                              <span>Delete</span>
+                            </button>
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>
-
-                  {/* Card Actions Footer */}
-                  <div className="p-3 bg-slate-50/70 flex items-center justify-between gap-2">
-                    <Link
-                      to={`/dashboard/documents/editor/${doc.id}`}
-                      className="flex-1 py-1.5 px-3 bg-white hover:bg-slate-100 text-slate-800 text-xs font-bold rounded-lg border border-slate-200 shadow-2xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer no-underline"
-                    >
-                      <NotePencil size={15} weight="bold" />
-                      <span>Edit</span>
-                    </Link>
-
-                    <button
-                      type="button"
-                      onClick={() => handleDuplicate(doc)}
-                      disabled={duplicatingId === doc.id}
-                      className="p-2 bg-white hover:bg-slate-100 text-slate-600 hover:text-slate-900 rounded-lg border border-slate-200 shadow-2xs transition-colors cursor-pointer disabled:opacity-50"
-                      title="Duplicate"
-                    >
-                      {duplicatingId === doc.id ? (
-                        <CircleNotch size={15} className="animate-spin text-slate-400" />
-                      ) : (
-                        <Copy size={15} weight="bold" />
-                      )}
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => handleDeleteClick(doc)}
-                      disabled={deletingId === doc.id}
-                      className="p-2 bg-white hover:bg-red-50 text-slate-400 hover:text-red-600 rounded-lg border border-slate-200 shadow-2xs transition-colors cursor-pointer disabled:opacity-50"
-                      title="Delete"
-                    >
-                      {deletingId === doc.id ? (
-                        <CircleNotch size={15} className="animate-spin text-red-500" />
-                      ) : (
-                        <Trash size={15} weight="bold" />
-                      )}
-                    </button>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
+                );
+              })}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* --- PROPER DELETE CONFIRMATION MODAL (No window.confirm) --- */}

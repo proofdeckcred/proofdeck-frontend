@@ -27,7 +27,7 @@ import {
   Link as LinkIcon,
   QrCode,
   ShieldCheck,
-  Sparkle,
+  PuzzlePiece,
   Plus,
   Trash,
   CheckCircle,
@@ -294,8 +294,23 @@ export default function DocumentEditorPage() {
   const { id } = useParams();
   const { user } = useUser();
 
-  const [docTitle, setDocTitle] = useState("Untitled document");
-  const [docHtml, setDocHtml] = useState(OFFICIAL_PRESETS[0].content);
+  const getInitialState = () => {
+    if (typeof window !== "undefined") {
+      const searchParams = new URLSearchParams(window.location.search);
+      const presetId = searchParams.get("preset");
+      if (presetId && presetId !== "blank") {
+        const found = OFFICIAL_PRESETS.find((p) => p.id === presetId);
+        if (found) {
+          return { title: found.title, html: found.content };
+        }
+      }
+    }
+    return { title: "Untitled document", html: "" };
+  };
+
+  const initialDocState = getInitialState();
+  const [docTitle, setDocTitle] = useState(initialDocState.title);
+  const [docHtml, setDocHtml] = useState(initialDocState.html);
   const [isSaving, setIsSaving] = useState(false);
   const [isSaved, setIsSaved] = useState(true);
   const [activeTab, setActiveTab] = useState("variables");
@@ -323,7 +338,7 @@ export default function DocumentEditorPage() {
     if (!id) {
       const searchParams = new URLSearchParams(location.search);
       const presetId = searchParams.get("preset");
-      if (presetId) {
+      if (presetId && presetId !== "blank") {
         const found = OFFICIAL_PRESETS.find((p) => p.id === presetId);
         if (found) {
           setDocTitle(found.title);
@@ -331,7 +346,14 @@ export default function DocumentEditorPage() {
           if (editorRef.current) {
             editorRef.current.innerHTML = found.content;
           }
+          return;
         }
+      }
+      // Blank document (default)
+      setDocTitle("Untitled document");
+      setDocHtml("");
+      if (editorRef.current) {
+        editorRef.current.innerHTML = "";
       }
     }
   }, [id, location.search]);
@@ -559,7 +581,7 @@ export default function DocumentEditorPage() {
   })).filter((grp) => grp.vars.length > 0);
 
   return (
-    <div className="flex flex-col h-screen w-full bg-[#f8f9fa] dark:bg-slate-950 overflow-hidden font-sans select-none">
+    <div className="flex flex-col h-full min-h-0 w-full bg-[#f8f9fa] dark:bg-slate-950 overflow-hidden font-sans select-none">
       <Toaster position="top-right" />
       <input
         type="file"
@@ -569,8 +591,8 @@ export default function DocumentEditorPage() {
         className="hidden"
       />
 
-      {/* Top Header */}
-      <header className="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 px-4 py-2 shrink-0 z-30">
+      {/* Top Header - Fixed & Pinned */}
+      <header className="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 px-4 py-2 flex-none shrink-0 z-30 sticky top-0">
         <div className="flex items-center justify-between gap-4">
           {/* Left Title Section */}
           <div className="flex items-center gap-3 min-w-0">
@@ -723,7 +745,7 @@ export default function DocumentEditorPage() {
                         }}
                         className="w-full text-left px-3 py-1.5 hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center gap-2"
                       >
-                        <Sparkle size={14} /> Variables
+                        <PuzzlePiece size={14} /> Variables
                       </button>
                       <button
                         onClick={() => {
@@ -836,8 +858,8 @@ export default function DocumentEditorPage() {
         </div>
       </header>
 
-      {/* Formatting Toolbar */}
-      <div className="bg-[#f0f4f9] dark:bg-slate-900/80 border-b border-slate-200 dark:border-slate-800 px-3 py-1 flex items-center gap-1 overflow-x-auto shrink-0 z-20">
+      {/* Formatting Toolbar - Fixed & Pinned */}
+      <div className="bg-[#f0f4f9] dark:bg-slate-900/80 border-b border-slate-200 dark:border-slate-800 px-3 py-1 flex items-center gap-1 overflow-x-auto flex-none shrink-0 z-20 sticky top-[49px]">
         <button
           type="button"
           onClick={() => execCmd("undo")}
@@ -1014,8 +1036,8 @@ export default function DocumentEditorPage() {
         </button>
       </div>
 
-      {/* Margin Ruler */}
-      <div className="h-4 bg-[#f8f9fa] dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 flex items-center justify-center shrink-0">
+      {/* Margin Ruler - Fixed & Pinned */}
+      <div className="h-4 bg-[#f8f9fa] dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 flex items-center justify-center flex-none shrink-0 z-20 sticky top-[86px]">
         <div className="w-[210mm] relative h-full flex items-center">
           <div className="absolute left-[25mm] text-blue-600 text-[10px] leading-none select-none">▼</div>
           <div className="absolute right-[25mm] text-blue-600 text-[10px] leading-none select-none">▼</div>
@@ -1024,7 +1046,7 @@ export default function DocumentEditorPage() {
 
       {/* Preview Mode Bar */}
       {isPreviewMode && (
-        <div className="bg-slate-800 text-white px-4 py-1.5 flex items-center justify-between text-xs shrink-0 z-20">
+        <div className="bg-slate-800 text-white px-4 py-1.5 flex items-center justify-between text-xs flex-none shrink-0 z-20 sticky top-[102px]">
           <span>Previewing record output</span>
           <div className="flex items-center gap-2">
             <span className="text-slate-400">Record:</span>
@@ -1044,7 +1066,7 @@ export default function DocumentEditorPage() {
       )}
 
       {/* Workspace */}
-      <div className="flex-1 flex overflow-hidden relative">
+      <div className="flex-1 min-h-0 flex overflow-hidden relative">
         {/* Left Side Panel */}
         <aside
           className={`bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 flex flex-col shrink-0 transition-all duration-200 z-10 ${
@@ -1225,9 +1247,9 @@ export default function DocumentEditorPage() {
           )}
         </aside>
 
-        {/* Canvas Area */}
+        {/* Canvas Area - Only this container scrolls */}
         <main
-          className="flex-1 overflow-y-auto p-8 flex justify-center bg-[#f0f4f9] dark:bg-slate-950"
+          className="flex-1 min-h-0 h-full overflow-y-auto p-8 flex justify-center bg-[#f0f4f9] dark:bg-slate-950"
           style={{ transform: `scale(${parseFloat(zoomLevel) / 100})`, transformOrigin: "top center" }}
         >
           {/* A4 Paper */}
