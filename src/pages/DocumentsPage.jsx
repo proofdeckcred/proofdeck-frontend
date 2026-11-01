@@ -4,7 +4,6 @@ import React, { useState, useEffect, useMemo, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Modal } from "react-bootstrap";
 import {
-  FileText,
   Plus,
   MagnifyingGlass,
   Trash,
@@ -24,6 +23,36 @@ import {
 import toast, { Toaster } from "react-hot-toast";
 import { getDocuments, deleteTemplate, createCustomTemplate, getTemplate } from "../api";
 import HelpGuide from "../components/HelpGuide";
+
+// --- PROOFDECK BRAND DOCUMENT ICON ---
+export const ProofDeckDocIcon = ({ size = 20, className = "" }) => (
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 32 32"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+    className={`shrink-0 ${className}`}
+  >
+    <defs>
+      <linearGradient id="pdDocGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stopColor="#6355F6" />
+        <stop offset="100%" stopColor="#4336D0" />
+      </linearGradient>
+    </defs>
+    {/* Purple Document Parchment */}
+    <rect x="5" y="3" width="22" height="26" rx="4" fill="url(#pdDocGrad)" />
+    {/* Lavender Folded Corner */}
+    <path d="M19 3 L27 11 L19 11 Z" fill="#C7D2FE" opacity="0.9" />
+    {/* Micro Content Lines */}
+    <rect x="9" y="14" width="14" height="2" rx="1" fill="#FFFFFF" opacity="0.95" />
+    <rect x="9" y="18" width="11" height="2" rx="1" fill="#FFFFFF" opacity="0.8" />
+    <rect x="9" y="22" width="7" height="2" rx="1" fill="#FFFFFF" opacity="0.65" />
+    {/* Gold Verification Seal Stamp */}
+    <circle cx="21" cy="22" r="3.5" fill="#FBBF24" />
+    <circle cx="21" cy="22" r="2" fill="#D97706" />
+  </svg>
+);
 
 // --- MINIATURE A4 PORTRAIT TEMPLATE ILLUSTRATIONS ---
 
@@ -324,7 +353,7 @@ const DocumentsPage = () => {
     setDuplicatingId(doc.id);
     try {
       const full = await getTemplate(doc.id);
-      const docData = full.data?.template;
+      const docData = full.data?.template || full.data;
       const cleanTitle = (doc.title || "Document")
         .replace(/\s*\(Senate Approved\)/gi, "")
         .replace(/Senate\s*/gi, "")
@@ -338,8 +367,9 @@ const DocumentsPage = () => {
       const res = await createCustomTemplate(payload);
       toast.success("Document duplicated");
       await fetchDocs();
-      if (res.data?.template_id) {
-        navigate(`/dashboard/documents/editor/${res.data.template_id}`);
+      const newId = res.data?.template_id || res.data?.id;
+      if (newId) {
+        navigate(`/dashboard/documents/editor/${newId}`);
       }
     } catch (err) {
       toast.error("Failed to duplicate document");
@@ -503,8 +533,8 @@ const DocumentsPage = () => {
           ) : filteredDocs.length === 0 ? (
             /* Clean Empty State */
             <div className="bg-white rounded-2xl border border-dashed border-slate-200 p-12 text-center shadow-2xs space-y-3 max-w-md mx-auto my-6">
-              <div className="w-12 h-12 rounded-2xl bg-slate-100 text-slate-500 mx-auto flex items-center justify-center">
-                <FileText size={24} weight="duotone" />
+              <div className="w-12 h-12 rounded-2xl bg-indigo-50/80 text-slate-500 mx-auto flex items-center justify-center">
+                <ProofDeckDocIcon size={28} />
               </div>
               <h3 className="text-sm font-bold text-slate-900">
                 {searchQuery ? "No matching documents" : "No documents yet"}
@@ -581,12 +611,8 @@ const DocumentsPage = () => {
 
                     {/* Bottom Document Info Footer */}
                     <div className="p-3 bg-white flex items-center justify-between gap-2 relative">
-                      <div className="flex items-center gap-2 min-w-0 flex-1">
-                        <FileText
-                          size={18}
-                          weight="fill"
-                          className="text-blue-600 shrink-0"
-                        />
+                      <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                        <ProofDeckDocIcon size={22} />
                         <div className="min-w-0 flex-1">
                           <Link
                             to={`/dashboard/documents/editor/${doc.id}`}

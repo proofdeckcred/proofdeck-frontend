@@ -51,6 +51,111 @@ import { createCustomTemplate, getTemplate, updateCustomTemplate } from "../api"
 import { useUser } from "../context/UserContext";
 import AppButton from "../components/ui/AppButton";
 
+// --- PROOFDECK BRAND DOCUMENT ICON (Distinct, Legal & Authentic) ---
+export const ProofDeckDocIcon = ({ size = 26, className = "" }) => (
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 32 32"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+    className={`shrink-0 ${className}`}
+  >
+    <defs>
+      <linearGradient id="pdDocGradEditor" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stopColor="#6355F6" />
+        <stop offset="100%" stopColor="#4336D0" />
+      </linearGradient>
+    </defs>
+    {/* Purple Document Parchment */}
+    <rect x="5" y="3" width="22" height="26" rx="4" fill="url(#pdDocGradEditor)" />
+    {/* Lavender Folded Corner */}
+    <path d="M19 3 L27 11 L19 11 Z" fill="#C7D2FE" opacity="0.9" />
+    {/* Micro Content Lines */}
+    <rect x="9" y="14" width="14" height="2" rx="1" fill="#FFFFFF" opacity="0.95" />
+    <rect x="9" y="18" width="11" height="2" rx="1" fill="#FFFFFF" opacity="0.8" />
+    <rect x="9" y="22" width="7" height="2" rx="1" fill="#FFFFFF" opacity="0.65" />
+    {/* Gold Verification Seal Stamp */}
+    <circle cx="21" cy="22" r="3.5" fill="#FBBF24" />
+    <circle cx="21" cy="22" r="2" fill="#D97706" />
+  </svg>
+);
+
+/**
+ * Paginates HTML string into discrete A4 page sheets
+ */
+export function paginateHtml(html) {
+  if (!html || !html.trim()) return ["<p><br></p>"];
+
+  // 1. Check for explicit page break markers
+  const explicitBreakRegex = /(?:<div[^>]*class=["'][^"']*pd-page-break[^"']*["'][^>]*>[\s\S]*?<\/div>|<div[^>]*style=["'][^"']*(?:page-break-after:\s*always|break-after:\s*page)[^"']*["'][^>]*>[\s\S]*?<\/div>|<hr[^>]*class=["'][^"']*pd-page-break[^"']*["'][^>]*>|<!--\s*pagebreak\s*-->)/gi;
+  if (explicitBreakRegex.test(html)) {
+    const parts = html.split(explicitBreakRegex).map((p) => p.trim()).filter((p) => p.length > 0);
+    if (parts.length > 0) return parts;
+  }
+
+  // 2. If content is short (fits in 1 A4 page, ~1400 chars), return single page
+  const plainTextLength = html.replace(/<[^>]+>/g, "").length;
+  if (plainTextLength <= 1400) {
+    return [html];
+  }
+
+  // 3. For long content without explicit breaks (e.g. multi-page Word imports), split by semantic blocks
+  const blockRegex = /(<(?:h[1-6]|p|ul|ol|table|blockquote|div)[^>]*>[\s\S]*?<\/(?:h[1-6]|p|ul|ol|table|blockquote|div)>)/gi;
+  const blocks = html.match(blockRegex);
+
+  if (!blocks || blocks.length <= 1) {
+    const paragraphs = html.split(/<\/p>|<br\s*\/?>\s*<br\s*\/?>/gi).filter(Boolean);
+    if (paragraphs.length > 1) {
+      const pPages = [];
+      let cur = [];
+      let cnt = 0;
+      for (const p of paragraphs) {
+        const len = p.replace(/<[^>]+>/g, "").length;
+        if (cnt + len > 1350 && cur.length > 0) {
+          pPages.push(cur.join("<p><br></p>"));
+          cur = [p];
+          cnt = len;
+        } else {
+          cur.push(p);
+          cnt += len;
+        }
+      }
+      if (cur.length > 0) pPages.push(cur.join("<p><br></p>"));
+      return pPages.length > 0 ? pPages : [html];
+    }
+    return [html];
+  }
+
+  const pages = [];
+  let currentPageBlocks = [];
+  let currentChars = 0;
+  const MAX_PAGE_CHARS = 1350;
+
+  for (const block of blocks) {
+    const blockTextLen = block.replace(/<[^>]+>/g, "").length;
+    const isMajorHeading = /^<h[1-3][^>]*>/i.test(block);
+
+    if (
+      (currentChars + blockTextLen > MAX_PAGE_CHARS && currentPageBlocks.length > 0) ||
+      (isMajorHeading && currentChars > 500)
+    ) {
+      pages.push(currentPageBlocks.join("\n"));
+      currentPageBlocks = [block];
+      currentChars = blockTextLen;
+    } else {
+      currentPageBlocks.push(block);
+      currentChars += blockTextLen;
+    }
+  }
+
+  if (currentPageBlocks.length > 0) {
+    pages.push(currentPageBlocks.join("\n"));
+  }
+
+  return pages.length > 0 ? pages : [html];
+}
+
 // --- PRESET DOCUMENT TEMPLATES ---
 const OFFICIAL_PRESETS = [
   {
@@ -310,7 +415,10 @@ export default function DocumentEditorPage() {
 
   const initialDocState = getInitialState();
   const [docTitle, setDocTitle] = useState(initialDocState.title);
-  const [docHtml, setDocHtml] = useState(initialDocState.html);
+  const [pages, setPages] = useState(() => {
+    const p = paginateHtml(initialDocState.html);
+    return p.length > 0 ? p : ["<p><br></p>"];
+  });
   const [isSaving, setIsSaving] = useState(false);
   const [isSaved, setIsSaved] = useState(true);
   const [activeTab, setActiveTab] = useState("variables");
@@ -330,9 +438,20 @@ export default function DocumentEditorPage() {
   // Menu dropdown toggles
   const [activeMenu, setActiveMenu] = useState(null);
 
-  const editorRef = useRef(null);
+  const activePageIdxRef = useRef(0);
+  const pageRefs = useRef([]);
   const fileInputRef = useRef(null);
   const menuContainerRef = useRef(null);
+
+  const syncDomPages = (pagesArray) => {
+    setTimeout(() => {
+      pagesArray.forEach((html, idx) => {
+        if (pageRefs.current[idx]) {
+          pageRefs.current[idx].innerHTML = html || "<p><br></p>";
+        }
+      });
+    }, 25);
+  };
 
   useEffect(() => {
     if (!id) {
@@ -342,19 +461,16 @@ export default function DocumentEditorPage() {
         const found = OFFICIAL_PRESETS.find((p) => p.id === presetId);
         if (found) {
           setDocTitle(found.title);
-          setDocHtml(found.content);
-          if (editorRef.current) {
-            editorRef.current.innerHTML = found.content;
-          }
+          const paginated = paginateHtml(found.content);
+          setPages(paginated);
+          syncDomPages(paginated);
           return;
         }
       }
       // Blank document (default)
       setDocTitle("Untitled document");
-      setDocHtml("");
-      if (editorRef.current) {
-        editorRef.current.innerHTML = "";
-      }
+      setPages(["<p><br></p>"]);
+      syncDomPages(["<p><br></p>"]);
     }
   }, [id, location.search]);
 
@@ -374,20 +490,31 @@ export default function DocumentEditorPage() {
     if (id) {
       getTemplate(id)
         .then((res) => {
-          const t = res.data.template;
+          const t = res.data?.template || res.data;
           if (t) {
             setDocTitle(t.title || "Untitled document");
-            if (t.canvas_data?.document_html) {
-              setDocHtml(t.canvas_data.document_html);
-              if (editorRef.current) {
-                editorRef.current.innerHTML = t.canvas_data.document_html;
+            let layoutData = t.layout_data || t.canvas_data || {};
+            if (typeof layoutData === "string") {
+              try {
+                layoutData = JSON.parse(layoutData);
+              } catch (e) {
+                layoutData = {};
               }
             }
-            if (t.canvas_data?.qr_code_enabled !== undefined) {
-              setIncludeQrCode(t.canvas_data.qr_code_enabled);
+            const docHtmlContent = layoutData.document_html || "";
+            if (docHtmlContent) {
+              const paginated = paginateHtml(docHtmlContent);
+              setPages(paginated);
+              syncDomPages(paginated);
             }
-            if (t.canvas_data?.qr_position) {
-              setQrPosition(t.canvas_data.qr_position);
+            if (layoutData.qr_code_enabled !== undefined) {
+              setIncludeQrCode(layoutData.qr_code_enabled);
+            }
+            if (layoutData.qr_position) {
+              setQrPosition(layoutData.qr_position);
+            }
+            if (layoutData.zoom) {
+              setZoomLevel(layoutData.zoom);
             }
           }
         })
@@ -398,17 +525,40 @@ export default function DocumentEditorPage() {
   }, [id]);
 
   useEffect(() => {
-    if (editorRef.current && !isPreviewMode && !editorRef.current.innerHTML) {
-      editorRef.current.innerHTML = docHtml;
+    if (!isPreviewMode) {
+      pages.forEach((p, idx) => {
+        const el = pageRefs.current[idx];
+        if (el && (!el.innerHTML || el.innerHTML === "<p><br></p>")) {
+          el.innerHTML = p || "<p><br></p>";
+        }
+      });
     }
-  }, [docHtml, isPreviewMode]);
+  }, [pages.length, isPreviewMode]);
+
+  const getCombinedHtml = () => {
+    const latestPages = pages.map((p, idx) => {
+      const el = pageRefs.current[idx];
+      return el ? el.innerHTML : p;
+    });
+    return latestPages.join('<div class="pd-page-break" style="page-break-after: always; break-after: page;"></div>');
+  };
+
+  const handlePageInput = (index) => {
+    const el = pageRefs.current[index];
+    if (!el) return;
+    const currentHtml = el.innerHTML;
+    setPages((prev) => {
+      const next = [...prev];
+      next[index] = currentHtml;
+      return next;
+    });
+    setIsSaved(false);
+  };
 
   const execCmd = (command, value = null) => {
     document.execCommand(command, false, value);
-    if (editorRef.current) {
-      setDocHtml(editorRef.current.innerHTML);
-      setIsSaved(false);
-    }
+    const activeIdx = activePageIdxRef.current || 0;
+    handlePageInput(activeIdx);
   };
 
   const handleFontChange = (font) => {
@@ -422,51 +572,74 @@ export default function DocumentEditorPage() {
   };
 
   const insertVariable = (varKey, varLabel) => {
-    if (!editorRef.current) return;
-    editorRef.current.focus();
+    const activeIdx = activePageIdxRef.current || 0;
+    const targetEl = pageRefs.current[activeIdx] || pageRefs.current[0];
+    if (targetEl) {
+      targetEl.focus();
+    }
     const chipHtml = `&nbsp;<span class="pd-chip" data-var="${varKey}" contenteditable="false" style="display: inline-block; background-color: #F1F5F9; color: #1E293B; border: 1px solid #CBD5E1; padding: 1px 6px; border-radius: 4px; font-family: monospace; font-size: 12px; font-weight: 600; user-select: all;">${varKey}</span>&nbsp;`;
     document.execCommand("insertHTML", false, chipHtml);
-    setDocHtml(editorRef.current.innerHTML);
-    setIsSaved(false);
+    handlePageInput(activeIdx);
   };
 
   const handleDragStart = (e, varKey) => {
     e.dataTransfer.setData("text/plain", varKey);
   };
 
-  const handleDrop = (e) => {
+  const handleDrop = (e, index) => {
     e.preventDefault();
     const varKey = e.dataTransfer.getData("text/plain");
     if (varKey && varKey.startsWith("{{") && varKey.endsWith("}}")) {
-      const chipHtml = `&nbsp;<span class="pd-chip" data-var="${varKey}" contenteditable="false" style="display: inline-block; background-color: #F1F5F9; color: #1E293B; border: 1px solid #CBD5E1; padding: 1px 6px; border-radius: 4px; font-family: monospace; font-size: 12px; font-weight: 600; user-select: all;">${varKey}</span>&nbsp;`;
+      const targetEl = pageRefs.current[index];
+      if (targetEl) targetEl.focus();
+      const chipHtml = `&nbsp;<span class="pd-chip" data-var="${varKey}" contenteditable="false" style="display: inline-block; background-color: #F1F5F9; color: #1E293B; border: 1px solid #CBD5E1; padding: 1px 6px; border-radius: 4px; font-family: monospace; font-size: 12px; font-weight: 600;">${varKey}</span>&nbsp;`;
       document.execCommand("insertHTML", false, chipHtml);
-      if (editorRef.current) {
-        setDocHtml(editorRef.current.innerHTML);
-        setIsSaved(false);
-      }
+      handlePageInput(index);
     }
   };
 
-  const handleEditorInput = () => {
-    if (editorRef.current) {
-      setDocHtml(editorRef.current.innerHTML);
-      setIsSaved(false);
+  const handleAddPage = (insertIndex = pages.length - 1) => {
+    const newIdx = insertIndex + 1;
+    setPages((prev) => {
+      const next = [...prev];
+      next.splice(newIdx, 0, "<p><br></p>");
+      return next;
+    });
+    setIsSaved(false);
+    setTimeout(() => {
+      if (pageRefs.current[newIdx]) {
+        pageRefs.current[newIdx].innerHTML = "<p><br></p>";
+        pageRefs.current[newIdx].focus();
+        activePageIdxRef.current = newIdx;
+      }
+    }, 60);
+  };
+
+  const handleDeletePage = (index) => {
+    if (pages.length <= 1) {
+      toast.error("Document must have at least one page");
+      return;
     }
+    const updated = pages.filter((_, i) => i !== index);
+    setPages(updated);
+    setIsSaved(false);
+    if (activePageIdxRef.current >= updated.length) {
+      activePageIdxRef.current = updated.length - 1;
+    }
+    syncDomPages(updated);
+    toast.success(`Page ${index + 1} deleted`);
   };
 
   const insertPageBreak = () => {
-    if (!editorRef.current) return;
-    editorRef.current.focus();
-    const pageBreakHtml = `&nbsp;<div class="pd-page-break" contenteditable="false" style="display: flex; align-items: center; justify-content: center; height: 36px; margin: 40px -25mm; background-color: #f0f4f9; border-top: 1px dashed #cbd5e1; border-bottom: 1px dashed #cbd5e1; position: relative; user-select: none; page-break-after: always; break-after: page;"><span style="background-color: #ffffff; color: #64748b; font-size: 11px; font-weight: 600; padding: 2px 14px; border-radius: 9999px; border: 1px solid #cbd5e1; box-shadow: 0 1px 2px rgba(0,0,0,0.05); letter-spacing: 0.5px; text-transform: uppercase;">Page Break</span></div><p><br></p>`;
-    document.execCommand("insertHTML", false, pageBreakHtml);
-    setDocHtml(editorRef.current.innerHTML);
-    setIsSaved(false);
+    const currentIdx = activePageIdxRef.current || 0;
+    handleAddPage(currentIdx);
+    toast.success(`Page ${currentIdx + 2} added`);
   };
 
-  const handleEditorKeyDown = (e) => {
+  const handlePageKeyDown = (e, index) => {
     if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
       e.preventDefault();
-      insertPageBreak();
+      handleAddPage(index);
     }
   };
 
@@ -487,24 +660,18 @@ export default function DocumentEditorPage() {
       const result = await mammoth.convertToHtml({ arrayBuffer }, options);
       let importedHtml = result.value;
 
-      // Replace Word page breaks or hr with our styled page break element
-      const styledPageBreak = `<div class="pd-page-break" contenteditable="false" style="display: flex; align-items: center; justify-content: center; height: 36px; margin: 40px -25mm; background-color: #f0f4f9; border-top: 1px dashed #cbd5e1; border-bottom: 1px dashed #cbd5e1; position: relative; user-select: none; page-break-after: always; break-after: page;"><span style="background-color: #ffffff; color: #64748b; font-size: 11px; font-weight: 600; padding: 2px 14px; border-radius: 9999px; border: 1px solid #cbd5e1; box-shadow: 0 1px 2px rgba(0,0,0,0.05); letter-spacing: 0.5px; text-transform: uppercase;">Page Break</span></div><p><br></p>`;
-
-      importedHtml = importedHtml.replace(/<div class="pd-page-break"><\/div>|<hr[^>]*>/gi, styledPageBreak);
-
       importedHtml = importedHtml.replace(/\{([a-zA-Z0-9_]+)\}/g, "{{$1}}");
       importedHtml = importedHtml.replace(/(\{\{[a-zA-Z0-9_]+\}\})/g, (match) => {
         return `<span class="pd-chip" data-var="${match}" contenteditable="false" style="display: inline-block; background-color: #F1F5F9; color: #1E293B; border: 1px solid #CBD5E1; padding: 1px 6px; border-radius: 4px; font-family: monospace; font-size: 12px; font-weight: 600;">${match}</span>`;
       });
 
-      setDocHtml(importedHtml);
-      if (editorRef.current) {
-        editorRef.current.innerHTML = importedHtml;
-      }
+      const paginated = paginateHtml(importedHtml);
+      setPages(paginated);
+      syncDomPages(paginated);
       setIsSaved(false);
       const fileNameClean = file.name.replace(/\.[^/.]+$/, "");
       setDocTitle(fileNameClean);
-      toast.success("Document imported", { id: toastId });
+      toast.success(`Imported ${paginated.length} page${paginated.length > 1 ? "s" : ""}`, { id: toastId });
     } catch (err) {
       toast.error("Failed to parse Word document", { id: toastId });
     }
@@ -517,7 +684,7 @@ export default function DocumentEditorPage() {
       return;
     }
     setIsSaving(true);
-    const htmlToSave = editorRef.current ? editorRef.current.innerHTML : docHtml;
+    const htmlToSave = getCombinedHtml();
 
     const payload = {
       title: docTitle,
@@ -537,8 +704,9 @@ export default function DocumentEditorPage() {
       } else {
         const res = await createCustomTemplate(payload);
         toast.success("Document created");
-        if (res.data?.template_id) {
-          navigate(`/dashboard/documents/editor/${res.data.template_id}`, { replace: true });
+        const newId = res.data?.template_id || res.data?.id;
+        if (newId) {
+          navigate(`/dashboard/documents/editor/${newId}`, { replace: true });
         }
       }
       setIsSaved(true);
@@ -553,9 +721,9 @@ export default function DocumentEditorPage() {
     setPresetToLoad(preset);
   };
 
-  const renderMergedPreview = () => {
-    const record = SAMPLE_RECORDS[selectedRecordIdx];
-    let rendered = docHtml;
+  const renderMergedPreviewForPage = (pageHtml) => {
+    const record = SAMPLE_RECORDS[selectedRecordIdx] || SAMPLE_RECORDS[0];
+    let rendered = pageHtml;
     rendered = rendered.replace(/class="pd-chip"[^>]*>\{\{([a-zA-Z0-9_]+)\}\}<\/span>/g, (match, p1) => {
       const val = record[p1] || `[${p1}]`;
       return `<span style="background-color: #FEF08A; color: #854D0E; padding: 1px 4px; border-radius: 3px; font-weight: 600;">${val}</span>`;
@@ -568,7 +736,9 @@ export default function DocumentEditorPage() {
 
   const handlePrint = () => {
     const printWindow = window.open("", "_blank");
-    const content = isPreviewMode ? renderMergedPreview() : (editorRef.current?.innerHTML || docHtml);
+    const content = isPreviewMode
+      ? pages.map((p) => renderMergedPreviewForPage(p)).join('<div class="pd-page-break" style="page-break-after: always; break-after: page;"></div>')
+      : getCombinedHtml();
     printWindow.document.write(`
       <!DOCTYPE html>
       <html>
@@ -632,7 +802,7 @@ export default function DocumentEditorPage() {
               <ArrowLeft size={16} weight="bold" />
             </Link>
 
-            <FileText size={28} weight="fill" className="text-blue-600 shrink-0" />
+            <ProofDeckDocIcon size={28} />
 
             <div className="flex flex-col min-w-0">
               <div className="flex items-center gap-2">
@@ -864,7 +1034,7 @@ export default function DocumentEditorPage() {
                     <div className="absolute left-0 top-full mt-1 w-40 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-md shadow-lg py-1 z-50 text-xs text-slate-700 dark:text-slate-200">
                       <button
                         onClick={() => {
-                          const words = docHtml.replace(/<[^>]+>/g, "").split(/\s+/).filter(Boolean).length;
+                          const words = getCombinedHtml().replace(/<[^>]+>/g, "").split(/\s+/).filter(Boolean).length;
                           toast(`Word count: ${words}`);
                           setActiveMenu(null);
                         }}
@@ -1077,7 +1247,17 @@ export default function DocumentEditorPage() {
 
         <div className="h-4 w-px bg-slate-300 dark:bg-slate-700 mx-1" />
 
-        {/* Page Break Button */}
+        {/* Add Page & Page Break Buttons */}
+        <button
+          type="button"
+          onClick={() => handleAddPage(activePageIdxRef.current)}
+          className="p-1.5 rounded hover:bg-white dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 flex items-center gap-1 text-xs cursor-pointer"
+          title="Add New A4 Page"
+        >
+          <Plus size={14} weight="bold" className="text-[#5144E8]" />
+          <span className="hidden sm:inline text-xs font-semibold text-slate-700 dark:text-slate-300">Add page</span>
+        </button>
+
         <button
           type="button"
           onClick={insertPageBreak}
@@ -1297,8 +1477,8 @@ export default function DocumentEditorPage() {
           {/* Margin Ruler - Inside Canvas Column, perfectly aligned with the A4 paper! */}
           <div className="h-6 bg-[#f8f9fa] dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 flex items-center justify-center flex-none shrink-0 z-20 shadow-2xs">
             <div className="w-[210mm] relative h-full flex items-center">
-              <div className="absolute left-[25mm] text-blue-600 text-[10px] leading-none select-none font-bold">▼</div>
-              <div className="absolute right-[25mm] text-blue-600 text-[10px] leading-none select-none font-bold">▼</div>
+              <div className="absolute left-[25mm] text-[#5144E8] text-[10px] leading-none select-none font-bold">▼</div>
+              <div className="absolute right-[25mm] text-[#5144E8] text-[10px] leading-none select-none font-bold">▼</div>
               <div className="w-full h-0.5 bg-slate-300 dark:bg-slate-700 mx-[25mm] rounded-full" />
             </div>
           </div>
@@ -1313,65 +1493,101 @@ export default function DocumentEditorPage() {
                 transformOrigin: "top center",
               }}
             >
-              {/* A4 Paper */}
-              <div
-                className="bg-white text-slate-900 shadow-sm border border-slate-200 dark:border-slate-800 relative transition-all rounded-xs"
-                style={{
-                  width: "210mm",
-                  minHeight: "297mm",
-                  padding: "25mm",
-                  boxSizing: "border-box",
-                }}
-                onDrop={handleDrop}
-                onDragOver={(e) => e.preventDefault()}
-              >
-                {/* Header QR */}
-                {includeQrCode && qrPosition === "header-right" && (
-                  <div className="absolute top-6 right-6 flex items-center gap-2 p-2 bg-slate-50 border border-slate-200 rounded">
-                    <div className="w-10 h-10 flex items-center justify-center">
-                      <QrCode size={36} className="text-slate-800" />
-                    </div>
+              {/* Multi-page A4 Paper Sheets */}
+              {pages.map((pageHtml, index) => (
+                <div
+                  key={index}
+                  className="bg-white text-slate-900 shadow-sm hover:shadow-md border border-slate-200/90 dark:border-slate-800 relative transition-all rounded-xs mb-8"
+                  style={{
+                    width: "210mm",
+                    minHeight: "297mm",
+                    padding: "25mm",
+                    boxSizing: "border-box",
+                  }}
+                  onDrop={(e) => handleDrop(e, index)}
+                  onDragOver={(e) => e.preventDefault()}
+                >
+                  {/* Page Indicator & Delete button above printable area */}
+                  <div className="absolute -top-6 left-0 right-0 flex items-center justify-between text-[11px] text-slate-400 font-medium px-1 select-none">
+                    <span className="bg-slate-200/70 dark:bg-slate-800 px-2 py-0.5 rounded text-[10px] text-slate-600 dark:text-slate-300 font-semibold tracking-wide">
+                      Page {index + 1} of {pages.length}
+                    </span>
+                    {pages.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => handleDeletePage(index)}
+                        className="text-slate-400 hover:text-rose-500 transition-colors p-0.5 rounded cursor-pointer flex items-center gap-1 text-[10px]"
+                        title={`Delete page ${index + 1}`}
+                      >
+                        <Trash size={13} />
+                        <span>Delete page</span>
+                      </button>
+                    )}
                   </div>
-                )}
 
-                {/* Content Area */}
-                {isPreviewMode ? (
-                  <div
-                    className="prose max-w-none text-slate-900 leading-relaxed outline-none"
-                    dangerouslySetInnerHTML={{ __html: renderMergedPreview() }}
-                  />
-                ) : (
-                  <div
-                    ref={editorRef}
-                    contentEditable
-                    suppressContentEditableWarning
-                    onInput={handleEditorInput}
-                    onKeyDown={handleEditorKeyDown}
-                    className="prose max-w-none text-slate-900 leading-relaxed outline-none min-h-[700px]"
-                    style={{
-                      fontFamily: currentFont,
-                      fontSize: `${currentFontSize}pt`,
-                    }}
-                  />
-                )}
+                  {/* Header QR (Only on first page) */}
+                  {includeQrCode && qrPosition === "header-right" && index === 0 && (
+                    <div className="absolute top-6 right-6 flex items-center gap-2 p-2 bg-slate-50 border border-slate-200 rounded">
+                      <div className="w-10 h-10 flex items-center justify-center">
+                        <QrCode size={36} className="text-slate-800" />
+                      </div>
+                    </div>
+                  )}
 
-                {/* Bottom QR Stamp */}
-                {includeQrCode && (qrPosition === "bottom-right" || qrPosition === "bottom-left") && (
-                  <div
-                    className={`mt-16 pt-6 border-t border-slate-200 flex items-center gap-3 ${
-                      qrPosition === "bottom-right" ? "justify-end" : "justify-start"
-                    }`}
-                  >
-                    <div className="w-12 h-12 bg-white border border-slate-200 p-1 rounded flex items-center justify-center">
-                      <QrCode size={40} className="text-slate-800" />
+                  {/* Content Area for this page */}
+                  {isPreviewMode ? (
+                    <div
+                      className="prose max-w-none text-slate-900 leading-relaxed outline-none min-h-[750px]"
+                      dangerouslySetInnerHTML={{ __html: renderMergedPreviewForPage(pageHtml) }}
+                    />
+                  ) : (
+                    <div
+                      ref={(el) => (pageRefs.current[index] = el)}
+                      contentEditable
+                      suppressContentEditableWarning
+                      onInput={() => handlePageInput(index)}
+                      onKeyDown={(e) => handlePageKeyDown(e, index)}
+                      onFocus={() => {
+                        activePageIdxRef.current = index;
+                      }}
+                      className="prose max-w-none text-slate-900 leading-relaxed outline-none min-h-[750px]"
+                      style={{
+                        fontFamily: currentFont,
+                        fontSize: `${currentFontSize}pt`,
+                      }}
+                    />
+                  )}
+
+                  {/* Bottom QR Stamp (Only on the last page) */}
+                  {includeQrCode && (qrPosition === "bottom-right" || qrPosition === "bottom-left") && index === pages.length - 1 && (
+                    <div
+                      className={`mt-16 pt-6 border-t border-slate-200 flex items-center gap-3 ${
+                        qrPosition === "bottom-right" ? "justify-end" : "justify-start"
+                      }`}
+                    >
+                      <div className="w-12 h-12 bg-white border border-slate-200 p-1 rounded flex items-center justify-center">
+                        <QrCode size={40} className="text-slate-800" />
+                      </div>
+                      <div className="text-left text-[10px] text-slate-500">
+                        <div className="font-semibold text-slate-700">Verified document</div>
+                        <div>Scan QR code to verify authenticity</div>
+                      </div>
                     </div>
-                    <div className="text-left text-[10px] text-slate-500">
-                      <div className="font-semibold text-slate-700">Verified document</div>
-                      <div>Scan QR code to verify authenticity</div>
-                    </div>
-                  </div>
-                )}
-              </div>
+                  )}
+                </div>
+              ))}
+
+              {/* Add Page Button Below Canvas */}
+              {!isPreviewMode && (
+                <button
+                  type="button"
+                  onClick={() => handleAddPage(pages.length - 1)}
+                  className="mt-2 mb-12 inline-flex items-center gap-2 px-5 py-2.5 bg-white hover:bg-slate-50 text-[#5144E8] font-bold text-xs rounded-xl border border-slate-200/90 shadow-2xs hover:shadow-sm transition-all cursor-pointer"
+                >
+                  <Plus size={15} weight="bold" />
+                  <span>Add Page ({pages.length + 1})</span>
+                </button>
+              )}
             </div>
           </main>
         </div>
@@ -1404,11 +1620,10 @@ export default function DocumentEditorPage() {
             <button
               type="button"
               onClick={() => {
-                setDocHtml(presetToLoad.content);
                 setDocTitle(presetToLoad.title);
-                if (editorRef.current) {
-                  editorRef.current.innerHTML = presetToLoad.content;
-                }
+                const paginated = paginateHtml(presetToLoad.content);
+                setPages(paginated);
+                syncDomPages(paginated);
                 setIsSaved(false);
                 setPresetToLoad(null);
                 toast.success(`Loaded "${presetToLoad.name}"`);
