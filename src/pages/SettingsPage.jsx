@@ -708,7 +708,7 @@ function SettingsPage() {
 
       <div className="max-w-5xl mx-auto px-0 sm:px-4 mt-2 sm:mt-6">
         <div className="overflow-x-auto scrollbar-none pb-2 mb-6 -mx-4 px-4 sm:mx-0 sm:px-0">
-          <div className="bg-slate-100/80 dark:bg-[#141417] p-1 rounded-xl inline-flex gap-1 border border-slate-200/40 dark:border-[#2b2b31] min-w-max">
+          <div data-tour="settings-tabs" className="bg-slate-100/80 dark:bg-[#141417] p-1 rounded-xl inline-flex gap-1 border border-slate-200/40 dark:border-[#2b2b31] min-w-max">
             {tabs.map((tab) => {
               const isActive = activeTab === tab.id;
               return (
@@ -731,6 +731,7 @@ function SettingsPage() {
           </div>
         </div>
 
+      <div data-tour="settings-content">
       {activeTab === "profile" && (
         <div className="space-y-6">
           <Section title="Public Profile" icon={User}>
@@ -1373,6 +1374,7 @@ function SettingsPage() {
           )}
         </Section>
       )}
+      </div>
 
       <Modal
         show={showKeyModal}

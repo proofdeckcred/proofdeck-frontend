@@ -8,6 +8,8 @@ import MobileWarning from "../components/MobileWarning";
 import DashboardTopbar from "../components/DashboardTopbar";
 import BackgroundJobIndicator from "../components/BackgroundJobIndicator";
 import DesktopActivationModal from "../components/DesktopActivationModal";
+import ProductTour from "../components/ProductTour";
+import { TourProvider } from "../context/TourContext";
 import { useUser } from "../context/UserContext";
 
 function DashboardLayout() {
@@ -55,8 +57,10 @@ function DashboardLayout() {
   }, []);
 
   return (
+    <TourProvider>
     <div className="flex h-screen bg-[#f8f9fc] dark:bg-[#121214] overflow-hidden w-full max-w-full">
       <MobileWarning />
+      <ProductTour />
       {/*  
         DESKTOP SIDEBAR 
         flex-shrink-0 prevents it from being squashed.
@@ -125,6 +129,7 @@ function DashboardLayout() {
         onActivated={(newCfg) => setDesktopConfig(newCfg)}
       />
     </div>
+    </TourProvider>
   );
 
 }

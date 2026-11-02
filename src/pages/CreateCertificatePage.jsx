@@ -58,7 +58,6 @@ import { Spinner } from "react-bootstrap";
 import toast, { Toaster } from "react-hot-toast";
 import { useUser } from "../context/UserContext";
 import TemplateSelector from "../components/TemplateSelector";
-import HelpGuide from "../components/HelpGuide";
 import SpreadsheetGrid, {
   ensureMinimumRows,
   MIN_STARTER_ROWS,
@@ -1598,8 +1597,6 @@ const CreateCertificatePage = () => {
               </h1>
             </div>
           </div>
-          
-          <HelpGuide type="certificates" />
         </div>
       </div>
 
@@ -1612,7 +1609,7 @@ const CreateCertificatePage = () => {
             
             {/* Segmented Mode Selector Pills */}
             {!isEditMode && (
-              <div className="bg-slate-100/80 p-1 rounded-xl flex gap-1 mb-5 border border-slate-200/40">
+              <div data-tour="create-mode-toggle" className="bg-slate-100/80 p-1 rounded-xl flex gap-1 mb-5 border border-slate-200/40">
                 <button
                   type="button"
                   onClick={() => setCreationMode("single")}
@@ -1645,14 +1642,17 @@ const CreateCertificatePage = () => {
             {/* Render Form based on Active Mode */}
             {creationMode === "single" ? (
               <form onSubmit={handleSubmit} className="space-y-3.5">
-                <TemplateSelector
-                  value={formData.template_id}
-                  onChange={(val) => handleTemplateChange({ target: { value: val } })}
-                  options={templates}
-                />
+                <div data-tour="create-template-select">
+                  <TemplateSelector
+                    value={formData.template_id}
+                    onChange={(val) => handleTemplateChange({ target: { value: val } })}
+                    options={templates}
+                  />
+                </div>
 
                 <div className="border-t border-slate-100 my-3.5"></div>
 
+                <div data-tour="create-recipient-form" className="space-y-3.5">
                 <FormInput
                   name="recipient_name"
                   label={isInvitation ? "Guest Name" : isReceipt ? "Payer Name" : "Recipient Name"}
@@ -1710,6 +1710,7 @@ const CreateCertificatePage = () => {
                     value={formData.issuer_name}
                     onChange={handleChange}
                   />
+                </div>
                 </div>
 
                 {!templateHasSignatureField ? (
@@ -1858,7 +1859,7 @@ const CreateCertificatePage = () => {
                 </div>
 
                 {/* PER-CERTIFICATE FONT SIZE & LAYOUT CUSTOMIZER */}
-                <div ref={styleEditorRef} className="pt-3.5 border-t border-slate-100">
+                <div ref={styleEditorRef} data-tour="create-style-customizer" className="pt-3.5 border-t border-slate-100">
                   <button
                     type="button"
                     onClick={() => setShowCertStyleEditor((prev) => !prev)}
@@ -2249,6 +2250,7 @@ const CreateCertificatePage = () => {
                   </div>
                 )}
 
+                <div data-tour="create-bulk-setup" className="space-y-4">
                 <TemplateSelector
                   value={formData.template_id}
                   onChange={(val) => handleTemplateChange({ target: { value: val } })}
@@ -2296,8 +2298,10 @@ const CreateCertificatePage = () => {
                     </div>
                   </div>
                 )}
+                </div>
 
                 {/* File Upload Box */}
+                <div data-tour="create-bulk-upload" className="space-y-3">
                 <div className="space-y-1">
                   <div className="flex justify-between items-center">
                     <label className="block text-xs font-semibold text-slate-700">Upload spreadsheet</label>
@@ -2369,6 +2373,7 @@ const CreateCertificatePage = () => {
                     {nonEmptyRowsCount === 0 ? "Open Grid" : `${readyRowsCount} ready`} &rarr;
                   </span>
                 </button>
+                </div>
 
                 <div className="flex flex-wrap justify-between items-center gap-2 text-[10px]">
                   <button
@@ -2532,7 +2537,7 @@ const CreateCertificatePage = () => {
 
                 {/* Action Buttons: Bulk Group Edit Mode vs Standard Bulk Create + Save Draft */}
                 {isBulkGroupEditMode ? (
-                  <div className="space-y-2 mt-3">
+                  <div data-tour="create-bulk-actions" className="space-y-2 mt-3">
                     <button
                       type="button"
                       onClick={() => handleBulkGroupUpdate(false)}
@@ -2577,7 +2582,7 @@ const CreateCertificatePage = () => {
                     </button>
                   </div>
                 ) : (
-                  <div className="space-y-2 mt-3">
+                  <div data-tour="create-bulk-actions" className="space-y-2 mt-3">
                     <button
                       type="button"
                       onClick={() => handleSaveSheet(sheetName)}
@@ -2641,7 +2646,7 @@ const CreateCertificatePage = () => {
 
         {/* RIGHT COLUMN: WYSIWYG LIVE PREVIEW (col-span-8) */}
         <div className="lg:col-span-8 space-y-6">
-          <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm flex flex-col justify-between">
+          <div data-tour="create-live-preview" className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm flex flex-col justify-between">
             <div className="flex justify-between items-center mb-3">
               <h3 className="font-bold text-slate-700 text-xs flex items-center gap-1.5">
                 <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-status-pulse" />

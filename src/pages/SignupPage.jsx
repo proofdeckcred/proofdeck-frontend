@@ -61,6 +61,9 @@ function SignupPage() {
 
       const res = await signupUser(payload);
       if (res.status === 200 || res.status === 201) {
+        try {
+          localStorage.setItem("pd_new_signup_tour", "1");
+        } catch (e) {}
         navigate(`/verify-email?email=${encodeURIComponent(email)}`, {
           state: { email },
         });

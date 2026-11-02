@@ -6,7 +6,8 @@ import {
   Sun,
   Moon,
   HardDrives,
-  ShieldCheck
+  ShieldCheck,
+  Play
 } from "@phosphor-icons/react";
 import { OverlayTrigger, Tooltip } from 'react-bootstrap';
 import NotificationBell from './NotificationBell';
@@ -14,10 +15,12 @@ import ProfileDropdown from './ProfileDropdown';
 import DesktopEnterpriseModal from './DesktopEnterpriseModal';
 import { useTheme } from '../context/ThemeContext';
 import { useUser } from '../context/UserContext';
+import { useTour } from '../context/TourContext';
 
 export default function DashboardTopbar({ isCollapsed, toggleSidebar, toggleMobileSidebar }) {
   const { setTheme, resolvedTheme } = useTheme();
   const { isDesktopMode, desktopConfig } = useUser();
+  const { startPageTour, isActive: isTourActive } = useTour();
   const [showDesktopModal, setShowDesktopModal] = useState(false);
 
   const toggleTheme = () => {
@@ -91,6 +94,31 @@ export default function DashboardTopbar({ isCollapsed, toggleSidebar, toggleMobi
             Settings
           </button>
         )}
+        <OverlayTrigger
+          placement="bottom"
+          delay={{ show: 150, hide: 50 }}
+          popperConfig={{ strategy: "fixed" }}
+          overlay={
+            <Tooltip id="play-tour-tip">
+              Play interactive tour for this page
+            </Tooltip>
+          }
+        >
+          <button
+            type="button"
+            onClick={() => startPageTour()}
+            className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-lg border transition-all cursor-pointer focus:outline-none ${
+              isTourActive
+                ? "bg-indigo-50 text-indigo-700 border-indigo-200 dark:bg-indigo-950/60 dark:text-indigo-300 dark:border-indigo-800"
+                : "text-slate-600 hover:text-slate-900 bg-slate-50 hover:bg-slate-100 border-slate-200/80 dark:bg-zinc-800/80 dark:text-zinc-300 dark:border-zinc-700 dark:hover:bg-zinc-800"
+            }`}
+            aria-label="Play tour"
+          >
+            <Play size={12} weight="fill" className="text-indigo-600 dark:text-indigo-400 shrink-0" />
+            <span>Play tour</span>
+          </button>
+        </OverlayTrigger>
+
         <OverlayTrigger
           placement="bottom"
           delay={{ show: 150, hide: 50 }}

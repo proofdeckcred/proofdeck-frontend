@@ -187,7 +187,7 @@ function TicketList() {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-8">
         {/* CREATE TICKET FORM */}
         <div className="lg:col-span-5 order-1 lg:order-1">
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6 static lg:sticky lg:top-6">
+          <div data-tour="tickets-create-form" className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6 static lg:sticky lg:top-6">
             <div className="flex items-center gap-2 mb-4 sm:mb-6 border-b border-gray-100 pb-3 sm:pb-4">
               <div className="bg-indigo-50 p-2 rounded-lg text-indigo-600">
                 <PlusCircle size={20} />
@@ -262,7 +262,7 @@ function TicketList() {
 
         {/* TICKET LIST */}
         <div className="lg:col-span-7 order-1 lg:order-2">
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+          <div data-tour="tickets-history" className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
             <div className="p-4 bg-gray-50 border-b border-gray-200 flex justify-between items-center">
               <h2 className="font-bold text-gray-700 flex items-center gap-2">
                 <FileText size={18} /> Ticket History

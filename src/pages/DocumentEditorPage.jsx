@@ -45,10 +45,12 @@ import {
   ArrowClockwise,
   ArrowCounterClockwise,
   PaintBrush,
-  Highlighter
+  Highlighter,
+  Play
 } from "@phosphor-icons/react";
 import { createCustomTemplate, getTemplate, updateCustomTemplate } from "../api";
 import { useUser } from "../context/UserContext";
+import { useTour } from "../context/TourContext";
 import AppButton from "../components/ui/AppButton";
 
 // --- PROOFDECK BRAND DOCUMENT ICON (Distinct, Legal & Authentic) ---
@@ -398,6 +400,7 @@ export default function DocumentEditorPage() {
   const location = useLocation();
   const { id } = useParams();
   const { user } = useUser();
+  const { startTour } = useTour();
 
   const getInitialState = () => {
     if (typeof window !== "undefined") {
@@ -793,7 +796,7 @@ export default function DocumentEditorPage() {
       <header className="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 px-4 py-2 flex-none shrink-0 z-30 sticky top-0">
         <div className="flex items-center justify-between gap-4">
           {/* Left Title Section */}
-          <div className="flex items-center gap-3 min-w-0">
+          <div data-tour="doc-editor-header" className="flex items-center gap-3 min-w-0">
             <Link
               to="/dashboard/documents"
               className="text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
@@ -1050,7 +1053,16 @@ export default function DocumentEditorPage() {
           </div>
 
           {/* Right Header Actions */}
-          <div className="flex items-center gap-2 shrink-0">
+          <div data-tour="doc-editor-actions" className="flex items-center gap-2 shrink-0">
+            <button
+              type="button"
+              onClick={() => startTour()}
+              className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold text-indigo-700 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-950/60 hover:bg-indigo-100 dark:hover:bg-indigo-900/60 border border-indigo-200/80 dark:border-indigo-800/60 rounded-lg transition-all cursor-pointer shadow-2xs"
+              title="Play interactive tour of the Document Editor"
+            >
+              <Play size={11} weight="fill" className="text-indigo-600 dark:text-indigo-400" />
+              <span>Play tour</span>
+            </button>
             <AppButton
               variant={isPreviewMode ? "primary" : "secondary"}
               onClick={() => setIsPreviewMode(!isPreviewMode)}
@@ -1294,6 +1306,7 @@ export default function DocumentEditorPage() {
       <div className="flex-1 min-h-0 flex overflow-hidden relative">
         {/* Left Side Panel */}
         <aside
+          data-tour="doc-editor-sidebar"
           className={`bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 flex flex-col shrink-0 transition-all duration-200 z-10 ${
             isSidebarOpen ? "w-72" : "w-10"
           }`}
@@ -1484,7 +1497,7 @@ export default function DocumentEditorPage() {
           </div>
 
           {/* Canvas Area - Only this container scrolls */}
-          <main className="flex-1 min-h-0 h-full overflow-y-auto py-8 px-4 sm:px-8 flex justify-center bg-[#f0f4f9] dark:bg-slate-950">
+          <main data-tour="doc-editor-canvas" className="flex-1 min-h-0 h-full overflow-y-auto py-8 px-4 sm:px-8 flex justify-center bg-[#f0f4f9] dark:bg-slate-950">
             {/* Transform wrapper so scroll coordinates are never distorted */}
             <div
               className="flex flex-col items-center pb-24"

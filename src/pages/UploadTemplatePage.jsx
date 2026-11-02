@@ -47,7 +47,8 @@ import {
   ArrowDown,
   Pen as PenTool,
   QrCode,
-  X
+  X,
+  Play
 } from "@phosphor-icons/react";
 import { Spinner } from "react-bootstrap";
 import {
@@ -58,6 +59,7 @@ import {
 import CustomTemplateEditor from "../components/CustomTemplateEditor";
 import TextElementControls from "../components/TextElementControls";
 import { SERVER_BASE_URL } from "../config";
+import { useTour } from "../context/TourContext";
 
 // --- PLACEHOLDER CONFIGURATIONS ---
 const CERTIFICATE_PLACEHOLDERS = [
@@ -346,6 +348,7 @@ const UploadTemplatePage = () => {
   const { templateId } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
+  const { startTour } = useTour();
   const [templateTitle, setTemplateTitle] = useState(templateId ? "" : "Untitled Certificate");
   const [templateType, setTemplateType] = useState("certificate");
   const [templateImageFile, setTemplateImageFile] = useState(null);
@@ -1228,10 +1231,22 @@ const UploadTemplatePage = () => {
         </div>
 
         {/* Studio Toolbar */}
-        <div className="flex items-center gap-1.5">
+        <div data-tour="studio-preview-save" className="flex items-center gap-1.5">
+          {/* Play Tour Button */}
+          <button
+            type="button"
+            onClick={() => startTour()}
+            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200/80 rounded-lg transition-all cursor-pointer shadow-2xs"
+            title="Play interactive tour of the Visual Studio"
+          >
+            <Play size={11} weight="fill" className="text-indigo-600" />
+            <span className="hidden lg:inline">Play tour</span>
+          </button>
+
           {/* Prominent Import Cert Template CTA */}
           <button
             type="button"
+            data-tour="studio-import-btn"
             onClick={() => fileInputRef.current?.click()}
             className="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 font-semibold py-1.5 px-2.5 rounded-lg flex items-center gap-1.5 text-xs transition-all cursor-pointer shadow-2xs"
             title="Import your own pre-designed certificate template (Canva, Photoshop, Figma, etc.)"
@@ -1338,7 +1353,7 @@ const UploadTemplatePage = () => {
       <div className="flex-grow flex overflow-hidden">
         {/* 1. LEFT SIDEBAR: Canva-Style Tools */}
         {isLeftSidebarOpen && (
-          <aside className="w-64 bg-white border-r border-gray-200 flex flex-col shrink-0 overflow-hidden animate-in slide-in-from-left duration-200 shadow-sm">
+          <aside data-tour="studio-left-tools" className="w-64 bg-white border-r border-gray-200 flex flex-col shrink-0 overflow-hidden animate-in slide-in-from-left duration-200 shadow-sm">
             {/* Canva Tab Strip */}
             <div className="grid grid-cols-5 border-b border-gray-100 p-1 bg-gray-50/70 text-center">
               <button
@@ -2147,7 +2162,7 @@ const UploadTemplatePage = () => {
         )}
 
         {/* 2. CENTER AREA: Canvas Viewport */}
-        <main className="flex-1 bg-slate-200/70 dark:bg-[#121214] flex flex-col overflow-hidden relative">
+        <main data-tour="studio-canvas" className="flex-1 bg-slate-200/70 dark:bg-[#121214] flex flex-col overflow-hidden relative">
           {/* Canvas Sub-Header & Zoom Bar */}
           <div className="bg-white dark:bg-[#18181b] border-b border-gray-200 dark:border-[#28282d] px-4 py-1.5 flex items-center justify-between z-10 shadow-xs">
             <div className="flex items-center gap-2">

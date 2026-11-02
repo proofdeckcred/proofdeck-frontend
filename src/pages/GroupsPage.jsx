@@ -909,6 +909,7 @@ function GroupsPage() {
               {!viewingGroup && (
                 <button
                   onClick={() => setShowCreateModal(true)}
+                  data-tour="groups-create-btn"
                   className="hidden sm:inline-flex items-center justify-center bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg py-1.5 px-3.5 transition-all font-semibold text-xs shadow-sm"
                 >
                   <Plus size={14} className="mr-1.5 text-white" />
@@ -927,7 +928,7 @@ function GroupsPage() {
         {!viewingGroup ? (
           <>
             {/* Section A: Batches (Folders) */}
-            <div>
+            <div data-tour="groups-folders">
               <div className="mb-4">
                 <h3 className="text-sm font-bold text-slate-800">Groups</h3>
               </div>
@@ -991,7 +992,7 @@ function GroupsPage() {
             </div>
 
             {/* Section B: All Certificates (Files Grid) */}
-            <div className="pt-6 border-t border-slate-100">
+            <div data-tour="groups-all-credentials" className="pt-6 border-t border-slate-100">
               <div className="mb-4">
                 <h3 className="text-sm font-bold text-slate-800">All Credentials</h3>
                 
@@ -1120,18 +1121,20 @@ function GroupsPage() {
 
                 {/* Top Right: Graphical Chart & Actions */}
                 <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
-                  <GroupAnalyticsWidget
-                    isFreeUser={isFreeUser}
-                    analytics={groupAnalytics}
-                    loading={loadingAnalytics}
-                    onUpgradeClick={() => {
-                      setUpgradeFeatureText("Live external scans and recipient analytics are exclusive to Pro and Enterprise plans.");
-                      setShowUpgradeModal(true);
-                    }}
-                  />
+                  <div data-tour="group-detail-analytics">
+                    <GroupAnalyticsWidget
+                      isFreeUser={isFreeUser}
+                      analytics={groupAnalytics}
+                      loading={loadingAnalytics}
+                      onUpgradeClick={() => {
+                        setUpgradeFeatureText("Live external scans and recipient analytics are exclusive to Pro and Enterprise plans.");
+                        setShowUpgradeModal(true);
+                      }}
+                    />
+                  </div>
 
                   {/* Actions */}
-                  <div className="flex flex-wrap items-center gap-2">
+                  <div data-tour="group-detail-actions" className="flex flex-wrap items-center gap-2">
                     <button
                       onClick={() => navigate(`/dashboard/bulk-create?edit_group=${viewingGroup.id}`)}
                       className="inline-flex items-center justify-center bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-300 rounded-lg py-1.5 px-3 transition-all font-semibold text-xs shadow-xs cursor-pointer"
@@ -1186,7 +1189,7 @@ function GroupsPage() {
             ) : (
               <>
                 {filteredCertificates.length > 0 ? (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
+                  <div data-tour="group-detail-cards" className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
                     {filteredCertificates.map((cert) => {
                       return (
                         <div key={cert.id} className="flex flex-col group/file">

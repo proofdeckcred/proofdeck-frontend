@@ -22,7 +22,6 @@ import {
 } from "@phosphor-icons/react";
 import toast, { Toaster } from "react-hot-toast";
 import { getDocuments, deleteTemplate, createCustomTemplate, getTemplate } from "../api";
-import HelpGuide from "../components/HelpGuide";
 
 // --- PROOFDECK BRAND DOCUMENT ICON ---
 export const ProofDeckDocIcon = ({ size = 20, className = "" }) => (
@@ -400,22 +399,30 @@ const DocumentsPage = () => {
     <div className="w-full pb-16 font-sans">
       <Toaster position="top-right" />
 
-      {/* --- Top Navigation Header (No Breadcrumb, Just Documents) --- */}
-      <div className="border-b border-slate-200/80 bg-white mb-6 -mt-6 px-4 sm:px-6 py-4 rounded-b-xl shadow-2xs">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 max-w-[1600px] mx-auto">
-          <div>
-            <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2">
+      {/* --- 1. Top Navigation Bar (Header - Locked to Top) --- */}
+      <div className="border-b border-slate-200/80 bg-white mb-4 sm:mb-6 -mt-6 px-4 py-3 rounded-b-lg">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 max-w-[1600px] mx-auto">
+          <div className="flex items-center justify-between">
+            <h1 className="text-sm font-bold text-slate-800 uppercase tracking-wider mb-0">
               Documents
             </h1>
-          </div>
 
-          <div className="flex items-center gap-3">
-            <HelpGuide type="certificates" />
             <Link
               to="/dashboard/documents/editor"
-              className="px-4 py-2 bg-slate-900 hover:bg-black text-white text-xs font-bold rounded-xl shadow-xs hover:shadow-md flex items-center gap-2 transition-all cursor-pointer transform hover:-translate-y-0.5 active:translate-y-0 no-underline"
+              className="sm:hidden inline-flex items-center justify-center bg-slate-900 hover:bg-black text-white rounded-lg py-1 px-2.5 font-semibold text-xs shadow-sm no-underline"
             >
-              <Plus size={16} weight="bold" />
+              <Plus size={13} className="mr-1 text-white" />
+              <span>New document</span>
+            </Link>
+          </div>
+
+          <div className="hidden sm:flex items-center gap-2.5">
+            <Link
+              to="/dashboard/documents/editor"
+              data-tour="documents-new-btn"
+              className="inline-flex items-center justify-center bg-slate-900 hover:bg-black text-white rounded-lg py-1.5 px-3.5 transition-all font-semibold text-xs shadow-sm no-underline"
+            >
+              <Plus size={14} className="mr-1.5 text-white" />
               <span>New document</span>
             </Link>
           </div>
@@ -424,7 +431,10 @@ const DocumentsPage = () => {
 
       <div className="max-w-[1600px] mx-auto space-y-8">
         {/* --- Top Section: Start a new document (Google Docs Style A4 Portrait Cards) --- */}
-        <div className="bg-[#f8f9fa] dark:bg-slate-900/60 rounded-2xl border border-slate-200/90 dark:border-slate-800 p-5 sm:p-6 shadow-2xs space-y-4">
+        <div
+          data-tour="documents-presets"
+          className="bg-[#f8f9fa] dark:bg-slate-900/60 rounded-2xl border border-slate-200/90 dark:border-slate-800 p-5 sm:p-6 shadow-2xs space-y-4"
+        >
           <div className="flex items-center justify-between">
             <h2 className="text-sm font-semibold text-slate-800 dark:text-slate-200">
               Start a new document
@@ -473,7 +483,7 @@ const DocumentsPage = () => {
         </div>
 
         {/* --- Bottom Section: Recent Documents (Google Docs Style A4 Grid) --- */}
-        <div className="space-y-4">
+        <div data-tour="documents-recent" className="space-y-4">
           {/* Header Row: Title & Controls */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2">
             <div className="flex items-center gap-2">

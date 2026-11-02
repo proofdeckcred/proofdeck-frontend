@@ -88,6 +88,7 @@ function Sidebar({ isCollapsed: propIsCollapsed, toggleSidebar: propToggleSideba
 
   return (
     <aside
+      data-tour="sidebar-nav"
       className={`relative bg-white dark:bg-[#18181b] border-r border-gray-200/80 dark:border-[#28282d] flex flex-col h-screen sticky top-0 left-0 transition-all duration-300 ease-in-out z-40 select-none ${
         isCollapsed ? "w-16" : "w-60"
       }`}

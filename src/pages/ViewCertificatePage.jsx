@@ -316,7 +316,7 @@ function ViewCertificatePage() {
             </div>
 
             {/* Top Right Action Buttons */}
-            <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap sm:flex-nowrap">
+            <div data-tour="view-cert-actions" className="flex items-center gap-1.5 sm:gap-2 flex-wrap sm:flex-nowrap">
               {isValid ? (
                 <button
                   onClick={() => { setPendingStatus("revoked"); setShowStatusModal(true); }}
@@ -386,7 +386,7 @@ function ViewCertificatePage() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
           
           {/* LEFT COLUMN: DOCUMENT PREVIEW CONTAINER (col-span-8) */}
-          <div className="lg:col-span-8">
+          <div data-tour="view-cert-preview" className="lg:col-span-8">
             <div className="bg-slate-50 dark:bg-[#141417] border border-slate-200/60 dark:border-[#2b2b31] rounded-xl p-4 sm:p-6 flex flex-col items-center shadow-inner min-h-[450px] justify-center">
               <div className="w-full relative shadow-2xl rounded-xl bg-white max-w-3xl border border-slate-200/50 dark:border-[#2b2b31] overflow-hidden">
                 <TemplateRenderer 
@@ -464,7 +464,7 @@ function ViewCertificatePage() {
             </div>
 
             {/* Bento Verification QR card */}
-            <div className="bg-white dark:bg-[#18181b] rounded-xl shadow-xs border border-slate-200 dark:border-[#2b2b31] p-4 text-center">
+            <div data-tour="view-cert-verification" className="bg-white dark:bg-[#18181b] rounded-xl shadow-xs border border-slate-200 dark:border-[#2b2b31] p-4 text-center">
               <h3 className="font-bold text-slate-850 dark:text-white text-xs uppercase tracking-wider mb-4 pb-2 border-b border-slate-100 dark:border-[#28282d] text-left flex items-center gap-1.5">
                 <QrCode className="text-slate-400 dark:text-zinc-400" size={14} />
                 <span>Secure Verification</span>

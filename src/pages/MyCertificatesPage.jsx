@@ -492,7 +492,7 @@ function MyCertificatesPage() {
           <div className="lg:col-span-8 flex flex-col divide-y divide-slate-200/80">
             
             {/* Metrics Sub-grid */}
-            <div className="grid grid-cols-3 divide-x divide-slate-200/80">
+            <div data-tour="overview-metrics" className="grid grid-cols-3 divide-x divide-slate-200/80">
               {/* Available Credits Card */}
               <div className="p-3 sm:p-5 bg-white hover:bg-slate-50/20 transition-colors">
                 <div className="flex items-center justify-between mb-1 gap-1">
@@ -620,7 +620,7 @@ function MyCertificatesPage() {
             </div>
 
             {/* Recent Certificates / Listing Panel */}
-            <div className="p-6 bg-white flex flex-col flex-1">
+            <div data-tour="overview-recent-table" className="p-6 bg-white flex flex-col flex-1">
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
                 <div>
                   <h3 className="text-sm font-bold text-slate-800">Recent Credentials</h3>
@@ -944,7 +944,7 @@ function MyCertificatesPage() {
           <div className="lg:col-span-4 bg-slate-50/20 dark:bg-[#18181b] flex flex-col divide-y divide-slate-200/80 dark:divide-[#2b2b31]">
             
             {/* Quick Actions Action Checklist */}
-            <div className="p-6 bg-white dark:bg-[#18181b]">
+            <div data-tour="overview-quick-actions" className="p-6 bg-white dark:bg-[#18181b]">
               <div className="mb-4">
                 <h3 className="text-sm font-bold text-slate-800 dark:text-white">Quick actions</h3>
               </div>
@@ -983,7 +983,7 @@ function MyCertificatesPage() {
             </div>
 
             {/* Quotas & Credit Limits Panel */}
-            <div className="p-6 bg-white dark:bg-[#18181b] flex flex-col gap-6">
+            <div data-tour="overview-quotas" className="p-6 bg-white dark:bg-[#18181b] flex flex-col gap-6">
               <div className="space-y-4">
                 <div className="mb-2">
                   <h3 className="text-xs font-bold text-slate-850 dark:text-white uppercase tracking-wider">Account Quotas</h3>

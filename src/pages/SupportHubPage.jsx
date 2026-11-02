@@ -48,7 +48,7 @@ function SupportHubPage() {
       <div className="grid grid-cols-1 lg:grid-cols-12 border border-slate-200/80 bg-white rounded-xl overflow-hidden shadow-sm divide-y lg:divide-y-0 lg:divide-x divide-slate-200/80">
         
         {/* Left Column: Search & Articles Grid (col-span-8) */}
-        <div className="lg:col-span-8 p-4 sm:p-6 space-y-6">
+        <div data-tour="support-kb" className="lg:col-span-8 p-4 sm:p-6 space-y-6">
           <div>
             <h2 className="text-sm font-bold text-slate-800">Browse Knowledge Base</h2>
             <p className="text-[10px] text-slate-400">Search guides and articles to solve common questions</p>
@@ -115,7 +115,7 @@ function SupportHubPage() {
             </div>
 
             {/* Premium Indigo Dark Card */}
-            <div className="bg-slate-900 rounded-2xl p-6 text-white relative overflow-hidden shadow">
+            <div data-tour="support-ticket-cta" className="bg-slate-900 rounded-2xl p-6 text-white relative overflow-hidden shadow">
               <div className="relative z-10 space-y-4">
                 <MessageCircle size={36} className="text-indigo-400" />
                 <div>

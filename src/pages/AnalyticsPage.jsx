@@ -292,7 +292,7 @@ const FullDashboard = ({ insights }) => {
   return (
     <>
       {/* 1. KPIs Row */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4 mb-6">
+      <div data-tour="analytics-kpis" className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4 mb-6">
         {kpiCards.map((card, i) => (
           <StatCard
             key={i}
@@ -305,7 +305,7 @@ const FullDashboard = ({ insights }) => {
       </div>
 
       {/* 2. Charts Bento Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 mb-6">
+      <div data-tour="analytics-charts" className="grid grid-cols-1 lg:grid-cols-12 gap-4 mb-6">
         <div className="col-span-12 lg:col-span-4">
           <div className="bg-white border border-slate-200/80 rounded-xl sm:rounded-2xl p-4 sm:p-5 h-64 sm:h-80 flex flex-col justify-between shadow-3xs">
             <div className="flex items-center justify-between mb-3">
@@ -357,7 +357,7 @@ const FullDashboard = ({ insights }) => {
       </div>
 
       {/* 3. Bottom Row: Table & Targets */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 mb-6">
+      <div data-tour="analytics-programs" className="grid grid-cols-1 lg:grid-cols-12 gap-4 mb-6">
         {/* Left side: Table */}
         <div className="col-span-12 lg:col-span-8">
           <div className="bg-white border border-slate-200/80 rounded-xl sm:rounded-2xl p-4 sm:p-5 shadow-3xs overflow-hidden">

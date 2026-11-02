@@ -35,7 +35,6 @@ import {
 } from "@phosphor-icons/react";
 import toast, { Toaster } from "react-hot-toast";
 import { useUser } from "../context/UserContext";
-import HelpGuide from "../components/HelpGuide";
 
 // --- REUSABLE UI COMPONENTS ---
 const FormInput = ({ label, icon: Icon, required, ...props }) => (
@@ -342,8 +341,6 @@ const SendInvitationPage = () => {
               </h1>
             </div>
           </div>
-          
-          <HelpGuide type="invitations" />
         </div>
       </div>
 

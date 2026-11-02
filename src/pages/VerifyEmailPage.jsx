@@ -60,6 +60,10 @@ function VerifyEmailPage() {
       const res = await verifyEmail({ email: cleanEmail, verification_code: cleanCode });
       const token = res.data?.access_token;
 
+      try {
+        localStorage.setItem("pd_new_signup_tour", "1");
+      } catch (e) {}
+
       if (token) {
         localStorage.setItem("token", token);
         setSuccess("Email verified successfully! Logging you in...");

@@ -351,7 +351,7 @@ function TemplatesPage() {
           </div>
 
           {/* Right Actions */}
-          <div className="flex items-center gap-2 w-full sm:w-auto">
+          <div data-tour="templates-studio-btns" className="flex items-center gap-2 w-full sm:w-auto">
             <Link
               to="/dashboard/documents/editor"
               className="inline-flex items-center justify-center bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg py-2 px-3.5 transition-all font-semibold text-xs shadow-sm hover:shadow decoration-none w-full sm:w-auto text-center gap-1.5"
@@ -373,7 +373,7 @@ function TemplatesPage() {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-12">
         {/* Creator Form */}
         <div className="col-span-12 lg:col-span-4">
-          <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
+          <div data-tour="templates-preset-creator" className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
             <div className="flex items-center gap-2 mb-4 pb-2 border-b border-slate-100">
               <LayoutTemplate size={16} className="text-indigo-600" />
               <h3 className="text-xs font-bold text-slate-800">
@@ -473,7 +473,7 @@ function TemplatesPage() {
 
         {/* Live Preview */}
         <div className="col-span-12 lg:col-span-8">
-          <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 static lg:sticky lg:top-6 min-h-[350px] flex flex-col justify-between shadow-sm">
+          <div data-tour="templates-live-preview" className="bg-slate-50 border border-slate-200 rounded-xl p-4 static lg:sticky lg:top-6 min-h-[350px] flex flex-col justify-between shadow-sm">
             <div className="flex justify-between items-center mb-3">
               <div className="flex items-center gap-1.5 text-slate-700 font-bold text-xs">
                 <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
@@ -496,7 +496,7 @@ function TemplatesPage() {
       </div>
 
       {/* Templates List */}
-      <div>
+      <div data-tour="templates-library">
         <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider mb-4 flex items-center gap-1.5">
           <div className="w-1 h-3.5 bg-indigo-600 rounded-full"></div>
           <span>Templates</span>
