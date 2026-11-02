@@ -53,13 +53,18 @@ import {
   FileDoc,
   PenNib,
   SealCheck,
-  Sparkle
+  Sparkle,
+  CaretDoubleLeft,
+  CaretDoubleRight,
+  LinkBreak,
+  X,
 } from "@phosphor-icons/react";
 import { createCustomTemplate, getTemplate, updateCustomTemplate } from "../api";
 import { useUser } from "../context/UserContext";
 import { useTour } from "../context/TourContext";
 import AppButton from "../components/ui/AppButton";
 import { encodeDocUuid, decodeDocUuid } from "../utils/docUuid";
+import { exportDocumentToPdf, exportDocumentToDocx } from "../utils/docExport";
 
 // --- PROOFDECK BRAND DOCUMENT ICON (Distinct, Legal & Authentic) ---
 export const ProofDeckDocIcon = ({ size = 26, className = "" }) => (
@@ -219,9 +224,60 @@ function paginateSingleChunk(html) {
     const isTable = /^<table/i.test(blockHtml);
     const isHr = /^<hr/i.test(blockHtml);
 
+    if (isTable) {
+      const tblWrap = document.createElement("div");
+      tblWrap.innerHTML = blockHtml;
+      const tblEl = tblWrap.querySelector("table");
+      const theadEl = tblEl?.querySelector("thead");
+      const theadHtml = theadEl ? theadEl.outerHTML : "";
+      const bodyRows = tblEl
+        ? Array.from(tblEl.querySelectorAll("tbody tr, > tr")).filter(
+            (r) => r.parentElement?.tagName.toUpperCase() !== "THEAD"
+          )
+        : [];
+
+      if (bodyRows.length > 0) {
+        let rowQueue = [...bodyRows];
+        while (rowQueue.length > 0) {
+          const remainingLines = MAX_VISUAL_LINES - currentLines;
+          const headerCost = theadHtml ? 2.2 : 0.5;
+          // Need at least space for header + 1 row (~4.5 visual lines)
+          if (remainingLines < 4.5 && currentBlocks.length > 0) {
+            pages.push(currentBlocks.join("\n"));
+            currentBlocks = [];
+            currentLines = 0;
+            continue;
+          }
+
+          let usedLines = headerCost;
+          const chunkRows = [];
+          while (rowQueue.length > 0) {
+            const r = rowQueue[0];
+            const rowTextLen = (r.textContent || "").trim().length;
+            const rowLines = Math.max(1.8, Math.ceil(rowTextLen / 65) * 1.4 + 0.6);
+            if (chunkRows.length > 0 && currentLines + usedLines + rowLines > MAX_VISUAL_LINES) {
+              break;
+            }
+            chunkRows.push(rowQueue.shift().outerHTML);
+            usedLines += rowLines;
+          }
+
+          const chunkTableHtml = `<table>${theadHtml}<tbody>${chunkRows.join("")}</tbody></table>`;
+          currentBlocks.push(chunkTableHtml);
+          currentLines += usedLines;
+
+          if (rowQueue.length > 0) {
+            pages.push(currentBlocks.join("\n"));
+            currentBlocks = [];
+            currentLines = 0;
+          }
+        }
+        continue;
+      }
+    }
+
     let blockLines = Math.max(1, Math.ceil(plain.length / CHARS_PER_LINE));
     if (isHeading) blockLines += 1.8;
-    else if (isTable) blockLines += 4;
     else if (isHr) blockLines += 1;
     else blockLines += 0.65; // paragraph bottom margin
 
@@ -564,6 +620,25 @@ export default function DocumentEditorPage() {
   const [activeMenu, setActiveMenu] = useState(null);
   const [openToolbarDropdown, setOpenToolbarDropdown] = useState(null); // 'style' | 'font' | 'size' | 'color' | 'highlight' | 'spacing' | null
 
+  // Floating Link Popover state (replaces native browser prompt)
+  const [linkPopover, setLinkPopover] = useState({
+    open: false,
+    text: "",
+    url: "",
+    top: 160,
+    left: 360,
+    hasExistingLink: false,
+  });
+  const linkPopoverRef = useRef(null);
+  const linkUrlInputRef = useRef(null);
+  const existingAnchorRef = useRef(null);
+
+  // Active Table Editing state
+  const [isInsideTable, setIsInsideTable] = useState(false);
+  const activeTableCellRef = useRef(null);
+  const [customTableRows, setCustomTableRows] = useState(4);
+  const [customTableCols, setCustomTableCols] = useState(4);
+
   const activePageIdxRef = useRef(0);
   const pageRefs = useRef([]);
   const fileInputRef = useRef(null);
@@ -623,7 +698,7 @@ export default function DocumentEditorPage() {
     }
   }, []);
 
-  // Inspect selection and update toolbar state (Heading, Font, Size, B/I/U, Lists, Alignment)
+  // Inspect selection and update toolbar state (Heading, Font, Size, B/I/U, Lists, Alignment, Active Table)
   const updateToolbarStateFromSelection = useCallback(() => {
     if (typeof window === "undefined" || isPreviewMode) return;
     const sel = window.getSelection();
@@ -641,6 +716,20 @@ export default function DocumentEditorPage() {
     if (!isInsideEditor) return;
 
     saveSelection();
+
+    // Detect if cursor is inside a Table cell
+    const cellEl = node.closest("td, th");
+    const tableEl = node.closest("table");
+    if (cellEl && tableEl) {
+      activeTableCellRef.current = {
+        tableEl,
+        cellEl,
+        pageIdx: activePageIdxRef.current,
+      };
+      setIsInsideTable(true);
+    } else {
+      setIsInsideTable(false);
+    }
 
     // 1. Detect Block Style (Title, Subtitle, H1-H4, Normal text)
     const blockEl = node.closest("h1, h2, h3, h4, p, div, blockquote, li");
@@ -702,25 +791,62 @@ export default function DocumentEditorPage() {
     return () => document.removeEventListener("selectionchange", updateToolbarStateFromSelection);
   }, [updateToolbarStateFromSelection]);
 
-  // Reflow overflowing DOM nodes from `pageIndex` onto subsequent pages so content never spills or overlaps
+  // Reflow overflowing DOM nodes (including splitting large tables row-by-row) from `pageIndex` onto subsequent pages
   const reflowOverflowFromPage = useCallback((startIndex = 0) => {
     const pageEl = pageRefs.current[startIndex];
     if (!pageEl) return;
 
-    // Only split if content is taller than 1 A4 page and has more than 1 child block
-    if (pageEl.scrollHeight <= A4_CONTENT_MAX_HEIGHT_PX || pageEl.children.length <= 1) {
+    if (pageEl.scrollHeight <= A4_CONTENT_MAX_HEIGHT_PX) {
       return;
     }
 
     // Collect current HTML of all pages from DOM
+    const currentLen = pagesRef.current ? pagesRef.current.length : pages.length;
     const allHtmls = pageRefs.current
-      .map((el, i) => (el ? el.innerHTML : pages[i] || ""))
-      .filter((_, i) => i < pages.length);
+      .slice(0, currentLen)
+      .map((el, i) => (el ? el.innerHTML : pagesRef.current[i] || pages[i] || ""));
 
     const overflowNodes = [];
-    while (pageEl.scrollHeight > A4_CONTENT_MAX_HEIGHT_PX && pageEl.children.length > 1) {
+
+    while (pageEl.scrollHeight > A4_CONTENT_MAX_HEIGHT_PX) {
       const lastChild = pageEl.lastElementChild;
       if (!lastChild) break;
+
+      // Special handling if the last element is a TABLE: peel off overflowing rows into a continuation table!
+      if (lastChild.tagName.toUpperCase() === "TABLE") {
+        const theadEl = lastChild.querySelector("thead");
+        const theadHtml = theadEl ? theadEl.outerHTML : "";
+        const bodyRows = Array.from(lastChild.querySelectorAll("tbody tr, > tr")).filter(
+          (r) => r.parentElement?.tagName.toUpperCase() !== "THEAD"
+        );
+
+        if (bodyRows.length > 1) {
+          const peeledRows = [];
+          while (pageEl.scrollHeight > A4_CONTENT_MAX_HEIGHT_PX && bodyRows.length > 1) {
+            const poppedRow = bodyRows.pop();
+            if (!poppedRow) break;
+            peeledRows.unshift(poppedRow.outerHTML);
+            poppedRow.remove();
+          }
+
+          // If the table still overflows with only 1 row left and there are earlier siblings on the page, move the whole table
+          if (pageEl.scrollHeight > A4_CONTENT_MAX_HEIGHT_PX && pageEl.children.length > 1 && bodyRows.length === 1) {
+            const firstRowHtml = bodyRows[0].outerHTML;
+            const fullTableHtml = `<table>${theadHtml}<tbody>${firstRowHtml}${peeledRows.join("")}</tbody></table>`;
+            overflowNodes.unshift(fullTableHtml);
+            pageEl.removeChild(lastChild);
+            continue;
+          }
+
+          if (peeledRows.length > 0) {
+            const continuationTableHtml = `<table>${theadHtml}<tbody>${peeledRows.join("")}</tbody></table>`;
+            overflowNodes.unshift(continuationTableHtml);
+          }
+          break;
+        }
+      }
+
+      if (pageEl.children.length <= 1) break;
       overflowNodes.unshift(lastChild.outerHTML);
       pageEl.removeChild(lastChild);
     }
@@ -734,7 +860,6 @@ export default function DocumentEditorPage() {
     const extraPages = paginateHtml(overflowHtml);
 
     if (startIndex + 1 < allHtmls.length) {
-      // Prepend to the next page and re-paginate from there
       const combinedRemaining = [
         ...extraPages.slice(0, -1),
         extraPages[extraPages.length - 1] + "\n" + allHtmls[startIndex + 1],
@@ -742,12 +867,16 @@ export default function DocumentEditorPage() {
       ].join('<div class="pd-page-break"></div>');
       const repaginatedTail = paginateHtml(combinedRemaining);
       const finalPages = [...allHtmls.slice(0, startIndex + 1), ...repaginatedTail];
+      pagesRef.current = finalPages;
       setPages(finalPages);
       syncDomPages(finalPages);
+      setIsSaved(false);
     } else {
       const finalPages = [...allHtmls.slice(0, startIndex + 1), ...extraPages];
+      pagesRef.current = finalPages;
       setPages(finalPages);
       syncDomPages(finalPages);
+      setIsSaved(false);
     }
   }, [pages, syncDomPages]);
 
@@ -788,12 +917,15 @@ export default function DocumentEditorPage() {
       if (toolbarDropdownRef.current && !toolbarDropdownRef.current.contains(e.target)) {
         setOpenToolbarDropdown(null);
       }
+      if (linkPopoverRef.current && !linkPopoverRef.current.contains(e.target)) {
+        setLinkPopover((prev) => (prev.open ? { ...prev, open: false } : prev));
+      }
     };
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // Keyboard shortcuts (Ctrl+S to save, Ctrl+P to print)
+  // Keyboard shortcuts (Ctrl+S to save, Ctrl+P to print, Ctrl+K to insert link)
   useEffect(() => {
     const handleKeyDown = (e) => {
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "s") {
@@ -802,6 +934,9 @@ export default function DocumentEditorPage() {
       } else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "p") {
         e.preventDefault();
         handlePrint();
+      } else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        openLinkPopover();
       }
     };
     window.addEventListener("keydown", handleKeyDown);
@@ -899,6 +1034,10 @@ export default function DocumentEditorPage() {
       return next;
     });
     setIsSaved(false);
+
+    if (el.scrollHeight > A4_CONTENT_MAX_HEIGHT_PX + 12) {
+      setTimeout(() => reflowOverflowFromPage(index), 25);
+    }
   };
 
   // Execute rich text command while preserving selection
@@ -948,19 +1087,50 @@ export default function DocumentEditorPage() {
     updateToolbarStateFromSelection();
   };
 
-  // Apply Font Family to selected text or active page
+  // Apply Font Family to selected text or active paragraph/block
   const handleFontChange = (font) => {
     setCurrentFont(font);
     setOpenToolbarDropdown(null);
     restoreSelection();
-    const sel = window.getSelection();
-    const activeIdx = activePageIdxRef.current || 0;
 
-    if (sel && !sel.isCollapsed) {
+    const activeIdx = activePageIdxRef.current || 0;
+    const pageEl = pageRefs.current[activeIdx];
+    if (!pageEl) return;
+
+    const sel = window.getSelection();
+    if (sel && sel.rangeCount > 0 && !sel.isCollapsed) {
       document.execCommand("fontName", false, font);
-    } else if (pageRefs.current[activeIdx]) {
-      pageRefs.current[activeIdx].style.fontFamily = font;
+      // Convert browser <font face="..."> tags into clean <span style="font-family: ...">
+      const fontNodes = pageEl.querySelectorAll("font[face]");
+      fontNodes.forEach((el) => {
+        const span = document.createElement("span");
+        span.style.fontFamily = `'${font}', sans-serif`;
+        span.innerHTML = el.innerHTML;
+        span.querySelectorAll("[style*='font-family']").forEach((inner) => {
+          inner.style.fontFamily = "";
+        });
+        el.parentNode.replaceChild(span, el);
+      });
+    } else if (sel && sel.rangeCount > 0) {
+      let node = sel.anchorNode;
+      if (node && node.nodeType === Node.TEXT_NODE) node = node.parentElement;
+      if (node && node instanceof HTMLElement && pageEl.contains(node)) {
+        const targetBlock =
+          node === pageEl
+            ? pageEl.firstElementChild || pageEl
+            : node.closest("p, li, h1, h2, h3, h4, td, th, blockquote, span, div");
+        if (targetBlock && pageEl.contains(targetBlock) && targetBlock !== pageEl) {
+          targetBlock.style.fontFamily = `'${font}', sans-serif`;
+          targetBlock.querySelectorAll("[style*='font-family'], font[face]").forEach((inner) => {
+            if (inner.tagName === "FONT") inner.removeAttribute("face");
+            else inner.style.fontFamily = "";
+          });
+        } else {
+          pageEl.style.fontFamily = `'${font}', sans-serif`;
+        }
+      }
     }
+
     saveSelection();
     handlePageInput(activeIdx);
   };
@@ -1167,6 +1337,43 @@ export default function DocumentEditorPage() {
     handlePageInput(activeIdx);
   };
 
+  // Insert Custom Editable Table (any rows x cols)
+  const insertCustomTable = (rowsCount = 4, colsCount = 4) => {
+    const rCount = Math.max(1, Math.min(30, parseInt(rowsCount, 10) || 4));
+    const cCount = Math.max(1, Math.min(12, parseInt(colsCount, 10) || 4));
+    restoreSelection();
+    const activeIdx = activePageIdxRef.current || 0;
+
+    const headerCells = Array.from({ length: cCount })
+      .map((_, i) => `<th>Header ${i + 1}</th>`)
+      .join("");
+    const bodyRows = Array.from({ length: Math.max(1, rCount - 1) })
+      .map(
+        () =>
+          `<tr>${Array.from({ length: cCount })
+            .map(() => `<td><br></td>`)
+            .join("")}</tr>`
+      )
+      .join("");
+
+    const html = `
+      <table>
+        <thead>
+          <tr>${headerCells}</tr>
+        </thead>
+        <tbody>
+          ${bodyRows}
+        </tbody>
+      </table>
+      <p><br></p>
+    `;
+    document.execCommand("insertHTML", false, html);
+    setActiveMenu(null);
+    setOpenToolbarDropdown(null);
+    handlePageInput(activeIdx);
+    setTimeout(() => reflowOverflowFromPage(activeIdx), 35);
+  };
+
   const insertAcademicTable = () => {
     restoreSelection();
     const activeIdx = activePageIdxRef.current || 0;
@@ -1205,18 +1412,269 @@ export default function DocumentEditorPage() {
     `;
     document.execCommand("insertHTML", false, html);
     setActiveMenu(null);
+    setOpenToolbarDropdown(null);
+    handlePageInput(activeIdx);
+    setTimeout(() => reflowOverflowFromPage(activeIdx), 35);
+  };
+
+  // --- TABLE EDITING ACTIONS (Add/Delete Rows & Columns, Fit Page Width & Reflow Overflow) ---
+  const handleTableAddRow = (position = "below") => {
+    const ctx = activeTableCellRef.current;
+    if (!ctx || !ctx.tableEl || !ctx.cellEl) {
+      toast.error("Click inside a table cell first");
+      return;
+    }
+    const { tableEl, cellEl, pageIdx } = ctx;
+    const currentRow = cellEl.closest("tr");
+    if (!currentRow) return;
+
+    const colCount = currentRow.querySelectorAll("th, td").length || 1;
+    const newRow = document.createElement("tr");
+    for (let i = 0; i < colCount; i++) {
+      const td = document.createElement("td");
+      td.innerHTML = "<br>";
+      newRow.appendChild(td);
+    }
+
+    let tbody = tableEl.querySelector("tbody");
+    if (!tbody) {
+      tbody = document.createElement("tbody");
+      tableEl.appendChild(tbody);
+    }
+
+    if (currentRow.parentElement?.tagName.toUpperCase() === "THEAD") {
+      // If inside header row and adding below, insert as first row of tbody
+      if (tbody.firstChild) {
+        tbody.insertBefore(newRow, tbody.firstChild);
+      } else {
+        tbody.appendChild(newRow);
+      }
+    } else if (position === "above") {
+      currentRow.parentElement.insertBefore(newRow, currentRow);
+    } else {
+      currentRow.parentElement.insertBefore(newRow, currentRow.nextSibling);
+    }
+
+    // Focus the first cell of the newly added row
+    const firstNewCell = newRow.querySelector("td");
+    if (firstNewCell) {
+      const range = document.createRange();
+      range.selectNodeContents(firstNewCell);
+      range.collapse(true);
+      const sel = window.getSelection();
+      if (sel) {
+        sel.removeAllRanges();
+        sel.addRange(range);
+      }
+      activeTableCellRef.current = { tableEl, cellEl: firstNewCell, pageIdx };
+    }
+
+    handlePageInput(pageIdx);
+    setTimeout(() => reflowOverflowFromPage(pageIdx), 30);
+  };
+
+  const handleTableAddCol = (position = "right") => {
+    const ctx = activeTableCellRef.current;
+    if (!ctx || !ctx.tableEl || !ctx.cellEl) {
+      toast.error("Click inside a table cell first");
+      return;
+    }
+    const { tableEl, cellEl, pageIdx } = ctx;
+    const currentRow = cellEl.closest("tr");
+    if (!currentRow) return;
+
+    const cellsInCurrentRow = Array.from(currentRow.querySelectorAll("th, td"));
+    const colIndex = Math.max(0, cellsInCurrentRow.indexOf(cellEl));
+
+    const allRows = Array.from(tableEl.querySelectorAll("tr"));
+    allRows.forEach((row) => {
+      const cells = Array.from(row.querySelectorAll("th, td"));
+      const isHeader =
+        row.parentElement?.tagName.toUpperCase() === "THEAD" ||
+        cells.some((c) => c.tagName.toUpperCase() === "TH");
+      const newCell = document.createElement(isHeader ? "th" : "td");
+      newCell.innerHTML = isHeader ? `Col ${cells.length + 1}` : "<br>";
+
+      const refCell = cells[colIndex] || cells[cells.length - 1];
+      if (!refCell) {
+        row.appendChild(newCell);
+      } else if (position === "left") {
+        row.insertBefore(newCell, refCell);
+      } else {
+        row.insertBefore(newCell, refCell.nextSibling);
+      }
+    });
+
+    handlePageInput(pageIdx);
+    setTimeout(() => reflowOverflowFromPage(pageIdx), 30);
+  };
+
+  const handleTableDeleteRow = () => {
+    const ctx = activeTableCellRef.current;
+    if (!ctx || !ctx.tableEl || !ctx.cellEl) return;
+    const { tableEl, cellEl, pageIdx } = ctx;
+    const currentRow = cellEl.closest("tr");
+    if (!currentRow) return;
+
+    const allRows = tableEl.querySelectorAll("tr");
+    if (allRows.length <= 1) {
+      tableEl.remove();
+      setIsInsideTable(false);
+      activeTableCellRef.current = null;
+    } else {
+      currentRow.remove();
+      setIsInsideTable(false);
+      activeTableCellRef.current = null;
+    }
+    handlePageInput(pageIdx);
+  };
+
+  const handleTableDeleteCol = () => {
+    const ctx = activeTableCellRef.current;
+    if (!ctx || !ctx.tableEl || !ctx.cellEl) return;
+    const { tableEl, cellEl, pageIdx } = ctx;
+    const currentRow = cellEl.closest("tr");
+    if (!currentRow) return;
+
+    const cellsInRow = Array.from(currentRow.querySelectorAll("th, td"));
+    if (cellsInRow.length <= 1) {
+      tableEl.remove();
+      setIsInsideTable(false);
+      activeTableCellRef.current = null;
+      handlePageInput(pageIdx);
+      return;
+    }
+
+    const colIndex = cellsInRow.indexOf(cellEl);
+    if (colIndex === -1) return;
+
+    Array.from(tableEl.querySelectorAll("tr")).forEach((row) => {
+      const cells = row.querySelectorAll("th, td");
+      if (cells[colIndex]) {
+        cells[colIndex].remove();
+      }
+    });
+
+    setIsInsideTable(false);
+    activeTableCellRef.current = null;
+    handlePageInput(pageIdx);
+  };
+
+  const handleTableDelete = () => {
+    const ctx = activeTableCellRef.current;
+    if (!ctx || !ctx.tableEl) return;
+    const { tableEl, pageIdx } = ctx;
+    tableEl.remove();
+    setIsInsideTable(false);
+    activeTableCellRef.current = null;
+    handlePageInput(pageIdx);
+    toast.success("Table removed");
+  };
+
+  // --- FLOATING LINK POPOVER (No browser window.prompt / alert!) ---
+  const openLinkPopover = () => {
+    saveSelection();
+    setActiveMenu(null);
+    setOpenToolbarDropdown(null);
+
+    let selectedText = "";
+    let existingUrl = "";
+    let hasExisting = false;
+    existingAnchorRef.current = null;
+
+    let topPos = 175;
+    let leftPos = typeof window !== "undefined" ? Math.max(260, window.innerWidth / 2 - 160) : 380;
+
+    if (savedRangeRef.current) {
+      selectedText = savedRangeRef.current.toString();
+      let node = savedRangeRef.current.commonAncestorContainer;
+      if (node && node.nodeType === Node.TEXT_NODE) {
+        node = node.parentElement;
+      }
+      if (node && node instanceof HTMLElement) {
+        const anchor = node.closest("a");
+        if (anchor) {
+          existingAnchorRef.current = anchor;
+          hasExisting = true;
+          existingUrl = anchor.getAttribute("href") || "";
+          if (!selectedText) {
+            selectedText = anchor.textContent || "";
+          }
+        }
+      }
+
+      const rect = savedRangeRef.current.getBoundingClientRect();
+      if (rect && (rect.width > 0 || rect.height > 0 || rect.top > 0)) {
+        const maxLeft = typeof window !== "undefined" ? window.innerWidth - 340 : 800;
+        const maxTop = typeof window !== "undefined" ? window.innerHeight - 230 : 600;
+        leftPos = Math.max(20, Math.min(maxLeft, rect.left));
+        topPos = Math.max(95, Math.min(maxTop, rect.bottom + 8));
+      }
+    }
+
+    setLinkPopover({
+      open: true,
+      text: selectedText,
+      url: existingUrl || "",
+      top: topPos,
+      left: leftPos,
+      hasExistingLink: hasExisting,
+    });
+
+    setTimeout(() => {
+      linkUrlInputRef.current?.focus();
+      linkUrlInputRef.current?.select();
+    }, 30);
+  };
+
+  const handleApplyLink = (e) => {
+    if (e) e.preventDefault();
+    const rawUrl = (linkPopover.url || "").trim();
+    if (!rawUrl) {
+      toast.error("Please enter a link URL");
+      return;
+    }
+
+    const normalizedUrl =
+      /^(https?:\/\/|mailto:|tel:)/i.test(rawUrl) ? rawUrl : `https://${rawUrl}`;
+    const displayText = (linkPopover.text || "").trim() || normalizedUrl;
+
+    const activeIdx = activePageIdxRef.current || 0;
+
+    if (existingAnchorRef.current) {
+      existingAnchorRef.current.setAttribute("href", normalizedUrl);
+      existingAnchorRef.current.setAttribute("target", "_blank");
+      existingAnchorRef.current.setAttribute("rel", "noopener noreferrer");
+      existingAnchorRef.current.textContent = displayText;
+    } else {
+      restoreSelection();
+      const safeText = displayText
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;");
+      const safeHref = normalizedUrl.replace(/"/g, "&quot;");
+      const anchorHtml = `<a href="${safeHref}" target="_blank" rel="noopener noreferrer" style="color: #2563EB; text-decoration: underline;">${safeText}</a>`;
+      document.execCommand("insertHTML", false, anchorHtml);
+    }
+
+    setLinkPopover((prev) => ({ ...prev, open: false }));
+    existingAnchorRef.current = null;
+    saveSelection();
     handlePageInput(activeIdx);
   };
 
-  const insertLinkPrompt = () => {
-    saveSelection();
-    const url = window.prompt("Enter URL (e.g. https://www.proofdeck.app):", "https://");
-    if (url && url !== "https://") {
+  const handleRemoveLink = () => {
+    const activeIdx = activePageIdxRef.current || 0;
+    if (existingAnchorRef.current) {
+      const textNode = document.createTextNode(existingAnchorRef.current.textContent || "");
+      existingAnchorRef.current.parentNode?.replaceChild(textNode, existingAnchorRef.current);
+      existingAnchorRef.current = null;
+    } else {
       restoreSelection();
-      document.execCommand("createLink", false, url);
-      handlePageInput(activePageIdxRef.current || 0);
+      document.execCommand("unlink", false, null);
     }
-    setActiveMenu(null);
+    setLinkPopover((prev) => ({ ...prev, open: false }));
+    handlePageInput(activeIdx);
   };
 
   const handleDragStart = (e, varKey) => {
@@ -1441,101 +1899,49 @@ export default function DocumentEditorPage() {
     }
   };
 
-  // Direct PDF Download (.pdf) using jsPDF + HTML rendering
+  // Direct Vector PDF Download (.pdf) - Never blank, selectable A4 vector text
   const handleDownloadPdf = async () => {
     setActiveMenu(null);
     const toastId = toast.loading("Generating PDF document...");
     try {
-      const pdf = new jsPDF({
-        orientation: "portrait",
-        unit: "mm",
-        format: "a4",
-      });
-
       const pageElements = pages.map((p, idx) => {
         if (isPreviewMode) return renderMergedPreviewForPage(p);
         const domEl = pageRefs.current[idx];
-        return domEl ? domEl.innerHTML : p;
+        return domEl && domEl.innerHTML ? domEl.innerHTML : p;
       });
 
-      // Build clean temporary offscreen container for jsPDF .html() rendering
-      const container = document.createElement("div");
-      container.style.position = "fixed";
-      container.style.left = "-9999px";
-      container.style.top = "0";
-      container.style.width = "794px"; // A4 width at 96 DPI
-      container.style.background = "#ffffff";
-      container.style.color = "#111827";
-      container.style.fontFamily = `${currentFont}, sans-serif`;
-      container.className = "pd-doc-editor-content";
-
-      container.innerHTML = pageElements
-        .map(
-          (htmlStr, idx) => `
-          <div style="width: 794px; min-height: 1122px; padding: 72px; box-sizing: border-box; background: #ffffff; color: #111827; font-family: ${currentFont}, sans-serif; font-size: ${currentFontSize}pt; line-height: 1.6; page-break-after: ${
-            idx < pageElements.length - 1 ? "always" : "auto"
-          };">
-            ${htmlStr}
-          </div>
-        `
-        )
-        .join("");
-
-      document.body.appendChild(container);
-
-      await pdf.html(container, {
-        callback: (doc) => {
-          const safeFilename = (docTitle || "ProofDeck_Document").replace(/[^a-zA-Z0-9_-]/g, "_");
-          doc.save(`${safeFilename}.pdf`);
-          document.body.removeChild(container);
-          toast.success("PDF downloaded!", { id: toastId });
-        },
-        x: 0,
-        y: 0,
-        width: 210,
-        windowWidth: 794,
-        autoPaging: "text",
+      exportDocumentToPdf({
+        title: docTitle || "ProofDeck_Document",
+        pagesHtml: pageElements,
+        pageMarginMm,
+        includeQrCode,
+        qrPosition,
       });
+      toast.success("PDF downloaded!", { id: toastId });
     } catch (err) {
-      toast.dismiss(toastId);
-      handlePrint();
+      toast.error("Failed to generate PDF", { id: toastId });
     }
   };
 
-  // Download as Microsoft Word (.doc)
+  // Download as Native Microsoft Word (.docx)
   const handleDownloadWord = () => {
     setActiveMenu(null);
-    const content = isPreviewMode
-      ? pages.map((p) => renderMergedPreviewForPage(p)).join("<br clear=all style='mso-special-character:line-break;page-break-before:always'>")
-      : pages
-          .map((p, idx) => (pageRefs.current[idx] ? pageRefs.current[idx].innerHTML : p))
-          .join("<br clear=all style='mso-special-character:line-break;page-break-before:always'>");
+    const toastId = toast.loading("Generating Word (.docx) document...");
+    try {
+      const pageElements = pages.map((p, idx) => {
+        if (isPreviewMode) return renderMergedPreviewForPage(p);
+        const domEl = pageRefs.current[idx];
+        return domEl && domEl.innerHTML ? domEl.innerHTML : p;
+      });
 
-    const wordDoc = `
-      <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
-      <head>
-        <meta charset="utf-8">
-        <title>${docTitle}</title>
-        <style>
-          @page { size: 21cm 29.7cm; margin: 2.5cm; }
-          body { font-family: ${currentFont}, sans-serif; font-size: ${currentFontSize}pt; line-height: 1.6; color: #111827; }
-          table { border-collapse: collapse; width: 100%; }
-          th, td { border: 1px solid #cbd5e1; padding: 6px 8px; }
-        </style>
-      </head>
-      <body>${content}</body>
-      </html>
-    `;
-    const blob = new Blob(["\ufeff", wordDoc], { type: "application/msword" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `${(docTitle || "ProofDeck_Document").replace(/[^a-zA-Z0-9_-]/g, "_")}.doc`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-    toast.success("Downloaded Word (.doc) file");
+      exportDocumentToDocx({
+        title: docTitle || "ProofDeck_Document",
+        pagesHtml: pageElements,
+      });
+      toast.success("Downloaded Word (.docx) file", { id: toastId });
+    } catch (err) {
+      toast.error("Failed to generate Word (.docx) file", { id: toastId });
+    }
   };
 
   const handleSelectPreset = (preset) => {
@@ -1745,7 +2151,7 @@ export default function DocumentEditorPage() {
                         className="w-full text-left px-3.5 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-2.5 cursor-pointer"
                       >
                         <FileDoc size={15} className="text-blue-600" weight="fill" />
-                        <span>Download as Microsoft Word (.doc)</span>
+                        <span>Download as Microsoft Word (.docx)</span>
                       </button>
 
                       <div className="my-1 border-t border-slate-100 dark:border-slate-800" />
@@ -1959,20 +2365,64 @@ export default function DocumentEditorPage() {
                         onClick={insertAcademicTable}
                         className="w-full text-left px-3.5 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-2.5 cursor-pointer"
                       >
-                        <Table size={15} className="text-slate-600" />
+                        <Table size={15} className="text-indigo-600" />
                         <span>Academic Results Table</span>
                       </button>
 
-                      <div className="my-1 border-t border-slate-100 dark:border-slate-800" />
+                      {/* Custom Editable Table Builder */}
+                      <div className="px-3.5 py-2 bg-slate-50/70 dark:bg-slate-800/40 border-y border-slate-100 dark:border-slate-800 my-1">
+                        <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">
+                          Insert Custom Table
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <label className="flex items-center gap-1 text-[11px] text-slate-600 dark:text-slate-300">
+                            <span>Rows</span>
+                            <input
+                              type="number"
+                              min={1}
+                              max={30}
+                              value={customTableRows}
+                              onChange={(e) => setCustomTableRows(e.target.value)}
+                              className="w-11 px-1.5 py-0.5 text-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded text-center"
+                            />
+                          </label>
+                          <span className="text-slate-400">×</span>
+                          <label className="flex items-center gap-1 text-[11px] text-slate-600 dark:text-slate-300">
+                            <span>Cols</span>
+                            <input
+                              type="number"
+                              min={1}
+                              max={12}
+                              value={customTableCols}
+                              onChange={(e) => setCustomTableCols(e.target.value)}
+                              className="w-11 px-1.5 py-0.5 text-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded text-center"
+                            />
+                          </label>
+                          <button
+                            type="button"
+                            onMouseDown={(e) => e.preventDefault()}
+                            onClick={() => insertCustomTable(customTableRows, customTableCols)}
+                            className="ml-auto px-2.5 py-1 bg-[#5144E8] hover:bg-indigo-700 text-white font-semibold rounded-md text-[11px] cursor-pointer transition-colors"
+                          >
+                            Insert
+                          </button>
+                        </div>
+                      </div>
 
                       <button
                         type="button"
-                        onMouseDown={(e) => e.preventDefault()}
-                        onClick={insertLinkPrompt}
-                        className="w-full text-left px-3.5 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-2.5 cursor-pointer"
+                        onMouseDown={(e) => {
+                          e.preventDefault();
+                          saveSelection();
+                        }}
+                        onClick={openLinkPopover}
+                        className="w-full text-left px-3.5 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-between cursor-pointer"
                       >
-                        <LinkIcon size={15} className="text-slate-500" />
-                        <span>Link</span>
+                        <span className="flex items-center gap-2.5">
+                          <LinkIcon size={15} className="text-slate-500" />
+                          <span>Link</span>
+                        </span>
+                        <span className="text-[10px] text-slate-400 font-mono">Ctrl+K</span>
                       </button>
                       <button
                         type="button"
@@ -2625,6 +3075,38 @@ export default function DocumentEditorPage() {
           <TextIndent size={14} weight="bold" />
         </button>
 
+        {/* Insert Link Button (Opens Floating Popover) */}
+        <button
+          type="button"
+          onMouseDown={(e) => {
+            e.preventDefault();
+            saveSelection();
+          }}
+          onClick={openLinkPopover}
+          className={`p-1.5 rounded cursor-pointer transition-colors ${
+            linkPopover.open
+              ? "bg-indigo-100 text-indigo-700 dark:bg-indigo-900/60 dark:text-indigo-300"
+              : "hover:bg-slate-200/70 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300"
+          }`}
+          title="Insert or edit link (Ctrl+K)"
+        >
+          <LinkIcon size={14} weight="bold" />
+        </button>
+
+        {/* Quick Insert Table Button */}
+        <button
+          type="button"
+          onMouseDown={(e) => {
+            e.preventDefault();
+            saveSelection();
+          }}
+          onClick={() => insertCustomTable(4, 4)}
+          className="p-1.5 rounded hover:bg-slate-200/70 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 cursor-pointer"
+          title="Insert 4×4 Table"
+        >
+          <Table size={14} weight="bold" />
+        </button>
+
         {/* Clear Formatting */}
         <button
           type="button"
@@ -2662,6 +3144,73 @@ export default function DocumentEditorPage() {
         </button>
       </div>
 
+      {/* Contextual Table Editing Toolbar - Appears automatically whenever cursor is inside a Table */}
+      {isInsideTable && !isPreviewMode && (
+        <div className="bg-indigo-50/95 dark:bg-indigo-950/80 border-b border-indigo-200/80 dark:border-indigo-800/70 px-4 py-1.5 flex items-center gap-1.5 flex-wrap flex-none shrink-0 z-20 text-xs">
+          <span className="inline-flex items-center gap-1.5 font-bold text-indigo-800 dark:text-indigo-200 mr-2">
+            <Table size={14} weight="bold" className="text-indigo-600" />
+            <span>Table Tools:</span>
+          </span>
+          <button
+            type="button"
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={() => handleTableAddRow("below")}
+            className="px-2.5 py-1 rounded-md bg-white dark:bg-slate-800 hover:bg-indigo-600 hover:text-white text-slate-700 dark:text-slate-200 border border-indigo-200 dark:border-indigo-700 font-semibold text-[11px] transition-colors cursor-pointer shadow-2xs"
+          >
+            + Row below
+          </button>
+          <button
+            type="button"
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={() => handleTableAddRow("above")}
+            className="px-2.5 py-1 rounded-md bg-white dark:bg-slate-800 hover:bg-indigo-600 hover:text-white text-slate-700 dark:text-slate-200 border border-indigo-200 dark:border-indigo-700 font-semibold text-[11px] transition-colors cursor-pointer shadow-2xs"
+          >
+            + Row above
+          </button>
+          <button
+            type="button"
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={() => handleTableAddCol("right")}
+            className="px-2.5 py-1 rounded-md bg-white dark:bg-slate-800 hover:bg-indigo-600 hover:text-white text-slate-700 dark:text-slate-200 border border-indigo-200 dark:border-indigo-700 font-semibold text-[11px] transition-colors cursor-pointer shadow-2xs"
+          >
+            + Column right
+          </button>
+          <button
+            type="button"
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={() => handleTableAddCol("left")}
+            className="px-2.5 py-1 rounded-md bg-white dark:bg-slate-800 hover:bg-indigo-600 hover:text-white text-slate-700 dark:text-slate-200 border border-indigo-200 dark:border-indigo-700 font-semibold text-[11px] transition-colors cursor-pointer shadow-2xs"
+          >
+            + Column left
+          </button>
+          <div className="h-3.5 w-px bg-indigo-200 dark:bg-indigo-800 mx-1" />
+          <button
+            type="button"
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={handleTableDeleteRow}
+            className="px-2 py-1 rounded-md bg-white dark:bg-slate-800 hover:bg-rose-50 dark:hover:bg-rose-950/60 text-rose-600 border border-rose-200 dark:border-rose-800 font-semibold text-[11px] transition-colors cursor-pointer"
+          >
+            Delete row
+          </button>
+          <button
+            type="button"
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={handleTableDeleteCol}
+            className="px-2 py-1 rounded-md bg-white dark:bg-slate-800 hover:bg-rose-50 dark:hover:bg-rose-950/60 text-rose-600 border border-rose-200 dark:border-rose-800 font-semibold text-[11px] transition-colors cursor-pointer"
+          >
+            Delete column
+          </button>
+          <button
+            type="button"
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={handleTableDelete}
+            className="px-2 py-1 rounded-md bg-rose-600 hover:bg-rose-700 text-white font-semibold text-[11px] transition-colors cursor-pointer ml-auto"
+          >
+            Delete table
+          </button>
+        </div>
+      )}
+
       {/* Preview Mode Bar */}
       {isPreviewMode && (
         <div className="bg-slate-800 text-white px-4 py-1.5 flex items-center justify-between text-xs flex-none shrink-0 z-20">
@@ -2689,23 +3238,41 @@ export default function DocumentEditorPage() {
         <aside
           data-tour="doc-editor-sidebar"
           className={`bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 flex flex-col shrink-0 transition-all duration-200 z-10 ${
-            isSidebarOpen ? "w-72" : "w-10"
+            isSidebarOpen ? "w-72" : "w-11"
           }`}
         >
-          <div className="p-2 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
-            {isSidebarOpen && (
-              <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                ProofDeck Tools
-              </span>
+          <div className="px-3 py-2 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+            {isSidebarOpen ? (
+              <>
+                <span className="text-xs font-bold text-slate-700 dark:text-slate-200 tracking-tight">
+                  ProofDeck Tools
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setIsSidebarOpen(false)}
+                  className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-semibold text-slate-600 dark:text-slate-300 bg-slate-100/80 dark:bg-slate-800 hover:bg-indigo-50 hover:text-indigo-600 dark:hover:bg-indigo-950/60 border border-slate-200/80 dark:border-slate-700 transition-colors cursor-pointer"
+                  title="Collapse ProofDeck Tools panel"
+                >
+                  <CaretDoubleLeft size={12} weight="bold" />
+                  <span>Hide</span>
+                </button>
+              </>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setIsSidebarOpen(true)}
+                className="w-full py-2 flex flex-col items-center gap-2 rounded-lg text-indigo-600 dark:text-indigo-400 bg-indigo-50/70 dark:bg-indigo-950/40 hover:bg-indigo-100 dark:hover:bg-indigo-900/60 border border-indigo-200/60 dark:border-indigo-800/50 transition-colors cursor-pointer"
+                title="Expand ProofDeck Tools panel"
+              >
+                <CaretDoubleRight size={14} weight="bold" />
+                <span
+                  className="text-[9px] font-extrabold uppercase tracking-widest"
+                  style={{ writingMode: "vertical-rl", textOrientation: "mixed" }}
+                >
+                  Tools
+                </span>
+              </button>
             )}
-            <button
-              type="button"
-              onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-              className="p-1 rounded text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 mx-auto cursor-pointer"
-              title={isSidebarOpen ? "Collapse" : "Expand"}
-            >
-              {isSidebarOpen ? <ArrowLeft size={14} /> : <CaretRight size={14} />}
-            </button>
           </div>
 
           {isSidebarOpen && (
@@ -2979,14 +3546,10 @@ export default function DocumentEditorPage() {
                     </div>
                   )}
 
-                  {/* Content Area for this page */}
+                  {/* Content Area for this page (Base 11pt Arial set in CSS so cursor selection never mutates root container size) */}
                   {isPreviewMode ? (
                     <div
                       className="pd-doc-editor-content max-w-none text-slate-900 outline-none min-h-[235mm]"
-                      style={{
-                        fontFamily: currentFont,
-                        fontSize: `${currentFontSize}pt`,
-                      }}
                       dangerouslySetInnerHTML={{ __html: renderMergedPreviewForPage(pageHtml) }}
                     />
                   ) : (
@@ -3013,10 +3576,6 @@ export default function DocumentEditorPage() {
                         activePageIdxRef.current = index;
                       }}
                       className="pd-doc-editor-content max-w-none text-slate-900 outline-none min-h-[235mm]"
-                      style={{
-                        fontFamily: currentFont,
-                        fontSize: `${currentFontSize}pt`,
-                      }}
                     />
                   )}
 
@@ -3054,6 +3613,93 @@ export default function DocumentEditorPage() {
           </main>
         </div>
       </div>
+
+      {/* Floating Link Popover over Highlighted Text (Replaces browser native prompt) */}
+      {linkPopover.open && (
+        <div
+          ref={linkPopoverRef}
+          style={{
+            position: "fixed",
+            top: `${linkPopover.top}px`,
+            left: `${linkPopover.left}px`,
+          }}
+          className="z-50 w-80 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl shadow-2xl p-3.5 font-sans"
+        >
+          <div className="flex items-center justify-between mb-2.5">
+            <span className="text-xs font-bold text-slate-800 dark:text-slate-100 flex items-center gap-1.5">
+              <LinkIcon size={14} weight="bold" className="text-indigo-600" />
+              <span>{linkPopover.hasExistingLink ? "Edit Link" : "Insert Link"}</span>
+            </span>
+            <button
+              type="button"
+              onClick={() => setLinkPopover((prev) => ({ ...prev, open: false }))}
+              className="text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 p-0.5 rounded cursor-pointer"
+            >
+              <X size={14} weight="bold" />
+            </button>
+          </div>
+
+          <form onSubmit={handleApplyLink} className="space-y-2.5">
+            <div>
+              <label className="block text-[10px] font-semibold uppercase tracking-wider text-slate-400 mb-1">
+                Text to display
+              </label>
+              <input
+                type="text"
+                value={linkPopover.text}
+                onChange={(e) => setLinkPopover((prev) => ({ ...prev, text: e.target.value }))}
+                placeholder="Link text"
+                className="w-full px-2.5 py-1.5 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-800 dark:text-slate-100 focus:outline-none focus:border-indigo-500"
+              />
+            </div>
+
+            <div>
+              <label className="block text-[10px] font-semibold uppercase tracking-wider text-slate-400 mb-1">
+                Link URL
+              </label>
+              <input
+                ref={linkUrlInputRef}
+                type="text"
+                value={linkPopover.url}
+                onChange={(e) => setLinkPopover((prev) => ({ ...prev, url: e.target.value }))}
+                placeholder="https://www.proofdeck.app"
+                className="w-full px-2.5 py-1.5 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-800 dark:text-slate-100 focus:outline-none focus:border-indigo-500"
+              />
+            </div>
+
+            <div className="flex items-center justify-between pt-1">
+              {linkPopover.hasExistingLink ? (
+                <button
+                  type="button"
+                  onClick={handleRemoveLink}
+                  className="inline-flex items-center gap-1 px-2 py-1 text-[11px] font-semibold text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/50 rounded-md cursor-pointer transition-colors"
+                >
+                  <LinkBreak size={13} weight="bold" />
+                  <span>Remove link</span>
+                </button>
+              ) : (
+                <span />
+              )}
+
+              <div className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => setLinkPopover((prev) => ({ ...prev, open: false }))}
+                  className="px-2.5 py-1 text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg cursor-pointer transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-3 py-1 text-xs font-bold text-white bg-[#5144E8] hover:bg-indigo-700 rounded-lg shadow-xs cursor-pointer transition-colors"
+                >
+                  Apply
+                </button>
+              </div>
+            </div>
+          </form>
+        </div>
+      )}
 
       {/* Preset confirmation modal */}
       {presetToLoad && (

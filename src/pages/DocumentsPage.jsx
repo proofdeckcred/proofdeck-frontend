@@ -608,8 +608,18 @@ const DocumentsPage = () => {
                 }
                 const plainSnippet = rawDocHtml
                   .replace(/<[^>]+>/g, " ")
+                  .replace(/&nbsp;|&#160;/gi, " ")
+                  .replace(/&amp;/gi, "&")
+                  .replace(/&lt;/gi, "<")
+                  .replace(/&gt;/gi, ">")
+                  .replace(/&quot;/gi, '"')
+                  .replace(/&#39;/gi, "'")
                   .replace(/\s+/g, " ")
                   .trim();
+
+                const snippetParts = plainSnippet
+                  ? plainSnippet.slice(0, 320).split(/(\{\{[a-zA-Z0-9_]+\}\})/g)
+                  : [];
 
                 return (
                   <div
@@ -632,9 +642,20 @@ const DocumentsPage = () => {
                           <div className="text-[8px] font-bold text-slate-800 truncate">
                             {cleanTitle}
                           </div>
-                          <p className="text-[7px] text-slate-500 leading-relaxed line-clamp-9 break-words mb-0">
-                            {plainSnippet.slice(0, 320)}
-                          </p>
+                          <div className="text-[7px] text-slate-500 leading-relaxed line-clamp-9 break-words mb-0">
+                            {snippetParts.map((part, pIdx) =>
+                              part.startsWith("{{") && part.endsWith("}}") ? (
+                                <span
+                                  key={pIdx}
+                                  className="inline-block bg-slate-100 text-slate-700 border border-slate-200 rounded px-1 py-px font-mono text-[6.5px] font-semibold mr-0.5 mb-0.5"
+                                >
+                                  {part}
+                                </span>
+                              ) : (
+                                <span key={pIdx}>{part}</span>
+                              )
+                            )}
+                          </div>
                         </div>
                       ) : (
                         /* Document Micro Lines Preview */
