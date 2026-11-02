@@ -22,6 +22,7 @@ import {
 } from "@phosphor-icons/react";
 import toast, { Toaster } from "react-hot-toast";
 import { getDocuments, deleteTemplate, createCustomTemplate, getTemplate } from "../api";
+import { encodeDocUuid } from "../utils/docUuid";
 
 // --- PROOFDECK BRAND DOCUMENT ICON ---
 export const ProofDeckDocIcon = ({ size = 20, className = "" }) => (
@@ -368,7 +369,7 @@ const DocumentsPage = () => {
       await fetchDocs();
       const newId = res.data?.template_id || res.data?.id;
       if (newId) {
-        navigate(`/dashboard/documents/editor/${newId}`);
+        navigate(`/dashboard/documents/editor/${encodeDocUuid(newId)}`);
       }
     } catch (err) {
       toast.error("Failed to duplicate document");
@@ -407,24 +408,26 @@ const DocumentsPage = () => {
               Documents
             </h1>
 
-            <Link
-              to="/dashboard/documents/editor"
-              className="sm:hidden inline-flex items-center justify-center bg-slate-900 hover:bg-black text-white rounded-lg py-1 px-2.5 font-semibold text-xs shadow-sm no-underline"
+            <button
+              type="button"
+              onClick={() => navigate("/dashboard/documents/editor")}
+              className="sm:hidden inline-flex items-center justify-center bg-slate-900 hover:bg-black text-white rounded-lg py-1 px-2.5 font-semibold text-xs shadow-sm cursor-pointer"
             >
               <Plus size={13} className="mr-1 text-white" />
               <span>New document</span>
-            </Link>
+            </button>
           </div>
 
           <div className="hidden sm:flex items-center gap-2.5">
-            <Link
-              to="/dashboard/documents/editor"
+            <button
+              type="button"
+              onClick={() => navigate("/dashboard/documents/editor")}
               data-tour="documents-new-btn"
-              className="inline-flex items-center justify-center bg-slate-900 hover:bg-black text-white rounded-lg py-1.5 px-3.5 transition-all font-semibold text-xs shadow-sm no-underline"
+              className="inline-flex items-center justify-center bg-slate-900 hover:bg-black text-white rounded-lg py-1.5 px-3.5 transition-all font-semibold text-xs shadow-sm cursor-pointer"
             >
               <Plus size={14} className="mr-1.5 text-white" />
               <span>New document</span>
-            </Link>
+            </button>
           </div>
         </div>
       </div>
@@ -456,22 +459,29 @@ const DocumentsPage = () => {
               return (
                 <div key={p.id} className="flex flex-col group">
                   {/* Portrait A4 Card Sheet */}
-                  <Link
-                    to={targetUrl}
-                    className="w-full aspect-[1/1.38] rounded-lg border border-slate-200/90 bg-white hover:border-blue-500 hover:shadow-md transition-all duration-200 flex flex-col overflow-hidden cursor-pointer no-underline relative group shadow-2xs"
+                  <div
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => navigate(targetUrl)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") navigate(targetUrl);
+                    }}
+                    className="w-full aspect-[1/1.38] rounded-lg border border-slate-200/90 bg-white hover:border-blue-500 hover:shadow-md transition-all duration-200 flex flex-col overflow-hidden cursor-pointer relative group shadow-2xs"
                   >
                     <ThumbnailComponent />
-                  </Link>
+                  </div>
 
                   {/* Title & Description Below Card */}
                   <div className="mt-2.5 px-0.5 space-y-0.5">
-                    <Link
-                      to={targetUrl}
-                      className="text-xs sm:text-sm font-semibold text-slate-800 group-hover:text-blue-600 transition-colors block truncate no-underline"
+                    <div
+                      role="button"
+                      tabIndex={0}
+                      onClick={() => navigate(targetUrl)}
+                      className="text-xs sm:text-sm font-semibold text-slate-800 group-hover:text-blue-600 transition-colors block truncate cursor-pointer"
                       title={p.name}
                     >
                       {p.name}
-                    </Link>
+                    </div>
                     <p className="text-[11px] text-slate-400 truncate leading-tight">
                       {p.desc}
                     </p>
@@ -556,13 +566,14 @@ const DocumentsPage = () => {
               </p>
               {!searchQuery && (
                 <div className="pt-2">
-                  <Link
-                    to="/dashboard/documents/editor"
-                    className="inline-flex items-center gap-2 px-4 py-2 bg-slate-900 hover:bg-black text-white text-xs font-bold rounded-xl shadow-2xs transition-all cursor-pointer no-underline"
+                  <button
+                    type="button"
+                    onClick={() => navigate("/dashboard/documents/editor")}
+                    className="inline-flex items-center gap-2 px-4 py-2 bg-slate-900 hover:bg-black text-white text-xs font-bold rounded-xl shadow-2xs transition-all cursor-pointer"
                   >
                     <Plus size={15} weight="bold" />
                     <span>Create a document</span>
-                  </Link>
+                  </button>
                 </div>
               )}
             </div>
@@ -583,54 +594,87 @@ const DocumentsPage = () => {
                   .replace(/Senate\s*/gi, "")
                   .trim();
 
+                const docUuidUrl = `/dashboard/documents/editor/${encodeDocUuid(doc.id)}`;
                 const isKebabOpen = openKebabId === doc.id;
+
+                // Extract a clean text snippet from saved document HTML if available
+                let rawDocHtml = "";
+                if (doc.layout_data && typeof doc.layout_data === "object") {
+                  rawDocHtml = doc.layout_data.document_html || "";
+                } else if (typeof doc.layout_data === "string") {
+                  try {
+                    rawDocHtml = JSON.parse(doc.layout_data)?.document_html || "";
+                  } catch (e) {}
+                }
+                const plainSnippet = rawDocHtml
+                  .replace(/<[^>]+>/g, " ")
+                  .replace(/\s+/g, " ")
+                  .trim();
 
                 return (
                   <div
                     key={doc.id}
                     className="group flex flex-col bg-white rounded-lg border border-slate-200 hover:border-blue-500 hover:shadow-md transition-all duration-200 overflow-hidden relative shadow-2xs"
                   >
-                    {/* Top Portrait Preview Area */}
-                    <Link
-                      to={`/dashboard/documents/editor/${doc.id}`}
-                      className="aspect-[1/1.25] bg-[#fdfdfd] border-b border-slate-100 p-3.5 flex flex-col justify-between cursor-pointer no-underline overflow-hidden group-hover:bg-slate-50/40 transition-colors"
+                    {/* Top Portrait Preview Area (No <a> href so browser never shows bottom-left URL popup) */}
+                    <div
+                      role="button"
+                      tabIndex={0}
+                      onClick={() => navigate(docUuidUrl)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") navigate(docUuidUrl);
+                      }}
+                      className="aspect-[1/1.25] bg-[#fdfdfd] border-b border-slate-100 p-3.5 flex flex-col justify-between cursor-pointer overflow-hidden group-hover:bg-slate-50/40 transition-colors"
                       title={`Open ${cleanTitle}`}
                     >
-                      {/* Document Micro Lines Preview */}
-                      <div className="space-y-1.5 opacity-70">
-                        <div className="h-1.5 bg-slate-700 rounded-xs w-3/5 mx-auto" />
-                        <div className="h-1 bg-slate-300 rounded-xs w-4/5 mx-auto" />
-                        <div className="pt-2 space-y-1">
-                          <div className="h-1 bg-slate-200 rounded-xs w-full" />
-                          <div className="h-1 bg-slate-200 rounded-xs w-11/12" />
-                          <div className="h-1 bg-slate-200 rounded-xs w-full" />
-                          <div className="h-1 bg-slate-200 rounded-xs w-9/12" />
+                      {plainSnippet ? (
+                        <div className="space-y-1.5 overflow-hidden">
+                          <div className="text-[8px] font-bold text-slate-800 truncate">
+                            {cleanTitle}
+                          </div>
+                          <p className="text-[7px] text-slate-500 leading-relaxed line-clamp-9 break-words mb-0">
+                            {plainSnippet.slice(0, 320)}
+                          </p>
                         </div>
-                        <div className="pt-1.5 p-1 bg-slate-100/70 border border-slate-200/60 rounded-xs space-y-0.5">
-                          <div className="h-1 bg-slate-400 rounded-xs w-1/2" />
-                          <div className="h-1 bg-blue-400 rounded-xs w-2/3" />
+                      ) : (
+                        /* Document Micro Lines Preview */
+                        <div className="space-y-1.5 opacity-70">
+                          <div className="h-1.5 bg-slate-700 rounded-xs w-3/5 mx-auto" />
+                          <div className="h-1 bg-slate-300 rounded-xs w-4/5 mx-auto" />
+                          <div className="pt-2 space-y-1">
+                            <div className="h-1 bg-slate-200 rounded-xs w-full" />
+                            <div className="h-1 bg-slate-200 rounded-xs w-11/12" />
+                            <div className="h-1 bg-slate-200 rounded-xs w-full" />
+                            <div className="h-1 bg-slate-200 rounded-xs w-9/12" />
+                          </div>
+                          <div className="pt-1.5 p-1 bg-slate-100/70 border border-slate-200/60 rounded-xs space-y-0.5">
+                            <div className="h-1 bg-slate-400 rounded-xs w-1/2" />
+                            <div className="h-1 bg-blue-400 rounded-xs w-2/3" />
+                          </div>
                         </div>
-                      </div>
+                      )}
 
                       {/* Bottom Footer Details */}
                       <div className="pt-1 flex justify-between items-center opacity-60 text-[8px] text-slate-400 border-t border-slate-100">
-                        <span>A4 Letterhead</span>
+                        <span>A4 Document</span>
                         <div className="w-2.5 h-2.5 rounded-full border border-slate-300" />
                       </div>
-                    </Link>
+                    </div>
 
                     {/* Bottom Document Info Footer */}
                     <div className="p-3 bg-white flex items-center justify-between gap-2 relative">
                       <div className="flex items-center gap-2.5 min-w-0 flex-1">
                         <ProofDeckDocIcon size={22} />
                         <div className="min-w-0 flex-1">
-                          <Link
-                            to={`/dashboard/documents/editor/${doc.id}`}
-                            className="text-xs font-semibold text-slate-800 hover:text-blue-600 block truncate transition-colors no-underline leading-tight"
+                          <div
+                            role="button"
+                            tabIndex={0}
+                            onClick={() => navigate(docUuidUrl)}
+                            className="text-xs font-semibold text-slate-800 hover:text-blue-600 block truncate transition-colors cursor-pointer leading-tight"
                             title={cleanTitle}
                           >
                             {cleanTitle}
-                          </Link>
+                          </div>
                           <div className="text-[10px] text-slate-400 mt-0.5 truncate">
                             {formattedDate}
                           </div>
@@ -654,14 +698,17 @@ const DocumentsPage = () => {
                         {/* Dropdown Menu */}
                         {isKebabOpen && (
                           <div className="absolute right-0 bottom-full mb-1 w-36 bg-white border border-slate-200 rounded-xl shadow-lg py-1 z-30 text-xs font-medium text-slate-700 animate-in fade-in duration-150">
-                            <Link
-                              to={`/dashboard/documents/editor/${doc.id}`}
-                              className="w-full px-3 py-1.5 hover:bg-slate-50 flex items-center gap-2 text-slate-700 no-underline cursor-pointer"
-                              onClick={() => setOpenKebabId(null)}
+                            <button
+                              type="button"
+                              className="w-full text-left px-3 py-1.5 hover:bg-slate-50 flex items-center gap-2 text-slate-700 cursor-pointer"
+                              onClick={() => {
+                                setOpenKebabId(null);
+                                navigate(docUuidUrl);
+                              }}
                             >
                               <NotePencil size={14} weight="bold" />
                               <span>Edit</span>
-                            </Link>
+                            </button>
 
                             <button
                               type="button"

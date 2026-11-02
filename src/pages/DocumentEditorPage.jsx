@@ -59,6 +59,7 @@ import { createCustomTemplate, getTemplate, updateCustomTemplate } from "../api"
 import { useUser } from "../context/UserContext";
 import { useTour } from "../context/TourContext";
 import AppButton from "../components/ui/AppButton";
+import { encodeDocUuid, decodeDocUuid } from "../utils/docUuid";
 
 // --- PROOFDECK BRAND DOCUMENT ICON (Distinct, Legal & Authentic) ---
 export const ProofDeckDocIcon = ({ size = 26, className = "" }) => (
@@ -482,11 +483,30 @@ const A4_CONTENT_MAX_HEIGHT_PX = 930;
 export default function DocumentEditorPage() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { id } = useParams();
+  const params = useParams();
+  const rawRouteParam = params.templateId || params.id || null;
+  const resolvedRouteId = decodeDocUuid(rawRouteParam);
+
   const { user } = useUser();
   const { startTour } = useTour();
 
+  // Track current document numeric ID in both state and ref so saves update in-place without remounting
+  const [currentDocId, setCurrentDocId] = useState(resolvedRouteId);
+  const currentDocIdRef = useRef(resolvedRouteId);
+  const [isLoadingDoc, setIsLoadingDoc] = useState(Boolean(resolvedRouteId));
+
+  // If the user opened a plain numeric URL like /dashboard/documents/editor/98, immediately mask it with its UUID
+  useEffect(() => {
+    if (rawRouteParam && /^\d+$/.test(String(rawRouteParam).trim()) && resolvedRouteId) {
+      const uuidPath = `/dashboard/documents/editor/${encodeDocUuid(resolvedRouteId)}`;
+      window.history.replaceState(null, "", uuidPath);
+    }
+  }, [rawRouteParam, resolvedRouteId]);
+
   const getInitialState = () => {
+    if (resolvedRouteId) {
+      return { title: "Loading document...", html: "<p><br></p>" };
+    }
     if (typeof window !== "undefined") {
       const searchParams = new URLSearchParams(window.location.search);
       const presetId = searchParams.get("preset");
@@ -506,7 +526,9 @@ export default function DocumentEditorPage() {
     const p = paginateHtml(initialDocState.html);
     return p.length > 0 ? p : ["<p><br></p>"];
   });
+  const pagesRef = useRef(pages);
   const [isSaving, setIsSaving] = useState(false);
+  const isSavingRef = useRef(false);
   const [isSaved, setIsSaved] = useState(true);
   const [activeTab, setActiveTab] = useState("variables");
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
@@ -530,7 +552,7 @@ export default function DocumentEditorPage() {
     italic: false,
     underline: false,
     strikeThrough: false,
-     unorderedList: false,
+    unorderedList: false,
     orderedList: false,
     justifyLeft: true,
     justifyCenter: false,
@@ -551,13 +573,21 @@ export default function DocumentEditorPage() {
   const savedRangeRef = useRef(null);
 
   const syncDomPages = useCallback((pagesArray) => {
-    setTimeout(() => {
+    pagesRef.current = pagesArray;
+    const applyToDom = () => {
       pagesArray.forEach((html, idx) => {
-        if (pageRefs.current[idx]) {
-          pageRefs.current[idx].innerHTML = html || "<p><br></p>";
+        const el = pageRefs.current[idx];
+        if (el) {
+          const targetHtml = html || "<p><br></p>";
+          if (el.innerHTML !== targetHtml) {
+            el.innerHTML = targetHtml;
+          }
+          el.dataset.loadedInit = "true";
         }
       });
-    }, 20);
+    };
+    applyToDom();
+    setTimeout(applyToDom, 30);
   }, []);
 
   // Save & restore selection range so toolbar clicks/dropdowns never lose the user's selection
@@ -721,8 +751,12 @@ export default function DocumentEditorPage() {
     }
   }, [pages, syncDomPages]);
 
+  // Initialize new document or preset when no route ID is present
   useEffect(() => {
-    if (!id) {
+    if (!resolvedRouteId) {
+      currentDocIdRef.current = null;
+      setCurrentDocId(null);
+      setIsLoadingDoc(false);
       const searchParams = new URLSearchParams(location.search);
       const presetId = searchParams.get("preset");
       if (presetId && presetId !== "blank") {
@@ -730,16 +764,20 @@ export default function DocumentEditorPage() {
         if (found) {
           setDocTitle(found.title);
           const paginated = paginateHtml(found.content);
+          pagesRef.current = paginated;
           setPages(paginated);
           syncDomPages(paginated);
+          setIsSaved(false);
           return;
         }
       }
       setDocTitle("Untitled document");
+      pagesRef.current = ["<p><br></p>"];
       setPages(["<p><br></p>"]);
       syncDomPages(["<p><br></p>"]);
+      setIsSaved(true);
     }
-  }, [id, location.search, syncDomPages]);
+  }, [resolvedRouteId, location.search, syncDomPages]);
 
   // Close menus & toolbar dropdowns on outside click
   useEffect(() => {
@@ -760,7 +798,7 @@ export default function DocumentEditorPage() {
     const handleKeyDown = (e) => {
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "s") {
         e.preventDefault();
-        handleSaveTemplate();
+        handleSaveTemplate({ silent: false });
       } else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "p") {
         e.preventDefault();
         handlePrint();
@@ -770,14 +808,18 @@ export default function DocumentEditorPage() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   });
 
-  // Fetch existing template if editing
+  // Fetch existing document when opening via UUID / ID
   useEffect(() => {
-    if (id) {
-      getTemplate(id)
+    if (resolvedRouteId) {
+      currentDocIdRef.current = String(resolvedRouteId);
+      setCurrentDocId(String(resolvedRouteId));
+      setIsLoadingDoc(true);
+      getTemplate(resolvedRouteId)
         .then((res) => {
           const t = res.data?.template || res.data;
           if (t) {
-            setDocTitle(t.title || "Untitled document");
+            const cleanTitle = (t.title || "Untitled document").replace(" (Senate Approved)", "");
+            setDocTitle(cleanTitle);
             let layoutData = t.layout_data || t.canvas_data || {};
             if (typeof layoutData === "string") {
               try {
@@ -787,11 +829,11 @@ export default function DocumentEditorPage() {
               }
             }
             const docHtmlContent = layoutData.document_html || "";
-            if (docHtmlContent) {
-              const paginated = paginateHtml(docHtmlContent);
-              setPages(paginated);
-              syncDomPages(paginated);
-            }
+            const paginated = docHtmlContent ? paginateHtml(docHtmlContent) : ["<p><br></p>"];
+            pagesRef.current = paginated;
+            setPages(paginated);
+            syncDomPages(paginated);
+
             if (layoutData.qr_code_enabled !== undefined) {
               setIncludeQrCode(layoutData.qr_code_enabled);
             }
@@ -801,32 +843,50 @@ export default function DocumentEditorPage() {
             if (layoutData.zoom) {
               setZoomLevel(layoutData.zoom);
             }
+            setIsSaved(true);
           }
         })
         .catch(() => {
           toast.error("Could not load document");
+        })
+        .finally(() => {
+          setIsLoadingDoc(false);
         });
     }
-  }, [id, syncDomPages]);
+  }, [resolvedRouteId, syncDomPages]);
 
+  // Keep DOM pages synced whenever pages array length changes or preview mode toggles off
   useEffect(() => {
     if (!isPreviewMode) {
       pages.forEach((p, idx) => {
         const el = pageRefs.current[idx];
-        if (el && (!el.innerHTML || el.innerHTML === "<p><br></p>")) {
-          el.innerHTML = p || "<p><br></p>";
+        const target = p || "<p><br></p>";
+        if (el && (!el.innerHTML || el.innerHTML === "<p><br></p>") && target !== "<p><br></p>") {
+          el.innerHTML = target;
+        } else if (el && !el.innerHTML) {
+          el.innerHTML = target;
         }
       });
     }
   }, [pages.length, isPreviewMode, pages]);
 
-  const getCombinedHtml = () => {
-    const latestPages = pages.map((p, idx) => {
-      const el = pageRefs.current[idx];
-      return el ? el.innerHTML : p;
+  const getCombinedHtml = useCallback(() => {
+    const currentPages = pagesRef.current && pagesRef.current.length > 0 ? pagesRef.current : pages;
+    const latestPages = currentPages.map((p, idx) => {
+      if (!isPreviewMode) {
+        const el = pageRefs.current[idx];
+        if (el && el.innerHTML && el.innerHTML !== "<p><br></p>") {
+          return el.innerHTML;
+        }
+        if (el && (!p || p === "<p><br></p>")) {
+          return el.innerHTML || "<p><br></p>";
+        }
+      }
+      return p || "<p><br></p>";
     });
+    pagesRef.current = latestPages;
     return latestPages.join('<div class="pd-page-break" style="page-break-after: always; break-after: page;"></div>');
-  };
+  }, [pages, isPreviewMode]);
 
   const handlePageInput = (index) => {
     const el = pageRefs.current[index];
@@ -835,6 +895,7 @@ export default function DocumentEditorPage() {
     setPages((prev) => {
       const next = [...prev];
       next[index] = currentHtml;
+      pagesRef.current = next;
       return next;
     });
     setIsSaved(false);
@@ -1038,14 +1099,17 @@ export default function DocumentEditorPage() {
 
       if (pageEl.scrollHeight > A4_CONTENT_MAX_HEIGHT_PX) {
         // Re-paginate all pages cleanly so a 3-page pasted document becomes 3 discrete A4 pages!
+        const currentLen = pagesRef.current ? pagesRef.current.length : pages.length;
         const allCombined = pageRefs.current
-          .map((el, i) => (el ? el.innerHTML : pages[i] || ""))
-          .filter((_, i) => i < pages.length)
+          .slice(0, currentLen)
+          .map((el, i) => (el ? el.innerHTML : pagesRef.current[i] || pages[i] || ""))
           .join('<div class="pd-page-break"></div>');
 
         const paginated = paginateHtml(allCombined);
+        pagesRef.current = paginated;
         setPages(paginated);
         syncDomPages(paginated);
+        setIsSaved(false);
         if (paginated.length > 1) {
           toast.success(`Formatted across ${paginated.length} A4 pages`);
         }
@@ -1176,6 +1240,7 @@ export default function DocumentEditorPage() {
     setPages((prev) => {
       const next = [...prev];
       next.splice(newIdx, 0, "<p><br></p>");
+      pagesRef.current = next;
       return next;
     });
     setIsSaved(false);
@@ -1196,6 +1261,7 @@ export default function DocumentEditorPage() {
       return;
     }
     const updated = pages.filter((_, i) => i !== index);
+    pagesRef.current = updated;
     setPages(updated);
     setIsSaved(false);
     if (activePageIdxRef.current >= updated.length) {
@@ -1249,6 +1315,7 @@ export default function DocumentEditorPage() {
       });
 
       const paginated = paginateHtml(importedHtml);
+      pagesRef.current = paginated;
       setPages(paginated);
       syncDomPages(paginated);
       setIsSaved(false);
@@ -1261,44 +1328,91 @@ export default function DocumentEditorPage() {
     e.target.value = "";
   };
 
-  // Save template
-  const handleSaveTemplate = async () => {
-    if (!docTitle.trim()) {
-      toast.error("Enter a document title");
-      return;
-    }
-    setIsSaving(true);
-    const htmlToSave = getCombinedHtml();
-
-    const payload = {
-      title: docTitle,
-      layout_style: "document",
-      canvas_data: {
-        document_html: htmlToSave,
-        qr_code_enabled: includeQrCode,
-        qr_position: qrPosition,
-        zoom: zoomLevel,
-      },
-    };
-
-    try {
-      if (id) {
-        await updateCustomTemplate(id, payload);
-        toast.success("Document saved");
-      } else {
-        const res = await createCustomTemplate(payload);
-        toast.success("Document created");
-        const newId = res.data?.template_id || res.data?.id;
-        if (newId) {
-          navigate(`/dashboard/documents/editor/${newId}`, { replace: true });
-        }
+  // Save document (supports both manual save and background Google Docs-style auto-save)
+  const handleSaveTemplate = useCallback(
+    async ({ silent = false } = {}) => {
+      if (isLoadingDoc) return;
+      const cleanTitle = (docTitle || "").trim() || "Untitled document";
+      if (!silent && !docTitle.trim()) {
+        toast.error("Enter a document title");
+        return;
       }
-      setIsSaved(true);
-    } catch (err) {
-      toast.error(err.response?.data?.msg || "Failed to save document");
-    } finally {
-      setIsSaving(false);
+      if (isSavingRef.current) return;
+
+      isSavingRef.current = true;
+      setIsSaving(true);
+      const htmlToSave = getCombinedHtml();
+
+      const payload = {
+        title: cleanTitle,
+        layout_style: "document",
+        canvas_data: {
+          document_html: htmlToSave,
+          qr_code_enabled: includeQrCode,
+          qr_position: qrPosition,
+          zoom: zoomLevel,
+        },
+      };
+
+      try {
+        const activeId = currentDocIdRef.current;
+        if (activeId) {
+          await updateCustomTemplate(activeId, payload);
+          if (!silent) {
+            toast.success("Document saved");
+          }
+        } else {
+          const res = await createCustomTemplate(payload);
+          const newId = res.data?.template_id || res.data?.id;
+          if (newId) {
+            const newIdStr = String(newId);
+            currentDocIdRef.current = newIdStr;
+            setCurrentDocId(newIdStr);
+            const uuidUrl = `/dashboard/documents/editor/${encodeDocUuid(newIdStr)}`;
+            window.history.replaceState(null, "", uuidUrl);
+          }
+          if (!silent) {
+            toast.success("Document saved");
+          }
+        }
+        setIsSaved(true);
+      } catch (err) {
+        if (!silent) {
+          toast.error(err.response?.data?.msg || "Failed to save document");
+        }
+      } finally {
+        isSavingRef.current = false;
+        setIsSaving(false);
+      }
+    },
+    [docTitle, getCombinedHtml, includeQrCode, isLoadingDoc, qrPosition, zoomLevel]
+  );
+
+  // Google Docs-style Auto-Save: automatically saves changes 1.8 seconds after the user stops typing/pasting
+  useEffect(() => {
+    if (isSaved || isLoadingDoc || isSaving) return;
+
+    // Avoid auto-creating a brand-new blank document if the user hasn't typed anything yet
+    const combined = getCombinedHtml();
+    const isBlankDefault =
+      !currentDocIdRef.current &&
+      (docTitle === "Untitled document" || !docTitle.trim()) &&
+      (!combined || combined === "<p><br></p>");
+    if (isBlankDefault) return;
+
+    const timer = setTimeout(() => {
+      handleSaveTemplate({ silent: true });
+    }, 1800);
+
+    return () => clearTimeout(timer);
+  }, [isSaved, isLoadingDoc, isSaving, docTitle, pages, includeQrCode, qrPosition, getCombinedHtml, handleSaveTemplate]);
+
+  // Flush any unsaved edits before navigating back to /dashboard/documents
+  const handleBackToDocuments = async () => {
+    if (!isSaved && !isLoadingDoc) {
+      await handleSaveTemplate({ silent: true });
     }
+    navigate("/dashboard/documents");
   };
 
   // Make a copy of the current document
@@ -1320,7 +1434,7 @@ export default function DocumentEditorPage() {
       const newId = res.data?.template_id || res.data?.id;
       toast.success("Copy created!", { id: toastId });
       if (newId) {
-        navigate(`/dashboard/documents/editor/${newId}`);
+        navigate(`/dashboard/documents/editor/${encodeDocUuid(newId)}`);
       }
     } catch (err) {
       toast.error("Failed to copy document", { id: toastId });
@@ -1530,13 +1644,14 @@ export default function DocumentEditorPage() {
         <div className="flex items-center justify-between gap-4">
           {/* Left Title & Menu Section */}
           <div data-tour="doc-editor-header" className="flex items-center gap-3 min-w-0">
-            <Link
-              to="/dashboard/documents"
-              className="text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+            <button
+              type="button"
+              onClick={handleBackToDocuments}
+              className="text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
               title="Back to Documents"
             >
               <ArrowLeft size={16} weight="bold" />
-            </Link>
+            </button>
 
             <ProofDeckDocIcon size={28} />
 
@@ -1553,7 +1668,7 @@ export default function DocumentEditorPage() {
                   className="font-semibold text-slate-800 dark:text-slate-100 text-sm bg-transparent border border-transparent hover:border-slate-300 focus:border-indigo-500 outline-none px-1.5 py-0.5 rounded transition-colors max-w-[240px] sm:max-w-md truncate"
                 />
                 <span className="text-[11px] text-slate-400 dark:text-slate-500 font-medium">
-                  {isSaving ? "Saving..." : isSaved ? "Saved" : "Unsaved changes"}
+                  {isLoadingDoc ? "Loading..." : isSaving ? "Saving..." : isSaved ? "Saved" : "Saving..."}
                 </span>
               </div>
 
@@ -1578,10 +1693,14 @@ export default function DocumentEditorPage() {
                         type="button"
                         onClick={() => {
                           setActiveMenu(null);
+                          currentDocIdRef.current = null;
+                          setCurrentDocId(null);
                           setDocTitle("Untitled document");
+                          pagesRef.current = ["<p><br></p>"];
                           setPages(["<p><br></p>"]);
                           syncDomPages(["<p><br></p>"]);
-                          setIsSaved(false);
+                          setIsSaved(true);
+                          navigate("/dashboard/documents/editor");
                         }}
                         className="w-full text-left px-3.5 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-2.5 cursor-pointer"
                       >
@@ -2035,10 +2154,10 @@ export default function DocumentEditorPage() {
             </AppButton>
             <AppButton
               variant="primary"
-              onClick={handleSaveTemplate}
-              disabled={isSaving}
+              onClick={() => handleSaveTemplate({ silent: false })}
+              disabled={isSaving || isLoadingDoc}
             >
-              Save template
+              {isSaving ? "Saving..." : isSaved && currentDocId ? "Saved" : "Save document"}
             </AppButton>
           </div>
         </div>
@@ -2872,7 +2991,17 @@ export default function DocumentEditorPage() {
                     />
                   ) : (
                     <div
-                      ref={(el) => (pageRefs.current[index] = el)}
+                      ref={(el) => {
+                        pageRefs.current[index] = el;
+                        if (el && el.dataset.loadedInit !== "true") {
+                          const targetHtml =
+                            (pagesRef.current && pagesRef.current[index]) ||
+                            pageHtml ||
+                            "<p><br></p>";
+                          el.innerHTML = targetHtml;
+                          el.dataset.loadedInit = "true";
+                        }
+                      }}
                       contentEditable
                       suppressContentEditableWarning
                       onInput={() => handlePageInput(index)}

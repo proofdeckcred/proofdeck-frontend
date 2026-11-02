@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
+import { encodeDocUuid } from "../utils/docUuid";
 import { Modal, Button, Spinner, Form, Card, Tooltip, OverlayTrigger } from "react-bootstrap";
 import {
   Trash as Trash2,
@@ -254,7 +255,7 @@ function TemplatesPage() {
 
   const handleEditClick = (template) => {
     if (template.layout_style === "document") {
-      navigate(`/dashboard/documents/editor/${template.id}`);
+      navigate(`/dashboard/documents/editor/${encodeDocUuid(template.id)}`);
       return;
     }
     if (template.layout_style === "visual") {
