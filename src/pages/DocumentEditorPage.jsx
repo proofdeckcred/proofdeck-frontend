@@ -1,13 +1,11 @@
 import React, { useState, useRef, useEffect, useCallback } from "react";
 import { useNavigate, useParams, Link, useLocation } from "react-router-dom";
 import mammoth from "mammoth";
+import { jsPDF } from "jspdf";
 import { toast, Toaster } from "react-hot-toast";
 import { Modal } from "react-bootstrap";
 import {
   FileText,
-  Star,
-  CloudCheck,
-  Cloud,
   ArrowLeft,
   UploadSimple,
   Printer,
@@ -41,12 +39,21 @@ import {
   Hash,
   Buildings,
   Certificate,
-  FolderOpen,
   ArrowClockwise,
   ArrowCounterClockwise,
-  PaintBrush,
   Highlighter,
-  Play
+  Play,
+  DownloadSimple,
+  Table,
+  TextT,
+  ArrowsOutLineVertical,
+  Eraser,
+  Check,
+  FilePdf,
+  FileDoc,
+  PenNib,
+  SealCheck,
+  Sparkle
 } from "@phosphor-icons/react";
 import { createCustomTemplate, getTemplate, updateCustomTemplate } from "../api";
 import { useUser } from "../context/UserContext";
@@ -69,90 +76,166 @@ export const ProofDeckDocIcon = ({ size = 26, className = "" }) => (
         <stop offset="100%" stopColor="#4336D0" />
       </linearGradient>
     </defs>
-    {/* Purple Document Parchment */}
     <rect x="5" y="3" width="22" height="26" rx="4" fill="url(#pdDocGradEditor)" />
-    {/* Lavender Folded Corner */}
     <path d="M19 3 L27 11 L19 11 Z" fill="#C7D2FE" opacity="0.9" />
-    {/* Micro Content Lines */}
     <rect x="9" y="14" width="14" height="2" rx="1" fill="#FFFFFF" opacity="0.95" />
     <rect x="9" y="18" width="11" height="2" rx="1" fill="#FFFFFF" opacity="0.8" />
     <rect x="9" y="22" width="7" height="2" rx="1" fill="#FFFFFF" opacity="0.65" />
-    {/* Gold Verification Seal Stamp */}
     <circle cx="21" cy="22" r="3.5" fill="#FBBF24" />
     <circle cx="21" cy="22" r="2" fill="#D97706" />
   </svg>
 );
 
+// --- GOOGLE DOCS BLOCK STYLE DEFINITIONS ---
+const BLOCK_STYLES = [
+  { id: "p", label: "Normal text", tag: "P", previewClass: "text-sm font-normal text-slate-800" },
+  { id: "title", label: "Title", tag: "H1", className: "doc-title", previewClass: "text-2xl font-bold text-slate-900" },
+  { id: "subtitle", label: "Subtitle", tag: "P", className: "doc-subtitle", previewClass: "text-base font-normal text-slate-500" },
+  { id: "h1", label: "Heading 1", tag: "H1", previewClass: "text-xl font-bold text-slate-900" },
+  { id: "h2", label: "Heading 2", tag: "H2", previewClass: "text-lg font-bold text-slate-800" },
+  { id: "h3", label: "Heading 3", tag: "H3", previewClass: "text-base font-bold text-slate-800" },
+  { id: "h4", label: "Heading 4", tag: "H4", previewClass: "text-sm font-bold text-slate-700" },
+];
+
+const FONT_FAMILIES = [
+  "Arial",
+  "Times New Roman",
+  "Georgia",
+  "Calibri",
+  "Garamond",
+  "Verdana",
+  "Trebuchet MS",
+  "Courier New",
+  "Playfair Display",
+  "Montserrat",
+  "Plus Jakarta Sans",
+];
+
+const FONT_SIZES = ["8", "9", "10", "11", "12", "14", "16", "18", "20", "24", "28", "32", "36", "48", "72"];
+
+const TEXT_COLORS = [
+  "#000000", "#1e293b", "#475569", "#94a3b8",
+  "#dc2626", "#ea580c", "#d97706", "#16a34a",
+  "#0284c7", "#2563eb", "#4f46e5", "#7c3aed",
+  "#be185d", "#1e3a8a", "#064e3b", "#78350f",
+];
+
+const HIGHLIGHT_COLORS = [
+  "transparent",
+  "#fef08a",
+  "#bbf7d0",
+  "#bae6fd",
+  "#e9d5ff",
+  "#fbcfe8",
+  "#fed7aa",
+  "#e2e8f0",
+];
+
 /**
  * Paginates HTML string into discrete A4 page sheets
+ * Uses semantic DOM parsing so multi-page pasted content splits cleanly without breaking tags
  */
 export function paginateHtml(html) {
   if (!html || !html.trim()) return ["<p><br></p>"];
 
-  // 1. Check for explicit page break markers
+  // 1. Check for explicit page break markers first
   const explicitBreakRegex = /(?:<div[^>]*class=["'][^"']*pd-page-break[^"']*["'][^>]*>[\s\S]*?<\/div>|<div[^>]*style=["'][^"']*(?:page-break-after:\s*always|break-after:\s*page)[^"']*["'][^>]*>[\s\S]*?<\/div>|<hr[^>]*class=["'][^"']*pd-page-break[^"']*["'][^>]*>|<!--\s*pagebreak\s*-->)/gi;
   if (explicitBreakRegex.test(html)) {
-    const parts = html.split(explicitBreakRegex).map((p) => p.trim()).filter((p) => p.length > 0);
-    if (parts.length > 0) return parts;
+    const parts = html
+      .split(explicitBreakRegex)
+      .map((p) => p.trim())
+      .filter((p) => p.length > 0);
+    if (parts.length > 0) {
+      // Also paginate any individual part that is itself very long
+      const expanded = [];
+      for (const part of parts) {
+        expanded.push(...paginateSingleChunk(part));
+      }
+      return expanded.length > 0 ? expanded : ["<p><br></p>"];
+    }
   }
 
-  // 2. If content is short (fits in 1 A4 page, ~1400 chars), return single page
-  const plainTextLength = html.replace(/<[^>]+>/g, "").length;
-  if (plainTextLength <= 1400) {
+  return paginateSingleChunk(html);
+}
+
+function paginateSingleChunk(html) {
+  if (!html || !html.trim()) return ["<p><br></p>"];
+
+  if (typeof document === "undefined") {
     return [html];
   }
 
-  // 3. For long content without explicit breaks (e.g. multi-page Word imports), split by semantic blocks
-  const blockRegex = /(<(?:h[1-6]|p|ul|ol|table|blockquote|div)[^>]*>[\s\S]*?<\/(?:h[1-6]|p|ul|ol|table|blockquote|div)>)/gi;
-  const blocks = html.match(blockRegex);
+  const temp = document.createElement("div");
+  temp.innerHTML = html;
 
-  if (!blocks || blocks.length <= 1) {
-    const paragraphs = html.split(/<\/p>|<br\s*\/?>\s*<br\s*\/?>/gi).filter(Boolean);
-    if (paragraphs.length > 1) {
-      const pPages = [];
-      let cur = [];
-      let cnt = 0;
-      for (const p of paragraphs) {
-        const len = p.replace(/<[^>]+>/g, "").length;
-        if (cnt + len > 1350 && cur.length > 0) {
-          pPages.push(cur.join("<p><br></p>"));
-          cur = [p];
-          cnt = len;
-        } else {
-          cur.push(p);
-          cnt += len;
+  // Convert bare text nodes or double <br> into proper <p> blocks
+  const children = Array.from(temp.childNodes);
+  const normalizedBlocks = [];
+
+  for (const node of children) {
+    if (node.nodeType === Node.TEXT_NODE) {
+      const txt = node.textContent.trim();
+      if (txt) {
+        const lines = txt.split(/\n{2,}/);
+        for (const l of lines) {
+          if (l.trim()) {
+            const p = document.createElement("p");
+            p.textContent = l.trim();
+            normalizedBlocks.push(p.outerHTML);
+          }
         }
       }
-      if (cur.length > 0) pPages.push(cur.join("<p><br></p>"));
-      return pPages.length > 0 ? pPages : [html];
+    } else if (node.nodeType === Node.ELEMENT_NODE) {
+      const tag = node.tagName.toUpperCase();
+      // If a single <p> or <div> has huge plain text with many line breaks, split by <br> or \n
+      const innerLen = (node.textContent || "").length;
+      if ((tag === "P" || tag === "DIV") && innerLen > 1200 && node.innerHTML.includes("<br")) {
+        const subParts = node.innerHTML.split(/(?:<br\s*\/?>\s*){2,}/i);
+        if (subParts.length > 1) {
+          for (const sp of subParts) {
+            if (sp.trim()) normalizedBlocks.push(`<p>${sp.trim()}</p>`);
+          }
+          continue;
+        }
+      }
+      normalizedBlocks.push(node.outerHTML);
     }
-    return [html];
   }
+
+  if (normalizedBlocks.length === 0) return [html];
+
+  // Estimate A4 page capacity (~2400 characters or ~36 visual lines per A4 sheet)
+  const MAX_VISUAL_LINES = 36;
+  const CHARS_PER_LINE = 78;
 
   const pages = [];
-  let currentPageBlocks = [];
-  let currentChars = 0;
-  const MAX_PAGE_CHARS = 1350;
+  let currentBlocks = [];
+  let currentLines = 0;
 
-  for (const block of blocks) {
-    const blockTextLen = block.replace(/<[^>]+>/g, "").length;
-    const isMajorHeading = /^<h[1-3][^>]*>/i.test(block);
+  for (const blockHtml of normalizedBlocks) {
+    const plain = blockHtml.replace(/<[^>]+>/g, "").trim();
+    const isHeading = /^<h[1-4]/i.test(blockHtml);
+    const isTable = /^<table/i.test(blockHtml);
+    const isHr = /^<hr/i.test(blockHtml);
 
-    if (
-      (currentChars + blockTextLen > MAX_PAGE_CHARS && currentPageBlocks.length > 0) ||
-      (isMajorHeading && currentChars > 500)
-    ) {
-      pages.push(currentPageBlocks.join("\n"));
-      currentPageBlocks = [block];
-      currentChars = blockTextLen;
+    let blockLines = Math.max(1, Math.ceil(plain.length / CHARS_PER_LINE));
+    if (isHeading) blockLines += 1.8;
+    else if (isTable) blockLines += 4;
+    else if (isHr) blockLines += 1;
+    else blockLines += 0.65; // paragraph bottom margin
+
+    if (currentLines + blockLines > MAX_VISUAL_LINES && currentBlocks.length > 0) {
+      pages.push(currentBlocks.join("\n"));
+      currentBlocks = [blockHtml];
+      currentLines = blockLines;
     } else {
-      currentPageBlocks.push(block);
-      currentChars += blockTextLen;
+      currentBlocks.push(blockHtml);
+      currentLines += blockLines;
     }
   }
 
-  if (currentPageBlocks.length > 0) {
-    pages.push(currentPageBlocks.join("\n"));
+  if (currentBlocks.length > 0) {
+    pages.push(currentBlocks.join("\n"));
   }
 
   return pages.length > 0 ? pages : [html];
@@ -168,58 +251,58 @@ const OFFICIAL_PRESETS = [
     title: "OFFICIAL STATEMENT OF RESULT",
     content: `
       <div style="text-align: center; margin-bottom: 24px;">
-        <h2 style="margin: 0; font-size: 22px; font-weight: 800; letter-spacing: 0.5px; color: #111827;">OFFICE OF THE ACADEMIC REGISTRAR</h2>
-        <h3 style="margin: 4px 0 0 0; font-size: 15px; font-weight: 700; color: #374151;">EXAMINATIONS AND ACADEMIC RECORDS DIVISION</h3>
-        <p style="margin: 4px 0 0 0; font-size: 12px; color: #6B7280;">Administrative Complex, University Main Campus</p>
+        <h2 style="margin: 0; font-size: 20pt; font-weight: 800; letter-spacing: 0.5px; color: #111827;">OFFICE OF THE ACADEMIC REGISTRAR</h2>
+        <h3 style="margin: 4px 0 0 0; font-size: 12pt; font-weight: 700; color: #374151;">EXAMINATIONS AND ACADEMIC RECORDS DIVISION</h3>
+        <p style="margin: 4px 0 0 0; font-size: 10pt; color: #6B7280;">Administrative Complex, University Main Campus</p>
       </div>
       <hr style="border: 0; border-top: 2px solid #111827; margin: 16px 0 24px 0;" />
       
-      <div style="display: flex; justify-content: space-between; font-size: 12px; font-weight: 600; margin-bottom: 24px;">
-        <div><strong>Ref:</strong> <span class="pd-chip" data-var="{{ref_number}}">{{ref_number}}</span></div>
-        <div><strong>Date:</strong> <span class="pd-chip" data-var="{{issue_date}}">{{issue_date}}</span></div>
+      <div style="display: flex; justify-content: space-between; font-size: 11pt; font-weight: 600; margin-bottom: 24px;">
+        <div><strong>Ref:</strong> <span class="pd-chip" data-var="{{ref_number}}" contenteditable="false">{{ref_number}}</span></div>
+        <div><strong>Date:</strong> <span class="pd-chip" data-var="{{issue_date}}" contenteditable="false">{{issue_date}}</span></div>
       </div>
 
-      <div style="text-align: center; margin-bottom: 28px;">
-        <h1 style="margin: 0; font-size: 19px; font-weight: 900; text-decoration: underline; letter-spacing: 0.5px; color: #111827;">
+      <div style="text-align: center; margin-bottom: 24px;">
+        <h1 style="margin: 0; font-size: 16pt; font-weight: 800; text-decoration: underline; letter-spacing: 0.5px; color: #111827;">
           OFFICIAL STATEMENT OF RESULT
         </h1>
       </div>
 
-      <p style="font-size: 14px; line-height: 1.9; color: #1F2937; text-align: justify; margin-bottom: 18px;">
-        This is to certify that <strong><span class="pd-chip" data-var="{{recipient_name}}">{{recipient_name}}</span></strong>, 
-        with Registration Number <strong><span class="pd-chip" data-var="{{student_id}}">{{student_id}}</span></strong>, 
+      <p style="font-size: 11.5pt; line-height: 1.85; color: #1F2937; text-align: justify; margin-bottom: 16px;">
+        This is to certify that <strong><span class="pd-chip" data-var="{{recipient_name}}" contenteditable="false">{{recipient_name}}</span></strong>, 
+        with Registration Number <strong><span class="pd-chip" data-var="{{student_id}}" contenteditable="false">{{student_id}}</span></strong>, 
         having completed an approved course of study and passed the prescribed examinations, has on the recommendation of the Board of Studies of the Faculty of 
-        <strong><span class="pd-chip" data-var="{{faculty}}">{{faculty}}</span></strong>, Department of 
-        <strong><span class="pd-chip" data-var="{{department}}">{{department}}</span></strong>, been admitted on 
-        <strong><span class="pd-chip" data-var="{{approval_date}}">{{approval_date}}</span></strong> to the Degree of:
+        <strong><span class="pd-chip" data-var="{{faculty}}" contenteditable="false">{{faculty}}</span></strong>, Department of 
+        <strong><span class="pd-chip" data-var="{{department}}" contenteditable="false">{{department}}</span></strong>, been admitted on 
+        <strong><span class="pd-chip" data-var="{{approval_date}}" contenteditable="false">{{approval_date}}</span></strong> to the Degree of:
       </p>
 
-      <div style="text-align: center; margin: 24px 0; padding: 16px; background-color: #F9FAFB; border: 1px solid #E5E7EB; border-radius: 8px;">
-        <div style="font-size: 18px; font-weight: 800; color: #111827; margin-bottom: 6px;">
-          <span class="pd-chip" data-var="{{course_title}}">{{course_title}}</span>
+      <div style="text-align: center; margin: 22px 0; padding: 16px; background-color: #F9FAFB; border: 1px solid #E5E7EB; border-radius: 8px;">
+        <div style="font-size: 14pt; font-weight: 800; color: #111827; margin-bottom: 6px;">
+          <span class="pd-chip" data-var="{{course_title}}" contenteditable="false">{{course_title}}</span>
         </div>
-        <div style="font-size: 15px; font-weight: 700; color: #374151;">
-          With <span class="pd-chip" data-var="{{grade_or_honours}}">{{grade_or_honours}}</span> 
-          (Cumulative Grade Point Average: <strong><span class="pd-chip" data-var="{{cgpa}}">{{cgpa}}</span></strong>)
+        <div style="font-size: 12pt; font-weight: 700; color: #374151;">
+          With <span class="pd-chip" data-var="{{grade_or_honours}}" contenteditable="false">{{grade_or_honours}}</span> 
+          (Cumulative Grade Point Average: <strong><span class="pd-chip" data-var="{{cgpa}}" contenteditable="false">{{cgpa}}</span></strong>)
         </div>
       </div>
 
-      <p style="font-size: 13px; line-height: 1.8; color: #374151; text-align: justify; margin-bottom: 36px;">
+      <p style="font-size: 11pt; line-height: 1.8; color: #374151; text-align: justify; margin-bottom: 32px;">
         The official certificate will be issued to him/her in due course upon surrender of this Statement of Result and clearance from all Directorates.
       </p>
 
-      <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-top: 50px;">
-        <div style="text-align: left; max-width: 250px;">
-          <div style="font-family: 'Times New Roman', serif; font-size: 20px; font-style: italic; font-weight: bold; margin-bottom: 4px; color: #1E3A8A;">
-            <span class="pd-chip" data-var="{{signatory_name}}">{{signatory_name}}</span>
+      <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-top: 44px;">
+        <div style="text-align: left; max-width: 260px;">
+          <div style="font-family: 'Times New Roman', serif; font-size: 16pt; font-style: italic; font-weight: bold; margin-bottom: 4px; color: #1E3A8A;">
+            <span class="pd-chip" data-var="{{signatory_name}}" contenteditable="false">{{signatory_name}}</span>
           </div>
-          <div style="border-top: 1.5px solid #374151; padding-top: 6px; font-size: 13px; font-weight: 700; color: #111827;">
-            <span class="pd-chip" data-var="{{signatory_title}}">{{signatory_title}}</span>
+          <div style="border-top: 1.5px solid #374151; padding-top: 6px; font-size: 11pt; font-weight: 700; color: #111827;">
+            <span class="pd-chip" data-var="{{signatory_title}}" contenteditable="false">{{signatory_title}}</span>
           </div>
-          <div style="font-size: 11px; color: #6B7280;">For: Academic Registrar & Secretary</div>
+          <div style="font-size: 9.5pt; color: #6B7280;">For: Academic Registrar & Secretary</div>
         </div>
 
-        <div style="text-align: center; padding: 10px 18px; border: 2px dashed #9CA3AF; border-radius: 8px; font-size: 11px; color: #6B7280;">
+        <div style="text-align: center; padding: 10px 18px; border: 2px dashed #9CA3AF; border-radius: 8px; font-size: 9.5pt; color: #6B7280;">
           <div style="font-weight: 700; color: #374151; margin-bottom: 2px;">OFFICIAL SEAL</div>
           <div>Valid Only With Stamp</div>
         </div>
@@ -234,46 +317,44 @@ const OFFICIAL_PRESETS = [
     title: "LETTER OF ENGLISH PROFICIENCY",
     content: `
       <div style="text-align: center; margin-bottom: 24px;">
-        <h2 style="margin: 0; font-size: 20px; font-weight: 800; color: #111827;">DIRECTORATE OF ACADEMIC AFFAIRS</h2>
-        <h3 style="margin: 4px 0 0 0; font-size: 14px; font-weight: 700; color: #374151;">OFFICE OF THE REGISTRAR</h3>
-        <p style="margin: 4px 0 0 0; font-size: 12px; color: #6B7280;">Verification & International Credential Services</p>
+        <h2 style="margin: 0; font-size: 18pt; font-weight: 800; color: #111827;">DIRECTORATE OF ACADEMIC AFFAIRS</h2>
+        <h3 style="margin: 4px 0 0 0; font-size: 12pt; font-weight: 700; color: #374151;">OFFICE OF THE REGISTRAR</h3>
+        <p style="margin: 4px 0 0 0; font-size: 10pt; color: #6B7280;">Verification & International Credential Services</p>
       </div>
       <hr style="border: 0; border-top: 2px solid #111827; margin: 16px 0 24px 0;" />
 
-      <div style="display: flex; justify-content: space-between; font-size: 12px; font-weight: 600; margin-bottom: 24px;">
-        <div><strong>Ref:</strong> <span class="pd-chip" data-var="{{ref_number}}">{{ref_number}}</span></div>
-        <div><strong>Date:</strong> <span class="pd-chip" data-var="{{issue_date}}">{{issue_date}}</span></div>
+      <div style="display: flex; justify-content: space-between; font-size: 11pt; font-weight: 600; margin-bottom: 24px;">
+        <div><strong>Ref:</strong> <span class="pd-chip" data-var="{{ref_number}}" contenteditable="false">{{ref_number}}</span></div>
+        <div><strong>Date:</strong> <span class="pd-chip" data-var="{{issue_date}}" contenteditable="false">{{issue_date}}</span></div>
       </div>
 
-      <div style="margin-bottom: 20px;">
-        <p style="font-size: 13px; font-weight: 700; margin: 0; color: #111827;">TO WHOM IT MAY CONCERN</p>
-      </div>
+      <p style="font-size: 11pt; font-weight: 700; margin: 0 0 18px 0; color: #111827;">TO WHOM IT MAY CONCERN</p>
 
-      <div style="text-align: center; margin-bottom: 24px;">
-        <h2 style="margin: 0; font-size: 17px; font-weight: 800; text-decoration: underline; color: #111827;">
+      <div style="text-align: center; margin-bottom: 22px;">
+        <h2 style="margin: 0; font-size: 14pt; font-weight: 800; text-decoration: underline; color: #111827;">
           ATTESTATION OF ENGLISH AS MEDIUM OF INSTRUCTION
         </h2>
       </div>
 
-      <p style="font-size: 14px; line-height: 1.85; color: #1F2937; text-align: justify; margin-bottom: 18px;">
-        This is to certify that <strong><span class="pd-chip" data-var="{{recipient_name}}">{{recipient_name}}</span></strong>, 
-        bearing Registration Number <strong><span class="pd-chip" data-var="{{student_id}}">{{student_id}}</span></strong>, was a bona fide student in the 
-        Department of <strong><span class="pd-chip" data-var="{{department}}">{{department}}</span></strong>, Faculty of 
-        <strong><span class="pd-chip" data-var="{{faculty}}">{{faculty}}</span></strong>.
+      <p style="font-size: 11.5pt; line-height: 1.85; color: #1F2937; text-align: justify; margin-bottom: 16px;">
+        This is to certify that <strong><span class="pd-chip" data-var="{{recipient_name}}" contenteditable="false">{{recipient_name}}</span></strong>, 
+        bearing Registration Number <strong><span class="pd-chip" data-var="{{student_id}}" contenteditable="false">{{student_id}}</span></strong>, was a bona fide student in the 
+        Department of <strong><span class="pd-chip" data-var="{{department}}" contenteditable="false">{{department}}</span></strong>, Faculty of 
+        <strong><span class="pd-chip" data-var="{{faculty}}" contenteditable="false">{{faculty}}</span></strong>.
       </p>
 
-      <p style="font-size: 14px; line-height: 1.85; color: #1F2937; text-align: justify; margin-bottom: 18px;">
+      <p style="font-size: 11.5pt; line-height: 1.85; color: #1F2937; text-align: justify; margin-bottom: 16px;">
         We confirm that English Language is the sole medium of instruction, examination, research, and general communication for all undergraduate and postgraduate academic programs.
       </p>
 
       <div style="margin-top: 48px;">
-        <div style="font-family: 'Times New Roman', serif; font-size: 19px; font-style: italic; font-weight: bold; margin-bottom: 4px; color: #1E3A8A;">
-          <span class="pd-chip" data-var="{{signatory_name}}">{{signatory_name}}</span>
+        <div style="font-family: 'Times New Roman', serif; font-size: 16pt; font-style: italic; font-weight: bold; margin-bottom: 4px; color: #1E3A8A;">
+          <span class="pd-chip" data-var="{{signatory_name}}" contenteditable="false">{{signatory_name}}</span>
         </div>
-        <div style="border-top: 1.5px solid #374151; padding-top: 4px; font-size: 13px; font-weight: 700; color: #111827; display: inline-block;">
-          <span class="pd-chip" data-var="{{signatory_title}}">{{signatory_title}}</span>
+        <div style="border-top: 1.5px solid #374151; padding-top: 4px; font-size: 11pt; font-weight: 700; color: #111827; display: inline-block;">
+          <span class="pd-chip" data-var="{{signatory_title}}" contenteditable="false">{{signatory_title}}</span>
         </div>
-        <div style="font-size: 11px; color: #6B7280; margin-top: 2px;">Director, Academic Planning & Records</div>
+        <div style="font-size: 9.5pt; color: #6B7280; margin-top: 2px;">Director, Academic Planning & Records</div>
       </div>
     `,
   },
@@ -285,38 +366,38 @@ const OFFICIAL_PRESETS = [
     title: "LETTER OF ATTESTATION",
     content: `
       <div style="text-align: center; margin-bottom: 24px;">
-        <h2 style="margin: 0; font-size: 20px; font-weight: 800; color: #111827;">OFFICE OF THE REGISTRAR</h2>
-        <p style="margin: 4px 0 0 0; font-size: 12px; color: #6B7280;">Student Academic Verification Unit</p>
+        <h2 style="margin: 0; font-size: 18pt; font-weight: 800; color: #111827;">OFFICE OF THE REGISTRAR</h2>
+        <p style="margin: 4px 0 0 0; font-size: 10pt; color: #6B7280;">Student Academic Verification Unit</p>
       </div>
       <hr style="border: 0; border-top: 2px solid #111827; margin: 16px 0 24px 0;" />
 
-      <div style="display: flex; justify-content: space-between; font-size: 12px; font-weight: 600; margin-bottom: 24px;">
-        <div><strong>Ref:</strong> <span class="pd-chip" data-var="{{ref_number}}">{{ref_number}}</span></div>
-        <div><strong>Date:</strong> <span class="pd-chip" data-var="{{issue_date}}">{{issue_date}}</span></div>
+      <div style="display: flex; justify-content: space-between; font-size: 11pt; font-weight: 600; margin-bottom: 24px;">
+        <div><strong>Ref:</strong> <span class="pd-chip" data-var="{{ref_number}}" contenteditable="false">{{ref_number}}</span></div>
+        <div><strong>Date:</strong> <span class="pd-chip" data-var="{{issue_date}}" contenteditable="false">{{issue_date}}</span></div>
       </div>
 
-      <div style="text-align: center; margin-bottom: 24px;">
-        <h2 style="margin: 0; font-size: 17px; font-weight: 800; text-decoration: underline; color: #111827;">
+      <div style="text-align: center; margin-bottom: 22px;">
+        <h2 style="margin: 0; font-size: 14pt; font-weight: 800; text-decoration: underline; color: #111827;">
           LETTER OF ATTESTATION
         </h2>
       </div>
 
-      <p style="font-size: 14px; line-height: 1.85; color: #1F2937; text-align: justify; margin-bottom: 16px;">
-        This is to attest that <strong><span class="pd-chip" data-var="{{recipient_name}}">{{recipient_name}}</span></strong> 
-        (Registration Number: <strong><span class="pd-chip" data-var="{{student_id}}">{{student_id}}</span></strong>) has satisfied all academic requirements for the award of 
-        <strong><span class="pd-chip" data-var="{{course_title}}">{{course_title}}</span></strong>.
+      <p style="font-size: 11.5pt; line-height: 1.85; color: #1F2937; text-align: justify; margin-bottom: 16px;">
+        This is to attest that <strong><span class="pd-chip" data-var="{{recipient_name}}" contenteditable="false">{{recipient_name}}</span></strong> 
+        (Registration Number: <strong><span class="pd-chip" data-var="{{student_id}}" contenteditable="false">{{student_id}}</span></strong>) has satisfied all academic requirements for the award of 
+        <strong><span class="pd-chip" data-var="{{course_title}}" contenteditable="false">{{course_title}}</span></strong>.
       </p>
 
-      <p style="font-size: 14px; line-height: 1.85; color: #1F2937; text-align: justify; margin-bottom: 16px;">
+      <p style="font-size: 11.5pt; line-height: 1.85; color: #1F2937; text-align: justify; margin-bottom: 16px;">
         This letter is issued upon request pending the issuance of the substantive diploma certificate.
       </p>
 
       <div style="margin-top: 48px;">
-        <div style="font-family: 'Times New Roman', serif; font-size: 19px; font-style: italic; font-weight: bold; margin-bottom: 4px; color: #1E3A8A;">
-          <span class="pd-chip" data-var="{{signatory_name}}">{{signatory_name}}</span>
+        <div style="font-family: 'Times New Roman', serif; font-size: 16pt; font-style: italic; font-weight: bold; margin-bottom: 4px; color: #1E3A8A;">
+          <span class="pd-chip" data-var="{{signatory_name}}" contenteditable="false">{{signatory_name}}</span>
         </div>
-        <div style="border-top: 1.5px solid #374151; padding-top: 4px; font-size: 13px; font-weight: 700; color: #111827; display: inline-block;">
-          <span class="pd-chip" data-var="{{signatory_title}}">{{signatory_title}}</span>
+        <div style="border-top: 1.5px solid #374151; padding-top: 4px; font-size: 11pt; font-weight: 700; color: #111827; display: inline-block;">
+          <span class="pd-chip" data-var="{{signatory_title}}" contenteditable="false">{{signatory_title}}</span>
         </div>
       </div>
     `,
@@ -395,6 +476,9 @@ const SAMPLE_RECORDS = [
   },
 ];
 
+// Maximum printable height inside a 297mm A4 sheet with 25mm top/bottom padding (~930px at 96dpi)
+const A4_CONTENT_MAX_HEIGHT_PX = 930;
+
 export default function DocumentEditorPage() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -413,7 +497,7 @@ export default function DocumentEditorPage() {
         }
       }
     }
-    return { title: "Untitled document", html: "" };
+    return { title: "Untitled document", html: "<p><br></p>" };
   };
 
   const initialDocState = getInitialState();
@@ -434,27 +518,208 @@ export default function DocumentEditorPage() {
   const [customVarName, setCustomVarName] = useState("");
   const [presetToLoad, setPresetToLoad] = useState(null);
   const [varSearchQuery, setVarSearchQuery] = useState("");
+  const [pageMarginMm, setPageMarginMm] = useState(25);
 
+  // Active selection formatting state (synced like Google Docs)
+  const [currentBlockStyle, setCurrentBlockStyle] = useState("p");
   const [currentFont, setCurrentFont] = useState("Arial");
   const [currentFontSize, setCurrentFontSize] = useState("11");
+  const [currentLineSpacing, setCurrentLineSpacing] = useState("1.5");
+  const [formatState, setFormatState] = useState({
+    bold: false,
+    italic: false,
+    underline: false,
+    strikeThrough: false,
+     unorderedList: false,
+    orderedList: false,
+    justifyLeft: true,
+    justifyCenter: false,
+    justifyRight: false,
+    justifyFull: false,
+  });
 
-  // Menu dropdown toggles
+  // Dropdown / popover toggles
   const [activeMenu, setActiveMenu] = useState(null);
+  const [openToolbarDropdown, setOpenToolbarDropdown] = useState(null); // 'style' | 'font' | 'size' | 'color' | 'highlight' | 'spacing' | null
 
   const activePageIdxRef = useRef(0);
   const pageRefs = useRef([]);
   const fileInputRef = useRef(null);
+  const titleInputRef = useRef(null);
   const menuContainerRef = useRef(null);
+  const toolbarDropdownRef = useRef(null);
+  const savedRangeRef = useRef(null);
 
-  const syncDomPages = (pagesArray) => {
+  const syncDomPages = useCallback((pagesArray) => {
     setTimeout(() => {
       pagesArray.forEach((html, idx) => {
         if (pageRefs.current[idx]) {
           pageRefs.current[idx].innerHTML = html || "<p><br></p>";
         }
       });
-    }, 25);
-  };
+    }, 20);
+  }, []);
+
+  // Save & restore selection range so toolbar clicks/dropdowns never lose the user's selection
+  const saveSelection = useCallback(() => {
+    if (typeof window === "undefined") return;
+    const sel = window.getSelection();
+    if (sel && sel.rangeCount > 0) {
+      const range = sel.getRangeAt(0);
+      // Only save if inside one of our page editors
+      for (let i = 0; i < pageRefs.current.length; i++) {
+        const pageEl = pageRefs.current[i];
+        if (pageEl && pageEl.contains(range.commonAncestorContainer)) {
+          savedRangeRef.current = range.cloneRange();
+          activePageIdxRef.current = i;
+          break;
+        }
+      }
+    }
+  }, []);
+
+  const restoreSelection = useCallback(() => {
+    if (typeof window === "undefined") return;
+    const activeIdx = activePageIdxRef.current || 0;
+    const pageEl = pageRefs.current[activeIdx] || pageRefs.current[0];
+    if (savedRangeRef.current && pageEl && pageEl.contains(savedRangeRef.current.commonAncestorContainer)) {
+      const sel = window.getSelection();
+      if (sel) {
+        sel.removeAllRanges();
+        sel.addRange(savedRangeRef.current);
+      }
+    } else if (pageEl) {
+      pageEl.focus();
+    }
+  }, []);
+
+  // Inspect selection and update toolbar state (Heading, Font, Size, B/I/U, Lists, Alignment)
+  const updateToolbarStateFromSelection = useCallback(() => {
+    if (typeof window === "undefined" || isPreviewMode) return;
+    const sel = window.getSelection();
+    if (!sel || sel.rangeCount === 0) return;
+
+    let node = sel.anchorNode;
+    if (!node) return;
+    if (node.nodeType === Node.TEXT_NODE) {
+      node = node.parentElement;
+    }
+    if (!node || !(node instanceof HTMLElement)) return;
+
+    // Check if selection is inside our editor
+    const isInsideEditor = pageRefs.current.some((el) => el && el.contains(node));
+    if (!isInsideEditor) return;
+
+    saveSelection();
+
+    // 1. Detect Block Style (Title, Subtitle, H1-H4, Normal text)
+    const blockEl = node.closest("h1, h2, h3, h4, p, div, blockquote, li");
+    if (blockEl) {
+      const tag = blockEl.tagName.toUpperCase();
+      if (blockEl.classList.contains("doc-title")) {
+        setCurrentBlockStyle("title");
+      } else if (blockEl.classList.contains("doc-subtitle")) {
+        setCurrentBlockStyle("subtitle");
+      } else if (tag === "H1") {
+        setCurrentBlockStyle("h1");
+      } else if (tag === "H2") {
+        setCurrentBlockStyle("h2");
+      } else if (tag === "H3") {
+        setCurrentBlockStyle("h3");
+      } else if (tag === "H4") {
+        setCurrentBlockStyle("h4");
+      } else {
+        setCurrentBlockStyle("p");
+      }
+    } else {
+      setCurrentBlockStyle("p");
+    }
+
+    // 2. Detect Computed Font Size & Font Family at cursor
+    const computed = window.getComputedStyle(node);
+    if (computed.fontSize) {
+      const px = parseFloat(computed.fontSize);
+      if (!isNaN(px)) {
+        const pt = Math.round(px * 0.75);
+        setCurrentFontSize(String(pt));
+      }
+    }
+    if (computed.fontFamily) {
+      const cleanFont = computed.fontFamily.split(",")[0].replace(/['"]/g, "").trim();
+      const matched = FONT_FAMILIES.find((f) => f.toLowerCase() === cleanFont.toLowerCase());
+      if (matched) setCurrentFont(matched);
+    }
+
+    // 3. Query command states
+    try {
+      setFormatState({
+        bold: document.queryCommandState("bold"),
+        italic: document.queryCommandState("italic"),
+        underline: document.queryCommandState("underline"),
+        strikeThrough: document.queryCommandState("strikeThrough"),
+        unorderedList: document.queryCommandState("insertUnorderedList"),
+        orderedList: document.queryCommandState("insertOrderedList"),
+        justifyLeft: document.queryCommandState("justifyLeft"),
+        justifyCenter: document.queryCommandState("justifyCenter"),
+        justifyRight: document.queryCommandState("justifyRight"),
+        justifyFull: document.queryCommandState("justifyFull"),
+      });
+    } catch (e) {}
+  }, [isPreviewMode, saveSelection]);
+
+  useEffect(() => {
+    document.addEventListener("selectionchange", updateToolbarStateFromSelection);
+    return () => document.removeEventListener("selectionchange", updateToolbarStateFromSelection);
+  }, [updateToolbarStateFromSelection]);
+
+  // Reflow overflowing DOM nodes from `pageIndex` onto subsequent pages so content never spills or overlaps
+  const reflowOverflowFromPage = useCallback((startIndex = 0) => {
+    const pageEl = pageRefs.current[startIndex];
+    if (!pageEl) return;
+
+    // Only split if content is taller than 1 A4 page and has more than 1 child block
+    if (pageEl.scrollHeight <= A4_CONTENT_MAX_HEIGHT_PX || pageEl.children.length <= 1) {
+      return;
+    }
+
+    // Collect current HTML of all pages from DOM
+    const allHtmls = pageRefs.current
+      .map((el, i) => (el ? el.innerHTML : pages[i] || ""))
+      .filter((_, i) => i < pages.length);
+
+    const overflowNodes = [];
+    while (pageEl.scrollHeight > A4_CONTENT_MAX_HEIGHT_PX && pageEl.children.length > 1) {
+      const lastChild = pageEl.lastElementChild;
+      if (!lastChild) break;
+      overflowNodes.unshift(lastChild.outerHTML);
+      pageEl.removeChild(lastChild);
+    }
+
+    if (overflowNodes.length === 0) return;
+
+    allHtmls[startIndex] = pageEl.innerHTML || "<p><br></p>";
+    const overflowHtml = overflowNodes.join("\n");
+
+    // Paginate the overflowed HTML in case it spans multiple pages itself
+    const extraPages = paginateHtml(overflowHtml);
+
+    if (startIndex + 1 < allHtmls.length) {
+      // Prepend to the next page and re-paginate from there
+      const combinedRemaining = [
+        ...extraPages.slice(0, -1),
+        extraPages[extraPages.length - 1] + "\n" + allHtmls[startIndex + 1],
+        ...allHtmls.slice(startIndex + 2),
+      ].join('<div class="pd-page-break"></div>');
+      const repaginatedTail = paginateHtml(combinedRemaining);
+      const finalPages = [...allHtmls.slice(0, startIndex + 1), ...repaginatedTail];
+      setPages(finalPages);
+      syncDomPages(finalPages);
+    } else {
+      const finalPages = [...allHtmls.slice(0, startIndex + 1), ...extraPages];
+      setPages(finalPages);
+      syncDomPages(finalPages);
+    }
+  }, [pages, syncDomPages]);
 
   useEffect(() => {
     if (!id) {
@@ -470,23 +735,40 @@ export default function DocumentEditorPage() {
           return;
         }
       }
-      // Blank document (default)
       setDocTitle("Untitled document");
       setPages(["<p><br></p>"]);
       syncDomPages(["<p><br></p>"]);
     }
-  }, [id, location.search]);
+  }, [id, location.search, syncDomPages]);
 
-  // Close menus on outside click
+  // Close menus & toolbar dropdowns on outside click
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (menuContainerRef.current && !menuContainerRef.current.contains(e.target)) {
         setActiveMenu(null);
       }
+      if (toolbarDropdownRef.current && !toolbarDropdownRef.current.contains(e.target)) {
+        setOpenToolbarDropdown(null);
+      }
     };
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+  // Keyboard shortcuts (Ctrl+S to save, Ctrl+P to print)
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "s") {
+        e.preventDefault();
+        handleSaveTemplate();
+      } else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "p") {
+        e.preventDefault();
+        handlePrint();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  });
 
   // Fetch existing template if editing
   useEffect(() => {
@@ -525,7 +807,7 @@ export default function DocumentEditorPage() {
           toast.error("Could not load document");
         });
     }
-  }, [id]);
+  }, [id, syncDomPages]);
 
   useEffect(() => {
     if (!isPreviewMode) {
@@ -536,7 +818,7 @@ export default function DocumentEditorPage() {
         }
       });
     }
-  }, [pages.length, isPreviewMode]);
+  }, [pages.length, isPreviewMode, pages]);
 
   const getCombinedHtml = () => {
     const latestPages = pages.map((p, idx) => {
@@ -558,23 +840,221 @@ export default function DocumentEditorPage() {
     setIsSaved(false);
   };
 
+  // Execute rich text command while preserving selection
   const execCmd = (command, value = null) => {
+    restoreSelection();
     document.execCommand(command, false, value);
+    saveSelection();
     const activeIdx = activePageIdxRef.current || 0;
+    handlePageInput(activeIdx);
+    updateToolbarStateFromSelection();
+  };
+
+  // Apply Google Docs Block Style (Normal text, Title, Subtitle, Heading 1-4)
+  const applyBlockStyle = (styleObj) => {
+    restoreSelection();
+    const activeIdx = activePageIdxRef.current || 0;
+    const pageEl = pageRefs.current[activeIdx];
+    if (!pageEl) return;
+
+    document.execCommand("formatBlock", false, `<${styleObj.tag}>`);
+
+    // Apply or clear special classes (doc-title, doc-subtitle) and inline font overrides on the block
+    const sel = window.getSelection();
+    if (sel && sel.rangeCount > 0) {
+      let node = sel.anchorNode;
+      if (node && node.nodeType === Node.TEXT_NODE) node = node.parentElement;
+      if (node && node instanceof HTMLElement) {
+        const block = node.closest("h1, h2, h3, h4, p, div");
+        if (block && pageEl.contains(block)) {
+          block.classList.remove("doc-title", "doc-subtitle");
+          if (styleObj.className) {
+            block.classList.add(styleObj.className);
+          }
+          // Strip inline font-size overrides inside heading so heading size takes effect cleanly
+          block.style.fontSize = "";
+          block.querySelectorAll("[style*='font-size']").forEach((child) => {
+            child.style.fontSize = "";
+          });
+        }
+      }
+    }
+
+    setCurrentBlockStyle(styleObj.id);
+    setOpenToolbarDropdown(null);
+    saveSelection();
+    handlePageInput(activeIdx);
+    updateToolbarStateFromSelection();
+  };
+
+  // Apply Font Family to selected text or active page
+  const handleFontChange = (font) => {
+    setCurrentFont(font);
+    setOpenToolbarDropdown(null);
+    restoreSelection();
+    const sel = window.getSelection();
+    const activeIdx = activePageIdxRef.current || 0;
+
+    if (sel && !sel.isCollapsed) {
+      document.execCommand("fontName", false, font);
+    } else if (pageRefs.current[activeIdx]) {
+      pageRefs.current[activeIdx].style.fontFamily = font;
+    }
+    saveSelection();
     handlePageInput(activeIdx);
   };
 
-  const handleFontChange = (font) => {
-    setCurrentFont(font);
-    execCmd("fontName", font);
-  };
-
+  // Real Font Size change (works on selected text OR current block, in real pt sizes)
   const handleFontSizeChange = (sizePt) => {
-    setCurrentFontSize(sizePt);
-    execCmd("fontSize", "3");
+    const cleanPt = Math.max(6, Math.min(96, parseInt(sizePt, 10) || 11));
+    setCurrentFontSize(String(cleanPt));
+    setOpenToolbarDropdown(null);
+    restoreSelection();
+
+    const activeIdx = activePageIdxRef.current || 0;
+    const pageEl = pageRefs.current[activeIdx];
+    if (!pageEl) return;
+
+    const sel = window.getSelection();
+    if (sel && sel.rangeCount > 0 && !sel.isCollapsed) {
+      // Use fontSize=7 marker then replace <font size="7"> with <span style="font-size: Xpt">
+      document.execCommand("fontSize", false, "7");
+      const fontElements = pageEl.querySelectorAll('font[size="7"], span[style*="xxx-large"]');
+      fontElements.forEach((el) => {
+        const span = document.createElement("span");
+        span.style.fontSize = `${cleanPt}pt`;
+        span.innerHTML = el.innerHTML;
+        // Strip nested conflicting font-size styles so the new size applies uniformly
+        span.querySelectorAll("[style*='font-size']").forEach((inner) => {
+          inner.style.fontSize = "";
+        });
+        el.parentNode.replaceChild(span, el);
+      });
+    } else if (sel && sel.rangeCount > 0) {
+      // Collapsed cursor: apply to current block element if inside one
+      let node = sel.anchorNode;
+      if (node && node.nodeType === Node.TEXT_NODE) node = node.parentElement;
+      if (node && node instanceof HTMLElement && pageEl.contains(node) && node !== pageEl) {
+        const targetBlock = node.closest("p, li, h1, h2, h3, h4, span, div");
+        if (targetBlock && pageEl.contains(targetBlock) && targetBlock !== pageEl) {
+          targetBlock.style.fontSize = `${cleanPt}pt`;
+        }
+      }
+    }
+
+    saveSelection();
+    handlePageInput(activeIdx);
   };
 
-  const insertVariable = (varKey, varLabel) => {
+  // Apply Line Spacing to selected paragraph(s) or current page
+  const handleLineSpacingChange = (spacing) => {
+    setCurrentLineSpacing(spacing);
+    setOpenToolbarDropdown(null);
+    restoreSelection();
+    const activeIdx = activePageIdxRef.current || 0;
+    const pageEl = pageRefs.current[activeIdx];
+    if (!pageEl) return;
+
+    const sel = window.getSelection();
+    if (sel && sel.rangeCount > 0) {
+      let node = sel.anchorNode;
+      if (node && node.nodeType === Node.TEXT_NODE) node = node.parentElement;
+      const block = node instanceof HTMLElement ? node.closest("p, div, li, h1, h2, h3, h4") : null;
+      if (block && pageEl.contains(block) && block !== pageEl) {
+        block.style.lineHeight = spacing;
+      } else {
+        pageEl.style.lineHeight = spacing;
+      }
+    }
+    saveSelection();
+    handlePageInput(activeIdx);
+  };
+
+  // Smart Paste Handler: Cleans external styles, converts {{variables}}, and paginates multi-page pastes automatically!
+  const handlePaste = (e, pageIndex) => {
+    e.preventDefault();
+    const clipboardData = e.clipboardData || window.clipboardData;
+    if (!clipboardData) return;
+
+    const pastedHtml = clipboardData.getData("text/html");
+    const pastedText = clipboardData.getData("text/plain");
+
+    let cleanHtml = "";
+    if (pastedHtml && pastedHtml.trim()) {
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(pastedHtml, "text/html");
+
+      // Remove script, style, meta, link tags
+      doc.querySelectorAll("script, style, meta, link, xml, o\\:p").forEach((n) => n.remove());
+
+      // Sanitize inline styles that break A4 layout (like fixed widths, negative margins, absolute positioning, background colors from web pages)
+      doc.body.querySelectorAll("*").forEach((el) => {
+        if (el instanceof HTMLElement) {
+          const fw = el.style.fontWeight;
+          const fs = el.style.fontStyle;
+          const td = el.style.textDecoration;
+          const ta = el.style.textAlign;
+          el.removeAttribute("style");
+          el.removeAttribute("class");
+          if (fw === "bold" || parseInt(fw, 10) >= 600) el.style.fontWeight = "bold";
+          if (fs === "italic") el.style.fontStyle = "italic";
+          if (td && td.includes("underline")) el.style.textDecoration = "underline";
+          if (ta && ["center", "right", "justify"].includes(ta)) el.style.textAlign = ta;
+        }
+      });
+
+      cleanHtml = doc.body.innerHTML;
+    } else if (pastedText) {
+      // Convert plain text paragraphs into clean <p> blocks
+      const paragraphs = pastedText.replace(/\r\n/g, "\n").split(/\n{2,}/);
+      cleanHtml = paragraphs
+        .map((para) => {
+          const lines = para
+            .trim()
+            .split("\n")
+            .map((l) => l.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"))
+            .join("<br>");
+          return lines ? `<p>${lines}</p>` : "";
+        })
+        .filter(Boolean)
+        .join("\n");
+    }
+
+    if (!cleanHtml) return;
+
+    // Convert any {{var}} in pasted content into ProofDeck chips
+    cleanHtml = cleanHtml.replace(/(\{\{[a-zA-Z0-9_]+\}\})/g, (match) => {
+      return `<span class="pd-chip" data-var="${match}" contenteditable="false" style="display: inline-block; background-color: #F1F5F9; color: #1E293B; border: 1px solid #CBD5E1; padding: 1px 6px; border-radius: 4px; font-family: monospace; font-size: 12px; font-weight: 600;">${match}</span>`;
+    });
+
+    // Insert at cursor
+    document.execCommand("insertHTML", false, cleanHtml);
+    handlePageInput(pageIndex);
+
+    // Wait a tick for DOM layout, then check if pageIndex overflowed 1 A4 sheet; if so, auto-split onto Page 2, 3, etc.
+    setTimeout(() => {
+      const pageEl = pageRefs.current[pageIndex];
+      if (!pageEl) return;
+
+      if (pageEl.scrollHeight > A4_CONTENT_MAX_HEIGHT_PX) {
+        // Re-paginate all pages cleanly so a 3-page pasted document becomes 3 discrete A4 pages!
+        const allCombined = pageRefs.current
+          .map((el, i) => (el ? el.innerHTML : pages[i] || ""))
+          .filter((_, i) => i < pages.length)
+          .join('<div class="pd-page-break"></div>');
+
+        const paginated = paginateHtml(allCombined);
+        setPages(paginated);
+        syncDomPages(paginated);
+        if (paginated.length > 1) {
+          toast.success(`Formatted across ${paginated.length} A4 pages`);
+        }
+      }
+    }, 35);
+  };
+
+  const insertVariable = (varKey) => {
+    restoreSelection();
     const activeIdx = activePageIdxRef.current || 0;
     const targetEl = pageRefs.current[activeIdx] || pageRefs.current[0];
     if (targetEl) {
@@ -582,7 +1062,97 @@ export default function DocumentEditorPage() {
     }
     const chipHtml = `&nbsp;<span class="pd-chip" data-var="${varKey}" contenteditable="false" style="display: inline-block; background-color: #F1F5F9; color: #1E293B; border: 1px solid #CBD5E1; padding: 1px 6px; border-radius: 4px; font-family: monospace; font-size: 12px; font-weight: 600; user-select: all;">${varKey}</span>&nbsp;`;
     document.execCommand("insertHTML", false, chipHtml);
+    saveSelection();
     handlePageInput(activeIdx);
+  };
+
+  const insertSignatureBlock = () => {
+    restoreSelection();
+    const activeIdx = activePageIdxRef.current || 0;
+    const html = `
+      <div style="margin-top: 36px; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: flex-end;">
+        <div style="text-align: left; max-width: 260px;">
+          <div style="font-family: 'Times New Roman', serif; font-size: 16pt; font-style: italic; font-weight: bold; margin-bottom: 4px; color: #1E3A8A;">
+            <span class="pd-chip" data-var="{{signatory_name}}" contenteditable="false" style="display: inline-block; background-color: #F1F5F9; color: #1E293B; border: 1px solid #CBD5E1; padding: 1px 6px; border-radius: 4px; font-family: monospace; font-size: 12px; font-weight: 600;">{{signatory_name}}</span>
+          </div>
+          <div style="border-top: 1.5px solid #374151; padding-top: 6px; font-size: 11pt; font-weight: 700; color: #111827;">
+            <span class="pd-chip" data-var="{{signatory_title}}" contenteditable="false" style="display: inline-block; background-color: #F1F5F9; color: #1E293B; border: 1px solid #CBD5E1; padding: 1px 6px; border-radius: 4px; font-family: monospace; font-size: 12px; font-weight: 600;">{{signatory_title}}</span>
+          </div>
+          <div style="font-size: 9.5pt; color: #6B7280;">Authorized Signatory</div>
+        </div>
+      </div>
+      <p><br></p>
+    `;
+    document.execCommand("insertHTML", false, html);
+    setActiveMenu(null);
+    handlePageInput(activeIdx);
+  };
+
+  const insertOfficialSeal = () => {
+    restoreSelection();
+    const activeIdx = activePageIdxRef.current || 0;
+    const html = `
+      <div style="display: inline-block; text-align: center; padding: 10px 20px; border: 2px dashed #6366F1; border-radius: 8px; font-size: 9.5pt; color: #4338CA; background-color: #EEF2FF; margin: 12px 0;">
+        <div style="font-weight: 800; letter-spacing: 0.5px; margin-bottom: 2px;">OFFICIAL VERIFIED SEAL</div>
+        <div style="font-size: 8.5pt; color: #6366F1;">Authenticated via ProofDeck Ledger</div>
+      </div>
+      <p><br></p>
+    `;
+    document.execCommand("insertHTML", false, html);
+    setActiveMenu(null);
+    handlePageInput(activeIdx);
+  };
+
+  const insertAcademicTable = () => {
+    restoreSelection();
+    const activeIdx = activePageIdxRef.current || 0;
+    const html = `
+      <table>
+        <thead>
+          <tr>
+            <th>Course Code</th>
+            <th>Course Title</th>
+            <th>Units</th>
+            <th>Grade</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>CSC 401</td>
+            <td>Software Engineering & Architecture</td>
+            <td>4</td>
+            <td>A</td>
+          </tr>
+          <tr>
+            <td>CSC 405</td>
+            <td>Distributed Systems & Cryptography</td>
+            <td>3</td>
+            <td>A</td>
+          </tr>
+          <tr>
+            <td>CSC 499</td>
+            <td>Final Year Research Project</td>
+            <td>6</td>
+            <td>A</td>
+          </tr>
+        </tbody>
+      </table>
+      <p><br></p>
+    `;
+    document.execCommand("insertHTML", false, html);
+    setActiveMenu(null);
+    handlePageInput(activeIdx);
+  };
+
+  const insertLinkPrompt = () => {
+    saveSelection();
+    const url = window.prompt("Enter URL (e.g. https://www.proofdeck.app):", "https://");
+    if (url && url !== "https://") {
+      restoreSelection();
+      document.execCommand("createLink", false, url);
+      handlePageInput(activePageIdxRef.current || 0);
+    }
+    setActiveMenu(null);
   };
 
   const handleDragStart = (e, varKey) => {
@@ -610,9 +1180,11 @@ export default function DocumentEditorPage() {
     });
     setIsSaved(false);
     setTimeout(() => {
-      if (pageRefs.current[newIdx]) {
-        pageRefs.current[newIdx].innerHTML = "<p><br></p>";
-        pageRefs.current[newIdx].focus();
+      const newPageEl = pageRefs.current[newIdx];
+      if (newPageEl) {
+        newPageEl.innerHTML = "<p><br></p>";
+        newPageEl.focus();
+        newPageEl.scrollIntoView({ behavior: "smooth", block: "center" });
         activePageIdxRef.current = newIdx;
       }
     }, 60);
@@ -643,6 +1215,14 @@ export default function DocumentEditorPage() {
     if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
       e.preventDefault();
       handleAddPage(index);
+      return;
+    }
+    // Auto-reflow onto next page if user presses Enter at the bottom of a full A4 page
+    if (e.key === "Enter" && !e.shiftKey) {
+      const pageEl = pageRefs.current[index];
+      if (pageEl && pageEl.scrollHeight > A4_CONTENT_MAX_HEIGHT_PX + 20) {
+        setTimeout(() => reflowOverflowFromPage(index), 20);
+      }
     }
   };
 
@@ -678,6 +1258,7 @@ export default function DocumentEditorPage() {
     } catch (err) {
       toast.error("Failed to parse Word document", { id: toastId });
     }
+    e.target.value = "";
   };
 
   // Save template
@@ -720,6 +1301,129 @@ export default function DocumentEditorPage() {
     }
   };
 
+  // Make a copy of the current document
+  const handleMakeCopy = async () => {
+    setActiveMenu(null);
+    const copyTitle = `${docTitle || "Untitled document"} (Copy)`;
+    const toastId = toast.loading("Creating a copy...");
+    try {
+      const res = await createCustomTemplate({
+        title: copyTitle,
+        layout_style: "document",
+        canvas_data: {
+          document_html: getCombinedHtml(),
+          qr_code_enabled: includeQrCode,
+          qr_position: qrPosition,
+          zoom: zoomLevel,
+        },
+      });
+      const newId = res.data?.template_id || res.data?.id;
+      toast.success("Copy created!", { id: toastId });
+      if (newId) {
+        navigate(`/dashboard/documents/editor/${newId}`);
+      }
+    } catch (err) {
+      toast.error("Failed to copy document", { id: toastId });
+    }
+  };
+
+  // Direct PDF Download (.pdf) using jsPDF + HTML rendering
+  const handleDownloadPdf = async () => {
+    setActiveMenu(null);
+    const toastId = toast.loading("Generating PDF document...");
+    try {
+      const pdf = new jsPDF({
+        orientation: "portrait",
+        unit: "mm",
+        format: "a4",
+      });
+
+      const pageElements = pages.map((p, idx) => {
+        if (isPreviewMode) return renderMergedPreviewForPage(p);
+        const domEl = pageRefs.current[idx];
+        return domEl ? domEl.innerHTML : p;
+      });
+
+      // Build clean temporary offscreen container for jsPDF .html() rendering
+      const container = document.createElement("div");
+      container.style.position = "fixed";
+      container.style.left = "-9999px";
+      container.style.top = "0";
+      container.style.width = "794px"; // A4 width at 96 DPI
+      container.style.background = "#ffffff";
+      container.style.color = "#111827";
+      container.style.fontFamily = `${currentFont}, sans-serif`;
+      container.className = "pd-doc-editor-content";
+
+      container.innerHTML = pageElements
+        .map(
+          (htmlStr, idx) => `
+          <div style="width: 794px; min-height: 1122px; padding: 72px; box-sizing: border-box; background: #ffffff; color: #111827; font-family: ${currentFont}, sans-serif; font-size: ${currentFontSize}pt; line-height: 1.6; page-break-after: ${
+            idx < pageElements.length - 1 ? "always" : "auto"
+          };">
+            ${htmlStr}
+          </div>
+        `
+        )
+        .join("");
+
+      document.body.appendChild(container);
+
+      await pdf.html(container, {
+        callback: (doc) => {
+          const safeFilename = (docTitle || "ProofDeck_Document").replace(/[^a-zA-Z0-9_-]/g, "_");
+          doc.save(`${safeFilename}.pdf`);
+          document.body.removeChild(container);
+          toast.success("PDF downloaded!", { id: toastId });
+        },
+        x: 0,
+        y: 0,
+        width: 210,
+        windowWidth: 794,
+        autoPaging: "text",
+      });
+    } catch (err) {
+      toast.dismiss(toastId);
+      handlePrint();
+    }
+  };
+
+  // Download as Microsoft Word (.doc)
+  const handleDownloadWord = () => {
+    setActiveMenu(null);
+    const content = isPreviewMode
+      ? pages.map((p) => renderMergedPreviewForPage(p)).join("<br clear=all style='mso-special-character:line-break;page-break-before:always'>")
+      : pages
+          .map((p, idx) => (pageRefs.current[idx] ? pageRefs.current[idx].innerHTML : p))
+          .join("<br clear=all style='mso-special-character:line-break;page-break-before:always'>");
+
+    const wordDoc = `
+      <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+      <head>
+        <meta charset="utf-8">
+        <title>${docTitle}</title>
+        <style>
+          @page { size: 21cm 29.7cm; margin: 2.5cm; }
+          body { font-family: ${currentFont}, sans-serif; font-size: ${currentFontSize}pt; line-height: 1.6; color: #111827; }
+          table { border-collapse: collapse; width: 100%; }
+          th, td { border: 1px solid #cbd5e1; padding: 6px 8px; }
+        </style>
+      </head>
+      <body>${content}</body>
+      </html>
+    `;
+    const blob = new Blob(["\ufeff", wordDoc], { type: "application/msword" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${(docTitle || "ProofDeck_Document").replace(/[^a-zA-Z0-9_-]/g, "_")}.doc`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    toast.success("Downloaded Word (.doc) file");
+  };
+
   const handleSelectPreset = (preset) => {
     setPresetToLoad(preset);
   };
@@ -738,7 +1442,12 @@ export default function DocumentEditorPage() {
   };
 
   const handlePrint = () => {
+    setActiveMenu(null);
     const printWindow = window.open("", "_blank");
+    if (!printWindow) {
+      toast.error("Please allow popups to print or save as PDF");
+      return;
+    }
     const content = isPreviewMode
       ? pages.map((p) => renderMergedPreviewForPage(p)).join('<div class="pd-page-break" style="page-break-after: always; break-after: page;"></div>')
       : getCombinedHtml();
@@ -748,10 +1457,23 @@ export default function DocumentEditorPage() {
         <head>
           <title>${docTitle}</title>
           <style>
-            @page { size: A4 portrait; margin: 25mm; }
-            body { font-family: ${currentFont}, sans-serif; color: #111827; margin: 0; padding: 0; }
-            .pd-chip { background: transparent !important; border: none !important; font-weight: bold; }
-            .pd-page-break { display: block !important; page-break-after: always !important; break-after: page !important; height: 0 !important; margin: 0 !important; padding: 0 !important; border: none !important; background: transparent !important; visibility: hidden !important; }
+            @page { size: A4 portrait; margin: ${pageMarginMm}mm; }
+            body { font-family: ${currentFont}, sans-serif; font-size: ${currentFontSize}pt; line-height: 1.6; color: #111827; margin: 0; padding: 0; }
+            h1 { font-size: 20pt; font-weight: 700; margin: 0.8em 0 0.35em; }
+            h1.doc-title { font-size: 26pt; font-weight: 700; margin: 0 0 0.4em; }
+            p.doc-subtitle { font-size: 15pt; color: #64748b; margin: 0 0 0.75em; }
+            h2 { font-size: 16pt; font-weight: 700; margin: 0.75em 0 0.3em; }
+            h3 { font-size: 13.5pt; font-weight: 700; margin: 0.65em 0 0.25em; }
+            h4 { font-size: 11.5pt; font-weight: 700; margin: 0.5em 0 0.2em; }
+            p { margin: 0 0 0.6em; }
+            ul { list-style-type: disc; padding-left: 1.75rem; margin: 0.5em 0; }
+            ol { list-style-type: decimal; padding-left: 1.75rem; margin: 0.5em 0; }
+            li { margin: 0.2em 0; }
+            table { width: 100%; border-collapse: collapse; margin: 0.85em 0; }
+            th, td { border: 1px solid #cbd5e1; padding: 8px 10px; text-align: left; }
+            th { background-color: #f8fafc; font-weight: 700; }
+            .pd-chip { background: transparent !important; border: none !important; font-weight: bold; font-family: inherit !important; padding: 0 !important; }
+            .pd-page-break { display: block !important; page-break-after: always !important; break-after: page !important; height: 0 !important; margin: 0 !important; padding: 0 !important; border: none !important; visibility: hidden !important; }
           </style>
         </head>
         <body>${content}</body>
@@ -772,6 +1494,15 @@ export default function DocumentEditorPage() {
     setCustomVarName("");
   };
 
+  const handleAutoPaginateAll = () => {
+    setActiveMenu(null);
+    const combined = getCombinedHtml();
+    const paginated = paginateHtml(combined);
+    setPages(paginated);
+    syncDomPages(paginated);
+    toast.success(`Formatted across ${paginated.length} A4 page${paginated.length > 1 ? "s" : ""}`);
+  };
+
   const filteredMergeVars = MERGE_VARIABLES.map((grp) => ({
     ...grp,
     vars: grp.vars.filter(
@@ -780,6 +1511,8 @@ export default function DocumentEditorPage() {
         v.key.toLowerCase().includes(varSearchQuery.toLowerCase())
     ),
   })).filter((grp) => grp.vars.length > 0);
+
+  const activeBlockStyleLabel = BLOCK_STYLES.find((b) => b.id === currentBlockStyle)?.label || "Normal text";
 
   return (
     <div className="flex flex-col h-full min-h-0 w-full bg-[#f8f9fa] dark:bg-slate-950 overflow-hidden font-sans select-none">
@@ -795,12 +1528,12 @@ export default function DocumentEditorPage() {
       {/* Top Header - Fixed & Pinned */}
       <header className="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 px-4 py-2 flex-none shrink-0 z-30 sticky top-0">
         <div className="flex items-center justify-between gap-4">
-          {/* Left Title Section */}
+          {/* Left Title & Menu Section */}
           <div data-tour="doc-editor-header" className="flex items-center gap-3 min-w-0">
             <Link
               to="/dashboard/documents"
-              className="text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-              title="Templates"
+              className="text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+              title="Back to Documents"
             >
               <ArrowLeft size={16} weight="bold" />
             </Link>
@@ -810,240 +1543,460 @@ export default function DocumentEditorPage() {
             <div className="flex flex-col min-w-0">
               <div className="flex items-center gap-2">
                 <input
+                  ref={titleInputRef}
                   type="text"
                   value={docTitle}
                   onChange={(e) => {
                     setDocTitle(e.target.value);
                     setIsSaved(false);
                   }}
-                  className="font-medium text-slate-800 dark:text-slate-100 text-sm bg-transparent border-0 outline-none hover:bg-slate-100 dark:hover:bg-slate-800 px-1 py-0.5 rounded transition-colors max-w-[280px] sm:max-w-md truncate"
+                  className="font-semibold text-slate-800 dark:text-slate-100 text-sm bg-transparent border border-transparent hover:border-slate-300 focus:border-indigo-500 outline-none px-1.5 py-0.5 rounded transition-colors max-w-[240px] sm:max-w-md truncate"
                 />
                 <span className="text-[11px] text-slate-400 dark:text-slate-500 font-medium">
-                  {isSaving ? "Saving..." : isSaved ? "Saved" : "Unsaved"}
+                  {isSaving ? "Saving..." : isSaved ? "Saved" : "Unsaved changes"}
                 </span>
               </div>
 
-              {/* Working Menu Bar */}
-              <div ref={menuContainerRef} className="flex items-center gap-3 text-xs text-slate-600 dark:text-slate-400 pt-0.5 relative">
-                {/* File */}
+              {/* Google Docs Style Menu Bar */}
+              <div ref={menuContainerRef} className="flex items-center gap-1 sm:gap-2 text-xs text-slate-600 dark:text-slate-400 pt-0.5 relative">
+                {/* FILE MENU */}
                 <div className="relative">
                   <button
                     type="button"
                     onClick={() => setActiveMenu(activeMenu === "file" ? null : "file")}
-                    className="hover:text-slate-900 dark:hover:text-slate-100 px-1 py-0.5 rounded hover:bg-slate-100 dark:hover:bg-slate-800"
+                    className={`px-1.5 py-0.5 rounded transition-colors cursor-pointer ${
+                      activeMenu === "file"
+                        ? "bg-slate-200/80 dark:bg-slate-800 text-slate-900 dark:text-white font-medium"
+                        : "hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800"
+                    }`}
                   >
                     File
                   </button>
                   {activeMenu === "file" && (
-                    <div className="absolute left-0 top-full mt-1 w-48 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-md shadow-lg py-1 z-50 text-xs text-slate-700 dark:text-slate-200">
+                    <div className="absolute left-0 top-full mt-1 w-60 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xl py-1.5 z-50 text-xs text-slate-700 dark:text-slate-200">
                       <button
+                        type="button"
+                        onClick={() => {
+                          setActiveMenu(null);
+                          setDocTitle("Untitled document");
+                          setPages(["<p><br></p>"]);
+                          syncDomPages(["<p><br></p>"]);
+                          setIsSaved(false);
+                        }}
+                        className="w-full text-left px-3.5 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-2.5 cursor-pointer"
+                      >
+                        <FileText size={15} className="text-indigo-600" />
+                        <span>New blank document</span>
+                      </button>
+                      <button
+                        type="button"
                         onClick={() => {
                           fileInputRef.current?.click();
                           setActiveMenu(null);
                         }}
-                        className="w-full text-left px-3 py-1.5 hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center gap-2"
+                        className="w-full text-left px-3.5 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-2.5 cursor-pointer"
                       >
-                        <UploadSimple size={14} /> Import Word (.docx)
+                        <UploadSimple size={15} className="text-slate-500" />
+                        <span>Open / Import Word (.docx)</span>
                       </button>
                       <button
-                        onClick={() => {
-                          handlePrint();
-                          setActiveMenu(null);
-                        }}
-                        className="w-full text-left px-3 py-1.5 hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center gap-2"
+                        type="button"
+                        onClick={handleMakeCopy}
+                        className="w-full text-left px-3.5 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-2.5 cursor-pointer"
                       >
-                        <Printer size={14} /> Print / PDF
+                        <Copy size={15} className="text-slate-500" />
+                        <span>Make a copy</span>
+                      </button>
+
+                      <div className="my-1 border-t border-slate-100 dark:border-slate-800" />
+
+                      <button
+                        type="button"
+                        onClick={handleDownloadPdf}
+                        className="w-full text-left px-3.5 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-between cursor-pointer"
+                      >
+                        <span className="flex items-center gap-2.5 font-medium text-slate-800 dark:text-slate-100">
+                          <FilePdf size={15} className="text-rose-600" weight="fill" />
+                          <span>Download as PDF (.pdf)</span>
+                        </span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleDownloadWord}
+                        className="w-full text-left px-3.5 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-2.5 cursor-pointer"
+                      >
+                        <FileDoc size={15} className="text-blue-600" weight="fill" />
+                        <span>Download as Microsoft Word (.doc)</span>
+                      </button>
+
+                      <div className="my-1 border-t border-slate-100 dark:border-slate-800" />
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setActiveMenu(null);
+                          setTimeout(() => {
+                            titleInputRef.current?.focus();
+                            titleInputRef.current?.select();
+                          }, 30);
+                        }}
+                        className="w-full text-left px-3.5 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-2.5 cursor-pointer"
+                      >
+                        <TextT size={15} className="text-slate-500" />
+                        <span>Rename</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setPageMarginMm((prev) => (prev === 25 ? 15 : prev === 15 ? 30 : 25));
+                          setActiveMenu(null);
+                          toast.success(
+                            `Page margins set to ${pageMarginMm === 25 ? "Narrow (15mm)" : pageMarginMm === 15 ? "Wide (30mm)" : "Standard (25mm)"}`
+                          );
+                        }}
+                        className="w-full text-left px-3.5 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-between cursor-pointer"
+                      >
+                        <span className="flex items-center gap-2.5">
+                          <FileText size={15} className="text-slate-500" />
+                          <span>Page margins</span>
+                        </span>
+                        <span className="text-[10px] text-slate-400 font-mono">{pageMarginMm}mm</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handlePrint}
+                        className="w-full text-left px-3.5 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-between cursor-pointer"
+                      >
+                        <span className="flex items-center gap-2.5">
+                          <Printer size={15} className="text-slate-500" />
+                          <span>Print</span>
+                        </span>
+                        <span className="text-[10px] text-slate-400 font-mono">Ctrl+P</span>
                       </button>
                     </div>
                   )}
                 </div>
 
-                {/* Edit */}
+                {/* EDIT MENU */}
                 <div className="relative">
                   <button
                     type="button"
                     onClick={() => setActiveMenu(activeMenu === "edit" ? null : "edit")}
-                    className="hover:text-slate-900 dark:hover:text-slate-100 px-1 py-0.5 rounded hover:bg-slate-100 dark:hover:bg-slate-800"
+                    className={`px-1.5 py-0.5 rounded transition-colors cursor-pointer ${
+                      activeMenu === "edit"
+                        ? "bg-slate-200/80 dark:bg-slate-800 text-slate-900 dark:text-white font-medium"
+                        : "hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800"
+                    }`}
                   >
                     Edit
                   </button>
                   {activeMenu === "edit" && (
-                    <div className="absolute left-0 top-full mt-1 w-40 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-md shadow-lg py-1 z-50 text-xs text-slate-700 dark:text-slate-200">
+                    <div className="absolute left-0 top-full mt-1 w-48 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xl py-1.5 z-50 text-xs text-slate-700 dark:text-slate-200">
                       <button
+                        type="button"
+                        onMouseDown={(e) => e.preventDefault()}
                         onClick={() => {
                           execCmd("undo");
                           setActiveMenu(null);
                         }}
-                        className="w-full text-left px-3 py-1.5 hover:bg-slate-50 dark:hover:bg-slate-800"
+                        className="w-full text-left px-3.5 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-between cursor-pointer"
                       >
-                        Undo
+                        <span>Undo</span>
+                        <span className="text-[10px] text-slate-400 font-mono">Ctrl+Z</span>
                       </button>
                       <button
+                        type="button"
+                        onMouseDown={(e) => e.preventDefault()}
                         onClick={() => {
                           execCmd("redo");
                           setActiveMenu(null);
                         }}
-                        className="w-full text-left px-3 py-1.5 hover:bg-slate-50 dark:hover:bg-slate-800"
+                        className="w-full text-left px-3.5 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-between cursor-pointer"
                       >
-                        Redo
+                        <span>Redo</span>
+                        <span className="text-[10px] text-slate-400 font-mono">Ctrl+Y</span>
                       </button>
+                      <div className="my-1 border-t border-slate-100 dark:border-slate-800" />
                       <button
+                        type="button"
+                        onMouseDown={(e) => e.preventDefault()}
                         onClick={() => {
                           execCmd("selectAll");
                           setActiveMenu(null);
                         }}
-                        className="w-full text-left px-3 py-1.5 hover:bg-slate-50 dark:hover:bg-slate-800"
+                        className="w-full text-left px-3.5 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-between cursor-pointer"
                       >
-                        Select all
+                        <span>Select all on page</span>
+                        <span className="text-[10px] text-slate-400 font-mono">Ctrl+A</span>
                       </button>
                     </div>
                   )}
                 </div>
 
-                {/* View */}
+                {/* VIEW MENU */}
                 <div className="relative">
                   <button
                     type="button"
                     onClick={() => setActiveMenu(activeMenu === "view" ? null : "view")}
-                    className="hover:text-slate-900 dark:hover:text-slate-100 px-1 py-0.5 rounded hover:bg-slate-100 dark:hover:bg-slate-800"
+                    className={`px-1.5 py-0.5 rounded transition-colors cursor-pointer ${
+                      activeMenu === "view"
+                        ? "bg-slate-200/80 dark:bg-slate-800 text-slate-900 dark:text-white font-medium"
+                        : "hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800"
+                    }`}
                   >
                     View
                   </button>
                   {activeMenu === "view" && (
-                    <div className="absolute left-0 top-full mt-1 w-36 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-md shadow-lg py-1 z-50 text-xs text-slate-700 dark:text-slate-200">
-                      {["75%", "90%", "100%", "125%"].map((z) => (
+                    <div className="absolute left-0 top-full mt-1 w-52 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xl py-1.5 z-50 text-xs text-slate-700 dark:text-slate-200">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsPreviewMode(!isPreviewMode);
+                          setActiveMenu(null);
+                        }}
+                        className="w-full text-left px-3.5 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-between cursor-pointer"
+                      >
+                        <span>{isPreviewMode ? "Switch to Editing" : "Preview Merged Record"}</span>
+                        {isPreviewMode && <Check size={13} className="text-indigo-600" />}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsSidebarOpen(!isSidebarOpen);
+                          setActiveMenu(null);
+                        }}
+                        className="w-full text-left px-3.5 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-between cursor-pointer"
+                      >
+                        <span>Show Left Panel</span>
+                        {isSidebarOpen && <Check size={13} className="text-indigo-600" />}
+                      </button>
+                      <div className="my-1 border-t border-slate-100 dark:border-slate-800" />
+                      {["75%", "90%", "100%", "125%", "150%"].map((z) => (
                         <button
                           key={z}
+                          type="button"
                           onClick={() => {
                             setZoomLevel(z);
                             setActiveMenu(null);
                           }}
-                          className="w-full text-left px-3 py-1.5 hover:bg-slate-50 dark:hover:bg-slate-800"
+                          className="w-full text-left px-3.5 py-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-between cursor-pointer"
                         >
-                          {z}
+                          <span>Zoom {z}</span>
+                          {zoomLevel === z && <Check size={13} className="text-indigo-600" />}
                         </button>
                       ))}
                     </div>
                   )}
                 </div>
 
-                {/* Insert */}
+                {/* INSERT MENU */}
                 <div className="relative">
                   <button
                     type="button"
                     onClick={() => setActiveMenu(activeMenu === "insert" ? null : "insert")}
-                    className="hover:text-slate-900 dark:hover:text-slate-100 px-1 py-0.5 rounded hover:bg-slate-100 dark:hover:bg-slate-800"
+                    className={`px-1.5 py-0.5 rounded transition-colors cursor-pointer ${
+                      activeMenu === "insert"
+                        ? "bg-slate-200/80 dark:bg-slate-800 text-slate-900 dark:text-white font-medium"
+                        : "hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800"
+                    }`}
                   >
                     Insert
                   </button>
                   {activeMenu === "insert" && (
-                    <div className="absolute left-0 top-full mt-1 w-44 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-md shadow-lg py-1 z-50 text-xs text-slate-700 dark:text-slate-200">
+                    <div className="absolute left-0 top-full mt-1 w-60 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xl py-1.5 z-50 text-xs text-slate-700 dark:text-slate-200">
                       <button
+                        type="button"
                         onClick={() => {
                           setIsSidebarOpen(true);
                           setActiveTab("variables");
                           setActiveMenu(null);
                         }}
-                        className="w-full text-left px-3 py-1.5 hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center gap-2"
+                        className="w-full text-left px-3.5 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-2.5 cursor-pointer"
                       >
-                        <PuzzlePiece size={14} /> Variables
+                        <PuzzlePiece size={15} className="text-indigo-600" />
+                        <span>Dynamic Merge Variable</span>
                       </button>
                       <button
-                        onClick={() => {
-                          insertPageBreak();
-                          setActiveMenu(null);
-                        }}
-                        className="w-full text-left px-3 py-1.5 hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center justify-between"
+                        type="button"
+                        onMouseDown={(e) => e.preventDefault()}
+                        onClick={insertSignatureBlock}
+                        className="w-full text-left px-3.5 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-2.5 cursor-pointer"
                       >
-                        <span className="flex items-center gap-2">
-                          <FileText size={14} /> Page break
-                        </span>
-                        <span className="text-[10px] text-slate-400 font-mono">Ctrl+Enter</span>
+                        <PenNib size={15} className="text-indigo-600" />
+                        <span>Official Signature Block</span>
                       </button>
                       <button
+                        type="button"
+                        onMouseDown={(e) => e.preventDefault()}
+                        onClick={insertOfficialSeal}
+                        className="w-full text-left px-3.5 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-2.5 cursor-pointer"
+                      >
+                        <SealCheck size={15} className="text-amber-600" />
+                        <span>Official Verification Seal</span>
+                      </button>
+                      <button
+                        type="button"
+                        onMouseDown={(e) => e.preventDefault()}
+                        onClick={insertAcademicTable}
+                        className="w-full text-left px-3.5 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-2.5 cursor-pointer"
+                      >
+                        <Table size={15} className="text-slate-600" />
+                        <span>Academic Results Table</span>
+                      </button>
+
+                      <div className="my-1 border-t border-slate-100 dark:border-slate-800" />
+
+                      <button
+                        type="button"
+                        onMouseDown={(e) => e.preventDefault()}
+                        onClick={insertLinkPrompt}
+                        className="w-full text-left px-3.5 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-2.5 cursor-pointer"
+                      >
+                        <LinkIcon size={15} className="text-slate-500" />
+                        <span>Link</span>
+                      </button>
+                      <button
+                        type="button"
+                        onMouseDown={(e) => e.preventDefault()}
                         onClick={() => {
                           execCmd("insertHorizontalRule");
                           setActiveMenu(null);
                         }}
-                        className="w-full text-left px-3 py-1.5 hover:bg-slate-50 dark:hover:bg-slate-800"
+                        className="w-full text-left px-3.5 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-2.5 cursor-pointer"
                       >
-                        Horizontal line
+                        <span className="w-3.5 h-0.5 bg-slate-500 inline-block" />
+                        <span>Horizontal line</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          insertPageBreak();
+                          setActiveMenu(null);
+                        }}
+                        className="w-full text-left px-3.5 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-between cursor-pointer"
+                      >
+                        <span className="flex items-center gap-2.5">
+                          <FileText size={15} className="text-slate-500" />
+                          <span>Page break</span>
+                        </span>
+                        <span className="text-[10px] text-slate-400 font-mono">Ctrl+Enter</span>
                       </button>
                     </div>
                   )}
                 </div>
 
-                {/* Format */}
+                {/* FORMAT MENU */}
                 <div className="relative">
                   <button
                     type="button"
                     onClick={() => setActiveMenu(activeMenu === "format" ? null : "format")}
-                    className="hover:text-slate-900 dark:hover:text-slate-100 px-1 py-0.5 rounded hover:bg-slate-100 dark:hover:bg-slate-800"
+                    className={`px-1.5 py-0.5 rounded transition-colors cursor-pointer ${
+                      activeMenu === "format"
+                        ? "bg-slate-200/80 dark:bg-slate-800 text-slate-900 dark:text-white font-medium"
+                        : "hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800"
+                    }`}
                   >
                     Format
                   </button>
                   {activeMenu === "format" && (
-                    <div className="absolute left-0 top-full mt-1 w-40 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-md shadow-lg py-1 z-50 text-xs text-slate-700 dark:text-slate-200">
+                    <div className="absolute left-0 top-full mt-1 w-56 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xl py-1.5 z-50 text-xs text-slate-700 dark:text-slate-200">
+                      <div className="px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                        Paragraph Styles
+                      </div>
+                      {BLOCK_STYLES.map((bs) => (
+                        <button
+                          key={bs.id}
+                          type="button"
+                          onMouseDown={(e) => e.preventDefault()}
+                          onClick={() => {
+                            applyBlockStyle(bs);
+                            setActiveMenu(null);
+                          }}
+                          className="w-full text-left px-3.5 py-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-between cursor-pointer"
+                        >
+                          <span className={bs.id.startsWith("h") || bs.id === "title" ? "font-bold" : ""}>{bs.label}</span>
+                          {currentBlockStyle === bs.id && <Check size={13} className="text-indigo-600" />}
+                        </button>
+                      ))}
+                      <div className="my-1 border-t border-slate-100 dark:border-slate-800" />
                       <button
+                        type="button"
+                        onMouseDown={(e) => e.preventDefault()}
                         onClick={() => {
-                          execCmd("bold");
+                          execCmd("insertUnorderedList");
                           setActiveMenu(null);
                         }}
-                        className="w-full text-left px-3 py-1.5 hover:bg-slate-50 dark:hover:bg-slate-800 font-bold"
+                        className="w-full text-left px-3.5 py-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-2 cursor-pointer"
                       >
-                        Bold
+                        <ListBullets size={14} /> Bulleted list
                       </button>
                       <button
+                        type="button"
+                        onMouseDown={(e) => e.preventDefault()}
                         onClick={() => {
-                          execCmd("italic");
+                          execCmd("insertOrderedList");
                           setActiveMenu(null);
                         }}
-                        className="w-full text-left px-3 py-1.5 hover:bg-slate-50 dark:hover:bg-slate-800 italic"
+                        className="w-full text-left px-3.5 py-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-2 cursor-pointer"
                       >
-                        Italic
+                        <ListNumbers size={14} /> Numbered list
                       </button>
+                      <div className="my-1 border-t border-slate-100 dark:border-slate-800" />
                       <button
-                        onClick={() => {
-                          execCmd("underline");
-                          setActiveMenu(null);
-                        }}
-                        className="w-full text-left px-3 py-1.5 hover:bg-slate-50 dark:hover:bg-slate-800 underline"
-                      >
-                        Underline
-                      </button>
-                      <button
+                        type="button"
+                        onMouseDown={(e) => e.preventDefault()}
                         onClick={() => {
                           execCmd("removeFormat");
                           setActiveMenu(null);
                         }}
-                        className="w-full text-left px-3 py-1.5 hover:bg-slate-50 dark:hover:bg-slate-800"
+                        className="w-full text-left px-3.5 py-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-2 text-rose-600 cursor-pointer"
                       >
-                        Clear formatting
+                        <Eraser size={14} /> Clear formatting
                       </button>
                     </div>
                   )}
                 </div>
 
-                {/* Tools */}
+                {/* TOOLS MENU */}
                 <div className="relative">
                   <button
                     type="button"
                     onClick={() => setActiveMenu(activeMenu === "tools" ? null : "tools")}
-                    className="hover:text-slate-900 dark:hover:text-slate-100 px-1 py-0.5 rounded hover:bg-slate-100 dark:hover:bg-slate-800"
+                    className={`px-1.5 py-0.5 rounded transition-colors cursor-pointer ${
+                      activeMenu === "tools"
+                        ? "bg-slate-200/80 dark:bg-slate-800 text-slate-900 dark:text-white font-medium"
+                        : "hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800"
+                    }`}
                   >
                     Tools
                   </button>
                   {activeMenu === "tools" && (
-                    <div className="absolute left-0 top-full mt-1 w-40 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-md shadow-lg py-1 z-50 text-xs text-slate-700 dark:text-slate-200">
+                    <div className="absolute left-0 top-full mt-1 w-60 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xl py-1.5 z-50 text-xs text-slate-700 dark:text-slate-200">
                       <button
+                        type="button"
+                        onClick={handleAutoPaginateAll}
+                        className="w-full text-left px-3.5 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-2.5 cursor-pointer"
+                      >
+                        <Sparkle size={15} className="text-indigo-600" />
+                        <span>Auto-paginate overflowing pages</span>
+                      </button>
+                      <button
+                        type="button"
                         onClick={() => {
-                          const words = getCombinedHtml().replace(/<[^>]+>/g, "").split(/\s+/).filter(Boolean).length;
-                          toast(`Word count: ${words}`);
+                          const html = getCombinedHtml();
+                          const plain = html.replace(/<[^>]+>/g, " ").trim();
+                          const words = plain ? plain.split(/\s+/).filter(Boolean).length : 0;
+                          const chars = plain.length;
+                          const vars = (html.match(/\{\{[a-zA-Z0-9_]+\}\}/g) || []).length;
+                          toast.success(
+                            `${pages.length} page(s) • ${words} words • ${chars} chars • ${vars} dynamic variable(s)`
+                          );
                           setActiveMenu(null);
                         }}
-                        className="w-full text-left px-3 py-1.5 hover:bg-slate-50 dark:hover:bg-slate-800"
+                        className="w-full text-left px-3.5 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-2.5 cursor-pointer"
                       >
-                        Word count
+                        <FileText size={15} className="text-slate-500" />
+                        <span>Word & variable count</span>
                       </button>
                     </div>
                   )}
@@ -1061,8 +2014,19 @@ export default function DocumentEditorPage() {
               title="Play interactive tour of the Document Editor"
             >
               <Play size={11} weight="fill" className="text-indigo-600 dark:text-indigo-400" />
-              <span>Play tour</span>
+              <span className="hidden sm:inline">Play tour</span>
             </button>
+
+            <button
+              type="button"
+              onClick={handleDownloadPdf}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 rounded-lg transition-all cursor-pointer shadow-2xs"
+              title="Download document as PDF"
+            >
+              <DownloadSimple size={14} weight="bold" className="text-indigo-600 dark:text-indigo-400" />
+              <span className="hidden md:inline">Download PDF</span>
+            </button>
+
             <AppButton
               variant={isPreviewMode ? "primary" : "secondary"}
               onClick={() => setIsPreviewMode(!isPreviewMode)}
@@ -1080,181 +2044,477 @@ export default function DocumentEditorPage() {
         </div>
       </header>
 
-      {/* Formatting Toolbar - Fixed & Pinned */}
-      <div className="bg-[#f0f4f9] dark:bg-slate-900/80 border-b border-slate-200 dark:border-slate-800 px-3 py-1 flex items-center gap-1 overflow-x-auto flex-none shrink-0 z-20 sticky top-[49px]">
+      {/* Google Docs Style Formatting Toolbar - Fixed & Pinned */}
+      <div
+        ref={toolbarDropdownRef}
+        className="bg-[#edf2fa] dark:bg-slate-900/95 border-b border-slate-200/90 dark:border-slate-800 px-3 py-1.5 flex items-center gap-1 flex-wrap flex-none shrink-0 z-20"
+      >
+        {/* Undo / Redo / Print */}
         <button
           type="button"
+          onMouseDown={(e) => e.preventDefault()}
           onClick={() => execCmd("undo")}
-          className="p-1.5 rounded hover:bg-white dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300"
-          title="Undo"
+          className="p-1.5 rounded hover:bg-slate-200/70 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 cursor-pointer"
+          title="Undo (Ctrl+Z)"
         >
           <ArrowCounterClockwise size={14} weight="bold" />
         </button>
         <button
           type="button"
+          onMouseDown={(e) => e.preventDefault()}
           onClick={() => execCmd("redo")}
-          className="p-1.5 rounded hover:bg-white dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300"
-          title="Redo"
+          className="p-1.5 rounded hover:bg-slate-200/70 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 cursor-pointer"
+          title="Redo (Ctrl+Y)"
         >
           <ArrowClockwise size={14} weight="bold" />
         </button>
         <button
           type="button"
+          onMouseDown={(e) => e.preventDefault()}
           onClick={handlePrint}
-          className="p-1.5 rounded hover:bg-white dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300"
-          title="Print"
+          className="p-1.5 rounded hover:bg-slate-200/70 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 cursor-pointer"
+          title="Print / Save as PDF (Ctrl+P)"
         >
           <Printer size={14} weight="bold" />
         </button>
 
         <div className="h-4 w-px bg-slate-300 dark:bg-slate-700 mx-1" />
 
-        {/* Zoom */}
+        {/* Zoom Selector */}
         <select
           value={zoomLevel}
           onChange={(e) => setZoomLevel(e.target.value)}
-          className="bg-transparent hover:bg-white dark:hover:bg-slate-800 text-slate-800 dark:text-slate-200 text-xs px-1.5 py-1 rounded border-0 outline-none cursor-pointer"
+          className="bg-transparent hover:bg-slate-200/70 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-200 text-xs font-medium px-1.5 py-1 rounded border-0 outline-none cursor-pointer"
+          title="Zoom"
         >
           <option value="75%">75%</option>
           <option value="90%">90%</option>
           <option value="100%">100%</option>
           <option value="125%">125%</option>
+          <option value="150%">150%</option>
         </select>
 
         <div className="h-4 w-px bg-slate-300 dark:bg-slate-700 mx-1" />
 
-        {/* Font Family */}
-        <select
-          value={currentFont}
-          onChange={(e) => handleFontChange(e.target.value)}
-          className="bg-transparent hover:bg-white dark:hover:bg-slate-800 text-slate-800 dark:text-slate-200 text-xs px-2 py-1 rounded border-0 outline-none cursor-pointer max-w-[130px] truncate"
-        >
-          <option value="Arial">Arial</option>
-          <option value="Georgia">Georgia</option>
-          <option value="Times New Roman">Times New Roman</option>
-          <option value="Calibri">Calibri</option>
-          <option value="Courier New">Courier New</option>
-        </select>
+        {/* GOOGLE DOCS BLOCK STYLE DROPDOWN (Normal text, Title, Subtitle, Heading 1-4) */}
+        <div className="relative">
+          <button
+            type="button"
+            onMouseDown={(e) => {
+              e.preventDefault();
+              saveSelection();
+            }}
+            onClick={() => setOpenToolbarDropdown(openToolbarDropdown === "style" ? null : "style")}
+            className="flex items-center justify-between gap-2 min-w-[115px] px-2.5 py-1 rounded hover:bg-slate-200/70 dark:hover:bg-slate-800 text-xs font-medium text-slate-800 dark:text-slate-200 cursor-pointer"
+            title="Styles (Normal text, Title, Headings)"
+          >
+            <span className="truncate">{activeBlockStyleLabel}</span>
+            <CaretDown size={11} />
+          </button>
 
-        {/* Font Size */}
-        <div className="flex items-center bg-white dark:bg-slate-800 rounded border border-slate-300 dark:border-slate-700 px-1 py-0.5">
-          <button
-            type="button"
-            onClick={() => handleFontSizeChange(Math.max(8, parseInt(currentFontSize) - 1).toString())}
-            className="px-1 text-slate-600 dark:text-slate-300 hover:text-black dark:hover:text-white font-bold text-xs"
-          >
-            -
-          </button>
-          <span className="px-1.5 text-xs font-bold text-slate-800 dark:text-slate-100 min-w-[20px] text-center">
-            {currentFontSize}
-          </span>
-          <button
-            type="button"
-            onClick={() => handleFontSizeChange((parseInt(currentFontSize) + 1).toString())}
-            className="px-1 text-slate-600 dark:text-slate-300 hover:text-black dark:hover:text-white font-bold text-xs"
-          >
-            +
-          </button>
+          {openToolbarDropdown === "style" && (
+            <div className="absolute left-0 top-full mt-1 w-56 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-2xl py-1.5 z-50 divide-y divide-slate-100 dark:divide-slate-800">
+              {BLOCK_STYLES.map((bs) => {
+                const isActive = currentBlockStyle === bs.id;
+                return (
+                  <button
+                    key={bs.id}
+                    type="button"
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={() => applyBlockStyle(bs)}
+                    className={`w-full text-left px-3.5 py-2.5 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-2.5 cursor-pointer transition-colors ${
+                      isActive ? "bg-indigo-50/70 dark:bg-indigo-950/40" : ""
+                    }`}
+                  >
+                    <span className="w-4 flex items-center justify-center shrink-0">
+                      {isActive && <Check size={14} weight="bold" className="text-indigo-600" />}
+                    </span>
+                    <span className={bs.previewClass}>{bs.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
         </div>
 
         <div className="h-4 w-px bg-slate-300 dark:bg-slate-700 mx-1" />
 
-        {/* Bold, Italic, Underline */}
+        {/* FONT FAMILY DROPDOWN */}
+        <div className="relative">
+          <button
+            type="button"
+            onMouseDown={(e) => {
+              e.preventDefault();
+              saveSelection();
+            }}
+            onClick={() => setOpenToolbarDropdown(openToolbarDropdown === "font" ? null : "font")}
+            className="flex items-center justify-between gap-2 min-w-[110px] max-w-[140px] px-2.5 py-1 rounded hover:bg-slate-200/70 dark:hover:bg-slate-800 text-xs font-medium text-slate-800 dark:text-slate-200 cursor-pointer"
+            title="Font Family"
+          >
+            <span className="truncate" style={{ fontFamily: currentFont }}>
+              {currentFont}
+            </span>
+            <CaretDown size={11} />
+          </button>
+
+          {openToolbarDropdown === "font" && (
+            <div className="absolute left-0 top-full mt-1 w-52 max-h-72 overflow-y-auto bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-2xl py-1 z-50">
+              {FONT_FAMILIES.map((f) => (
+                <button
+                  key={f}
+                  type="button"
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={() => handleFontChange(f)}
+                  className="w-full text-left px-3 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-2 text-xs text-slate-800 dark:text-slate-200 cursor-pointer"
+                  style={{ fontFamily: f }}
+                >
+                  <span className="w-4 shrink-0">
+                    {currentFont === f && <Check size={13} weight="bold" className="text-indigo-600" />}
+                  </span>
+                  <span>{f}</span>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div className="h-4 w-px bg-slate-300 dark:bg-slate-700 mx-1" />
+
+        {/* FONT SIZE STEPPER & DROPDOWN (- 11 +) */}
+        <div className="relative flex items-center gap-0.5">
+          <button
+            type="button"
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={() => handleFontSizeChange(Math.max(8, (parseInt(currentFontSize, 10) || 11) - 1))}
+            className="w-6 h-6 flex items-center justify-center rounded hover:bg-slate-200/70 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold text-xs cursor-pointer"
+            title="Decrease font size"
+          >
+            −
+          </button>
+          <button
+            type="button"
+            onMouseDown={(e) => {
+              e.preventDefault();
+              saveSelection();
+            }}
+            onClick={() => setOpenToolbarDropdown(openToolbarDropdown === "size" ? null : "size")}
+            className="min-w-[32px] h-6 px-1.5 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded text-xs font-semibold text-slate-800 dark:text-slate-100 text-center cursor-pointer hover:border-indigo-500"
+            title="Font size (pt)"
+          >
+            {currentFontSize}
+          </button>
+          <button
+            type="button"
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={() => handleFontSizeChange(Math.min(72, (parseInt(currentFontSize, 10) || 11) + 1))}
+            className="w-6 h-6 flex items-center justify-center rounded hover:bg-slate-200/70 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold text-xs cursor-pointer"
+            title="Increase font size"
+          >
+            +
+          </button>
+
+          {openToolbarDropdown === "size" && (
+            <div className="absolute left-6 top-full mt-1 w-20 max-h-64 overflow-y-auto bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xl py-1 z-50">
+              {FONT_SIZES.map((sz) => (
+                <button
+                  key={sz}
+                  type="button"
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={() => handleFontSizeChange(sz)}
+                  className={`w-full text-center py-1.5 text-xs hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer ${
+                    String(currentFontSize) === sz ? "bg-indigo-50 text-indigo-600 font-bold" : "text-slate-700 dark:text-slate-200"
+                  }`}
+                >
+                  {sz}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div className="h-4 w-px bg-slate-300 dark:bg-slate-700 mx-1" />
+
+        {/* Bold, Italic, Underline, Strikethrough */}
         <button
           type="button"
+          onMouseDown={(e) => e.preventDefault()}
           onClick={() => execCmd("bold")}
-          className="p-1.5 rounded hover:bg-white dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold"
-          title="Bold"
+          className={`p-1.5 rounded cursor-pointer transition-colors ${
+            formatState.bold
+              ? "bg-indigo-100 text-indigo-700 dark:bg-indigo-900/60 dark:text-indigo-300"
+              : "hover:bg-slate-200/70 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300"
+          }`}
+          title="Bold (Ctrl+B)"
         >
           <TextB size={14} weight="bold" />
         </button>
         <button
           type="button"
+          onMouseDown={(e) => e.preventDefault()}
           onClick={() => execCmd("italic")}
-          className="p-1.5 rounded hover:bg-white dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300"
-          title="Italic"
+          className={`p-1.5 rounded cursor-pointer transition-colors ${
+            formatState.italic
+              ? "bg-indigo-100 text-indigo-700 dark:bg-indigo-900/60 dark:text-indigo-300"
+              : "hover:bg-slate-200/70 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300"
+          }`}
+          title="Italic (Ctrl+I)"
         >
           <TextItalic size={14} weight="bold" />
         </button>
         <button
           type="button"
+          onMouseDown={(e) => e.preventDefault()}
           onClick={() => execCmd("underline")}
-          className="p-1.5 rounded hover:bg-white dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300"
-          title="Underline"
+          className={`p-1.5 rounded cursor-pointer transition-colors ${
+            formatState.underline
+              ? "bg-indigo-100 text-indigo-700 dark:bg-indigo-900/60 dark:text-indigo-300"
+              : "hover:bg-slate-200/70 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300"
+          }`}
+          title="Underline (Ctrl+U)"
         >
           <TextUnderline size={14} weight="bold" />
         </button>
+        <button
+          type="button"
+          onMouseDown={(e) => e.preventDefault()}
+          onClick={() => execCmd("strikeThrough")}
+          className={`p-1.5 rounded cursor-pointer transition-colors ${
+            formatState.strikeThrough
+              ? "bg-indigo-100 text-indigo-700 dark:bg-indigo-900/60 dark:text-indigo-300"
+              : "hover:bg-slate-200/70 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300"
+          }`}
+          title="Strikethrough"
+        >
+          <TextStrikethrough size={14} weight="bold" />
+        </button>
+
+        {/* Text Color Picker */}
+        <div className="relative">
+          <button
+            type="button"
+            onMouseDown={(e) => {
+              e.preventDefault();
+              saveSelection();
+            }}
+            onClick={() => setOpenToolbarDropdown(openToolbarDropdown === "color" ? null : "color")}
+            className="p-1.5 rounded hover:bg-slate-200/70 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 flex flex-col items-center cursor-pointer"
+            title="Text color"
+          >
+            <span className="text-xs font-extrabold leading-none">A</span>
+            <span className="w-3.5 h-1 bg-indigo-600 rounded-full mt-0.5" />
+          </button>
+          {openToolbarDropdown === "color" && (
+            <div className="absolute left-0 top-full mt-1 p-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xl z-50 w-40">
+              <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">Text Color</div>
+              <div className="grid grid-cols-4 gap-1.5">
+                {TEXT_COLORS.map((c) => (
+                  <button
+                    key={c}
+                    type="button"
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={() => {
+                      execCmd("foreColor", c);
+                      setOpenToolbarDropdown(null);
+                    }}
+                    className="w-6 h-6 rounded-full border border-slate-200 hover:scale-110 transition-transform cursor-pointer"
+                    style={{ backgroundColor: c }}
+                    title={c}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Highlight Color Picker */}
+        <div className="relative">
+          <button
+            type="button"
+            onMouseDown={(e) => {
+              e.preventDefault();
+              saveSelection();
+            }}
+            onClick={() => setOpenToolbarDropdown(openToolbarDropdown === "highlight" ? null : "highlight")}
+            className="p-1.5 rounded hover:bg-slate-200/70 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 cursor-pointer"
+            title="Highlight color"
+          >
+            <Highlighter size={14} weight="bold" />
+          </button>
+          {openToolbarDropdown === "highlight" && (
+            <div className="absolute left-0 top-full mt-1 p-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xl z-50 w-40">
+              <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">Highlight</div>
+              <div className="grid grid-cols-4 gap-1.5">
+                {HIGHLIGHT_COLORS.map((c) => (
+                  <button
+                    key={c}
+                    type="button"
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={() => {
+                      execCmd("hiliteColor", c);
+                      setOpenToolbarDropdown(null);
+                    }}
+                    className="w-6 h-6 rounded-full border border-slate-300 hover:scale-110 transition-transform cursor-pointer flex items-center justify-center text-[9px]"
+                    style={{ backgroundColor: c === "transparent" ? "#ffffff" : c }}
+                    title={c === "transparent" ? "None" : c}
+                  >
+                    {c === "transparent" && "✕"}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
 
         <div className="h-4 w-px bg-slate-300 dark:bg-slate-700 mx-1" />
 
         {/* Alignments */}
         <button
           type="button"
+          onMouseDown={(e) => e.preventDefault()}
           onClick={() => execCmd("justifyLeft")}
-          className="p-1.5 rounded hover:bg-white dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300"
+          className={`p-1.5 rounded cursor-pointer ${
+            formatState.justifyLeft
+              ? "bg-indigo-100 text-indigo-700 dark:bg-indigo-900/60 dark:text-indigo-300"
+              : "hover:bg-slate-200/70 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300"
+          }`}
           title="Align Left"
         >
           <TextAlignLeft size={14} weight="bold" />
         </button>
         <button
           type="button"
+          onMouseDown={(e) => e.preventDefault()}
           onClick={() => execCmd("justifyCenter")}
-          className="p-1.5 rounded hover:bg-white dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300"
+          className={`p-1.5 rounded cursor-pointer ${
+            formatState.justifyCenter
+              ? "bg-indigo-100 text-indigo-700 dark:bg-indigo-900/60 dark:text-indigo-300"
+              : "hover:bg-slate-200/70 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300"
+          }`}
           title="Align Center"
         >
           <TextAlignCenter size={14} weight="bold" />
         </button>
         <button
           type="button"
+          onMouseDown={(e) => e.preventDefault()}
           onClick={() => execCmd("justifyRight")}
-          className="p-1.5 rounded hover:bg-white dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300"
+          className={`p-1.5 rounded cursor-pointer ${
+            formatState.justifyRight
+              ? "bg-indigo-100 text-indigo-700 dark:bg-indigo-900/60 dark:text-indigo-300"
+              : "hover:bg-slate-200/70 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300"
+          }`}
           title="Align Right"
         >
           <TextAlignRight size={14} weight="bold" />
         </button>
         <button
           type="button"
+          onMouseDown={(e) => e.preventDefault()}
           onClick={() => execCmd("justifyFull")}
-          className="p-1.5 rounded hover:bg-white dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300"
+          className={`p-1.5 rounded cursor-pointer ${
+            formatState.justifyFull
+              ? "bg-indigo-100 text-indigo-700 dark:bg-indigo-900/60 dark:text-indigo-300"
+              : "hover:bg-slate-200/70 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300"
+          }`}
           title="Justify"
         >
           <TextAlignJustify size={14} weight="bold" />
         </button>
 
+        {/* Line Spacing */}
+        <div className="relative">
+          <button
+            type="button"
+            onMouseDown={(e) => {
+              e.preventDefault();
+              saveSelection();
+            }}
+            onClick={() => setOpenToolbarDropdown(openToolbarDropdown === "spacing" ? null : "spacing")}
+            className="p-1.5 rounded hover:bg-slate-200/70 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 cursor-pointer"
+            title="Line spacing"
+          >
+            <ArrowsOutLineVertical size={14} weight="bold" />
+          </button>
+          {openToolbarDropdown === "spacing" && (
+            <div className="absolute left-0 top-full mt-1 w-36 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xl py-1 z-50 text-xs">
+              {[
+                { label: "Single (1.0)", val: "1.2" },
+                { label: "1.15", val: "1.35" },
+                { label: "1.5", val: "1.6" },
+                { label: "Double (2.0)", val: "2.0" },
+              ].map((sp) => (
+                <button
+                  key={sp.val}
+                  type="button"
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={() => handleLineSpacingChange(sp.val)}
+                  className="w-full text-left px-3 py-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-between cursor-pointer"
+                >
+                  <span>{sp.label}</span>
+                  {currentLineSpacing === sp.val && <Check size={12} className="text-indigo-600" />}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
         <div className="h-4 w-px bg-slate-300 dark:bg-slate-700 mx-1" />
 
-        {/* Lists & Indents */}
+        {/* Bullet List, Numbered List, Outdent, Indent */}
         <button
           type="button"
+          onMouseDown={(e) => e.preventDefault()}
           onClick={() => execCmd("insertUnorderedList")}
-          className="p-1.5 rounded hover:bg-white dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300"
-          title="Bullet List"
+          className={`p-1.5 rounded cursor-pointer transition-colors ${
+            formatState.unorderedList
+              ? "bg-indigo-100 text-indigo-700 dark:bg-indigo-900/60 dark:text-indigo-300"
+              : "hover:bg-slate-200/70 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300"
+          }`}
+          title="Bulleted list"
         >
-          <ListBullets size={14} weight="bold" />
+          <ListBullets size={15} weight="bold" />
         </button>
         <button
           type="button"
+          onMouseDown={(e) => e.preventDefault()}
           onClick={() => execCmd("insertOrderedList")}
-          className="p-1.5 rounded hover:bg-white dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300"
-          title="Numbered List"
+          className={`p-1.5 rounded cursor-pointer transition-colors ${
+            formatState.orderedList
+              ? "bg-indigo-100 text-indigo-700 dark:bg-indigo-900/60 dark:text-indigo-300"
+              : "hover:bg-slate-200/70 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300"
+          }`}
+          title="Numbered list"
         >
-          <ListNumbers size={14} weight="bold" />
+          <ListNumbers size={15} weight="bold" />
         </button>
         <button
           type="button"
+          onMouseDown={(e) => e.preventDefault()}
           onClick={() => execCmd("outdent")}
-          className="p-1.5 rounded hover:bg-white dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300"
-          title="Outdent"
+          className="p-1.5 rounded hover:bg-slate-200/70 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 cursor-pointer"
+          title="Decrease indent"
         >
           <TextOutdent size={14} weight="bold" />
         </button>
         <button
           type="button"
+          onMouseDown={(e) => e.preventDefault()}
           onClick={() => execCmd("indent")}
-          className="p-1.5 rounded hover:bg-white dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300"
-          title="Indent"
+          className="p-1.5 rounded hover:bg-slate-200/70 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 cursor-pointer"
+          title="Increase indent"
         >
           <TextIndent size={14} weight="bold" />
+        </button>
+
+        {/* Clear Formatting */}
+        <button
+          type="button"
+          onMouseDown={(e) => e.preventDefault()}
+          onClick={() => execCmd("removeFormat")}
+          className="p-1.5 rounded hover:bg-slate-200/70 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 cursor-pointer"
+          title="Clear formatting"
+        >
+          <Eraser size={14} weight="bold" />
         </button>
 
         <div className="h-4 w-px bg-slate-300 dark:bg-slate-700 mx-1" />
@@ -1262,34 +2522,36 @@ export default function DocumentEditorPage() {
         {/* Add Page & Page Break Buttons */}
         <button
           type="button"
+          onMouseDown={(e) => e.preventDefault()}
           onClick={() => handleAddPage(activePageIdxRef.current)}
-          className="p-1.5 rounded hover:bg-white dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 flex items-center gap-1 text-xs cursor-pointer"
+          className="px-2 py-1 rounded hover:bg-white dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 flex items-center gap-1 text-xs cursor-pointer font-semibold"
           title="Add New A4 Page"
         >
-          <Plus size={14} weight="bold" className="text-[#5144E8]" />
-          <span className="hidden sm:inline text-xs font-semibold text-slate-700 dark:text-slate-300">Add page</span>
+          <Plus size={13} weight="bold" className="text-[#5144E8]" />
+          <span className="hidden sm:inline">Add page</span>
         </button>
 
         <button
           type="button"
+          onMouseDown={(e) => e.preventDefault()}
           onClick={insertPageBreak}
-          className="p-1.5 rounded hover:bg-white dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 flex items-center gap-1.5 text-xs cursor-pointer"
+          className="px-2 py-1 rounded hover:bg-white dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 flex items-center gap-1 text-xs cursor-pointer font-semibold"
           title="Insert Page Break (Ctrl+Enter)"
         >
-          <FileText size={14} weight="bold" />
-          <span className="hidden sm:inline text-xs font-semibold text-slate-700 dark:text-slate-300">Page break</span>
+          <FileText size={13} weight="bold" />
+          <span className="hidden sm:inline">Page break</span>
         </button>
       </div>
 
       {/* Preview Mode Bar */}
       {isPreviewMode && (
-        <div className="bg-slate-800 text-white px-4 py-1.5 flex items-center justify-between text-xs flex-none shrink-0 z-20 sticky top-[86px]">
-          <span>Previewing record output</span>
+        <div className="bg-slate-800 text-white px-4 py-1.5 flex items-center justify-between text-xs flex-none shrink-0 z-20">
+          <span>Previewing merged recipient output ({pages.length} page{pages.length > 1 ? "s" : ""})</span>
           <div className="flex items-center gap-2">
-            <span className="text-slate-400">Record:</span>
+            <span className="text-slate-400">Sample Recipient:</span>
             <select
               value={selectedRecordIdx}
-              onChange={(e) => setSelectedRecordIdx(parseInt(e.target.value))}
+              onChange={(e) => setSelectedRecordIdx(parseInt(e.target.value, 10))}
               className="bg-slate-900 text-white px-2 py-0.5 rounded text-xs border border-slate-700"
             >
               {SAMPLE_RECORDS.map((r, i) => (
@@ -1314,13 +2576,13 @@ export default function DocumentEditorPage() {
           <div className="p-2 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
             {isSidebarOpen && (
               <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                Variables
+                ProofDeck Tools
               </span>
             )}
             <button
               type="button"
               onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-              className="p-1 rounded text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 mx-auto"
+              className="p-1 rounded text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 mx-auto cursor-pointer"
               title={isSidebarOpen ? "Collapse" : "Expand"}
             >
               {isSidebarOpen ? <ArrowLeft size={14} /> : <CaretRight size={14} />}
@@ -1334,7 +2596,7 @@ export default function DocumentEditorPage() {
                 <button
                   type="button"
                   onClick={() => setActiveTab("variables")}
-                  className={`flex-1 py-1 text-xs font-medium rounded ${
+                  className={`flex-1 py-1 text-xs font-medium rounded cursor-pointer ${
                     activeTab === "variables"
                       ? "bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-slate-100"
                       : "text-slate-500 hover:text-slate-900 dark:hover:text-slate-200"
@@ -1345,7 +2607,7 @@ export default function DocumentEditorPage() {
                 <button
                   type="button"
                   onClick={() => setActiveTab("presets")}
-                  className={`flex-1 py-1 text-xs font-medium rounded ${
+                  className={`flex-1 py-1 text-xs font-medium rounded cursor-pointer ${
                     activeTab === "presets"
                       ? "bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-slate-100"
                       : "text-slate-500 hover:text-slate-900 dark:hover:text-slate-200"
@@ -1356,7 +2618,7 @@ export default function DocumentEditorPage() {
                 <button
                   type="button"
                   onClick={() => setActiveTab("security")}
-                  className={`flex-1 py-1 text-xs font-medium rounded ${
+                  className={`flex-1 py-1 text-xs font-medium rounded cursor-pointer ${
                     activeTab === "security"
                       ? "bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-slate-100"
                       : "text-slate-500 hover:text-slate-900 dark:hover:text-slate-200"
@@ -1366,9 +2628,36 @@ export default function DocumentEditorPage() {
                 </button>
               </div>
 
-              {/* Tab 1: Variables */}
+              {/* Tab 1: Variables & ProofDeck Blocks */}
               {activeTab === "variables" && (
                 <div className="flex-1 overflow-y-auto p-3 space-y-4">
+                  {/* Quick ProofDeck Blocks */}
+                  <div className="space-y-1.5">
+                    <div className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">
+                      Official Blocks
+                    </div>
+                    <div className="grid grid-cols-2 gap-1.5">
+                      <button
+                        type="button"
+                        onMouseDown={(e) => e.preventDefault()}
+                        onClick={insertSignatureBlock}
+                        className="p-2 rounded-lg border border-slate-200 dark:border-slate-800 hover:border-indigo-400 hover:bg-indigo-50/20 text-left text-[11px] font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1.5 cursor-pointer transition-colors"
+                      >
+                        <PenNib size={13} className="text-indigo-600 shrink-0" />
+                        <span className="truncate">+ Signature</span>
+                      </button>
+                      <button
+                        type="button"
+                        onMouseDown={(e) => e.preventDefault()}
+                        onClick={insertOfficialSeal}
+                        className="p-2 rounded-lg border border-slate-200 dark:border-slate-800 hover:border-indigo-400 hover:bg-indigo-50/20 text-left text-[11px] font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1.5 cursor-pointer transition-colors"
+                      >
+                        <SealCheck size={13} className="text-amber-600 shrink-0" />
+                        <span className="truncate">+ Seal Stamp</span>
+                      </button>
+                    </div>
+                  </div>
+
                   <div className="relative">
                     <MagnifyingGlass size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
                     <input
@@ -1391,8 +2680,9 @@ export default function DocumentEditorPage() {
                             key={v.key}
                             draggable
                             onDragStart={(e) => handleDragStart(e, v.key)}
+                            onMouseDown={(e) => e.preventDefault()}
                             onClick={() => insertVariable(v.key, v.label)}
-                            className="flex items-center justify-between p-1.5 rounded border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-indigo-400 hover:bg-indigo-50/20 cursor-grab active:cursor-grabbing text-xs transition-colors"
+                            className="flex items-center justify-between p-1.5 rounded border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-indigo-400 hover:bg-indigo-50/20 cursor-pointer text-xs transition-colors"
                           >
                             <span className="text-slate-700 dark:text-slate-300 font-medium truncate">
                               {v.label}
@@ -1415,6 +2705,12 @@ export default function DocumentEditorPage() {
                         type="text"
                         value={customVarName}
                         onChange={(e) => setCustomVarName(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            e.preventDefault();
+                            handleAddCustomVar();
+                          }
+                        }}
                         placeholder="e.g. matric_no"
                         className="flex-1 px-2 py-1 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded outline-none"
                       />
@@ -1461,7 +2757,7 @@ export default function DocumentEditorPage() {
                       type="checkbox"
                       checked={includeQrCode}
                       onChange={(e) => setIncludeQrCode(e.target.checked)}
-                      className="w-4 h-4 rounded text-blue-600"
+                      className="w-4 h-4 rounded text-blue-600 cursor-pointer"
                     />
                   </div>
 
@@ -1487,20 +2783,35 @@ export default function DocumentEditorPage() {
 
         {/* Right Canvas Column */}
         <div className="flex-1 min-h-0 flex flex-col overflow-hidden bg-[#f0f4f9] dark:bg-slate-950">
-          {/* Margin Ruler - Inside Canvas Column, perfectly aligned with the A4 paper! */}
-          <div className="h-6 bg-[#f8f9fa] dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 flex items-center justify-center flex-none shrink-0 z-20 shadow-2xs">
+          {/* Margin Ruler - Inside Canvas Column, aligned with the A4 paper */}
+          <div className="h-6 bg-[#f8f9fa] dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 flex items-center justify-center flex-none shrink-0 z-10 shadow-2xs">
             <div className="w-[210mm] relative h-full flex items-center">
-              <div className="absolute left-[25mm] text-[#5144E8] text-[10px] leading-none select-none font-bold">▼</div>
-              <div className="absolute right-[25mm] text-[#5144E8] text-[10px] leading-none select-none font-bold">▼</div>
-              <div className="w-full h-0.5 bg-slate-300 dark:bg-slate-700 mx-[25mm] rounded-full" />
+              <div
+                className="absolute text-[#5144E8] text-[10px] leading-none select-none font-bold"
+                style={{ left: `${pageMarginMm}mm` }}
+              >
+                ▼
+              </div>
+              <div
+                className="absolute text-[#5144E8] text-[10px] leading-none select-none font-bold"
+                style={{ right: `${pageMarginMm}mm` }}
+              >
+                ▼
+              </div>
+              <div
+                className="w-full h-0.5 bg-slate-300 dark:bg-slate-700 rounded-full"
+                style={{ marginLeft: `${pageMarginMm}mm`, marginRight: `${pageMarginMm}mm` }}
+              />
             </div>
           </div>
 
-          {/* Canvas Area - Only this container scrolls */}
-          <main data-tour="doc-editor-canvas" className="flex-1 min-h-0 h-full overflow-y-auto py-8 px-4 sm:px-8 flex justify-center bg-[#f0f4f9] dark:bg-slate-950">
-            {/* Transform wrapper so scroll coordinates are never distorted */}
+          {/* Canvas Scroll Viewport - Block scroll container so flex-shrink never squishes A4 sheets */}
+          <main
+            data-tour="doc-editor-canvas"
+            className="flex-1 min-h-0 h-full overflow-y-auto overflow-x-auto py-8 px-4 sm:px-8 block bg-[#f0f4f9] dark:bg-slate-950"
+          >
             <div
-              className="flex flex-col items-center pb-24"
+              className="w-fit mx-auto flex flex-col items-center pb-28"
               style={{
                 transform: zoomLevel !== "100%" ? `scale(${parseFloat(zoomLevel) / 100})` : undefined,
                 transformOrigin: "top center",
@@ -1510,11 +2821,13 @@ export default function DocumentEditorPage() {
               {pages.map((pageHtml, index) => (
                 <div
                   key={index}
-                  className="bg-white text-slate-900 shadow-sm hover:shadow-md border border-slate-200/90 dark:border-slate-800 relative transition-all rounded-xs mb-8"
+                  data-theme-ignore="true"
+                  className="pd-doc-canvas shrink-0 bg-white text-slate-900 shadow-md border border-slate-200/90 relative transition-shadow rounded-xs mb-10"
                   style={{
                     width: "210mm",
                     minHeight: "297mm",
-                    padding: "25mm",
+                    height: "auto",
+                    padding: `${pageMarginMm}mm`,
                     boxSizing: "border-box",
                   }}
                   onDrop={(e) => handleDrop(e, index)}
@@ -1522,17 +2835,17 @@ export default function DocumentEditorPage() {
                 >
                   {/* Page Indicator & Delete button above printable area */}
                   <div className="absolute -top-6 left-0 right-0 flex items-center justify-between text-[11px] text-slate-400 font-medium px-1 select-none">
-                    <span className="bg-slate-200/70 dark:bg-slate-800 px-2 py-0.5 rounded text-[10px] text-slate-600 dark:text-slate-300 font-semibold tracking-wide">
+                    <span className="bg-slate-200/80 dark:bg-slate-800 px-2 py-0.5 rounded text-[10px] text-slate-600 dark:text-slate-300 font-semibold tracking-wide">
                       Page {index + 1} of {pages.length}
                     </span>
                     {pages.length > 1 && (
                       <button
                         type="button"
                         onClick={() => handleDeletePage(index)}
-                        className="text-slate-400 hover:text-rose-500 transition-colors p-0.5 rounded cursor-pointer flex items-center gap-1 text-[10px]"
+                        className="text-slate-400 hover:text-rose-600 transition-colors px-1.5 py-0.5 rounded cursor-pointer flex items-center gap-1 text-[10px] bg-white/80 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700"
                         title={`Delete page ${index + 1}`}
                       >
-                        <Trash size={13} />
+                        <Trash size={12} />
                         <span>Delete page</span>
                       </button>
                     )}
@@ -1550,7 +2863,11 @@ export default function DocumentEditorPage() {
                   {/* Content Area for this page */}
                   {isPreviewMode ? (
                     <div
-                      className="prose max-w-none text-slate-900 leading-relaxed outline-none min-h-[750px]"
+                      className="pd-doc-editor-content max-w-none text-slate-900 outline-none min-h-[235mm]"
+                      style={{
+                        fontFamily: currentFont,
+                        fontSize: `${currentFontSize}pt`,
+                      }}
                       dangerouslySetInnerHTML={{ __html: renderMergedPreviewForPage(pageHtml) }}
                     />
                   ) : (
@@ -1559,11 +2876,14 @@ export default function DocumentEditorPage() {
                       contentEditable
                       suppressContentEditableWarning
                       onInput={() => handlePageInput(index)}
+                      onPaste={(e) => handlePaste(e, index)}
                       onKeyDown={(e) => handlePageKeyDown(e, index)}
+                      onKeyUp={updateToolbarStateFromSelection}
+                      onMouseUp={updateToolbarStateFromSelection}
                       onFocus={() => {
                         activePageIdxRef.current = index;
                       }}
-                      className="prose max-w-none text-slate-900 leading-relaxed outline-none min-h-[750px]"
+                      className="pd-doc-editor-content max-w-none text-slate-900 outline-none min-h-[235mm]"
                       style={{
                         fontFamily: currentFont,
                         fontSize: `${currentFontSize}pt`,
@@ -1574,7 +2894,7 @@ export default function DocumentEditorPage() {
                   {/* Bottom QR Stamp (Only on the last page) */}
                   {includeQrCode && (qrPosition === "bottom-right" || qrPosition === "bottom-left") && index === pages.length - 1 && (
                     <div
-                      className={`mt-16 pt-6 border-t border-slate-200 flex items-center gap-3 ${
+                      className={`mt-12 pt-5 border-t border-slate-200 flex items-center gap-3 ${
                         qrPosition === "bottom-right" ? "justify-end" : "justify-start"
                       }`}
                     >
@@ -1582,8 +2902,8 @@ export default function DocumentEditorPage() {
                         <QrCode size={40} className="text-slate-800" />
                       </div>
                       <div className="text-left text-[10px] text-slate-500">
-                        <div className="font-semibold text-slate-700">Verified document</div>
-                        <div>Scan QR code to verify authenticity</div>
+                        <div className="font-semibold text-slate-700">Verified ProofDeck Document</div>
+                        <div>Scan QR code to verify authenticity on the ledger</div>
                       </div>
                     </div>
                   )}
@@ -1595,7 +2915,7 @@ export default function DocumentEditorPage() {
                 <button
                   type="button"
                   onClick={() => handleAddPage(pages.length - 1)}
-                  className="mt-2 mb-12 inline-flex items-center gap-2 px-5 py-2.5 bg-white hover:bg-slate-50 text-[#5144E8] font-bold text-xs rounded-xl border border-slate-200/90 shadow-2xs hover:shadow-sm transition-all cursor-pointer"
+                  className="mt-2 mb-12 shrink-0 inline-flex items-center gap-2 px-5 py-2.5 bg-white hover:bg-slate-50 text-[#5144E8] font-bold text-xs rounded-xl border border-slate-200/90 shadow-xs hover:shadow-md transition-all cursor-pointer"
                 >
                   <Plus size={15} weight="bold" />
                   <span>Add Page ({pages.length + 1})</span>
