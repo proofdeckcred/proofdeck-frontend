@@ -171,131 +171,136 @@ function paginateSingleChunk(html) {
     return [html];
   }
 
-  const temp = document.createElement("div");
-  temp.innerHTML = html;
+  try {
+    const temp = document.createElement("div");
+    temp.innerHTML = html;
 
-  // Convert bare text nodes or double <br> into proper <p> blocks
-  const children = Array.from(temp.childNodes);
-  const normalizedBlocks = [];
+    // Convert bare text nodes or double <br> into proper <p> blocks
+    const children = Array.from(temp.childNodes);
+    const normalizedBlocks = [];
 
-  for (const node of children) {
-    if (node.nodeType === Node.TEXT_NODE) {
-      const txt = node.textContent.trim();
-      if (txt) {
-        const lines = txt.split(/\n{2,}/);
-        for (const l of lines) {
-          if (l.trim()) {
-            const p = document.createElement("p");
-            p.textContent = l.trim();
-            normalizedBlocks.push(p.outerHTML);
+    for (const node of children) {
+      if (node.nodeType === Node.TEXT_NODE) {
+        const txt = node.textContent.trim();
+        if (txt) {
+          const lines = txt.split(/\n{2,}/);
+          for (const l of lines) {
+            if (l.trim()) {
+              const p = document.createElement("p");
+              p.textContent = l.trim();
+              normalizedBlocks.push(p.outerHTML);
+            }
           }
         }
+      } else if (node.nodeType === Node.ELEMENT_NODE) {
+        const tag = node.tagName.toUpperCase();
+        // If a single <p> or <div> has huge plain text with many line breaks, split by <br> or \n
+        const innerLen = (node.textContent || "").length;
+        if ((tag === "P" || tag === "DIV") && innerLen > 1200 && node.innerHTML.includes("<br")) {
+          const subParts = node.innerHTML.split(/(?:<br\s*\/?>\s*){2,}/i);
+          if (subParts.length > 1) {
+            for (const sp of subParts) {
+              if (sp.trim()) normalizedBlocks.push(`<p>${sp.trim()}</p>`);
+            }
+            continue;
+          }
+        }
+        normalizedBlocks.push(node.outerHTML);
       }
-    } else if (node.nodeType === Node.ELEMENT_NODE) {
-      const tag = node.tagName.toUpperCase();
-      // If a single <p> or <div> has huge plain text with many line breaks, split by <br> or \n
-      const innerLen = (node.textContent || "").length;
-      if ((tag === "P" || tag === "DIV") && innerLen > 1200 && node.innerHTML.includes("<br")) {
-        const subParts = node.innerHTML.split(/(?:<br\s*\/?>\s*){2,}/i);
-        if (subParts.length > 1) {
-          for (const sp of subParts) {
-            if (sp.trim()) normalizedBlocks.push(`<p>${sp.trim()}</p>`);
+    }
+
+    if (normalizedBlocks.length === 0) return [html];
+
+    // Estimate A4 page capacity (~2400 characters or ~36 visual lines per A4 sheet)
+    const MAX_VISUAL_LINES = 36;
+    const CHARS_PER_LINE = 78;
+
+    const pages = [];
+    let currentBlocks = [];
+    let currentLines = 0;
+
+    for (const blockHtml of normalizedBlocks) {
+      const plain = blockHtml.replace(/<[^>]+>/g, "").trim();
+      const isHeading = /^<h[1-4]/i.test(blockHtml);
+      const isTable = /^<table/i.test(blockHtml);
+      const isHr = /^<hr/i.test(blockHtml);
+
+      if (isTable) {
+        const tblWrap = document.createElement("div");
+        tblWrap.innerHTML = blockHtml;
+        const tblEl = tblWrap.querySelector("table");
+        const theadEl = tblEl?.querySelector("thead");
+        const theadHtml = theadEl ? theadEl.outerHTML : "";
+        const bodyRows = tblEl
+          ? Array.from(tblEl.querySelectorAll("tr")).filter(
+              (r) => r.parentElement?.tagName.toUpperCase() !== "THEAD"
+            )
+          : [];
+
+        if (bodyRows.length > 0) {
+          let rowQueue = [...bodyRows];
+          while (rowQueue.length > 0) {
+            const remainingLines = MAX_VISUAL_LINES - currentLines;
+            const headerCost = theadHtml ? 2.2 : 0.5;
+            // Need at least space for header + 1 row (~4.5 visual lines)
+            if (remainingLines < 4.5 && currentBlocks.length > 0) {
+              pages.push(currentBlocks.join("\n"));
+              currentBlocks = [];
+              currentLines = 0;
+              continue;
+            }
+
+            let usedLines = headerCost;
+            const chunkRows = [];
+            while (rowQueue.length > 0) {
+              const r = rowQueue[0];
+              const rowTextLen = (r.textContent || "").trim().length;
+              const rowLines = Math.max(1.8, Math.ceil(rowTextLen / 65) * 1.4 + 0.6);
+              if (chunkRows.length > 0 && currentLines + usedLines + rowLines > MAX_VISUAL_LINES) {
+                break;
+              }
+              chunkRows.push(rowQueue.shift().outerHTML);
+              usedLines += rowLines;
+            }
+
+            const chunkTableHtml = `<table>${theadHtml}<tbody>${chunkRows.join("")}</tbody></table>`;
+            currentBlocks.push(chunkTableHtml);
+            currentLines += usedLines;
+
+            if (rowQueue.length > 0) {
+              pages.push(currentBlocks.join("\n"));
+              currentBlocks = [];
+              currentLines = 0;
+            }
           }
           continue;
         }
       }
-      normalizedBlocks.push(node.outerHTML);
-    }
-  }
 
-  if (normalizedBlocks.length === 0) return [html];
+      let blockLines = Math.max(1, Math.ceil(plain.length / CHARS_PER_LINE));
+      if (isHeading) blockLines += 1.8;
+      else if (isHr) blockLines += 1;
+      else blockLines += 0.65; // paragraph bottom margin
 
-  // Estimate A4 page capacity (~2400 characters or ~36 visual lines per A4 sheet)
-  const MAX_VISUAL_LINES = 36;
-  const CHARS_PER_LINE = 78;
-
-  const pages = [];
-  let currentBlocks = [];
-  let currentLines = 0;
-
-  for (const blockHtml of normalizedBlocks) {
-    const plain = blockHtml.replace(/<[^>]+>/g, "").trim();
-    const isHeading = /^<h[1-4]/i.test(blockHtml);
-    const isTable = /^<table/i.test(blockHtml);
-    const isHr = /^<hr/i.test(blockHtml);
-
-    if (isTable) {
-      const tblWrap = document.createElement("div");
-      tblWrap.innerHTML = blockHtml;
-      const tblEl = tblWrap.querySelector("table");
-      const theadEl = tblEl?.querySelector("thead");
-      const theadHtml = theadEl ? theadEl.outerHTML : "";
-      const bodyRows = tblEl
-        ? Array.from(tblEl.querySelectorAll("tbody tr, > tr")).filter(
-            (r) => r.parentElement?.tagName.toUpperCase() !== "THEAD"
-          )
-        : [];
-
-      if (bodyRows.length > 0) {
-        let rowQueue = [...bodyRows];
-        while (rowQueue.length > 0) {
-          const remainingLines = MAX_VISUAL_LINES - currentLines;
-          const headerCost = theadHtml ? 2.2 : 0.5;
-          // Need at least space for header + 1 row (~4.5 visual lines)
-          if (remainingLines < 4.5 && currentBlocks.length > 0) {
-            pages.push(currentBlocks.join("\n"));
-            currentBlocks = [];
-            currentLines = 0;
-            continue;
-          }
-
-          let usedLines = headerCost;
-          const chunkRows = [];
-          while (rowQueue.length > 0) {
-            const r = rowQueue[0];
-            const rowTextLen = (r.textContent || "").trim().length;
-            const rowLines = Math.max(1.8, Math.ceil(rowTextLen / 65) * 1.4 + 0.6);
-            if (chunkRows.length > 0 && currentLines + usedLines + rowLines > MAX_VISUAL_LINES) {
-              break;
-            }
-            chunkRows.push(rowQueue.shift().outerHTML);
-            usedLines += rowLines;
-          }
-
-          const chunkTableHtml = `<table>${theadHtml}<tbody>${chunkRows.join("")}</tbody></table>`;
-          currentBlocks.push(chunkTableHtml);
-          currentLines += usedLines;
-
-          if (rowQueue.length > 0) {
-            pages.push(currentBlocks.join("\n"));
-            currentBlocks = [];
-            currentLines = 0;
-          }
-        }
-        continue;
+      if (currentLines + blockLines > MAX_VISUAL_LINES && currentBlocks.length > 0) {
+        pages.push(currentBlocks.join("\n"));
+        currentBlocks = [blockHtml];
+        currentLines = blockLines;
+      } else {
+        currentBlocks.push(blockHtml);
+        currentLines += blockLines;
       }
     }
 
-    let blockLines = Math.max(1, Math.ceil(plain.length / CHARS_PER_LINE));
-    if (isHeading) blockLines += 1.8;
-    else if (isHr) blockLines += 1;
-    else blockLines += 0.65; // paragraph bottom margin
-
-    if (currentLines + blockLines > MAX_VISUAL_LINES && currentBlocks.length > 0) {
+    if (currentBlocks.length > 0) {
       pages.push(currentBlocks.join("\n"));
-      currentBlocks = [blockHtml];
-      currentLines = blockLines;
-    } else {
-      currentBlocks.push(blockHtml);
-      currentLines += blockLines;
     }
-  }
 
-  if (currentBlocks.length > 0) {
-    pages.push(currentBlocks.join("\n"));
+    return pages.length > 0 ? pages : [html];
+  } catch (err) {
+    console.error("Pagination fallback triggered:", err);
+    return [html];
   }
-
-  return pages.length > 0 ? pages : [html];
 }
 
 // --- PRESET DOCUMENT TEMPLATES ---
@@ -816,7 +821,7 @@ export default function DocumentEditorPage() {
       if (lastChild.tagName.toUpperCase() === "TABLE") {
         const theadEl = lastChild.querySelector("thead");
         const theadHtml = theadEl ? theadEl.outerHTML : "";
-        const bodyRows = Array.from(lastChild.querySelectorAll("tbody tr, > tr")).filter(
+        const bodyRows = Array.from(lastChild.querySelectorAll("tr")).filter(
           (r) => r.parentElement?.tagName.toUpperCase() !== "THEAD"
         );
 
@@ -981,7 +986,8 @@ export default function DocumentEditorPage() {
             setIsSaved(true);
           }
         })
-        .catch(() => {
+        .catch((err) => {
+          console.error("Failed to load document:", err);
           toast.error("Could not load document");
         })
         .finally(() => {
