@@ -128,9 +128,7 @@ export const createCustomTemplate = (formData) => {
       JSON.stringify(formData.canvas_data || formData.layout_data || {})
     );
   }
-  return API.post("/templates/upload-custom", body, {
-    headers: { "Content-Type": "multipart/form-data" },
-  });
+  return API.post("/templates/upload-custom", body);
 };
 
 export const updateCustomTemplate = (templateId, formData) => {
@@ -144,9 +142,7 @@ export const updateCustomTemplate = (templateId, formData) => {
       JSON.stringify(formData.canvas_data || formData.layout_data || {})
     );
   }
-  return API.put(`/templates/upload-custom/${templateId}`, body, {
-    headers: { "Content-Type": "multipart/form-data" },
-  });
+  return API.put(`/templates/upload-custom/${templateId}`, body);
 };
 
 // CERTIFICATES

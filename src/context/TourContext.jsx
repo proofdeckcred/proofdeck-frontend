@@ -613,6 +613,7 @@ export function TourProvider({ children }) {
         currentStepIndex,
         currentStep: activeSteps[currentStepIndex] || null,
         startPageTour,
+        startTour: startPageTour,
         stopTour,
         nextStep,
         prevStep,

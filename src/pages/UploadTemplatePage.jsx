@@ -55,6 +55,7 @@ import {
   createCustomTemplate,
   getTemplate,
   updateCustomTemplate,
+  uploadEditorImage,
 } from "../api";
 import CustomTemplateEditor from "../components/CustomTemplateEditor";
 import TextElementControls from "../components/TextElementControls";
@@ -776,7 +777,7 @@ const UploadTemplatePage = () => {
     reader.onload = (event) => {
       const img = new Image();
       img.onload = () => {
-        const MAX_DIM = 1000;
+        const MAX_DIM = 450;
         let w = img.width || 300;
         let h = img.height || 300;
         if (w > MAX_DIM || h > MAX_DIM) {
@@ -793,14 +794,54 @@ const UploadTemplatePage = () => {
         canvas.height = h;
         const ctx = canvas.getContext("2d");
         ctx.drawImage(img, 0, 0, w, h);
-        const mimeType =
-          file.type === "image/jpeg" || ext === "jpg" || ext === "jpeg"
-            ? "image/jpeg"
-            : "image/png";
-        const optimizedDataUrl = canvas.toDataURL(mimeType, 0.9);
+
+        // Try WebP first for transparency + ultra-compact payload (< 35KB), fallback to JPEG/PNG
+        let optimizedDataUrl = canvas.toDataURL("image/webp", 0.85);
+        if (!optimizedDataUrl.startsWith("data:image/webp")) {
+          const mimeType =
+            file.type === "image/jpeg" || ext === "jpg" || ext === "jpeg"
+              ? "image/jpeg"
+              : "image/png";
+          optimizedDataUrl = canvas.toDataURL(mimeType, 0.85);
+        }
+
+        // Immediately add to canvas so user gets instant feedback
         setUploadedAssets((prev) => [...prev, { name: file.name, src: optimizedDataUrl, width: w, height: h }]);
         handleAddImageToCanvas(optimizedDataUrl, w, h);
         toast.success(`Added "${file.name}" to canvas!`);
+
+        // Also upload asset in background so layout_data stores a tiny URL path instead of base64
+        canvas.toBlob(
+          async (blob) => {
+            if (!blob) return;
+            try {
+              const cleanName = (file.name.replace(/\.[^/.]+$/, "") || "logo").replace(/[^a-zA-Z0-9_-]/g, "_");
+              const uploadFile = new File([blob], `${cleanName}.png`, { type: "image/png" });
+              const fd = new FormData();
+              fd.append("image", uploadFile);
+              const res = await uploadEditorImage(fd);
+              const remoteUrl = res.data?.imageUrl;
+              if (remoteUrl) {
+                let relativeUrl = remoteUrl;
+                try {
+                  relativeUrl = new URL(remoteUrl).pathname;
+                } catch {
+                  const cleanServer = SERVER_BASE_URL.replace(/\/+$/, "");
+                  relativeUrl = remoteUrl.replace(cleanServer, "");
+                }
+                setUploadedAssets((prev) =>
+                  prev.map((a) => (a.src === optimizedDataUrl ? { ...a, src: relativeUrl } : a))
+                );
+                setElements((prev) =>
+                  prev.map((el) => (el.src === optimizedDataUrl ? { ...el, src: relativeUrl } : el))
+                );
+              }
+            } catch {
+              // Silent fallback: optimizedDataUrl is already compact (< 40KB) and works offline
+            }
+          },
+          "image/png"
+        );
       };
       img.onerror = () => {
         toast.error("Could not read image file. Please try another PNG or JPG.");
@@ -942,25 +983,62 @@ const UploadTemplatePage = () => {
   const handleConvertElementToTemplate = (imgElement) => {
     if (!imgElement?.src) return;
     const img = new Image();
+    img.crossOrigin = "anonymous";
     img.onload = () => {
-      const aspectRatio = (img.width || 842) / (img.height || 595);
+      const naturalW = img.width || 842;
+      const naturalH = img.height || 595;
+      const aspectRatio = naturalW / naturalH;
       const canvasWidth = 842;
       const canvasHeight = Math.max(300, Math.min(1400, Math.round(canvasWidth / aspectRatio)));
-      setCanvasSize({ width: canvasWidth, height: canvasHeight });
-      setTemplateImageUrl(imgElement.src);
-      setTemplateImageFile(null);
-      setImportedTemplateMeta({
-        name: "Converted Certificate Design",
-        width: img.width || 842,
-        height: img.height || 595,
-        aspectRatio,
-      });
-      setBackgroundConfig((prev) => ({ ...prev, border: false }));
-      setElements((prev) => prev.filter((el) => el.id !== imgElement.id));
-      setSelectedId(null);
-      toast.success("Set image as your full Certificate Template!");
+
+      const MAX_CERT_DIM = 1800;
+      let outW = naturalW;
+      let outH = naturalH;
+      if (outW > MAX_CERT_DIM || outH > MAX_CERT_DIM) {
+        if (outW > outH) {
+          outH = Math.round((outH * MAX_CERT_DIM) / outW);
+          outW = MAX_CERT_DIM;
+        } else {
+          outW = Math.round((outW * MAX_CERT_DIM) / outH);
+          outH = MAX_CERT_DIM;
+        }
+      }
+
+      const offCanvas = document.createElement("canvas");
+      offCanvas.width = outW;
+      offCanvas.height = outH;
+      const ctx = offCanvas.getContext("2d");
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(0, 0, outW, outH);
+      ctx.drawImage(img, 0, 0, outW, outH);
+
+      const previewDataUrl = offCanvas.toDataURL("image/jpeg", 0.88);
+      offCanvas.toBlob(
+        (blob) => {
+          const optimizedFile = blob
+            ? new File([blob], "converted_certificate_template.jpg", { type: "image/jpeg" })
+            : null;
+          setCanvasSize({ width: canvasWidth, height: canvasHeight });
+          setTemplateImageUrl(previewDataUrl);
+          setTemplateImageFile(optimizedFile);
+          setImportedTemplateMeta({
+            name: "Converted Certificate Design",
+            width: naturalW,
+            height: naturalH,
+            aspectRatio,
+          });
+          setBackgroundConfig((prev) => ({ ...prev, border: false }));
+          setElements((prev) => prev.filter((el) => el.id !== imgElement.id));
+          setSelectedId(null);
+          toast.success("Set image as your full Certificate Template!");
+        },
+        "image/jpeg",
+        0.88
+      );
     };
-    img.src = imgElement.src;
+    img.src = imgElement.src.startsWith("/uploads")
+      ? `${SERVER_BASE_URL}${imgElement.src}`
+      : imgElement.src;
   };
 
   const handleRemoveImportedTemplate = () => {
@@ -1087,6 +1165,24 @@ const UploadTemplatePage = () => {
     toast.success(`Created variable "${formattedName}"`);
   };
 
+  // Helper to convert a data:image/* base64 URL into a File object
+  const dataUrlToFile = (dataUrl, filename = "template_bg.jpg") => {
+    try {
+      const [header, b64] = dataUrl.split(";base64,");
+      if (!b64) return null;
+      const mime = header.replace("data:", "") || "image/jpeg";
+      const ext = mime.includes("png") ? "png" : mime.includes("webp") ? "webp" : "jpg";
+      const binary = atob(b64);
+      const bytes = new Uint8Array(binary.length);
+      for (let i = 0; i < binary.length; i++) {
+        bytes[i] = binary.charCodeAt(i);
+      }
+      return new File([bytes], `${filename.replace(/\.[^/.]+$/, "")}.${ext}`, { type: mime });
+    } catch {
+      return null;
+    }
+  };
+
   // --- Save Template ---
   const handleSaveTemplate = async () => {
     if (!templateTitle.trim()) {
@@ -1098,85 +1194,154 @@ const UploadTemplatePage = () => {
 
     setIsSubmitting(true);
 
-    // IMPORTANT: Do NOT embed huge base64 data URL inside layout_data when templateImageFile is being uploaded as a file!
-    let bgImageForJson = null;
-    if (!templateImageFile && templateImageUrl) {
-      let relativePath = templateImageUrl;
-      if (!relativePath.startsWith("data:") && !relativePath.startsWith("blob:")) {
-        try {
-          const urlObj = new URL(relativePath);
-          relativePath = urlObj.pathname;
-        } catch (e) {
-          const cleanServer = SERVER_BASE_URL.replace(/\/+$/, "");
-          relativePath = relativePath.replace(cleanServer, "");
+    try {
+      // 1. Ensure any base64 logos/stamps (> 45KB) in elements are uploaded to /uploads/editor-images first
+      //    so layout_data never exceeds Werkzeug's 500KB form field memory limit.
+      const resolvedElements = await Promise.all(
+        elements.map(async (el) => {
+          let src = el.src;
+          if (src && typeof src === "string" && src.startsWith("data:image/") && src.length > 45000) {
+            try {
+              const fileObj = dataUrlToFile(src, "asset_logo.png");
+              if (fileObj) {
+                const fd = new FormData();
+                fd.append("image", fileObj);
+                const res = await uploadEditorImage(fd);
+                const remoteUrl = res.data?.imageUrl;
+                if (remoteUrl) {
+                  try {
+                    src = new URL(remoteUrl).pathname;
+                  } catch {
+                    const cleanServer = SERVER_BASE_URL.replace(/\/+$/, "");
+                    src = remoteUrl.replace(cleanServer, "");
+                  }
+                }
+              }
+            } catch {
+              // Keep existing src if upload fails
+            }
+          }
+          return {
+            id: el.id,
+            type: el.type || (el.isQr ? "qr" : "text"),
+            text: el.text,
+            src,
+            x: Math.round(el.x || 0),
+            y: Math.round(el.y || 0),
+            width: Math.round(el.width || 100),
+            height: Math.round(el.height || 30),
+            fontSize: el.fontSize,
+            fontFamily: el.fontFamily,
+            fill: el.fill,
+            stroke: el.stroke,
+            strokeWidth: el.strokeWidth,
+            dash: el.dash,
+            cornerRadius: el.cornerRadius,
+            numPoints: el.numPoints,
+            align: el.align || "left",
+            fontStyle: el.fontStyle || "normal",
+            textDecoration: el.textDecoration || "",
+            letterSpacing: el.letterSpacing || 0,
+            lineHeight: el.lineHeight || 1,
+            opacity: el.opacity != null ? el.opacity : 1,
+            rotation: Math.round(el.rotation || 0),
+            verticalAlign: el.verticalAlign || "middle",
+            isQr: !!el.isQr,
+            visible: el.visible !== false,
+            locked: !!el.locked,
+          };
+        })
+      );
+
+      // 2. IMPORTANT: Never embed large raster base64 data URLs inside layout_data.background.image.
+      //    If templateImageUrl is a raster base64 string without a templateImageFile, convert it to a File part!
+      let finalTemplateFile = templateImageFile;
+      let bgImageForJson = null;
+
+      if (!finalTemplateFile && templateImageUrl) {
+        if (
+          templateImageUrl.startsWith("data:image/") &&
+          !templateImageUrl.startsWith("data:image/svg") &&
+          templateImageUrl.length > 40000
+        ) {
+          finalTemplateFile = dataUrlToFile(templateImageUrl, "certificate_template.jpg");
+        } else {
+          let relativePath = templateImageUrl;
+          if (!relativePath.startsWith("data:") && !relativePath.startsWith("blob:")) {
+            try {
+              const urlObj = new URL(relativePath);
+              relativePath = urlObj.pathname;
+            } catch {
+              const cleanServer = SERVER_BASE_URL.replace(/\/+$/, "");
+              relativePath = relativePath.replace(cleanServer, "");
+            }
+          }
+          bgImageForJson = relativePath;
         }
       }
-      bgImageForJson = relativePath;
+
+      const layoutData = {
+        type: templateType,
+        canvas: canvasSize,
+        custom_fields: customVariables,
+        background: {
+          fill: backgroundConfig.fill || "#ffffff",
+          border: !!backgroundConfig.border,
+          borderColor: backgroundConfig.borderColor || "#1e3a8a",
+          borderAccent: backgroundConfig.borderAccent || "#d97706",
+          borderWidth: backgroundConfig.borderWidth || 4,
+          image: bgImageForJson,
+        },
+        elements: resolvedElements,
+      };
+
+      const buildFormData = () => {
+        const fd = new FormData();
+        fd.append("title", templateTitle.trim());
+        fd.append("layout_data", JSON.stringify(layoutData));
+        if (finalTemplateFile) {
+          fd.append("template_image", finalTemplateFile);
+        }
+        return fd;
+      };
+
+      const submitWithRetry = async () => {
+        try {
+          return templateId
+            ? await updateCustomTemplate(templateId, buildFormData())
+            : await createCustomTemplate(buildFormData());
+        } catch (err) {
+          // Retry once on transient network/DNS/connection drop (!err.response)
+          if (!err.response) {
+            await new Promise((r) => setTimeout(r, 900));
+            return templateId
+              ? await updateCustomTemplate(templateId, buildFormData())
+              : await createCustomTemplate(buildFormData());
+          }
+          throw err;
+        }
+      };
+
+      const savePromise = submitWithRetry();
+
+      await toast.promise(savePromise, {
+        loading: templateId ? "Updating design..." : "Saving certificate template...",
+        success: () => {
+          setTimeout(() => navigate("/dashboard/templates"), 1000);
+          return "Certificate template saved successfully!";
+        },
+        error: (err) => {
+          if (!err?.response) {
+            return "Network connection interrupted while saving. Please check your internet connection and try again.";
+          }
+          return err.response?.data?.msg || "Failed to save template.";
+        },
+      });
+    } catch {
+      // Error already displayed by toast.promise
+    } finally {
+      setIsSubmitting(false);
     }
-
-    const layoutData = {
-      type: templateType,
-      canvas: canvasSize,
-      custom_fields: customVariables,
-      background: {
-        fill: backgroundConfig.fill || "#ffffff",
-        border: !!backgroundConfig.border,
-        borderColor: backgroundConfig.borderColor || "#1e3a8a",
-        borderAccent: backgroundConfig.borderAccent || "#d97706",
-        borderWidth: backgroundConfig.borderWidth || 4,
-        image: bgImageForJson,
-      },
-      elements: elements.map((el) => ({
-        id: el.id,
-        type: el.type || (el.isQr ? "qr" : "text"),
-        text: el.text,
-        src: el.src,
-        x: Math.round(el.x || 0),
-        y: Math.round(el.y || 0),
-        width: Math.round(el.width || 100),
-        height: Math.round(el.height || 30),
-        fontSize: el.fontSize,
-        fontFamily: el.fontFamily,
-        fill: el.fill,
-        stroke: el.stroke,
-        strokeWidth: el.strokeWidth,
-        dash: el.dash,
-        cornerRadius: el.cornerRadius,
-        numPoints: el.numPoints,
-        align: el.align || "left",
-        fontStyle: el.fontStyle || "normal",
-        textDecoration: el.textDecoration || "",
-        letterSpacing: el.letterSpacing || 0,
-        lineHeight: el.lineHeight || 1,
-        opacity: el.opacity != null ? el.opacity : 1,
-        rotation: Math.round(el.rotation || 0),
-        verticalAlign: el.verticalAlign || "middle",
-        isQr: !!el.isQr,
-        visible: el.visible !== false,
-        locked: !!el.locked,
-      })),
-    };
-
-    const formData = new FormData();
-    formData.append("title", templateTitle);
-    formData.append("layout_data", JSON.stringify(layoutData));
-    if (templateImageFile) {
-      formData.append("template_image", templateImageFile);
-    }
-
-    const promise = templateId
-      ? updateCustomTemplate(templateId, formData)
-      : createCustomTemplate(formData);
-
-    toast.promise(promise, {
-      loading: templateId ? "Updating design..." : "Saving certificate template...",
-      success: () => {
-        setTimeout(() => navigate("/dashboard/templates"), 1200);
-        return `Certificate template saved successfully!`;
-      },
-      error: (err) => err.response?.data?.msg || `Failed to save template.`,
-    });
-    promise.finally(() => setIsSubmitting(false));
   };
 
   const selectedElement = elements.find((el) => el.id === selectedId);

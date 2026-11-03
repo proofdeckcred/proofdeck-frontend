@@ -7,13 +7,13 @@
   font-family: 'Product Sans';
   font-style: normal;
   font-weight: 400;
-  src: local('Product Sans'), local('ProductSans-Regular'), url(https://fonts.gstatic.com/s/productsans/v5/HYvgU2fE2nRJvZ5JFAumwegdm0LZxxJZkbJ7NDDPsr0.woff2) format('woff2');
+  src: local('Product Sans'), local('ProductSans-Regular'), local('Plus Jakarta Sans'), local('Inter');
 }
 @font-face {
   font-family: 'Product Sans';
   font-style: normal;
-  font-weight: 750;
-  src: local('Product Sans Bold'), local('ProductSans-Bold'), url(https://fonts.gstatic.com/s/productsans/v5/ea8acIL1mXDmi1A-4C2hnT9-pQURs1S4Uo3Al709Yuw.woff2) format('woff2');
+  font-weight: 700;
+  src: local('Product Sans Bold'), local('ProductSans-Bold'), local('Plus Jakarta Sans Bold'), local('Inter Bold');
 }
 
 
